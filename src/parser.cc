@@ -194,8 +194,8 @@ AstNode* Parser::ParseExpression() {
     // member "(" ... args ... ")" block? |
     // member? "(" ... args ... ")" block
     {
+      FunctionLiteral* fn = new FunctionLiteral(member, Peek()->offset);
       Skip();
-      FunctionLiteral* fn = new FunctionLiteral(member);
       member = NULL;
 
       while (Peek()->type != kParenClose && Peek()->type != kEnd) {
@@ -219,7 +219,7 @@ AstNode* Parser::ParseExpression() {
         break;
       }
 
-      result = fn;
+      result = fn->End(Peek()->offset);
     }
     break;
    default:

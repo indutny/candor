@@ -25,7 +25,6 @@
 
 #define PARSER_TEST(code, block)\
     {\
-      fprintf(stdout, "try: \"%s\"\n", code);\
       Parser p(code, strlen(code));\
       AstNode* ast = p.Execute();\
       assert(ast != NULL);\

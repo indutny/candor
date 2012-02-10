@@ -82,7 +82,7 @@ class AstNode {
     }
   }
 
-  AstNode* FromToken(Lexer::Token* tok) {
+  inline AstNode* FromToken(Lexer::Token* tok) {
     value = tok->value;
     length = tok->length;
 
@@ -113,10 +113,13 @@ class BlockStmt : public AstNode {
 
 class FunctionLiteral : public AstNode {
  public:
-  FunctionLiteral(AstNode* variable_) : AstNode(kFunction) {
+  FunctionLiteral(AstNode* variable_, uint32_t offset_) : AstNode(kFunction) {
     variable = variable_;
     body = NULL;
     args.allocated = true;
+
+    offset = offset_;
+    length = 0;
   }
 
   ~FunctionLiteral() {
@@ -124,7 +127,7 @@ class FunctionLiteral : public AstNode {
     delete body;
   }
 
-  bool CheckDeclaration() {
+  inline bool CheckDeclaration() {
     // Function without body is a call
     if (body == NULL) {
       // So it should have a name
@@ -148,9 +151,17 @@ class FunctionLiteral : public AstNode {
     return true;
   }
 
+  inline FunctionLiteral* End(uint32_t end) {
+    length = end - offset;
+    return this;
+  }
+
   AstNode* variable;
   List<AstNode*> args;
   AstNode* body;
+
+  uint32_t offset;
+  uint32_t length;
 };
 
 
