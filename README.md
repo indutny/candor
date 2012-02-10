@@ -26,7 +26,7 @@ a()
 b + c
 +(b, c)
 +any_stuff(b, c) {
-  return b + c;
+  return b + c
 }
 b +any_stuff c
 
@@ -43,7 +43,7 @@ b +any_stuff c
 x.a = 1
 ```
 
-Grammar:
+## Grammar
 
 ```
 code := statement*
@@ -85,3 +85,7 @@ statement := (return | break | if | while | block | expr) CR
 expr := binop | prefix | postfix |
         blockExpr | assign | callOrFun | member
 ```
+
+## Heap
+
+
