@@ -12,7 +12,7 @@ namespace dotlang {
 class Parser : public Lexer {
  public:
   Parser(const char* source, uint32_t length) : Lexer(source, length) {
-    ast = new AstNode(AstNode::kBlock);
+    ast = new BlockStmt(NULL);
     current = ast;
   }
 
@@ -63,6 +63,7 @@ class Parser : public Lexer {
   AstNode* ParsePrimary();
   AstNode* ParseMember();
   AstNode* ParseBlock();
+  AstNode* ParseScope();
 
   AstNode* ast;
   AstNode* current;

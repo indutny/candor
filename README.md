@@ -76,7 +76,8 @@ blockExpr := block
 
 return := "return" expr?
 break := "break"
-if := "if" "(" expr ")" block ("else" block)?
+if := "if" "(" expr ")" block ("else" block)? |
+      "if" "(" expr ")" stmt
 while := "while" "(" expr ")" block
 
 statement := (return | break | if | while | block | expr) CR

@@ -58,10 +58,16 @@ AstNode* Parser::ParseStatement() {
       AstNode* body = ParseBlock();
       AstNode* elseBody = NULL;
 
-      if (Peek()->type == kElse) {
-        Skip();
-        elseBody = ParseBlock();
+      if (body == NULL) {
+        body = ParseStatement();
+      } else {
+        if (Peek()->type == kElse) {
+          Skip();
+          elseBody = ParseBlock();
+        }
       }
+
+      if (body == NULL) return NULL;
 
       IfStmt* w = new IfStmt(cond, body, elseBody);
       result = w;
@@ -102,7 +108,7 @@ AstNode* Parser::ParseStatement() {
     delete result;
     return NULL;
   }
-  Skip();
+  if (Peek()->type == kCr) Skip();
 
   return pos.Commit(result);
 }
@@ -161,6 +167,7 @@ AstNode* Parser::ParseExpression() {
     return ParsePrefixUnop(AstNode::kNot);
    case kBraceOpen:
     result = ParseBlock();
+    if (result == NULL) return NULL;
     result->type = AstNode::kBlockExpr;
     return result;
    default:
@@ -351,11 +358,13 @@ AstNode* Parser::ParseMember() {
 
 AstNode* Parser::ParseBlock() {
   if (Peek()->type != kBraceOpen) return NULL;
-
   Position pos(this);
-  AstNode* result;
+
   Skip();
-  result = new AstNode(AstNode::kBlock);
+
+  while (Peek()->type == kCr) Skip();
+  AstNode* result = new BlockStmt(ParseScope());
+
   while (Peek()->type != kEnd && Peek()->type != kBraceClose) {
     AstNode* stmt = ParseStatement();
     if (stmt == NULL) break;
@@ -366,6 +375,33 @@ AstNode* Parser::ParseBlock() {
     return NULL;
   }
   Skip();
+
+  return pos.Commit(result);
+}
+
+
+AstNode* Parser::ParseScope() {
+  if (Peek()->type != kScope) return NULL;
+  Position pos(this);
+
+  Skip();
+
+  AstNode* result = new AstNode(AstNode::kScope);
+
+  while (Peek()->type != kCr && Peek()->type != kBraceClose) {
+    if (Peek()->type != kName) break;
+    result->children.Push((new AstNode(AstNode::kName))->FromToken(Peek()));
+    Skip();
+
+    if (Peek()->type != kComma &&
+        Peek()->type != kCr && Peek()->type != kBraceClose) break;
+    if (Peek()->type == kComma) Skip();
+  }
+
+  if (Peek()->type != kCr && Peek()->type != kBraceClose) {
+    delete result;
+    result = NULL;
+  }
 
   return pos.Commit(result);
 }

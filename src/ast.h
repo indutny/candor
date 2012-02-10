@@ -13,6 +13,7 @@ namespace dotlang {
     V(kTrue)\
     V(kFalse)\
     V(kNil)\
+    V(kScope)\
     V(kAdd)\
     V(kSub)\
     V(kDiv)\
@@ -93,6 +94,18 @@ class AstNode {
   List<AstNode*> children;
 };
 #undef TYPE_MAPPING
+
+
+class BlockStmt : public AstNode {
+ public:
+  BlockStmt(AstNode* scope_) : AstNode(kBlock), scope(scope_) {
+  }
+  ~BlockStmt() {
+    delete scope;
+  }
+
+  AstNode* scope;
+};
 
 
 class FunctionLiteral : public AstNode {
