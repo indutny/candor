@@ -69,6 +69,9 @@ class AstNode {
     children.allocated = true;
   }
 
+  virtual ~AstNode() {
+  }
+
   inline static Type ConvertType(Lexer::TokenType type) {
     switch (type) {
 #define MAP_DF(x) case Lexer::x: return x;
