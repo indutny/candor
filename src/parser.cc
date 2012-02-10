@@ -10,7 +10,7 @@ AstNode* Parser::Execute() {
   while ((stmt = ParseStatement()) != NULL) {
     ast()->children()->Push(stmt);
   }
-  assert(Peek()->type == kEnd);
+  assert(Peek()->is(kEnd));
 
   return ast();
 }
@@ -61,7 +61,7 @@ AstNode* Parser::ParseStatement() {
       if (body == NULL) {
         body = ParseStatement();
       } else {
-        if (!Peek()->is(kElse)) {
+        if (Peek()->is(kElse)) {
           Skip();
           elseBody = ParseBlock();
         }
@@ -404,6 +404,5 @@ AstNode* Parser::ParseScope() {
 
   return pos.Commit(result);
 }
-
 
 } // namespace dotlang

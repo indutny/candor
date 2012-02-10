@@ -4,6 +4,8 @@
 #include <stdlib.h> // NULL
 #include <stdint.h> // uint32_t
 
+namespace dotlang {
+
 template <class T>
 class List {
  public:
@@ -83,5 +85,7 @@ class List {
 
   bool allocated;
 };
+
+} // namespace dotlang
 
 #endif // _SRC_UTILS_H_

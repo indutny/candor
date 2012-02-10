@@ -201,4 +201,4 @@ Lexer::Token* Lexer::Consume() {
   }
 }
 
-}
+} // namespace dotlang

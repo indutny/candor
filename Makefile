@@ -21,6 +21,7 @@ endif
 all: dotlang.a
 
 OBJS += src/dotlang.o
+OBJS += src/compiler.o
 OBJS += src/lexer.o
 OBJS += src/parser.o
 
@@ -38,9 +39,15 @@ else
 endif
 
 ifeq ($(OS),Darwin)
-	CPPFLAGS += -D__DARWIN
+	CPPFLAGS += -D__PLATFORM=darwin
 else
-	CPPFLAGS += -D__LINUX
+	CPPFLAGS += -D__PLATFORM=linux
+endif
+
+ifeq ($(ARCH),i386)
+	CPPFLAGS += -D__ARCH=ia32
+else
+	CPPFLAGS += -D__ARCH=x64
 endif
 
 dotlang.a: $(OBJS)
@@ -50,9 +57,11 @@ src/%.o: src/%.cc
 	$(CXX) $(CPPFLAGS) -Isrc -c $< -o $@
 
 TESTS += test/test-parser
+TESTS += test/test-api
 
 test: $(TESTS)
 	@test/test-parser
+	@test/test-api
 
 test/%: test/%.cc dotlang.a
 	$(CXX) $(CPPFLAGS) -Isrc $< -o $@ dotlang.a

@@ -233,7 +233,6 @@ class AssignExpr : public AstNode {
   AstNode* value_;
 };
 
-
 } // namespace dotlang
 
 #endif // _SRC_AST_H_

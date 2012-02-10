@@ -1,10 +1,28 @@
 #ifndef _SRC_FULLGEN_H_
 #define _SRC_FULLGEN_H_
 
+#include "ast.h"
+
+#if __ARCH == x64
+#include "x64/assembler-x64.h"
+#else
+#include "ia32/assembler-ia32.h"
+#endif
+
 namespace dotlang {
 
-class Fullgen {
+class Fullgen : public Assembler {
  public:
+  Fullgen() : Assembler() {
+  }
+
+  void GeneratePrologue();
+  void GenerateEpilogue();
+
+  void GenerateBlock(BlockStmt* stmt);
+  void GenerateAssign(AssignExpr* stmt);
+  void GenerateStackLookup(AstNode* name);
+  void GenerateScopeLookup(AstNode* name);
 };
 
 } // namespace dotlang
