@@ -1,0 +1,6 @@
+*.o
+*.a
+*.dSYM
+/test/*
+!/test/*.h
+!/test/*.cc
