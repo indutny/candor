@@ -63,10 +63,10 @@ class AstNode {
     kNop
   };
 
-  AstNode(Type type_) : type(type_) {
-    value = NULL;
-    length = 0;
-    children.allocated = true;
+  AstNode(Type type) : type_(type) {
+    value_ = NULL;
+    length_ = 0;
+    children_.allocated = true;
   }
 
   virtual ~AstNode() {
@@ -83,139 +83,154 @@ class AstNode {
   }
 
   inline AstNode* FromToken(Lexer::Token* tok) {
-    value = tok->value;
-    length = tok->length;
+    value_ = tok->value_;
+    length_ = tok->length_;
 
     return this;
   }
 
+  inline List<AstNode*>* children() {
+    return &children_;
+  }
 
-  Type type;
-  const char* value;
-  uint32_t length;
+  inline Type type() {
+    return type_;
+  }
 
-  List<AstNode*> children;
+  inline bool is(Type type) {
+    return type_ == type;
+  }
+
+
+  Type type_;
+  const char* value_;
+  uint32_t length_;
+
+  List<AstNode*> children_;
 };
 #undef TYPE_MAPPING
 
 
 class BlockStmt : public AstNode {
  public:
-  BlockStmt(AstNode* scope_) : AstNode(kBlock), scope(scope_) {
+  BlockStmt(AstNode* scope) : AstNode(kBlock), scope_(scope) {
   }
   ~BlockStmt() {
-    delete scope;
+    delete scope_;
   }
 
-  AstNode* scope;
+  AstNode* scope_;
 };
 
 
 class FunctionLiteral : public AstNode {
  public:
-  FunctionLiteral(AstNode* variable_, uint32_t offset_) : AstNode(kFunction) {
-    variable = variable_;
-    body = NULL;
-    args.allocated = true;
+  FunctionLiteral(AstNode* variable, uint32_t offset) : AstNode(kFunction) {
+    variable_ = variable;
+    body_ = NULL;
+    args_.allocated = true;
 
-    offset = offset_;
-    length = 0;
+    offset_ = offset;
+    length_ = 0;
   }
 
   ~FunctionLiteral() {
-    delete variable;
-    delete body;
+    delete variable_;
+    delete body_;
   }
 
   inline bool CheckDeclaration() {
     // Function without body is a call
-    if (body == NULL) {
+    if (body_ == NULL) {
       // So it should have a name
-      if (variable == NULL) return false;
+      if (variable_ == NULL) return false;
       return true;
     }
 
     // Name should not be "a.b.c"
-    if (variable != NULL && variable->type != kName) return false;
+    if (variable_ != NULL && !variable_->is(kName)) return false;
 
     // Arguments should be a kName, not expressions
-    List<AstNode*>::Item* head = args.Head();
-    while (head != NULL) {
-      if (head->value->type != kName) return false;
-      head = args.Next(head);
+    List<AstNode*>::Item* head;
+    for (head = args_.Head(); head != NULL; head = args_.Next(head)) {
+      if (!head->value->is(kName)) return false;
     }
 
     // Body should be a block
-    if (body->type != kBlock) return false;
+    if (!body_->is(kBlock)) return false;
 
     return true;
   }
 
   inline FunctionLiteral* End(uint32_t end) {
-    length = end - offset;
+    length_ = end - offset_;
     return this;
   }
 
-  AstNode* variable;
-  List<AstNode*> args;
-  AstNode* body;
+  inline List<AstNode*>* args() {
+    return &args_;
+  }
 
-  uint32_t offset;
-  uint32_t length;
+  AstNode* variable_;
+  List<AstNode*> args_;
+  AstNode* body_;
+
+  uint32_t offset_;
+  uint32_t length_;
 };
 
 
 class IfStmt : public AstNode {
  public:
-  IfStmt(AstNode* condition, AstNode* body_, AstNode* else_) : AstNode(kIf) {
-    cond = condition;
-    body = body_;
-    else_body = else_;
+  IfStmt(AstNode* condition, AstNode* body, AstNode* else_body) : AstNode(kIf) {
+    cond_ = condition;
+    body_ = body;
+    else_ = else_body;
   }
 
   ~IfStmt() {
-    delete cond;
-    delete body;
-    delete else_body;
+    delete cond_;
+    delete body_;
+    delete else_;
   }
 
-  AstNode* cond;
-  AstNode* body;
-  AstNode* else_body;
+  AstNode* cond_;
+  AstNode* body_;
+  AstNode* else_;
 };
 
 
 class WhileStmt : public AstNode {
  public:
-  WhileStmt(AstNode* condition, AstNode* body_) : AstNode(kWhile) {
-    cond = condition;
-    body = body_;
+  WhileStmt(AstNode* condition, AstNode* body) : AstNode(kWhile) {
+    cond_ = condition;
+    body_ = body;
   }
 
   ~WhileStmt() {
-    delete cond;
-    delete body;
+    delete cond_;
+    delete body_;
   }
 
-  AstNode* cond;
-  AstNode* body;
+  AstNode* cond_;
+  AstNode* body_;
 };
 
 
 class AssignExpr : public AstNode {
  public:
-  AssignExpr(AstNode* variable_, AstNode* value_) : AstNode(kAssign) {
-    variable = variable_;
-    value = value_;
+  AssignExpr(AstNode* variable, AstNode* value) : AstNode(kAssign) {
+    variable_ = variable;
+    value_ = value;
   }
 
   ~AssignExpr() {
-    delete variable;
-    delete value;
+    delete variable_;
+    delete value_;
   }
 
-  AstNode* variable;
-  AstNode* value;
+  AstNode* variable_;
+  AstNode* value_;
 };
 
 

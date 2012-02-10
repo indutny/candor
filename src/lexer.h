@@ -8,10 +8,10 @@ namespace dotlang {
 
 class Lexer {
  public:
-  Lexer(const char* source_, uint32_t length_) : source(source_),
-                                                 offset(0),
-                                                 length(length_) {
-    queue.allocated = true;
+  Lexer(const char* source, uint32_t length) : source_(source),
+                                               offset_(0),
+                                               length_(length) {
+    queue_.allocated = true;
   }
 
   enum TokenType {
@@ -76,23 +76,35 @@ class Lexer {
 
   class Token {
    public:
-    Token(TokenType type_, uint32_t offset_) : type(type_),
-                                               value(NULL),
-                                               length(0),
-                                               offset(offset_) {
+    Token(TokenType type, uint32_t offset) : type_(type),
+                                             value_(NULL),
+                                             length_(0),
+                                             offset_(offset) {
     }
 
-    Token(TokenType type_,
-          const char* value_,
-          uint32_t length_,
-          uint32_t offset_) :
-        type(type_), value(value_), length(length_), offset(offset_) {
+    Token(TokenType type,
+          const char* value,
+          uint32_t length,
+          uint32_t offset) :
+        type_(type), value_(value), length_(length), offset_(offset) {
     }
 
-    TokenType type;
-    const char* value;
-    uint32_t length;
-    uint32_t offset;
+    inline TokenType type() {
+      return type_;
+    }
+
+    inline bool is(TokenType type) {
+      return type_ == type;
+    }
+
+    inline const uint32_t offset() {
+      return offset_;
+    }
+
+    TokenType type_;
+    const char* value_;
+    uint32_t length_;
+    uint32_t offset_;
   };
 
   Token* Peek();
@@ -103,15 +115,23 @@ class Lexer {
   void Restore();
   void Commit();
 
-  inline char get(uint32_t offset_) {
-    return source[offset + offset_];
+  inline char get(uint32_t delta) {
+    return source_[offset_ + delta];
   }
 
-  const char* source;
-  uint32_t offset;
-  uint32_t length;
+  inline bool has(uint32_t num) {
+    return offset_ + num - 1 < length_;
+  }
 
-  List<Token*> queue;
+  inline List<Token*>* queue() {
+    return &queue_;
+  }
+
+  const char* source_;
+  uint32_t offset_;
+  uint32_t length_;
+
+  List<Token*> queue_;
 };
 
 } // namespace dotlang

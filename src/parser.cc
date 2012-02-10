@@ -8,11 +8,11 @@ namespace dotlang {
 AstNode* Parser::Execute() {
   AstNode* stmt;
   while ((stmt = ParseStatement()) != NULL) {
-    ast->children.Push(stmt);
+    ast()->children()->Push(stmt);
   }
   assert(Peek()->type == kEnd);
 
-  return ast;
+  return ast();
 }
 
 
@@ -22,18 +22,18 @@ AstNode* Parser::ParseStatement() {
 
   // Skip cr's before statement
   // needed for {\n blocks \n}
-  while (Peek()->type == kCr) Skip();
+  while (Peek()->is(kCr)) Skip();
 
-  switch (Peek()->type) {
+  switch (Peek()->type()) {
    case kReturn:
     Skip();
     {
       AstNode* retValue = NULL;
-      if (Peek()->type != kEnd && Peek()->type != kCr) {
+      if (!Peek()->is(kEnd) && !Peek()->is(kCr)) {
         retValue = ParseExpression();
       }
       result = new AstNode(AstNode::kReturn);
-      if (retValue != NULL) result->children.Push(retValue);
+      if (retValue != NULL) result->children()->Push(retValue);
     }
     break;
    case kBreak:
@@ -43,13 +43,13 @@ AstNode* Parser::ParseStatement() {
    case kIf:
     Skip();
     {
-      if (Peek()->type != kParenOpen) break;
+      if (!Peek()->is(kParenOpen)) break;
       Skip();
 
       AstNode* cond = ParseExpression();
       if (cond == NULL) break;
 
-      if (Peek()->type != kParenClose) {
+      if (!Peek()->is(kParenClose)) {
         delete cond;
         break;
       }
@@ -61,7 +61,7 @@ AstNode* Parser::ParseStatement() {
       if (body == NULL) {
         body = ParseStatement();
       } else {
-        if (Peek()->type == kElse) {
+        if (!Peek()->is(kElse)) {
           Skip();
           elseBody = ParseBlock();
         }
@@ -76,12 +76,12 @@ AstNode* Parser::ParseStatement() {
    case kWhile:
     Skip();
     {
-      if (Peek()->type != kParenOpen) break;
+      if (!Peek()->is(kParenOpen)) break;
       Skip();
 
       AstNode* cond = ParseExpression();
       if (cond == NULL) break;
-      if (Peek()->type != kParenClose) {
+      if (!Peek()->is(kParenClose)) {
         delete cond;
         break;
       }
@@ -102,13 +102,11 @@ AstNode* Parser::ParseStatement() {
   }
 
   // Consume kCr or kBraceClose
-  if (Peek()->type != kEnd &&
-      Peek()->type != kCr &&
-      Peek()->type != kBraceClose) {
+  if (!Peek()->is(kEnd) && !Peek()->is(kCr) && !Peek()->is(kBraceClose)) {
     delete result;
     return NULL;
   }
-  if (Peek()->type == kCr) Skip();
+  if (Peek()->is(kCr)) Skip();
 
   return pos.Commit(result);
 }
@@ -144,7 +142,7 @@ AstNode* Parser::ParseStatement() {
     case kDiv:
 
 #define BINOP_SWITCH(type, result, K)\
-    type = Peek()->type;\
+    type = Peek()->type();\
     switch (type) {\
      K\
       result = ParseBinOp(type, result);\
@@ -158,7 +156,7 @@ AstNode* Parser::ParseExpression() {
   AstNode* result = NULL;
 
   // Parse prefix unops and block expression
-  switch (Peek()->type) {
+  switch (Peek()->type()) {
    case kInc:
     return ParsePrefixUnop(AstNode::kPreInc);
    case kDec:
@@ -168,7 +166,7 @@ AstNode* Parser::ParseExpression() {
    case kBraceOpen:
     result = ParseBlock();
     if (result == NULL) return NULL;
-    result->type = AstNode::kBlockExpr;
+    result->type_ = AstNode::kBlockExpr;
     return result;
    default:
     break;
@@ -177,7 +175,7 @@ AstNode* Parser::ParseExpression() {
   Position pos(this);
   AstNode* member = ParseMember();
 
-  switch (Peek()->type) {
+  switch (Peek()->type()) {
    case kAssign:
     if (member == NULL) return NULL;
 
@@ -194,32 +192,32 @@ AstNode* Parser::ParseExpression() {
     // member "(" ... args ... ")" block? |
     // member? "(" ... args ... ")" block
     {
-      FunctionLiteral* fn = new FunctionLiteral(member, Peek()->offset);
+      FunctionLiteral* fn = new FunctionLiteral(member, Peek()->offset());
       Skip();
       member = NULL;
 
-      while (Peek()->type != kParenClose && Peek()->type != kEnd) {
+      while (!Peek()->is(kParenClose) && !Peek()->is(kEnd)) {
         AstNode* expr = ParseExpression();
         if (expr == NULL) break;
-        fn->args.Push(expr);
+        fn->args()->Push(expr);
 
         // Skip commas
-        if (Peek()->type == kComma) Skip();
+        if (Peek()->is(kComma)) Skip();
       }
-      if (Peek()->type != kParenClose) {
+      if (!Peek()->is(kParenClose)) {
         delete fn;
         break;
       }
       Skip();
 
       // Optional body (for function declaration)
-      fn->body = ParseBlock();
+      fn->body_ = ParseBlock();
       if (!fn->CheckDeclaration()) {
         delete fn;
         break;
       }
 
-      result = fn->End(Peek()->offset);
+      result = fn->End(Peek()->offset());
     }
     break;
    default:
@@ -233,7 +231,7 @@ AstNode* Parser::ParseExpression() {
   }
 
   // Parse postfixes
-  TokenType type = Peek()->type;
+  TokenType type = Peek()->type();
   switch (type) {
    case kInc:
    case kDec:
@@ -282,7 +280,7 @@ AstNode* Parser::ParseBinOp(TokenType type, AstNode* lhs) {
   }
 
   AstNode* result = Wrap(AstNode::ConvertType(type), lhs);
-  result->children.Push(rhs);
+  result->children()->Push(rhs);
 
   return pos.Commit(result);
 }
@@ -293,21 +291,21 @@ AstNode* Parser::ParsePrimary() {
   Lexer::Token* token = Peek();
   AstNode* result = NULL;
 
-  switch (token->type) {
+  switch (token->type()) {
    case kName:
    case kNumber:
    case kString:
    case kTrue:
    case kFalse:
    case kNil:
-    result = new AstNode(AstNode::ConvertType(token->type));
+    result = new AstNode(AstNode::ConvertType(token->type()));
     result->FromToken(token);
     Skip();
     break;
    case kParenOpen:
     Skip();
     result = ParseExpression();
-    if (Peek()->type != kParenClose) {
+    if (!Peek()->is(kParenClose)) {
       delete result;
       result = NULL;
     } else {
@@ -329,27 +327,27 @@ AstNode* Parser::ParseMember() {
   AstNode* result = ParsePrimary();
   if (result == NULL) return NULL;
 
-  while (Peek()->type != kEnd && Peek()->type != kCr) {
+  while (!Peek()->is(kEnd) && !Peek()->is(kCr)) {
     AstNode* next = NULL;
-    if (Peek()->type == kDot) {
+    if (Peek()->is(kDot)) {
       // a.b
       Skip();
       next = ParsePrimary();
-    } else if (Peek()->type == kArrayOpen) {
+    } else if (Peek()->is(kArrayOpen)) {
       // a["prop-expr"]
       Skip();
       next = ParseExpression();
-      if (Peek()->type != kArrayClose) {
+      if (Peek()->is(kArrayClose)) {
+        Skip();
+      } else {
         delete next;
         next = NULL;
-      } else {
-        Skip();
       }
     }
     if (next == NULL) break;
 
     result = Wrap(AstNode::kMember, result);
-    result->children.Push(next);
+    result->children()->Push(next);
   }
 
   return pos.Commit(result);
@@ -357,20 +355,20 @@ AstNode* Parser::ParseMember() {
 
 
 AstNode* Parser::ParseBlock() {
-  if (Peek()->type != kBraceOpen) return NULL;
+  if (!Peek()->is(kBraceOpen)) return NULL;
   Position pos(this);
 
   Skip();
 
-  while (Peek()->type == kCr) Skip();
+  while (Peek()->is(kCr)) Skip();
   AstNode* result = new BlockStmt(ParseScope());
 
-  while (Peek()->type != kEnd && Peek()->type != kBraceClose) {
+  while (!Peek()->is(kEnd) && !Peek()->is(kBraceClose)) {
     AstNode* stmt = ParseStatement();
     if (stmt == NULL) break;
-    result->children.Push(stmt);
+    result->children()->Push(stmt);
   }
-  if (Peek()->type != kEnd && Peek()->type != kBraceClose) {
+  if (!Peek()->is(kEnd) && !Peek()->is(kBraceClose)) {
     delete result;
     return NULL;
   }
@@ -381,24 +379,25 @@ AstNode* Parser::ParseBlock() {
 
 
 AstNode* Parser::ParseScope() {
-  if (Peek()->type != kScope) return NULL;
+  if (!Peek()->is(kScope)) return NULL;
   Position pos(this);
 
   Skip();
 
   AstNode* result = new AstNode(AstNode::kScope);
 
-  while (Peek()->type != kCr && Peek()->type != kBraceClose) {
-    if (Peek()->type != kName) break;
-    result->children.Push((new AstNode(AstNode::kName))->FromToken(Peek()));
+  while (!Peek()->is(kCr) && !Peek()->is(kBraceClose)) {
+    if (!Peek()->is(kName)) break;
+    result->children()->Push((new AstNode(AstNode::kName))->FromToken(Peek()));
     Skip();
 
-    if (Peek()->type != kComma &&
-        Peek()->type != kCr && Peek()->type != kBraceClose) break;
-    if (Peek()->type == kComma) Skip();
+    if (!Peek()->is(kComma) && !Peek()->is(kCr) && !Peek()->is(kBraceClose)) {
+      break;
+    }
+    if (Peek()->is(kComma)) Skip();
   }
 
-  if (Peek()->type != kCr && Peek()->type != kBraceClose) {
+  if (!Peek()->is(kCr) && !Peek()->is(kBraceClose)) {
     delete result;
     result = NULL;
   }

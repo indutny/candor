@@ -12,46 +12,50 @@ namespace dotlang {
 class Parser : public Lexer {
  public:
   Parser(const char* source, uint32_t length) : Lexer(source, length) {
-    ast = new BlockStmt(NULL);
-    current = ast;
+    ast_ = new BlockStmt(NULL);
   }
 
 
   class Position {
    public:
-    Position(Lexer* lexer_) : lexer(lexer_), committed(false) {
-      if (lexer->queue.length == 0) {
-        offset = lexer->offset;
+    Position(Lexer* lexer) : lexer_(lexer), committed_(false) {
+      if (lexer_->queue()->length == 0) {
+        offset_ = lexer_->offset_;
       } else {
-        offset = lexer->queue.Head()->value->offset;
+        offset_ = lexer_->queue()->Head()->value->offset_;
       }
     }
 
     ~Position() {
-      if (!committed) {
-        while (lexer->queue.length > 0) delete lexer->queue.Shift();
-        lexer->offset = offset;
+      if (!committed_) {
+        while (lexer_->queue()->length > 0) delete lexer_->queue()->Shift();
+        lexer_->offset_ = offset_;
       }
     }
 
     inline AstNode* Commit(AstNode* result) {
       if (result != NULL) {
-        committed = true;
+        committed_ = true;
       }
       return result;
     }
 
    private:
-    Lexer* lexer;
-    uint32_t offset;
-    bool committed;
+    Lexer* lexer_;
+    uint32_t offset_;
+    bool committed_;
   };
 
 
   inline AstNode* Wrap(AstNode::Type type, AstNode* original) {
     AstNode* wrap = new AstNode(type);
-    wrap->children.Push(original);
+    wrap->children()->Push(original);
     return wrap;
+  }
+
+
+  inline AstNode* ast() {
+    return ast_;
   }
 
 
@@ -65,8 +69,7 @@ class Parser : public Lexer {
   AstNode* ParseBlock();
   AstNode* ParseScope();
 
-  AstNode* ast;
-  AstNode* current;
+  AstNode* ast_;
 };
 
 } // namespace dotlang
