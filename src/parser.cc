@@ -1,4 +1,5 @@
 #include "parser.h"
+#include "scope.h" // Scope
 #include "ast.h"
 #include <assert.h> // assert
 #include <stdlib.h> // NULL
@@ -55,7 +56,7 @@ AstNode* Parser::ParseStatement() {
       }
       Skip();
 
-      AstNode* body = ParseBlock();
+      AstNode* body = ParseBlock(NULL);
       AstNode* elseBody = NULL;
 
       if (body == NULL) {
@@ -63,14 +64,16 @@ AstNode* Parser::ParseStatement() {
       } else {
         if (Peek()->is(kElse)) {
           Skip();
-          elseBody = ParseBlock();
+          elseBody = ParseBlock(NULL);
         }
       }
 
       if (body == NULL) return NULL;
 
-      IfStmt* w = new IfStmt(cond, body, elseBody);
-      result = w;
+      result = new AstNode(AstNode::kIf);
+      result->children()->Push(cond);
+      result->children()->Push(body);
+      if (elseBody != NULL) result->children()->Push(elseBody);
     }
     break;
    case kWhile:
@@ -87,14 +90,15 @@ AstNode* Parser::ParseStatement() {
       }
       Skip();
 
-      AstNode* body = ParseBlock();
+      AstNode* body = ParseBlock(NULL);
 
-      WhileStmt* w = new WhileStmt(cond, body);
-      result = w;
+      result = new AstNode(AstNode::kWhile);
+      result->children()->Push(cond);
+      result->children()->Push(body);
     }
     break;
    case kBraceOpen:
-    result = ParseBlock();
+    result = ParseBlock(NULL);
     break;
    default:
     result = ParseExpression();
@@ -164,7 +168,7 @@ AstNode* Parser::ParseExpression() {
    case kNot:
     return ParsePrefixUnop(AstNode::kNot);
    case kBraceOpen:
-    result = ParseBlock();
+    result = ParseBlock(NULL);
     if (result == NULL) return NULL;
     result->type_ = AstNode::kBlockExpr;
     return result;
@@ -184,8 +188,9 @@ AstNode* Parser::ParseExpression() {
       Skip();
       AstNode* value = ParseExpression();
       if (value == NULL) break;
-      AssignExpr* expr = new AssignExpr(member, value);
-      result = expr;
+      result = new AstNode(AstNode::kAssign);
+      result->children()->Push(member);
+      result->children()->Push(value);
     }
     break;
    case kParenOpen:
@@ -211,7 +216,7 @@ AstNode* Parser::ParseExpression() {
       Skip();
 
       // Optional body (for function declaration)
-      fn->body_ = ParseBlock();
+      ParseBlock(reinterpret_cast<AstNode*>(fn));
       if (!fn->CheckDeclaration()) {
         delete fn;
         break;
@@ -354,14 +359,16 @@ AstNode* Parser::ParseMember() {
 }
 
 
-AstNode* Parser::ParseBlock() {
+AstNode* Parser::ParseBlock(AstNode* block) {
   if (!Peek()->is(kBraceOpen)) return NULL;
   Position pos(this);
+  Scope scope(this);
 
   Skip();
 
   while (Peek()->is(kCr)) Skip();
-  AstNode* result = new BlockStmt(ParseScope());
+  ParseScope();
+  AstNode* result = block == NULL ? new AstNode(AstNode::kBlock) : block;
 
   while (!Peek()->is(kEnd) && !Peek()->is(kBraceClose)) {
     AstNode* stmt = ParseStatement();

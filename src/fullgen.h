@@ -19,8 +19,9 @@ class Fullgen : public Assembler {
   void GeneratePrologue();
   void GenerateEpilogue();
 
-  void GenerateBlock(BlockStmt* stmt);
-  void GenerateAssign(AssignExpr* stmt);
+  void GenerateFunction(AstNode* stmt);
+  void GenerateBlock(AstNode* stmt);
+  void GenerateAssign(AstNode* stmt);
   void GenerateStackLookup(AstNode* name);
   void GenerateScopeLookup(AstNode* name);
 };

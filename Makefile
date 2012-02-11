@@ -21,9 +21,10 @@ endif
 all: dotlang.a
 
 OBJS += src/dotlang.o
-OBJS += src/compiler.o
 OBJS += src/lexer.o
 OBJS += src/parser.o
+OBJS += src/compiler.o
+OBJS += src/scope.o
 
 ifeq ($(ARCH),i386)
 	ifeq ($(OS),Darwin)

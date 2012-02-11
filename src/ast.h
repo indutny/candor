@@ -111,23 +111,10 @@ class AstNode {
 #undef TYPE_MAPPING
 
 
-class BlockStmt : public AstNode {
- public:
-  BlockStmt(AstNode* scope) : AstNode(kBlock), scope_(scope) {
-  }
-  ~BlockStmt() {
-    delete scope_;
-  }
-
-  AstNode* scope_;
-};
-
-
 class FunctionLiteral : public AstNode {
  public:
   FunctionLiteral(AstNode* variable, uint32_t offset) : AstNode(kFunction) {
     variable_ = variable;
-    body_ = NULL;
     args_.allocated = true;
 
     offset_ = offset;
@@ -136,12 +123,11 @@ class FunctionLiteral : public AstNode {
 
   ~FunctionLiteral() {
     delete variable_;
-    delete body_;
   }
 
   inline bool CheckDeclaration() {
     // Function without body is a call
-    if (body_ == NULL) {
+    if (children()->length == 0) {
       // So it should have a name
       if (variable_ == NULL) return false;
       return true;
@@ -153,11 +139,8 @@ class FunctionLiteral : public AstNode {
     // Arguments should be a kName, not expressions
     List<AstNode*>::Item* head;
     for (head = args_.Head(); head != NULL; head = args_.Next(head)) {
-      if (!head->value->is(kName)) return false;
+      if (!head->value()->is(kName)) return false;
     }
-
-    // Body should be a block
-    if (!body_->is(kBlock)) return false;
 
     return true;
   }
@@ -173,64 +156,9 @@ class FunctionLiteral : public AstNode {
 
   AstNode* variable_;
   List<AstNode*> args_;
-  AstNode* body_;
 
   uint32_t offset_;
   uint32_t length_;
-};
-
-
-class IfStmt : public AstNode {
- public:
-  IfStmt(AstNode* condition, AstNode* body, AstNode* else_body) : AstNode(kIf) {
-    cond_ = condition;
-    body_ = body;
-    else_ = else_body;
-  }
-
-  ~IfStmt() {
-    delete cond_;
-    delete body_;
-    delete else_;
-  }
-
-  AstNode* cond_;
-  AstNode* body_;
-  AstNode* else_;
-};
-
-
-class WhileStmt : public AstNode {
- public:
-  WhileStmt(AstNode* condition, AstNode* body) : AstNode(kWhile) {
-    cond_ = condition;
-    body_ = body;
-  }
-
-  ~WhileStmt() {
-    delete cond_;
-    delete body_;
-  }
-
-  AstNode* cond_;
-  AstNode* body_;
-};
-
-
-class AssignExpr : public AstNode {
- public:
-  AssignExpr(AstNode* variable, AstNode* value) : AstNode(kAssign) {
-    variable_ = variable;
-    value_ = value;
-  }
-
-  ~AssignExpr() {
-    delete variable_;
-    delete value_;
-  }
-
-  AstNode* variable_;
-  AstNode* value_;
 };
 
 } // namespace dotlang

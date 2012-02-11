@@ -14,9 +14,7 @@ void CompiledScript::Compile() {
 
   AstNode* ast = p.Execute();
 
-  f.GeneratePrologue();
-  f.GenerateBlock(reinterpret_cast<BlockStmt*>(ast));
-  f.GenerateEpilogue();
+  f.GenerateFunction(ast);
 
   guard_ = new Guard(f.buffer(), f.length());
 

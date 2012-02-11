@@ -9,10 +9,14 @@
 
 namespace dotlang {
 
+// Forward declaration
+class Scope;
+
 class Parser : public Lexer {
  public:
   Parser(const char* source, uint32_t length) : Lexer(source, length) {
-    ast_ = new BlockStmt(NULL);
+    ast_ = new FunctionLiteral(NULL, 0);
+    scope_ = NULL;
   }
 
 
@@ -22,7 +26,7 @@ class Parser : public Lexer {
       if (lexer_->queue()->length == 0) {
         offset_ = lexer_->offset_;
       } else {
-        offset_ = lexer_->queue()->Head()->value->offset_;
+        offset_ = lexer_->queue()->Head()->value()->offset_;
       }
     }
 
@@ -59,6 +63,11 @@ class Parser : public Lexer {
   }
 
 
+  inline Scope* scope() {
+    return scope_;
+  }
+
+
   AstNode* Execute();
   AstNode* ParseStatement();
   AstNode* ParseExpression();
@@ -66,10 +75,11 @@ class Parser : public Lexer {
   AstNode* ParseBinOp(TokenType type, AstNode* lhs);
   AstNode* ParsePrimary();
   AstNode* ParseMember();
-  AstNode* ParseBlock();
+  AstNode* ParseBlock(AstNode* block);
   AstNode* ParseScope();
 
   AstNode* ast_;
+  Scope* scope_;
 };
 
 } // namespace dotlang

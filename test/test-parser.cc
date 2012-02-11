@@ -54,4 +54,7 @@ TEST_START("parser test")
   PARSER_TEST("a({})", {})
   PARSER_TEST("a({ x + 1 })", {})
   PARSER_TEST("a({\n scope x\n x + 1 })", {})
+
+  // Nested scopes
+  PARSER_TEST("{{{{}}}}", {})
 TEST_END("parser test")

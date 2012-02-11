@@ -32,7 +32,7 @@ namespace dotlang {
 
 Lexer::Token* Lexer::Peek() {
   List<Token*>::Item* head = queue()->Head();
-  if (head != NULL) return head->value;
+  if (head != NULL) return head->value();
 
   Token* result = Consume();
   queue()->Push(result);

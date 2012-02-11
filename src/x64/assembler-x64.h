@@ -3,6 +3,7 @@
 
 #include <stdint.h> // uint32_t
 #include <stdlib.h> // NULL
+#include <string.h> // memset
 
 namespace dotlang {
 
@@ -70,8 +71,9 @@ class Operand {
 
 class Assembler {
  public:
-  Assembler() : offset_(0), length_(512) {
+  Assembler() : offset_(0), length_(256) {
     buffer_ = new char[length_];
+    memset(buffer_, 0x90, length_);
   }
 
   ~Assembler() {
