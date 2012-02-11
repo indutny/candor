@@ -2,6 +2,8 @@
 #define _TEST_TEST_H_
 
 #include <dotlang.h>
+#include <zone.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -16,6 +18,7 @@
 #define TEST_START(name)\
     using namespace dotlang;\
     int main(void) {\
+      Zone z;\
       fprintf(stdout, "-- %s --\n", name);
 
 #define TEST_END(name)\
@@ -25,10 +28,10 @@
 
 #define PARSER_TEST(code, block)\
     {\
-      Zone z;\
       Parser p(code, strlen(code));\
       AstNode* ast = p.Execute();\
       assert(ast != NULL);\
+      ast = NULL;\
       block\
     }
 
