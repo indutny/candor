@@ -12,6 +12,11 @@ inline void Assembler::emit_rex_if_high(Register src) {
 }
 
 
+inline void Assembler::emit_rexw(Register dst) {
+  emitb(0x48 | dst.high() << 2);
+}
+
+
 inline void Assembler::emit_rexw(Register dst, Register src) {
   emitb(0x48 | dst.high() << 2 | src.high());
 }
@@ -19,6 +24,11 @@ inline void Assembler::emit_rexw(Register dst, Register src) {
 
 inline void Assembler::emit_modrm(Register dst, Register src) {
   emitb(0xC0 | dst.code() << 3 | src.code());
+}
+
+
+inline void Assembler::emit_modrm(Register dst, uint32_t op) {
+  emitb(0xC0 | op << 3 | dst.code());
 }
 
 

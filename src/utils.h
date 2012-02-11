@@ -27,6 +27,7 @@ class List {
   List() : head(NULL), current(NULL), length(0), allocated(false) {
   }
 
+
   ~List() {
     if (allocated) {
       while (length > 0) delete Shift();
@@ -34,6 +35,7 @@ class List {
       while (length > 0) Shift();
     }
   }
+
 
   void Push(T item) {
     Item* next = new Item(item);
@@ -45,12 +47,14 @@ class List {
     length++;
   }
 
+
   void Unshift(T item) {
     Item* next = new Item(item);
     next->prev_ = NULL;
     next->next_ = head;
     head = next;
   }
+
 
   T Shift() {
     if (head == NULL) return NULL;
@@ -68,17 +72,10 @@ class List {
     return value;
   }
 
-  Item* Head() {
-    return head;
-  }
 
-  Item* Next(Item* item) {
-    return item->next_;
-  }
-
-  Item* Prev(Item* item) {
-    return item->prev_;
-  }
+  inline Item* Head() { return head; }
+  inline Item* Next(Item* item) { return item->next_; }
+  inline Item* Prev(Item* item) { return item->prev_; }
 
   uint32_t Length() {
     return length;
@@ -95,12 +92,15 @@ class List {
 template <class T, class ItemParent>
 class HashMap {
  public:
+  typedef void (*EnumerateCallback)(void* map, T value);
+
   class Item : public ItemParent{
    public:
     Item(const char* key, uint32_t length, T value) : key_(key),
                                                       length_(length),
                                                       value_(value),
-                                                      next_(NULL) {
+                                                      next_(NULL),
+                                                      next_linear_(NULL) {
     }
 
     const char* key_;
@@ -108,11 +108,13 @@ class HashMap {
     T value_;
 
     Item* next_;
+    Item* next_linear_;
   };
 
-  HashMap() {
+  HashMap() : head(NULL) {
     memset(&map_, 0, sizeof(map_));
   }
+
 
   static uint32_t Hash(const char* key, uint32_t length) {
     uint32_t hash = 0;
@@ -128,10 +130,19 @@ class HashMap {
     return hash;
   }
 
+
   void Set(const char* key, uint32_t length, T value) {
     uint32_t index = Hash(key, length) & mask_;
     Item* i = map_[index];
     Item* next = new Item(key, length, value);
+
+    // Setup head or append item to linked list
+    // (Needed for enumeration)
+    if (head == NULL) {
+      head = next;
+    } else {
+      head->next_linear_ = next;
+    }
 
     if (i == NULL) {
       map_[index] = next;
@@ -140,6 +151,7 @@ class HashMap {
       i->next_ = next;
     }
   }
+
 
   T Get(const char* key, uint32_t length) {
     uint32_t index = Hash(key, length) & mask_;
@@ -156,11 +168,29 @@ class HashMap {
     return NULL;
   }
 
+
+  void Enumerate(EnumerateCallback cb) {
+    Item* i = head;
+
+    while (i != NULL) {
+      cb(this, i->value_);
+      i = i->next_linear_;
+    }
+  }
+
  private:
   static const uint32_t size_ = 64;
   static const uint32_t mask_ = 63;
   Item* map_[size_];
+  Item* head;
 };
+
+
+inline uint32_t RoundUp(uint32_t value, uint32_t to) {
+  if (value % to == 0) return value;
+
+  return value + to - value % to;
+}
 
 } // namespace dotlang
 

@@ -46,6 +46,8 @@ class Immediate {
   Immediate(uint32_t value) : value_(value) {
   }
 
+  inline uint32_t value() { return value_; }
+
  private:
   uint32_t value_;
 
@@ -86,11 +88,14 @@ class Assembler {
   void ret(uint16_t imm);
 
   void movq(Register dst, Register src);
+  void subq(Register dst, Immediate imm);
 
   // Routines
   void emit_rex_if_high(Register src);
+  void emit_rexw(Register dst);
   void emit_rexw(Register dst, Register src);
   void emit_modrm(Register dst, Register src);
+  void emit_modrm(Register dst, uint32_t op);
 
   void emitb(uint8_t v);
   void emitw(uint16_t v);

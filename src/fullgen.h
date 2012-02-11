@@ -16,14 +16,13 @@ class Fullgen : public Assembler {
   Fullgen() : Assembler() {
   }
 
-  void GeneratePrologue();
-  void GenerateEpilogue();
+  void GeneratePrologue(AstNode* stmt);
+  void GenerateEpilogue(AstNode* stmt);
 
   void GenerateFunction(AstNode* stmt);
   void GenerateBlock(AstNode* stmt);
   void GenerateAssign(AstNode* stmt);
-  void GenerateStackLookup(AstNode* name);
-  void GenerateScopeLookup(AstNode* name);
+  void GenerateLookup(AstNode* name);
 };
 
 } // namespace dotlang

@@ -33,10 +33,7 @@ Guard::Guard(char* buffer, uint32_t length) {
   page_size_ = sysconf(_SC_PAGE_SIZE);
 #endif
 
-  length_ = length;
-  if (length_ % page_size_ != 0) {
-    length_ += page_size_ - length_ % page_size_;
-  }
+  length_ = RoundUp(length, page_size_);
 
   buffer_ = mmap(0,
                  length_,

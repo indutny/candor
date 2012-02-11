@@ -32,4 +32,12 @@ void Assembler::movq(Register dst, Register src) {
   emit_modrm(dst, src);
 }
 
+
+void Assembler::subq(Register dst, Immediate imm) {
+  emit_rexw(dst);
+  emitb(0x81);
+  emit_modrm(dst, 0x05);
+  emitl(imm.value());
+}
+
 } // namespace dotlang

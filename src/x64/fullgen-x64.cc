@@ -4,16 +4,20 @@
 #include "utils.h" // List
 
 #include <assert.h>
+#include <stdint.h>
 
 namespace dotlang {
 
-void Fullgen::GeneratePrologue() {
+void Fullgen::GeneratePrologue(AstNode* stmt) {
   push(rbp);
   movq(rbp, rsp);
+
+  // Allocate space for on stack variables
+  subq(rsp, Immediate(RoundUp(stmt->stack_slots() * sizeof(void*), 16)));
 }
 
 
-void Fullgen::GenerateEpilogue() {
+void Fullgen::GenerateEpilogue(AstNode* stmt) {
   movq(rsp, rbp);
   pop(rbp);
   ret(0);
@@ -21,14 +25,16 @@ void Fullgen::GenerateEpilogue() {
 
 
 void Fullgen::GenerateFunction(AstNode* stmt) {
-  GeneratePrologue();
+  GeneratePrologue(stmt);
   GenerateBlock(stmt);
-  GenerateEpilogue();
+  GenerateEpilogue(stmt);
 }
 
 
 void Fullgen::GenerateBlock(AstNode* stmt) {
   AstList::Item* i;
+
+  // Iterate and generate each block child
   for (i = stmt->children()->Head(); i != NULL; i = stmt->children()->Next(i)) {
     switch (i->value()->type()) {
      case AstNode::kAssign:
@@ -46,11 +52,13 @@ void Fullgen::GenerateAssign(AstNode* stmt) {
 }
 
 
-void Fullgen::GenerateStackLookup(AstNode* name) {
-}
+void Fullgen::GenerateLookup(AstNode* name) {
+  assert(name->is(AstNode::kName));
+  AstValue* value = reinterpret_cast<AstValue*>(name);
 
-
-void Fullgen::GenerateScopeLookup(AstNode* name) {
+  if (value->slot()->isStack()) {
+  } else if (value->slot()->isContext()) {
+  }
 }
 
 

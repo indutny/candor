@@ -7,13 +7,15 @@
 namespace dotlang {
 
 AstNode* Parser::Execute() {
-  Scope scope(this);
+  Scope scope(this, Scope::kFunction);
 
   AstNode* stmt;
   while ((stmt = ParseStatement()) != NULL) {
     ast()->children()->Push(stmt);
   }
   assert(Peek()->is(kEnd));
+
+  ast()->SetScope(&scope);
 
   return ast();
 }
@@ -314,7 +316,10 @@ AstNode* Parser::ParseMember() {
   AstNode* result = ParsePrimary();
   if (result == NULL) return NULL;
 
-  result = new AstValue(scope(), result);
+  // Lookup names in scope
+  if (result->type() == AstNode::kName) {
+    result = new AstValue(scope(), result);
+  }
 
   while (!Peek()->is(kEnd) && !Peek()->is(kCr)) {
     AstNode* next = NULL;
@@ -344,13 +349,16 @@ AstNode* Parser::ParseMember() {
 
 AstNode* Parser::ParseBlock(AstNode* block) {
   if (!Peek()->is(kBraceOpen)) return NULL;
+
+  bool fn = block != NULL;
+
   Position pos(this);
-  Scope scope(this);
+  Scope scope(this, fn ? Scope::kFunction : Scope::kBlock);
 
   Skip();
 
   while (Peek()->is(kCr)) Skip();
-  AstNode* result = block == NULL ? new AstNode(AstNode::kBlock) : block;
+  AstNode* result = fn ? block : new AstNode(AstNode::kBlock);
 
   result->children()->Push(ParseScope());
 
@@ -361,6 +369,8 @@ AstNode* Parser::ParseBlock(AstNode* block) {
   }
   if (!Peek()->is(kEnd) && !Peek()->is(kBraceClose)) return NULL;
   Skip();
+
+  if (fn) result->SetScope(&scope);
 
   return pos.Commit(result);
 }

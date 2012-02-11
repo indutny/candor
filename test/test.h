@@ -18,7 +18,6 @@
 #define TEST_START(name)\
     using namespace dotlang;\
     int main(void) {\
-      Zone z;\
       fprintf(stdout, "-- %s --\n", name);
 
 #define TEST_END(name)\
@@ -28,6 +27,7 @@
 
 #define PARSER_TEST(code, block)\
     {\
+      Zone z;\
       Parser p(code, strlen(code));\
       AstNode* ast = p.Execute();\
       assert(ast != NULL);\

@@ -4,7 +4,7 @@
 #include "zone.h" // ZoneObject
 #include "utils.h" // List
 #include "lexer.h" // lexer
-#include "scope.h" // Scpe
+#include "scope.h" // Scope
 
 namespace dotlang {
 
@@ -71,9 +71,11 @@ class AstNode : public ZoneObject {
     kNop
   };
 
-  AstNode(Type type) : type_(type) {
-    value_ = NULL;
-    length_ = 0;
+  AstNode(Type type) : type_(type),
+                       value_(NULL),
+                       length_(0),
+                       stack_count_(0),
+                       context_count_(0) {
   }
 
   virtual ~AstNode() {
@@ -96,22 +98,24 @@ class AstNode : public ZoneObject {
     return this;
   }
 
-  inline AstList* children() {
-    return &children_;
-  }
+  inline AstList* children() { return &children_; }
+  inline Type type() { return type_; }
+  inline bool is(Type type) { return type_ == type; }
+  inline int32_t stack_slots() { return stack_count_; }
+  inline int32_t context_slots() { return context_count_; }
 
-  inline Type type() {
-    return type_;
+  inline void SetScope(Scope* scope) {
+    stack_count_ = scope->stack_count();
+    context_count_ = scope->context_count();
   }
-
-  inline bool is(Type type) {
-    return type_ == type;
-  }
-
 
   Type type_;
+
   const char* value_;
   uint32_t length_;
+
+  int32_t stack_count_;
+  int32_t context_count_;
 
   AstList children_;
 };
@@ -152,9 +156,7 @@ class FunctionLiteral : public AstNode {
     return this;
   }
 
-  inline AstList* args() {
-    return &args_;
-  }
+  inline AstList* args() { return &args_; }
 
   AstNode* variable_;
   AstList args_;
@@ -171,6 +173,10 @@ class AstValue : public AstNode {
     name_ = name;
   }
 
+  inline ScopeSlot* slot() { return slot_; }
+  inline AstNode* name() { return name_; }
+
+ protected:
   ScopeSlot* slot_;
   AstNode* name_;
 };
