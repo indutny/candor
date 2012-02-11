@@ -24,66 +24,67 @@ class List {
     Item* next_;
   };
 
-  List() : head(NULL), current(NULL), length(0), allocated(false) {
+  List() : head_(NULL), current_(NULL), length_(0), allocated(false) {
   }
 
 
   ~List() {
     if (allocated) {
-      while (length > 0) delete Shift();
+      while (length_ > 0) delete Shift();
     } else {
-      while (length > 0) Shift();
+      while (length_ > 0) Shift();
     }
   }
 
 
   void Push(T item) {
     Item* next = new Item(item);
-    next->prev_ = current;
-    if (current != NULL) current->next_ = next;
-    if (head == NULL) head = next;
+    next->prev_ = current_;
 
-    current = next;
-    length++;
+    if (head_ == NULL) {
+      head_ = next;
+    } else {
+      current_->next_ = next;
+    }
+
+    current_ = next;
+    length_++;
   }
 
 
   void Unshift(T item) {
     Item* next = new Item(item);
     next->prev_ = NULL;
-    next->next_ = head;
-    head = next;
+    next->next_ = head_;
+    head_ = next;
   }
 
 
   T Shift() {
-    if (head == NULL) return NULL;
+    if (head_ == NULL) return NULL;
 
-    Item* tmp = head;
-    T value = head->value();
+    Item* tmp = head_;
+    T value = head_->value();
 
-    if (head == current) current = NULL;
-    if (head->next_ != NULL) head->next_->prev_ = NULL;
+    if (head_ == current_) current_ = NULL;
+    if (head_->next_ != NULL) head_->next_->prev_ = NULL;
 
-    head = head->next_;
+    head_ = head_->next_;
     delete tmp;
-    length--;
+    length_--;
 
     return value;
   }
 
 
-  inline Item* Head() { return head; }
+  inline Item* Head() { return head_; }
   inline Item* Next(Item* item) { return item->next_; }
   inline Item* Prev(Item* item) { return item->prev_; }
+  inline uint32_t Length() { return length_; }
 
-  uint32_t Length() {
-    return length;
-  }
-
-  Item* head;
-  Item* current;
-  uint32_t length;
+  Item* head_;
+  Item* current_;
+  uint32_t length_;
 
   bool allocated;
 };
@@ -111,7 +112,7 @@ class HashMap {
     Item* next_linear_;
   };
 
-  HashMap() : head(NULL) {
+  HashMap() : head_(NULL), current_(NULL) {
     memset(&map_, 0, sizeof(map_));
   }
 
@@ -138,11 +139,12 @@ class HashMap {
 
     // Setup head or append item to linked list
     // (Needed for enumeration)
-    if (head == NULL) {
-      head = next;
+    if (head_ == NULL) {
+      head_ = next;
     } else {
-      head->next_linear_ = next;
+      current_->next_linear_ = next;
     }
+    current_ = next;
 
     if (i == NULL) {
       map_[index] = next;
@@ -170,7 +172,7 @@ class HashMap {
 
 
   void Enumerate(EnumerateCallback cb) {
-    Item* i = head;
+    Item* i = head_;
 
     while (i != NULL) {
       cb(this, i->value_);
@@ -182,7 +184,8 @@ class HashMap {
   static const uint32_t size_ = 64;
   static const uint32_t mask_ = 63;
   Item* map_[size_];
-  Item* head;
+  Item* head_;
+  Item* current_;
 };
 
 

@@ -133,7 +133,7 @@ class FunctionLiteral : public AstNode {
 
   inline bool CheckDeclaration() {
     // Function without body is a call
-    if (children()->length == 0) {
+    if (children()->Length() == 0) {
       // So it should have a name
       if (variable_ == NULL) return false;
       return true;

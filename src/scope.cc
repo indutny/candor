@@ -88,10 +88,12 @@ void Scope::MoveToContext(const char* name, uint32_t length) {
 
 
 void ScopeSlot::Enumerate(void* scope, ScopeSlot* slot) {
+  Scope* scope_ = reinterpret_cast<Scope*>(scope);
+
   if (slot->isStack()) {
-    slot->index_ = reinterpret_cast<Scope*>(scope)->stack_index_++;
+    slot->index_ = scope_->stack_index_++;
   } else if (slot->isContext()) {
-    slot->index_ = reinterpret_cast<Scope*>(scope)->context_index_++;
+    slot->index_ = scope_->context_index_++;
   } else {
     assert(0 && "Unreachable");
   }

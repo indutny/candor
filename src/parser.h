@@ -21,7 +21,7 @@ class Parser : public Lexer {
   class Position {
    public:
     Position(Lexer* lexer) : lexer_(lexer), committed_(false) {
-      if (lexer_->queue()->length == 0) {
+      if (lexer_->queue()->Length() == 0) {
         offset_ = lexer_->offset_;
       } else {
         offset_ = lexer_->queue()->Head()->value()->offset_;
@@ -30,7 +30,7 @@ class Parser : public Lexer {
 
     ~Position() {
       if (!committed_) {
-        while (lexer_->queue()->length > 0) lexer_->queue()->Shift();
+        while (lexer_->queue()->Length() > 0) lexer_->queue()->Shift();
         lexer_->offset_ = offset_;
       }
     }
