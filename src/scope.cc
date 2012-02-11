@@ -8,6 +8,9 @@ Scope::Scope(Parser* parser) {
 
   parent_ = parser_->scope_;
   parser_->scope_ = this;
+
+  stack_count_ = 0;
+  context_count_ = 0;
 }
 
 
@@ -21,9 +24,10 @@ ScopeSlot* Scope::GetSlot(const char* name,
   ScopeSlot* slot = Get(name, length);
 
   if (slot == NULL) {
-    slot = new ScopeSlot();
-    slot->type_ = ScopeSlot::kStack;
+    slot = new ScopeSlot(ScopeSlot::kStack);
     Set(name, length, slot);
+
+    stack_count_++;
   }
 
   return slot;
@@ -33,10 +37,16 @@ void Scope::MoveToContext(const char* name, uint32_t length) {
   ScopeSlot* slot = Get(name, length);
 
   if (slot == NULL) {
-    slot = new ScopeSlot();
+    slot = new ScopeSlot(ScopeSlot::kContext);
     Set(name, length, slot);
+    context_count_++;
   }
-  slot->type_ = ScopeSlot::kContext;
+
+  if (slot->type_ != ScopeSlot::kContext) {
+    slot->type_ = ScopeSlot::kContext;
+    stack_count_--;
+    context_count_++;
+  }
 }
 
 } // namespace dotlang

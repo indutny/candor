@@ -22,6 +22,7 @@ void Fullgen::GenerateEpilogue() {
 
 void Fullgen::GenerateFunction(AstNode* stmt) {
   GeneratePrologue();
+  GenerateBlock(stmt);
   GenerateEpilogue();
 }
 

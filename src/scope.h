@@ -15,6 +15,9 @@ class ScopeSlot : public ZoneObject {
     kContext
   };
 
+  ScopeSlot(Type type) : type_(type) {
+  }
+
   Type type_;
 };
 
@@ -27,6 +30,9 @@ class Scope : public HashMap<ScopeSlot*, ZoneObject> {
   void MoveToContext(const char* name, uint32_t length);
 
  private:
+  uint32_t stack_count_;
+  uint32_t context_count_;
+
   Parser* parser_;
   Scope* parent_;
 };
