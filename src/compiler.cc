@@ -9,6 +9,7 @@
 namespace dotlang {
 
 void CompiledScript::Compile() {
+  Zone zone;
   Parser p(source_, length_);
   Fullgen f;
 
@@ -17,8 +18,6 @@ void CompiledScript::Compile() {
   f.GenerateFunction(ast);
 
   guard_ = new Guard(f.buffer(), f.length());
-
-  delete ast;
 }
 
 

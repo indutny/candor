@@ -25,11 +25,11 @@
 
 #define PARSER_TEST(code, block)\
     {\
+      Zone z;\
       Parser p(code, strlen(code));\
       AstNode* ast = p.Execute();\
       assert(ast != NULL);\
       block\
-      delete ast;\
     }
 
 #define BENCH_START(name, num)\

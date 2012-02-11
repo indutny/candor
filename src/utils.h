@@ -7,10 +7,10 @@
 
 namespace dotlang {
 
-template <class T>
+template <class T, class ItemParent>
 class List {
  public:
-  class Item {
+  class Item : public ItemParent {
    public:
     Item(T value) : value_(value), prev_(NULL), next_(NULL) {
     }
@@ -92,10 +92,10 @@ class List {
 };
 
 
-template <class T>
+template <class T, class ItemParent>
 class HashMap {
  public:
-  class Item {
+  class Item : public ItemParent{
    public:
     Item(const char* key, uint32_t length, T value) : key_(key),
                                                       length_(length),
@@ -129,7 +129,7 @@ class HashMap {
   }
 
   void Set(const char* key, uint32_t length, T value) {
-    uint32_t index = Hash(key) & size_;
+    uint32_t index = Hash(key, length) & mask_;
     Item* i = map_[index];
     Item* next = new Item(key, length, value);
 
@@ -142,7 +142,7 @@ class HashMap {
   }
 
   T Get(const char* key, uint32_t length) {
-    uint32_t index = Hash(key) & size_;
+    uint32_t index = Hash(key, length) & mask_;
     Item* i = map_[index];
 
     while (i != NULL) {
@@ -158,6 +158,7 @@ class HashMap {
 
  private:
   static const uint32_t size_ = 64;
+  static const uint32_t mask_ = 63;
   Item* map_[size_];
 };
 

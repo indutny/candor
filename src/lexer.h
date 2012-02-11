@@ -2,6 +2,7 @@
 #define _SRC_LEXER_H_
 
 #include "utils.h" // List
+#include "zone.h" // ZoneObject
 #include <stdint.h>
 
 namespace dotlang {
@@ -11,7 +12,6 @@ class Lexer {
   Lexer(const char* source, uint32_t length) : source_(source),
                                                offset_(0),
                                                length_(length) {
-    queue_.allocated = true;
   }
 
   enum TokenType {
@@ -74,7 +74,7 @@ class Lexer {
     kEnd
   };
 
-  class Token {
+  class Token : public ZoneObject {
    public:
     Token(TokenType type, uint32_t offset) : type_(type),
                                              value_(NULL),
@@ -123,7 +123,7 @@ class Lexer {
     return offset_ + num - 1 < length_;
   }
 
-  inline List<Token*>* queue() {
+  inline List<Token*, ZoneObject>* queue() {
     return &queue_;
   }
 
@@ -131,7 +131,7 @@ class Lexer {
   uint32_t offset_;
   uint32_t length_;
 
-  List<Token*> queue_;
+  List<Token*, ZoneObject> queue_;
 };
 
 } // namespace dotlang

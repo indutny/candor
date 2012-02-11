@@ -7,6 +7,8 @@
 namespace dotlang {
 
 AstNode* Parser::Execute() {
+  Scope scope(this);
+
   AstNode* stmt;
   while ((stmt = ParseStatement()) != NULL) {
     ast()->children()->Push(stmt);
@@ -50,10 +52,7 @@ AstNode* Parser::ParseStatement() {
       AstNode* cond = ParseExpression();
       if (cond == NULL) break;
 
-      if (!Peek()->is(kParenClose)) {
-        delete cond;
-        break;
-      }
+      if (!Peek()->is(kParenClose)) break;
       Skip();
 
       AstNode* body = ParseBlock(NULL);
@@ -84,10 +83,7 @@ AstNode* Parser::ParseStatement() {
 
       AstNode* cond = ParseExpression();
       if (cond == NULL) break;
-      if (!Peek()->is(kParenClose)) {
-        delete cond;
-        break;
-      }
+      if (!Peek()->is(kParenClose)) break;
       Skip();
 
       AstNode* body = ParseBlock(NULL);
@@ -107,7 +103,6 @@ AstNode* Parser::ParseStatement() {
 
   // Consume kCr or kBraceClose
   if (!Peek()->is(kEnd) && !Peek()->is(kCr) && !Peek()->is(kBraceClose)) {
-    delete result;
     return NULL;
   }
   if (Peek()->is(kCr)) Skip();
@@ -209,18 +204,12 @@ AstNode* Parser::ParseExpression() {
         // Skip commas
         if (Peek()->is(kComma)) Skip();
       }
-      if (!Peek()->is(kParenClose)) {
-        delete fn;
-        break;
-      }
+      if (!Peek()->is(kParenClose)) break;
       Skip();
 
       // Optional body (for function declaration)
       ParseBlock(reinterpret_cast<AstNode*>(fn));
-      if (!fn->CheckDeclaration()) {
-        delete fn;
-        break;
-      }
+      if (!fn->CheckDeclaration()) break;
 
       result = fn->End(Peek()->offset());
     }
@@ -230,10 +219,7 @@ AstNode* Parser::ParseExpression() {
     break;
   }
 
-  if (result == NULL) {
-    delete member;
-    return result;
-  }
+  if (result == NULL) return result;
 
   // Parse postfixes
   TokenType type = Peek()->type();
@@ -279,10 +265,7 @@ AstNode* Parser::ParseBinOp(TokenType type, AstNode* lhs) {
   Skip();
 
   AstNode* rhs = ParseExpression();
-  if (rhs == NULL) {
-    delete lhs;
-    return NULL;
-  }
+  if (rhs == NULL) return NULL;
 
   AstNode* result = Wrap(AstNode::ConvertType(type), lhs);
   result->children()->Push(rhs);
@@ -311,7 +294,6 @@ AstNode* Parser::ParsePrimary() {
     Skip();
     result = ParseExpression();
     if (!Peek()->is(kParenClose)) {
-      delete result;
       result = NULL;
     } else {
       Skip();
@@ -332,6 +314,8 @@ AstNode* Parser::ParseMember() {
   AstNode* result = ParsePrimary();
   if (result == NULL) return NULL;
 
+  result = new AstValue(scope(), result);
+
   while (!Peek()->is(kEnd) && !Peek()->is(kCr)) {
     AstNode* next = NULL;
     if (Peek()->is(kDot)) {
@@ -345,7 +329,6 @@ AstNode* Parser::ParseMember() {
       if (Peek()->is(kArrayClose)) {
         Skip();
       } else {
-        delete next;
         next = NULL;
       }
     }
@@ -367,18 +350,16 @@ AstNode* Parser::ParseBlock(AstNode* block) {
   Skip();
 
   while (Peek()->is(kCr)) Skip();
-  ParseScope();
   AstNode* result = block == NULL ? new AstNode(AstNode::kBlock) : block;
+
+  result->children()->Push(ParseScope());
 
   while (!Peek()->is(kEnd) && !Peek()->is(kBraceClose)) {
     AstNode* stmt = ParseStatement();
     if (stmt == NULL) break;
     result->children()->Push(stmt);
   }
-  if (!Peek()->is(kEnd) && !Peek()->is(kBraceClose)) {
-    delete result;
-    return NULL;
-  }
+  if (!Peek()->is(kEnd) && !Peek()->is(kBraceClose)) return NULL;
   Skip();
 
   return pos.Commit(result);
@@ -391,11 +372,15 @@ AstNode* Parser::ParseScope() {
 
   Skip();
 
-  AstNode* result = new AstNode(AstNode::kScope);
+  AstNode* result = new AstNode(AstNode::kScopeDecl);
 
   while (!Peek()->is(kCr) && !Peek()->is(kBraceClose)) {
     if (!Peek()->is(kName)) break;
-    result->children()->Push((new AstNode(AstNode::kName))->FromToken(Peek()));
+
+    AstNode* name = (new AstNode(AstNode::kName))->FromToken(Peek());
+    scope()->MoveToContext(name->value_, name->length_);
+
+    result->children()->Push(name);
     Skip();
 
     if (!Peek()->is(kComma) && !Peek()->is(kCr) && !Peek()->is(kBraceClose)) {
@@ -405,7 +390,6 @@ AstNode* Parser::ParseScope() {
   }
 
   if (!Peek()->is(kCr) && !Peek()->is(kBraceClose)) {
-    delete result;
     result = NULL;
   }
 

@@ -3,14 +3,12 @@
 
 #include "lexer.h"
 #include "ast.h"
+#include "scope.h"
 
 #include <assert.h> // assert
 #include <stdlib.h> // NULL
 
 namespace dotlang {
-
-// Forward declaration
-class Scope;
 
 class Parser : public Lexer {
  public:
@@ -32,7 +30,7 @@ class Parser : public Lexer {
 
     ~Position() {
       if (!committed_) {
-        while (lexer_->queue()->length > 0) delete lexer_->queue()->Shift();
+        while (lexer_->queue()->length > 0) lexer_->queue()->Shift();
         lexer_->offset_ = offset_;
       }
     }

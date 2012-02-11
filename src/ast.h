@@ -1,10 +1,18 @@
 #ifndef _SRC_AST_H_
 #define _SRC_AST_H_
 
+#include "zone.h" // ZoneObject
 #include "utils.h" // List
 #include "lexer.h" // lexer
+#include "scope.h" // Scpe
 
 namespace dotlang {
+
+// Forward declaration
+struct ScopeSlot;
+class AstNode;
+
+typedef List<AstNode*, ZoneObject> AstList;
 
 #define TYPE_MAPPING(V)\
     V(kName)\
@@ -13,7 +21,6 @@ namespace dotlang {
     V(kTrue)\
     V(kFalse)\
     V(kNil)\
-    V(kScope)\
     V(kAdd)\
     V(kSub)\
     V(kDiv)\
@@ -33,11 +40,12 @@ namespace dotlang {
     V(kLAnd)
 
 // Base class
-class AstNode {
+class AstNode : public ZoneObject {
  public:
   enum Type {
     kBlock,
     kBlockExpr,
+    kScopeDecl,
     kMember,
     kAssign,
     kIf,
@@ -66,7 +74,6 @@ class AstNode {
   AstNode(Type type) : type_(type) {
     value_ = NULL;
     length_ = 0;
-    children_.allocated = true;
   }
 
   virtual ~AstNode() {
@@ -82,14 +89,14 @@ class AstNode {
     }
   }
 
-  inline AstNode* FromToken(Lexer::Token* tok) {
-    value_ = tok->value_;
-    length_ = tok->length_;
+  inline AstNode* FromToken(Lexer::Token* token) {
+    value_ = token->value_;
+    length_ = token->length_;
 
     return this;
   }
 
-  inline List<AstNode*>* children() {
+  inline AstList* children() {
     return &children_;
   }
 
@@ -106,7 +113,7 @@ class AstNode {
   const char* value_;
   uint32_t length_;
 
-  List<AstNode*> children_;
+  AstList children_;
 };
 #undef TYPE_MAPPING
 
@@ -115,14 +122,9 @@ class FunctionLiteral : public AstNode {
  public:
   FunctionLiteral(AstNode* variable, uint32_t offset) : AstNode(kFunction) {
     variable_ = variable;
-    args_.allocated = true;
 
     offset_ = offset;
     length_ = 0;
-  }
-
-  ~FunctionLiteral() {
-    delete variable_;
   }
 
   inline bool CheckDeclaration() {
@@ -137,7 +139,7 @@ class FunctionLiteral : public AstNode {
     if (variable_ != NULL && !variable_->is(kName)) return false;
 
     // Arguments should be a kName, not expressions
-    List<AstNode*>::Item* head;
+    AstList::Item* head;
     for (head = args_.Head(); head != NULL; head = args_.Next(head)) {
       if (!head->value()->is(kName)) return false;
     }
@@ -150,15 +152,27 @@ class FunctionLiteral : public AstNode {
     return this;
   }
 
-  inline List<AstNode*>* args() {
+  inline AstList* args() {
     return &args_;
   }
 
   AstNode* variable_;
-  List<AstNode*> args_;
+  AstList args_;
 
   uint32_t offset_;
   uint32_t length_;
+};
+
+
+class AstValue : public AstNode {
+ public:
+  AstValue(Scope* scope, AstNode* name) : AstNode(kName) {
+    slot_ = scope->GetSlot(name->value_, name->length_);
+    name_ = name;
+  }
+
+  ScopeSlot* slot_;
+  AstNode* name_;
 };
 
 } // namespace dotlang

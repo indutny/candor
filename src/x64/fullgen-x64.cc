@@ -27,7 +27,7 @@ void Fullgen::GenerateFunction(AstNode* stmt) {
 
 
 void Fullgen::GenerateBlock(AstNode* stmt) {
-  List<AstNode*>::Item* i;
+  AstList::Item* i;
   for (i = stmt->children()->Head(); i != NULL; i = stmt->children()->Next(i)) {
     switch (i->value()->type()) {
      case AstNode::kAssign:

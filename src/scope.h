@@ -1,33 +1,30 @@
 #ifndef _SRC_SCOPE_H_
 #define _SRC_SCOPE_H_
 
-#include "parser.h"
 #include "utils.h" // HashMap
+#include "zone.h" // HashMap
 
 namespace dotlang {
 
-enum ScopeSlotType {
-  kLocal,
-  kScope
+class Parser;
+
+class ScopeSlot : public ZoneObject {
+ public:
+  enum Type {
+    kStack,
+    kContext
+  };
+
+  Type type_;
 };
 
-class ScopeSlot {
+class Scope : public HashMap<ScopeSlot*, ZoneObject> {
  public:
-};
+  Scope(Parser* parser);
+  ~Scope();
 
-class Scope : public HashMap<ScopeSlot*> {
- public:
-  Scope(Parser* parser) : parser_(parser) {
-    parent_ = parser_->scope_;
-    parser_->scope_ = this;
-  }
-  ~Scope() {
-    parser_->scope_ = parent_;
-  }
-
-  ScopeSlot* GetSlot(const char* name,
-                     uint32_t length,
-                     ScopeSlotType type);
+  ScopeSlot* GetSlot(const char* name, uint32_t length);
+  void MoveToContext(const char* name, uint32_t length);
 
  private:
   Parser* parser_;

@@ -21,6 +21,7 @@ endif
 all: dotlang.a
 
 OBJS += src/dotlang.o
+OBJS += src/zone.o
 OBJS += src/lexer.o
 OBJS += src/parser.o
 OBJS += src/compiler.o

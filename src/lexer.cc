@@ -1,6 +1,7 @@
 #include "lexer.h"
 #include <string.h> // strncmp
 #include <stdlib.h> // NULL
+#include "zone.h" // ZoneObject
 
 #define LENGTH_CHECK\
     if (offset_ == length_) return new Token(kEnd, offset_);
@@ -31,7 +32,7 @@
 namespace dotlang {
 
 Lexer::Token* Lexer::Peek() {
-  List<Token*>::Item* head = queue()->Head();
+  List<Token*, ZoneObject>::Item* head = queue()->Head();
   if (head != NULL) return head->value();
 
   Token* result = Consume();
@@ -42,7 +43,7 @@ Lexer::Token* Lexer::Peek() {
 
 
 void Lexer::Skip() {
-  delete queue()->Shift();
+  queue()->Shift();
 }
 
 
