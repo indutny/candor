@@ -32,7 +32,7 @@
 namespace dotlang {
 
 Lexer::Token* Lexer::Peek() {
-  List<Token*, ZoneObject>::Item* head = queue()->Head();
+  List<Token*, ZoneObject>::Item* head = queue()->head();
   if (head != NULL) return head->value();
 
   Token* result = Consume();

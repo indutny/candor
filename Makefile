@@ -24,6 +24,7 @@ OBJS += src/dotlang.o
 OBJS += src/zone.o
 OBJS += src/lexer.o
 OBJS += src/parser.o
+OBJS += src/visitor.o
 OBJS += src/compiler.o
 OBJS += src/scope.o
 

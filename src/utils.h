@@ -15,16 +15,20 @@ class List {
     Item(T value) : value_(value), prev_(NULL), next_(NULL) {
     }
 
-    inline T value() {
-      return value_;
-    }
+    inline T value() { return value_; }
+    inline void value(T value) { value_ = value; }
+    inline Item* next() { return next_; }
+    inline Item* prev() { return prev_; }
 
+   protected:
     T value_;
     Item* prev_;
     Item* next_;
+
+    friend class List;
   };
 
-  List() : head_(NULL), current_(NULL), length_(0), allocated(false) {
+  List() : allocated(false), head_(NULL), current_(NULL), length_(0) {
   }
 
 
@@ -57,6 +61,7 @@ class List {
     next->prev_ = NULL;
     next->next_ = head_;
     head_ = next;
+    length_++;
   }
 
 
@@ -67,9 +72,9 @@ class List {
     T value = head_->value();
 
     if (head_ == current_) current_ = NULL;
-    if (head_->next_ != NULL) head_->next_->prev_ = NULL;
+    if (head_->next_ != NULL) head_->next()->prev_ = NULL;
 
-    head_ = head_->next_;
+    head_ = head_->next();
     delete tmp;
     length_--;
 
@@ -77,16 +82,15 @@ class List {
   }
 
 
-  inline Item* Head() { return head_; }
-  inline Item* Next(Item* item) { return item->next_; }
-  inline Item* Prev(Item* item) { return item->prev_; }
-  inline uint32_t Length() { return length_; }
+  inline Item* head() { return head_; }
+  inline uint32_t length() { return length_; }
 
+  bool allocated;
+
+ private:
   Item* head_;
   Item* current_;
   uint32_t length_;
-
-  bool allocated;
 };
 
 
@@ -95,7 +99,7 @@ class HashMap {
  public:
   typedef void (*EnumerateCallback)(void* map, T value);
 
-  class Item : public ItemParent{
+  class Item : public ItemParent {
    public:
     Item(const char* key, uint32_t length, T value) : key_(key),
                                                       length_(length),
@@ -104,12 +108,20 @@ class HashMap {
                                                       next_linear_(NULL) {
     }
 
+    inline T value() { return value_; }
+    inline void value(T value) { value_ = value; }
+    inline Item* next() { return next_; }
+    inline Item* next_linear() { return next_linear_; }
+
+   protected:
     const char* key_;
     uint32_t length_;
     T value_;
 
     Item* next_;
     Item* next_linear_;
+
+    friend class HashMap;
   };
 
   HashMap() : head_(NULL), current_(NULL) {
@@ -149,7 +161,7 @@ class HashMap {
     if (i == NULL) {
       map_[index] = next;
     } else {
-      while (i->next_ != NULL) i = i->next_;
+      while (i->next() != NULL) i = i->next();
       i->next_ = next;
     }
   }
@@ -162,9 +174,9 @@ class HashMap {
     while (i != NULL) {
       if (length == i->length_ &&
           strncmp(i->key_, key, length) == 0) {
-        return i->value_;
+        return i->value();
       }
-      i = i->next_;
+      i = i->next();
     }
 
     return NULL;
@@ -175,8 +187,8 @@ class HashMap {
     Item* i = head_;
 
     while (i != NULL) {
-      cb(this, i->value_);
-      i = i->next_linear_;
+      cb(this, i->value());
+      i = i->next_linear();
     }
   }
 

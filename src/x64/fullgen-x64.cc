@@ -35,7 +35,7 @@ void Fullgen::GenerateBlock(AstNode* stmt) {
   AstList::Item* i;
 
   // Iterate and generate each block child
-  for (i = stmt->children()->Head(); i != NULL; i = stmt->children()->Next(i)) {
+  for (i = stmt->children()->head(); i != NULL; i = i->next()) {
     switch (i->value()->type()) {
      case AstNode::kAssign:
       GenerateAssign(i->value());

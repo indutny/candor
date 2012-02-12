@@ -3,7 +3,6 @@
 
 #include "lexer.h"
 #include "ast.h"
-#include "scope.h"
 
 #include <assert.h> // assert
 #include <stdlib.h> // NULL
@@ -14,23 +13,22 @@ class Parser : public Lexer {
  public:
   Parser(const char* source, uint32_t length) : Lexer(source, length) {
     ast_ = new FunctionLiteral(NULL, 0);
-    scope_ = NULL;
   }
 
 
   class Position {
    public:
     Position(Lexer* lexer) : lexer_(lexer), committed_(false) {
-      if (lexer_->queue()->Length() == 0) {
+      if (lexer_->queue()->length() == 0) {
         offset_ = lexer_->offset_;
       } else {
-        offset_ = lexer_->queue()->Head()->value()->offset_;
+        offset_ = lexer_->queue()->head()->value()->offset_;
       }
     }
 
     ~Position() {
       if (!committed_) {
-        while (lexer_->queue()->Length() > 0) lexer_->queue()->Shift();
+        while (lexer_->queue()->length() > 0) lexer_->queue()->Shift();
         lexer_->offset_ = offset_;
       }
     }
@@ -61,11 +59,6 @@ class Parser : public Lexer {
   }
 
 
-  inline Scope* scope() {
-    return scope_;
-  }
-
-
   AstNode* Execute();
   AstNode* ParseStatement();
   AstNode* ParseExpression();
@@ -77,7 +70,6 @@ class Parser : public Lexer {
   AstNode* ParseScope();
 
   AstNode* ast_;
-  Scope* scope_;
 };
 
 } // namespace dotlang

@@ -1,5 +1,4 @@
 #include "parser.h"
-#include "scope.h" // Scope
 #include "ast.h"
 #include <assert.h> // assert
 #include <stdlib.h> // NULL
@@ -7,15 +6,11 @@
 namespace dotlang {
 
 AstNode* Parser::Execute() {
-  Scope scope(this, Scope::kFunction);
-
   AstNode* stmt;
   while ((stmt = ParseStatement()) != NULL) {
     ast()->children()->Push(stmt);
   }
   assert(Peek()->is(kEnd));
-
-  ast()->SetScope(&scope);
 
   return ast();
 }
@@ -316,11 +311,6 @@ AstNode* Parser::ParseMember() {
   AstNode* result = ParsePrimary();
   if (result == NULL) return NULL;
 
-  // Lookup names in scope
-  if (result->type() == AstNode::kName) {
-    result = new AstValue(scope(), result);
-  }
-
   while (!Peek()->is(kEnd) && !Peek()->is(kCr)) {
     AstNode* next = NULL;
     if (Peek()->is(kDot)) {
@@ -338,6 +328,7 @@ AstNode* Parser::ParseMember() {
       }
     }
     if (next == NULL) break;
+    if (next->is(AstNode::kName)) next->type_ = AstNode::kProperty;
 
     result = Wrap(AstNode::kMember, result);
     result->children()->Push(next);
@@ -353,7 +344,6 @@ AstNode* Parser::ParseBlock(AstNode* block) {
   bool fn = block != NULL;
 
   Position pos(this);
-  Scope scope(this, fn ? Scope::kFunction : Scope::kBlock);
 
   Skip();
 
@@ -369,8 +359,6 @@ AstNode* Parser::ParseBlock(AstNode* block) {
   }
   if (!Peek()->is(kEnd) && !Peek()->is(kBraceClose)) return NULL;
   Skip();
-
-  if (fn) result->SetScope(&scope);
 
   return pos.Commit(result);
 }
@@ -388,8 +376,6 @@ AstNode* Parser::ParseScope() {
     if (!Peek()->is(kName)) break;
 
     AstNode* name = (new AstNode(AstNode::kName))->FromToken(Peek());
-    scope()->MoveToContext(name->value_, name->length_);
-
     result->children()->Push(name);
     Skip();
 

@@ -3,12 +3,16 @@
 
 #include "utils.h" // HashMap
 #include "zone.h" // HashMap
+#include "visitor.h" // Visitor
+
+#include <assert.h> // assert
 
 namespace dotlang {
 
 // Forward declarations
+class AstNode;
 class Scope;
-class Parser;
+class ScopeAnalyze;
 
 class ScopeSlot : public ZoneObject {
  public:
@@ -37,7 +41,9 @@ class Scope : public HashMap<ScopeSlot*, ZoneObject> {
     kFunction
   };
 
-  Scope(Parser* parser, Type type);
+  static void Analyze(AstNode* ast);
+
+  Scope(ScopeAnalyze* a, Type type);
   ~Scope();
 
   ScopeSlot* GetSlot(const char* name, uint32_t length);
@@ -58,12 +64,27 @@ class Scope : public HashMap<ScopeSlot*, ZoneObject> {
   int32_t stack_index_;
   int32_t context_index_;
 
-  Parser* parser_;
+  ScopeAnalyze* a_;
   Type type_;
 
   Scope* parent_;
 
   friend class ScopeSlot;
+};
+
+class ScopeAnalyze : public Visitor {
+ public:
+  ScopeAnalyze(AstNode* ast);
+
+  AstNode* VisitFunction(AstNode* node);
+  AstNode* VisitBlock(AstNode* node);
+  AstNode* VisitScopeDecl(AstNode* node);
+  AstNode* VisitName(AstNode* node);
+
+ protected:
+  Scope* scope_;
+
+  friend class Scope;
 };
 
 } // namespace dotlang

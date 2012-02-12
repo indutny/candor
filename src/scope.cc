@@ -1,13 +1,13 @@
 #include "scope.h"
-#include "parser.h"
+#include "ast.h" // AstNode, AstList
 
 #include <assert.h>
 
 namespace dotlang {
 
-Scope::Scope(Parser* parser, Type type) : parser_(parser), type_(type) {
-  parent_ = parser_->scope_;
-  parser_->scope_ = this;
+Scope::Scope(ScopeAnalyze* a, Type type) : a_(a), type_(type) {
+  parent_ = a_->scope_;
+  a_->scope_ = this;
 
   stack_count_ = 0;
   context_count_ = 0;
@@ -38,7 +38,7 @@ Scope::~Scope() {
     parent_->context_index_ = context_index_;
   }
 
-  parser_->scope_ = parent_;
+  a_->scope_ = parent_;
 }
 
 
@@ -97,6 +97,45 @@ void ScopeSlot::Enumerate(void* scope, ScopeSlot* slot) {
   } else {
     assert(0 && "Unreachable");
   }
+}
+
+
+void Scope::Analyze(AstNode* ast) {
+  ScopeAnalyze a(ast);
+}
+
+
+ScopeAnalyze::ScopeAnalyze(AstNode* ast) : scope_(NULL) {
+  Visit(ast);
+}
+
+
+AstNode* ScopeAnalyze::VisitFunction(AstNode* node) {
+  Scope scope(this, Scope::kFunction);
+  VisitChildren(node);
+  return node;
+}
+
+
+AstNode* ScopeAnalyze::VisitBlock(AstNode* node) {
+  Scope scope(this, Scope::kBlock);
+  VisitChildren(node);
+  return node;
+}
+
+
+AstNode* ScopeAnalyze::VisitScopeDecl(AstNode* node) {
+  AstList::Item* child = node->children()->head();
+  while (child != NULL) {
+
+    child = child->next();
+  }
+  return node;
+}
+
+
+AstNode* ScopeAnalyze::VisitName(AstNode* node) {
+  return new AstValue(scope_, node);
 }
 
 } // namespace dotlang

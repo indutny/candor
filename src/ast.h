@@ -47,6 +47,7 @@ class AstNode : public ZoneObject {
     kBlockExpr,
     kScopeDecl,
     kMember,
+    kProperty,
     kAssign,
     kIf,
     kWhile,
@@ -133,7 +134,7 @@ class FunctionLiteral : public AstNode {
 
   inline bool CheckDeclaration() {
     // Function without body is a call
-    if (children()->Length() == 0) {
+    if (children()->length() == 0) {
       // So it should have a name
       if (variable_ == NULL) return false;
       return true;
@@ -144,7 +145,7 @@ class FunctionLiteral : public AstNode {
 
     // Arguments should be a kName, not expressions
     AstList::Item* head;
-    for (head = args_.Head(); head != NULL; head = args_.Next(head)) {
+    for (head = args_.head(); head != NULL; head = head->next()) {
       if (!head->value()->is(kName)) return false;
     }
 

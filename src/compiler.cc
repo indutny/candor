@@ -15,6 +15,10 @@ void CompiledScript::Compile() {
 
   AstNode* ast = p.Execute();
 
+  // Add scope information to variables (i.e. stack vs context, and indexes)
+  Scope::Analyze(ast);
+
+  // Generate machine code
   f.GenerateFunction(ast);
 
   guard_ = new Guard(f.buffer(), f.length());
