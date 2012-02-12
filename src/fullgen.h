@@ -1,28 +1,28 @@
 #ifndef _SRC_FULLGEN_H_
 #define _SRC_FULLGEN_H_
 
-#include "ast.h"
+#include "visitor.h"
 
 #if __ARCH == x64
-#include "x64/assembler-x64.h"
+#include "x64/macroassembler-x64.h"
 #else
-#include "ia32/assembler-ia32.h"
+#include "ia32/macroassembler-ia32.h"
 #endif
 
 namespace dotlang {
 
-class Fullgen : public Assembler {
+class Fullgen : public Masm, public Visitor {
  public:
-  Fullgen() : Assembler() {
+  Fullgen() : Masm(), Visitor(kPreorder) {
   }
 
   void GeneratePrologue(AstNode* stmt);
   void GenerateEpilogue(AstNode* stmt);
-
-  void GenerateFunction(AstNode* stmt);
-  void GenerateBlock(AstNode* stmt);
-  void GenerateAssign(AstNode* stmt);
   void GenerateLookup(AstNode* name);
+
+  AstNode* VisitFunction(AstNode* stmt);
+  AstNode* VisitAssign(AstNode* stmt);
+  AstNode* VisitValue(AstNode* node);
 };
 
 } // namespace dotlang

@@ -33,6 +33,20 @@ void Assembler::movq(Register dst, Register src) {
 }
 
 
+void Assembler::movq(Register dst, Operand* src) {
+  emit_rexw(dst, src);
+  emitb(0x8B);
+  emit_modrm(dst, src);
+}
+
+
+void Assembler::movq(Operand* dst, Register src) {
+  emit_rexw(src, dst);
+  emitb(0x89);
+  emit_modrm(src, dst);
+}
+
+
 void Assembler::subq(Register dst, Immediate imm) {
   emit_rexw(dst);
   emitb(0x81);

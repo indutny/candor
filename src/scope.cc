@@ -19,6 +19,11 @@ Scope::Scope(ScopeAnalyze* a, Type type) : a_(a), type_(type) {
     stack_index_ = 0;
     context_index_ = 0;
   }
+
+  // Increase depth when entering function
+  // depth_ = 0 is for global object
+  depth_ = parent_ == NULL ? 1 : parent_->depth_;
+  if (type_ == kFunction) depth_++;
 }
 
 
@@ -63,20 +68,21 @@ void Scope::MoveToContext(const char* name, uint32_t length) {
   if (slot == NULL) {
     // Variable wasn't used here so far
     // Mark it as context variable in parent scope
-    {
-      // Bubble up until parent will be found
-      Scope* scope = parent_;
-      while (scope != NULL) {
-        if (scope->Get(name, length) != NULL)  {
-          parent_->MoveToContext(name, length);
-          break;
-        }
-
-        scope = scope->parent_;
+    // Bubble up until parent will be found
+    Scope* scope = parent_;
+    int32_t depth = depth_;
+    while (scope != NULL) {
+      if (scope->Get(name, length) != NULL)  {
+        parent_->MoveToContext(name, length);
+        break;
       }
+
+      if (scope->type_ == kFunction) depth--;
+
+      scope = scope->parent_;
     }
 
-    slot = new ScopeSlot(ScopeSlot::kContext);
+    slot = new ScopeSlot(ScopeSlot::kContext, depth);
     Set(name, length, slot);
   } else if (slot->isStack()) {
     // Variable was stored in stack, but should be moved into context
@@ -105,14 +111,19 @@ void Scope::Analyze(AstNode* ast) {
 }
 
 
-ScopeAnalyze::ScopeAnalyze(AstNode* ast) : scope_(NULL) {
+ScopeAnalyze::ScopeAnalyze(AstNode* ast) : Visitor(kBreadthFirst),
+                                           scope_(NULL) {
   Visit(ast);
 }
 
 
 AstNode* ScopeAnalyze::VisitFunction(AstNode* node) {
   Scope scope(this, Scope::kFunction);
+
   VisitChildren(node);
+
+  node->SetScope(&scope);
+
   return node;
 }
 
@@ -127,7 +138,7 @@ AstNode* ScopeAnalyze::VisitBlock(AstNode* node) {
 AstNode* ScopeAnalyze::VisitScopeDecl(AstNode* node) {
   AstList::Item* child = node->children()->head();
   while (child != NULL) {
-
+    scope_->MoveToContext(child->value()->value_, child->value()->length_);
     child = child->next();
   }
   return node;

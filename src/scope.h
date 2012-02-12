@@ -21,7 +21,10 @@ class ScopeSlot : public ZoneObject {
     kContext
   };
 
-  ScopeSlot(Type type) : type_(type), index_(0) {
+  ScopeSlot(Type type) : type_(type), index_(0), depth_(0) {
+  }
+
+  ScopeSlot(Type type, uint32_t depth) : type_(type), index_(0), depth_(depth) {
   }
 
   static void Enumerate(void* scope, ScopeSlot* slot);
@@ -29,9 +32,11 @@ class ScopeSlot : public ZoneObject {
   inline bool isStack() { return type_ == kStack; }
   inline bool isContext() { return type_ == kContext; }
   inline uint32_t index() { return index_; }
+  inline uint32_t depth() { return depth_; }
 
   Type type_;
   uint32_t index_;
+  uint32_t depth_;
 };
 
 class Scope : public HashMap<ScopeSlot*, ZoneObject> {
@@ -63,6 +68,8 @@ class Scope : public HashMap<ScopeSlot*, ZoneObject> {
 
   int32_t stack_index_;
   int32_t context_index_;
+
+  int32_t depth_;
 
   ScopeAnalyze* a_;
   Type type_;

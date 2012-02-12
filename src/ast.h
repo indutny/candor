@@ -11,6 +11,7 @@ namespace dotlang {
 // Forward declaration
 struct ScopeSlot;
 class AstNode;
+class AstValue;
 
 typedef List<AstNode*, ZoneObject> AstList;
 
@@ -47,6 +48,8 @@ class AstNode : public ZoneObject {
     kBlockExpr,
     kScopeDecl,
     kMember,
+    kValue,
+    kMValue,
     kProperty,
     kAssign,
     kIf,
@@ -132,6 +135,10 @@ class FunctionLiteral : public AstNode {
     length_ = 0;
   }
 
+  static inline FunctionLiteral* Cast(AstNode* node) {
+    return reinterpret_cast<FunctionLiteral*>(node);
+  }
+
   inline bool CheckDeclaration() {
     // Function without body is a call
     if (children()->length() == 0) {
@@ -169,9 +176,13 @@ class FunctionLiteral : public AstNode {
 
 class AstValue : public AstNode {
  public:
-  AstValue(Scope* scope, AstNode* name) : AstNode(kName) {
+  AstValue(Scope* scope, AstNode* name) : AstNode(kValue) {
     slot_ = scope->GetSlot(name->value_, name->length_);
     name_ = name;
+  }
+
+  static inline AstValue* Cast(AstNode* node) {
+    return reinterpret_cast<AstValue*>(node);
   }
 
   inline ScopeSlot* slot() { return slot_; }

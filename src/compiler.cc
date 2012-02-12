@@ -19,7 +19,7 @@ void CompiledScript::Compile() {
   Scope::Analyze(ast);
 
   // Generate machine code
-  f.GenerateFunction(ast);
+  f.Visit(ast);
 
   guard_ = new Guard(f.buffer(), f.length());
 }

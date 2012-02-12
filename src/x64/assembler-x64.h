@@ -5,11 +5,13 @@
 #include <stdlib.h> // NULL
 #include <string.h> // memset
 
+#include "zone.h" // ZoneObject
+
 namespace dotlang {
 
 struct Register {
   const int high() {
-    return code_ >> 3;
+    return (code_ >> 3) & 1;
   };
 
   const int low() {
@@ -41,7 +43,9 @@ const Register r13 = { 13 };
 const Register r14 = { 14 };
 const Register r15 = { 15 };
 
-class Immediate {
+const Register scratch = r11;
+
+class Immediate : public ZoneObject {
  public:
   Immediate(uint32_t value) : value_(value) {
   }
@@ -54,7 +58,7 @@ class Immediate {
   friend class Assembler;
 };
 
-class Operand {
+class Operand : public ZoneObject {
  public:
   enum Scale {
     one = 0,
@@ -63,10 +67,24 @@ class Operand {
     eight = 3
   };
 
-  Operand(Register base, Scale scale, uint32_t disp);
-  Operand(Register base, uint32_t disp);
+  Operand(Register base, Scale scale, uint32_t disp) : base_(base),
+                                                       scale_(scale),
+                                                       disp_(disp) {
+  }
+  Operand(Register base, uint32_t disp) : base_(base),
+                                          scale_(one),
+                                          disp_(disp) {
+  }
+
+  inline Register base() { return base_; }
+  inline Scale scale() { return scale_; }
+  inline uint32_t disp() { return disp_; }
 
  private:
+  Register base_;
+  Scale scale_;
+  uint32_t disp_;
+
 
   friend class Assembler;
 };
@@ -88,22 +106,29 @@ class Assembler {
   void ret(uint16_t imm);
 
   void movq(Register dst, Register src);
+  void movq(Register dst, Operand* src);
+  void movq(Operand* dst, Register src);
+
   void subq(Register dst, Immediate imm);
 
   // Routines
-  void emit_rex_if_high(Register src);
-  void emit_rexw(Register dst);
-  void emit_rexw(Register dst, Register src);
-  void emit_modrm(Register dst, Register src);
-  void emit_modrm(Register dst, uint32_t op);
+  inline void emit_rex_if_high(Register src);
+  inline void emit_rexw(Register dst);
+  inline void emit_rexw(Register dst, Register src);
+  inline void emit_rexw(Register dst, Operand* src);
+  inline void emit_rexw(Operand* dst, Register src);
 
-  void emitb(uint8_t v);
-  void emitw(uint16_t v);
-  void emitl(uint32_t v);
-  void emitq(uint64_t v);
+  inline void emit_modrm(Register dst, Register src);
+  inline void emit_modrm(Register dst, Operand* src);
+  inline void emit_modrm(Register dst, uint32_t op);
+
+  inline void emitb(uint8_t v);
+  inline void emitw(uint16_t v);
+  inline void emitl(uint32_t v);
+  inline void emitq(uint64_t v);
 
   // Increase buffer size automatically
-  void Grow();
+  inline void Grow();
 
   inline char* pos() {
     return buffer_ + offset_;
