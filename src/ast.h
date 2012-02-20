@@ -13,6 +13,7 @@ struct ScopeSlot;
 class AstNode;
 class AstValue;
 
+// Just to simplify future use cases
 typedef List<AstNode*, ZoneObject> AstList;
 
 #define TYPE_MAPPING(V)\
@@ -67,7 +68,7 @@ class AstNode : public ZoneObject {
     kPostInc,
     kPostDec,
 
-    // Binop
+    // Binop and others
 #define MAP_DF(x) x,
     TYPE_MAPPING(MAP_DF)
 #undef MAP_DF
@@ -85,6 +86,7 @@ class AstNode : public ZoneObject {
   virtual ~AstNode() {
   }
 
+  // Converts lexer's token type to ast node type if possible
   inline static Type ConvertType(Lexer::TokenType type) {
     switch (type) {
 #define MAP_DF(x) case Lexer::x: return x;
@@ -95,6 +97,7 @@ class AstNode : public ZoneObject {
     }
   }
 
+  // Loads token value and length into ast node
   inline AstNode* FromToken(Lexer::Token* token) {
     value_ = token->value_;
     length_ = token->length_;
@@ -102,6 +105,7 @@ class AstNode : public ZoneObject {
     return this;
   }
 
+  // Some shortcuts
   inline AstList* children() { return &children_; }
   inline AstNode* lhs() { return children()->head()->value(); }
   inline AstNode* rhs() { return children()->head()->next()->value(); }
@@ -111,6 +115,8 @@ class AstNode : public ZoneObject {
   inline int32_t stack_slots() { return stack_count_; }
   inline int32_t context_slots() { return context_count_; }
 
+  // Some node (such as Functions) have context and stack variables
+  // SetScope will save that information for future uses in generation
   inline void SetScope(Scope* scope) {
     stack_count_ = scope->stack_count();
     context_count_ = scope->context_count();
@@ -129,6 +135,8 @@ class AstNode : public ZoneObject {
 #undef TYPE_MAPPING
 
 
+// Specific AST node for function,
+// contains name and variables list
 class FunctionLiteral : public AstNode {
  public:
   FunctionLiteral(AstNode* variable, uint32_t offset) : AstNode(kFunction) {
@@ -162,6 +170,7 @@ class FunctionLiteral : public AstNode {
     return true;
   }
 
+  // Function literal will keep it's boundaries in original source
   inline FunctionLiteral* End(uint32_t end) {
     length_ = end - offset_;
     return this;
@@ -177,6 +186,9 @@ class FunctionLiteral : public AstNode {
 };
 
 
+// Every kName AST node will be replaced by
+// AST value with scope information
+// (is variable on-stack or in-context, it's index, and etc)
 class AstValue : public AstNode {
  public:
   AstValue(Scope* scope, AstNode* name) : AstNode(kValue) {

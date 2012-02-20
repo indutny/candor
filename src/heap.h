@@ -39,6 +39,8 @@ class Space {
   // Otherwise allocate new page
   char* Allocate(uint32_t bytes);
 
+  // Both top and limit are always pointing to current page's
+  // top and limit.
   inline char** top() { return top_; }
   inline char** limit() { return limit_; }
 

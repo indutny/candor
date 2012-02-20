@@ -10,10 +10,12 @@
 namespace dotlang {
 
 CompiledScript::CompiledScript(const char* source, uint32_t length) {
+  // Copy source
   source_ = new char[length];
   length_ = length;
   memcpy(source_, source, length);
 
+  // Compile
   Compile();
 }
 
@@ -51,6 +53,7 @@ void CompiledScript::Run() {
 
 
 Guard::Guard(char* buffer, uint32_t length) {
+  // TODO: move page size getting into utils.h
 #ifdef __DARWIN
   page_size_ = getpagesize();
 #else

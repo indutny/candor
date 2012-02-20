@@ -9,6 +9,7 @@ namespace dotlang {
 class Heap;
 typedef void (*CompiledFunction)(Heap* heap);
 
+// Guards executable page with non-readable&non-executable page
 class Guard {
  public:
   Guard(char* buffer, uint32_t length);
@@ -25,6 +26,7 @@ class Guard {
   uint32_t page_size_;
 };
 
+// Main compilator object holds source, heap, and compiled code
 class CompiledScript {
  public:
   CompiledScript(const char* source, uint32_t length);

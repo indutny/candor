@@ -15,6 +15,7 @@ namespace dotlang {
 class Heap;
 class Register;
 
+// Generates non-optimized code by visiting each node in AST tree in-order
 class Fullgen : public Masm, public Visitor {
  public:
   enum VisitorType {

@@ -33,14 +33,18 @@ void Fullgen::GenerateEpilogue(AstNode* stmt) {
 
 
 AstNode* Fullgen::VisitForValue(AstNode* node, Register reg) {
+  // Save previous data
   Register stored = result_;
   VisitorType stored_type = visitor_type_;
 
+  // Set new
   result_ = reg;
   visitor_type_ = kValue;
 
+  // Visit node
   AstNode* result = Visit(node);
 
+  // Restore
   result_ = stored;
   visitor_type_ = stored_type;
 
@@ -49,16 +53,20 @@ AstNode* Fullgen::VisitForValue(AstNode* node, Register reg) {
 
 
 AstNode* Fullgen::VisitForSlot(AstNode* node, Operand* op, Register base) {
+  // Save data
   Operand* stored = slot_;
   Register stored_base = result_;
   VisitorType stored_type = visitor_type_;
 
+  // Set new
   slot_ = op;
   result_ = base;
   visitor_type_ = kSlot;
 
+  // Visit node
   AstNode* result = Visit(node);
 
+  // Restore
   slot_ = stored;
   result_ = stored_base;
   visitor_type_ = stored_type;
@@ -68,6 +76,7 @@ AstNode* Fullgen::VisitForSlot(AstNode* node, Operand* op, Register base) {
 
 
 AstNode* Fullgen::VisitFunction(AstNode* stmt) {
+  // TODO: Generation of body should be deferred
   GeneratePrologue(stmt);
   VisitChildren(stmt);
   GenerateEpilogue(stmt);
@@ -77,11 +86,11 @@ AstNode* Fullgen::VisitFunction(AstNode* stmt) {
 
 
 AstNode* Fullgen::VisitAssign(AstNode* stmt) {
-  emitb(0xcc);
-
+  // Get value of right-hand side expression in rbx
   VisitForValue(stmt->rhs(), rbx);
   push(rbx);
 
+  // Get target slot for left-hand side
   Operand lhs(rax, 0);
   VisitForSlot(stmt->lhs(), &lhs, rax);
   pop(rbx);
@@ -89,6 +98,7 @@ AstNode* Fullgen::VisitAssign(AstNode* stmt) {
   // Put value into slot
   movq(lhs, rbx);
 
+  // Propagate result of assign operation
   movq(result(), rbx);
 
   return stmt;
@@ -121,6 +131,7 @@ AstNode* Fullgen::VisitValue(AstNode* node) {
     slot()->disp(sizeof(void*) * (value->slot()->index() + 2));
   }
 
+  // If we was asked to return value - dereference slot
   if (visiting_for_value()) {
     movq(result(), *slot());
   }
@@ -134,6 +145,7 @@ AstNode* Fullgen::VisitNumber(AstNode* node) {
 
   Label runtime_alloc, finish;
 
+  // TODO: Move this to AllocateNumber
   Register result_end = result().is(rbx) ? rax : rbx;
   Allocate(result(), result_end, 16, scratch, &runtime_alloc);
 

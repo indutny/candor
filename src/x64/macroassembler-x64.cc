@@ -12,6 +12,7 @@ void Masm::Allocate(Register result,
 
   Operand scratch_op(scratch, 0);
 
+  // Get pointer to current page's top
   movq(scratch, top);
   movq(result, scratch_op);
   movq(result_end, result);
@@ -24,6 +25,8 @@ void Masm::Allocate(Register result,
   movq(scratch, limit);
   cmp(result_end, scratch_op);
   jmp(kGt, runtime_allocate);
+
+  // Voila result and result_end are pointers
 }
 
 
