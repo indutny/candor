@@ -9,6 +9,7 @@
 
 namespace dotlang {
 
+// Chunk of memory that will hold some of allocated data in Zone
 class ZoneBlock {
  public:
   ZoneBlock(size_t size) : data_(NULL), offset_(0), size_(size) {
@@ -36,6 +37,9 @@ class ZoneBlock {
   size_t size_;
 };
 
+// Zones are used for AST and other data that should be allocated fast
+// and removed at once. Each allocation goes into zone's block or new block
+// is created (if current one was exhausted).
 class Zone {
  public:
   class ZoneItem {
@@ -48,6 +52,7 @@ class Zone {
     current_ = this;
     blocks_.allocated = true;
 
+    // TODO: Move it to utils and reuse code
 #ifdef __DARWIN
     page_size_ = getpagesize();
 #else
@@ -66,6 +71,7 @@ class Zone {
   size_t page_size_;
 };
 
+// Base class for objects that will be bound to some zone
 class ZoneObject {
  public:
   inline void* operator new(size_t size) {

@@ -14,6 +14,8 @@ class AstNode;
 class Scope;
 class ScopeAnalyze;
 
+// Each AstVariable gets it's slot
+// After parse end indexes will be allocated
 class ScopeSlot : public ZoneObject {
  public:
   enum Type {
@@ -39,6 +41,7 @@ class ScopeSlot : public ZoneObject {
   int32_t depth_;
 };
 
+// On each block or function enter new scope is created
 class Scope : public HashMap<ScopeSlot*, ZoneObject> {
  public:
   enum Type {
@@ -79,6 +82,8 @@ class Scope : public HashMap<ScopeSlot*, ZoneObject> {
   friend class ScopeSlot;
 };
 
+// Runs on complete AST tree to wrap each kName into AstValue
+// and put it either in stack or in some context
 class ScopeAnalyze : public Visitor {
  public:
   ScopeAnalyze(AstNode* ast);

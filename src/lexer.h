@@ -7,6 +7,7 @@
 
 namespace dotlang {
 
+// Splits source code into lexems and emits them
 class Lexer {
  public:
   Lexer(const char* source, uint32_t length) : source_(source),

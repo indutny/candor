@@ -9,13 +9,14 @@
 
 namespace dotlang {
 
+// Creates AST tree from plain source code
 class Parser : public Lexer {
  public:
   Parser(const char* source, uint32_t length) : Lexer(source, length) {
     ast_ = new FunctionLiteral(NULL, 0);
   }
 
-
+  // Used to implement lookahead
   class Position {
    public:
     Position(Lexer* lexer) : lexer_(lexer), committed_(false) {
@@ -46,14 +47,14 @@ class Parser : public Lexer {
     bool committed_;
   };
 
-
+  // Creates new ast node and inserts `original` as it's child
   inline AstNode* Wrap(AstNode::Type type, AstNode* original) {
     AstNode* wrap = new AstNode(type);
     wrap->children()->Push(original);
     return wrap;
   }
 
-
+  // AST (result)
   inline AstNode* ast() {
     return ast_;
   }

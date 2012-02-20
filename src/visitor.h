@@ -6,6 +6,7 @@ namespace dotlang {
 // Forward declaration
 class AstNode;
 
+// AST Visiting abstraction
 class Visitor {
  public:
   enum Type {

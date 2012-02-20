@@ -204,6 +204,7 @@ class HashMap {
 };
 
 
+// Find minimum number that's greater than value and is dividable by to
 inline uint32_t RoundUp(uint32_t value, uint32_t to) {
   if (value % to == 0) return value;
 
