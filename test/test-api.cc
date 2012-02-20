@@ -3,6 +3,6 @@
 TEST_START("API test")
   Script s;
 
-  s.Compile("a = 3", 5);
+  s.Compile("a = 32", 6);
   s.Run();
 TEST_END("API test")

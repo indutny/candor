@@ -29,14 +29,14 @@ class ScopeSlot : public ZoneObject {
 
   static void Enumerate(void* scope, ScopeSlot* slot);
 
-  inline bool isStack() { return type_ == kStack; }
-  inline bool isContext() { return type_ == kContext; }
-  inline uint32_t index() { return index_; }
-  inline uint32_t depth() { return depth_; }
+  inline bool is_stack() { return type_ == kStack; }
+  inline bool is_context() { return type_ == kContext; }
+  inline int32_t index() { return index_; }
+  inline int32_t depth() { return depth_; }
 
   Type type_;
-  uint32_t index_;
-  uint32_t depth_;
+  int32_t index_;
+  int32_t depth_;
 };
 
 class Scope : public HashMap<ScopeSlot*, ZoneObject> {

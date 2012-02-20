@@ -210,6 +210,17 @@ inline uint32_t RoundUp(uint32_t value, uint32_t to) {
   return value + to - value % to;
 }
 
+
+// XXX: Naive implementation
+inline uint64_t StringToInt(const char* value, uint32_t length) {
+  uint64_t result = 0;
+  for (uint32_t index = 0; index < length; index++) {
+    result *= 10;
+    result += value[index] - '0';
+  }
+  return result;
+}
+
 } // namespace dotlang
 
 #endif // _SRC_UTILS_H_

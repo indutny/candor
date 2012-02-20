@@ -54,6 +54,12 @@ class Space {
 
 class Heap {
  public:
+  enum HeapTag {
+    kNone,
+    kContext,
+    kNumber
+  };
+
   Heap(uint32_t page_size) : new_space_(page_size), old_space_(page_size) {
   }
 

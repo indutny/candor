@@ -17,7 +17,15 @@ class Register;
 
 class Fullgen : public Masm, public Visitor {
  public:
-  Fullgen(Heap* heap) : Masm(heap), Visitor(kPreorder), heap_(heap) {
+  enum VisitorType {
+    kValue,
+    kSlot
+  };
+
+  Fullgen(Heap* heap) : Masm(heap),
+                        Visitor(kPreorder),
+                        heap_(heap),
+                        visitor_type_(kValue) {
   }
 
   void GeneratePrologue(AstNode* stmt);
@@ -29,12 +37,16 @@ class Fullgen : public Masm, public Visitor {
   AstNode* VisitValue(AstNode* node);
   AstNode* VisitNumber(AstNode* node);
 
-  void VisitForValue(AstNode* node, Register reg);
+  AstNode* VisitForValue(AstNode* node, Register reg);
+  AstNode* VisitForSlot(AstNode* node, Operand* op, Register base);
 
   inline Heap* heap() { return heap_; }
+  inline bool visiting_for_value() { return visitor_type_ == kValue; }
+  inline bool visiting_for_slot() { return visitor_type_ == kSlot; }
 
  private:
   Heap* heap_;
+  VisitorType visitor_type_;
 };
 
 } // namespace dotlang

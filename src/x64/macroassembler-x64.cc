@@ -26,35 +26,4 @@ void Masm::Allocate(Register result,
   jmp(kGt, runtime_allocate);
 }
 
-
-void Masm::Mov(MValue* dst, MValue* src) {
-  assert(!src->isNone());
-  assert(!dst->isNone());
-  assert(!dst->isImm());
-
-  if (dst->isReg()) {
-    if (src->isReg()) {
-      movq(dst->reg(), src->reg());
-    } else if (src->isOp()) {
-      movq(dst->reg(), *src->op());
-    } else {
-      movq(dst->reg(), *src->imm());
-    }
-  } else if (dst->isOp()) {
-    if (src->isReg()) {
-      movq(*dst->op(), src->reg());
-    } else if (src->isOp()) {
-      movq(scratch, *src->op());
-      movq(*dst->op(), scratch);
-    } else {
-      if (src->imm()->is64()) {
-        movq(scratch, *src->imm());
-        movq(*dst->op(), scratch);
-      } else {
-        movq(*dst->op(), *src->imm());
-      }
-    }
-  }
-}
-
 } // namespace dotlang

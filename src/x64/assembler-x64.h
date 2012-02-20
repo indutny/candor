@@ -86,11 +86,14 @@ class Operand : public ZoneObject {
   inline Scale scale() { return scale_; }
   inline uint32_t disp() { return disp_; }
 
+  inline Register base(Register base) { return base_ = base; }
+  inline Scale scale(Scale scale) { return scale_ = scale; }
+  inline uint32_t disp(uint32_t disp) { return disp_ = disp; }
+
  private:
   Register base_;
   Scale scale_;
   uint32_t disp_;
-
 
   friend class Assembler;
 };

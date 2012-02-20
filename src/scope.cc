@@ -84,7 +84,7 @@ void Scope::MoveToContext(const char* name, uint32_t length) {
 
     slot = new ScopeSlot(ScopeSlot::kContext, depth);
     Set(name, length, slot);
-  } else if (slot->isStack()) {
+  } else if (slot->is_stack()) {
     // Variable was stored in stack, but should be moved into context
     slot->type_ = ScopeSlot::kContext;
     stack_count_--;
@@ -96,9 +96,9 @@ void Scope::MoveToContext(const char* name, uint32_t length) {
 void ScopeSlot::Enumerate(void* scope, ScopeSlot* slot) {
   Scope* scope_ = reinterpret_cast<Scope*>(scope);
 
-  if (slot->isStack()) {
+  if (slot->is_stack()) {
     slot->index_ = scope_->stack_index_++;
-  } else if (slot->isContext()) {
+  } else if (slot->is_context()) {
     slot->index_ = scope_->context_index_++;
   } else {
     assert(0 && "Unreachable");
