@@ -26,4 +26,29 @@ void Masm::Allocate(Register result,
   jmp(kGt, runtime_allocate);
 }
 
+
+void Masm::AllocateContext(uint32_t slots) {
+  // We can use any registers here
+  // because context allocation is performed in prelude
+  // and nothing can be affected yet
+  Label runtime_alloc, end;
+  Allocate(rax, rbx, sizeof(void*) * (slots + 2), scratch, &runtime_alloc);
+
+  Operand qtag(rax, 0);
+  Operand qparent(rax, 8);
+
+  movq(qtag, Heap::kContext);
+  movq(qparent, rsi);
+  jmp(&end);
+
+  bind(&runtime_alloc);
+  // TODO: implement me
+  emitb(0xcc);
+
+  bind(&end);
+
+  // Replace reference to context
+  movq(rsi, rax);
+}
+
 } // namespace dotlang

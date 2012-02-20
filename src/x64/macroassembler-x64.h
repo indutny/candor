@@ -17,6 +17,7 @@ class Masm : public Assembler {
                 uint32_t size,
                 Register scratch,
                 Label* runtime_allocate);
+  void AllocateContext(uint32_t slots);
 
   inline Register result() { return result_; }
   inline Operand* slot() { return slot_; }

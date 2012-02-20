@@ -11,15 +11,22 @@ namespace dotlang {
 
 void Fullgen::GeneratePrologue(AstNode* stmt) {
   push(rbp);
+  push(rsi); // context
+  push(rdi); // heap
   movq(rbp, rsp);
 
   // Allocate space for on stack variables
   subq(rsp, Immediate(RoundUp((stmt->stack_slots() + 1) * sizeof(void*), 16)));
+
+  // Allocate context
+  AllocateContext(stmt->context_slots());
 }
 
 
 void Fullgen::GenerateEpilogue(AstNode* stmt) {
   movq(rsp, rbp);
+  pop(rdi); // restore heap
+  pop(rsi); // restore context
   pop(rbp);
   ret(0);
 }
