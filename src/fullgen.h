@@ -11,9 +11,13 @@
 
 namespace dotlang {
 
+// Forward declaration
+class Heap;
+class Register;
+
 class Fullgen : public Masm, public Visitor {
  public:
-  Fullgen() : Masm(), Visitor(kPreorder) {
+  Fullgen(Heap* heap) : Masm(heap), Visitor(kPreorder), heap_(heap) {
   }
 
   void GeneratePrologue(AstNode* stmt);
@@ -23,6 +27,14 @@ class Fullgen : public Masm, public Visitor {
   AstNode* VisitFunction(AstNode* stmt);
   AstNode* VisitAssign(AstNode* stmt);
   AstNode* VisitValue(AstNode* node);
+  AstNode* VisitNumber(AstNode* node);
+
+  void VisitForValue(AstNode* node, Register reg);
+
+  inline Heap* heap() { return heap_; }
+
+ private:
+  Heap* heap_;
 };
 
 } // namespace dotlang

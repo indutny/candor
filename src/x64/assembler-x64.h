@@ -6,6 +6,7 @@
 #include <string.h> // memset
 
 #include "zone.h" // ZoneObject
+#include "utils.h" // List
 
 namespace dotlang {
 
@@ -20,6 +21,10 @@ struct Register {
 
   const int code() {
     return code_;
+  }
+
+  inline bool is(Register reg) {
+    return code_ == reg.code();
   }
 
   int code_;
@@ -47,13 +52,14 @@ const Register scratch = r11;
 
 class Immediate : public ZoneObject {
  public:
-  Immediate(uint32_t value) : value_(value) {
+  Immediate(uint64_t value) : value_(value) {
   }
 
-  inline uint32_t value() { return value_; }
+  inline uint64_t value() { return value_; }
+  inline bool is64() { return value_ > 0xffffffff; }
 
  private:
-  uint32_t value_;
+  uint64_t value_;
 
   friend class Assembler;
 };
@@ -89,15 +95,37 @@ class Operand : public ZoneObject {
   friend class Assembler;
 };
 
+class Label {
+ public:
+  Label(): pos_(NULL) {
+  }
+
+ private:
+  inline void relocate(char* pos);
+  inline void use(char* addr);
+  inline void emit(char* addr);
+
+  char* pos_;
+  List<char*, EmptyClass> addrs_;
+  friend class Assembler;
+};
+
+enum Condition {
+  kEq,
+  kLt,
+  kGt,
+  kCarry
+};
+
 class Assembler {
  public:
   Assembler() : offset_(0), length_(256) {
     buffer_ = new char[length_];
-    memset(buffer_, 0x90, length_);
+    memset(buffer_, 0xCC, length_);
   }
 
   ~Assembler() {
-    delete buffer_;
+    delete[] buffer_;
   }
 
   // Instructions
@@ -105,21 +133,33 @@ class Assembler {
   void pop(Register dst);
   void ret(uint16_t imm);
 
-  void movq(Register dst, Register src);
-  void movq(Register dst, Operand* src);
-  void movq(Operand* dst, Register src);
+  void bind(Label* label);
+  void cmp(Register dst, Register src);
+  void cmp(Register dst, Operand& src);
+  void jmp(Label* label);
+  void jmp(Condition cond, Label* label);
 
+  void movq(Register dst, Register src);
+  void movq(Register dst, Operand& src);
+  void movq(Operand& dst, Register src);
+  void movq(Register dst, Immediate src);
+  void movq(Operand& dst, Immediate src);
+
+  void addq(Register dst, Immediate src);
   void subq(Register dst, Immediate imm);
 
   // Routines
   inline void emit_rex_if_high(Register src);
   inline void emit_rexw(Register dst);
+  inline void emit_rexw(Operand& dst);
   inline void emit_rexw(Register dst, Register src);
-  inline void emit_rexw(Register dst, Operand* src);
-  inline void emit_rexw(Operand* dst, Register src);
+  inline void emit_rexw(Register dst, Operand& src);
+  inline void emit_rexw(Operand& dst, Register src);
 
+  inline void emit_modrm(Register dst);
+  inline void emit_modrm(Operand &dst);
   inline void emit_modrm(Register dst, Register src);
-  inline void emit_modrm(Register dst, Operand* src);
+  inline void emit_modrm(Register dst, Operand& src);
   inline void emit_modrm(Register dst, uint32_t op);
 
   inline void emitb(uint8_t v);

@@ -3,9 +3,44 @@
 
 #include "assembler-x64.h"
 
-#include <string.h>
+#include <assert.h> // assert
+#include <string.h> // memcpy, memset
+#include <stdlib.h> // NULL
 
 namespace dotlang {
+
+void Label::relocate(char* pos) {
+  // Label should be relocated only once
+  assert(pos_ == NULL);
+  pos_ = pos;
+
+  // Iterate through all label's uses and insert correct relocation info
+  List<char*, EmptyClass>::Item* item = addrs_.head();
+  while (item != NULL) {
+    emit(item->value());
+    item = item->next();
+  }
+}
+
+
+void Label::use(char* addr) {
+  if (pos_ == NULL) {
+    // If label wasn't allocated - add address into queue
+    addrs_.Push(addr);
+  } else {
+    // Otherwise insert correct offset
+    emit(addr);
+  }
+}
+
+
+void Label::emit(char* addr) {
+  int32_t* imm = reinterpret_cast<int32_t*>(addr);
+  *imm = static_cast<int32_t>(reinterpret_cast<uint64_t>(pos_) -
+         reinterpret_cast<uint64_t>(addr) -
+         sizeof(int32_t));
+}
+
 
 void Assembler::emit_rex_if_high(Register src) {
   if (src.high() == 1) emitb(0x40 | 0x01);
@@ -17,18 +52,37 @@ void Assembler::emit_rexw(Register dst) {
 }
 
 
+void Assembler::emit_rexw(Operand& dst) {
+  emitb(0x48 | dst.base().high() << 2);
+}
+
+
 void Assembler::emit_rexw(Register dst, Register src) {
   emitb(0x48 | dst.high() << 2 | src.high());
 }
 
 
-void Assembler::emit_rexw(Register dst, Operand* src) {
-  emitb(0x48 | dst.high() << 2 | src->base().high());
+void Assembler::emit_rexw(Register dst, Operand& src) {
+  emitb(0x48 | dst.high() << 2 | src.base().high());
 }
 
 
-void Assembler::emit_rexw(Operand* dst, Register src) {
-  emitb(0x48 | src.high() | dst->base().high() << 2);
+void Assembler::emit_rexw(Operand& dst, Register src) {
+  emitb(0x48 | dst.base().high() << 2 | src.high());
+}
+
+
+void Assembler::emit_modrm(Register dst) {
+  emitb(0xC0 | dst.low() << 3);
+}
+
+
+void Assembler::emit_modrm(Operand &dst) {
+  if (dst.scale() == Operand::one) {
+    emitb(0x80 | dst.base().low());
+    emitl(dst.disp());
+  } else {
+  }
 }
 
 
@@ -37,10 +91,10 @@ void Assembler::emit_modrm(Register dst, Register src) {
 }
 
 
-void Assembler::emit_modrm(Register dst, Operand* src) {
-  if (src->scale() == Operand::one) {
-    emitb(0x80 | dst.low() << 3 | src->base().low());
-    emitl(src->disp());
+void Assembler::emit_modrm(Register dst, Operand& src) {
+  if (src.scale() == Operand::one) {
+    emitb(0x80 | dst.low() << 3 | src.base().low());
+    emitl(src.disp());
   } else {
   }
 }
@@ -85,7 +139,7 @@ void Assembler::Grow() {
   char* new_buffer = new char[length_ << 1];
   memcpy(new_buffer, buffer_, length_);
   memset(new_buffer + length_, 0x90, length_);
-  delete buffer_;
+  delete[] buffer_;
   buffer_ = new_buffer;
 }
 

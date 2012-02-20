@@ -103,6 +103,9 @@ class AstNode : public ZoneObject {
   }
 
   inline AstList* children() { return &children_; }
+  inline AstNode* lhs() { return children()->head()->value(); }
+  inline AstNode* rhs() { return children()->head()->next()->value(); }
+
   inline Type type() { return type_; }
   inline bool is(Type type) { return type_ == type; }
   inline int32_t stack_slots() { return stack_count_; }

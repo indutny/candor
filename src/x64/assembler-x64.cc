@@ -26,6 +26,58 @@ void Assembler::ret(uint16_t imm) {
 }
 
 
+void Assembler::bind(Label* label) {
+  label->relocate(pos());
+}
+
+
+void Assembler::cmp(Register dst, Register src) {
+  emit_rexw(dst, src);
+  emitb(0x3B);
+  emit_modrm(dst, src);
+}
+
+
+void Assembler::cmp(Register dst, Operand& src) {
+  emit_rexw(dst, src);
+  emitb(0x3B);
+  emit_modrm(dst, src);
+}
+
+
+void Assembler::jmp(Label* label) {
+  emitb(0xE9);
+  emitl(0x12345678);
+  label->use(pos() - 4);
+}
+
+
+void Assembler::jmp(Condition cond, Label* label) {
+  switch (cond) {
+   case kEq:
+    emitb(0x0F);
+    emitb(0x84);
+    break;
+   case kLt:
+    emitb(0x0F);
+    emitb(0x8c);
+    break;
+   case kGt:
+    emitb(0x0F);
+    emitb(0x8F);
+    break;
+   case kCarry:
+    emitb(0x0F);
+    emitb(0x82);
+    break;
+   default:
+    assert(0 && "unexpected");
+  }
+  emitl(0x12345678);
+  label->use(pos() - 4);
+}
+
+
 void Assembler::movq(Register dst, Register src) {
   emit_rexw(dst, src);
   emitb(0x8B);
@@ -33,17 +85,39 @@ void Assembler::movq(Register dst, Register src) {
 }
 
 
-void Assembler::movq(Register dst, Operand* src) {
+void Assembler::movq(Register dst, Operand& src) {
   emit_rexw(dst, src);
   emitb(0x8B);
   emit_modrm(dst, src);
 }
 
 
-void Assembler::movq(Operand* dst, Register src) {
+void Assembler::movq(Operand& dst, Register src) {
   emit_rexw(src, dst);
   emitb(0x89);
   emit_modrm(src, dst);
+}
+
+
+void Assembler::movq(Register dst, Immediate src) {
+  emit_rexw(rax, dst);
+  emitb(0xB8 | dst.low());
+  emitq(src.value());
+}
+
+
+void Assembler::movq(Operand& dst, Immediate src) {
+  emit_rexw(dst);
+  emitb(0xC7);
+  emit_modrm(dst);
+  emitl(src.value());
+}
+
+
+void Assembler::addq(Register dst, Immediate imm) {
+  emit_rexw(dst);
+  emitb(0x05);
+  emitl(imm.value());
 }
 
 

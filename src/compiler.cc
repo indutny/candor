@@ -1,5 +1,6 @@
 #include "compiler.h"
 #include "parser.h"
+#include "heap.h"
 #include "fullgen.h"
 
 #include <string.h> // memcpy, memset
@@ -8,10 +9,29 @@
 
 namespace dotlang {
 
+CompiledScript::CompiledScript(const char* source, uint32_t length) {
+  source_ = new char[length];
+  length_ = length;
+  memcpy(source_, source, length);
+
+  Compile();
+}
+
+
+CompiledScript::~CompiledScript() {
+  delete[] source_;
+  delete guard_;
+  delete heap_;
+}
+
+
 void CompiledScript::Compile() {
+  // XXX: Hardcoded page size here
+  heap_ = new Heap(1024 * 1024);
+
   Zone zone;
   Parser p(source_, length_);
-  Fullgen f;
+  Fullgen f(heap_);
 
   AstNode* ast = p.Execute();
 
@@ -26,7 +46,7 @@ void CompiledScript::Compile() {
 
 
 void CompiledScript::Run() {
-  guard_->AsFunction()();
+  guard_->AsFunction()(heap_);
 }
 
 

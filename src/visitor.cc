@@ -21,6 +21,8 @@ AstNode* Visitor::Visit(AstNode* node) {
     return VisitName(node);
    case AstNode::kValue:
     return VisitValue(node);
+   case AstNode::kNumber:
+    return VisitNumber(node);
    default:
     VisitChildren(node);
     return node;
@@ -86,6 +88,11 @@ AstNode* Visitor::VisitName(AstNode* node) {
 
 
 AstNode* Visitor::VisitValue(AstNode* node) {
+  return node;
+}
+
+
+AstNode* Visitor::VisitNumber(AstNode* node) {
   return node;
 }
 

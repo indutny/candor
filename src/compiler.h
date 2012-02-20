@@ -6,7 +6,8 @@
 
 namespace dotlang {
 
-typedef void (*CompiledFunction)(void);
+class Heap;
+typedef void (*CompiledFunction)(Heap* heap);
 
 class Guard {
  public:
@@ -26,23 +27,15 @@ class Guard {
 
 class CompiledScript {
  public:
-  CompiledScript(const char* source, uint32_t length) {
-    source_ = new char[length];
-    length_ = length;
-    memcpy(source_, source, length);
+  CompiledScript(const char* source, uint32_t length);
 
-    Compile();
-  }
-
-  ~CompiledScript() {
-    delete source_;
-    delete guard_;
-  }
+  ~CompiledScript();
 
   void Compile();
   void Run();
 
  private:
+  Heap* heap_;
   Guard* guard_;
 
   char* source_;

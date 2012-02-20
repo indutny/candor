@@ -7,6 +7,9 @@
 
 namespace dotlang {
 
+class EmptyClass {
+};
+
 template <class T, class ItemParent>
 class List {
  public:
