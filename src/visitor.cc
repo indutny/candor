@@ -40,14 +40,14 @@ void Visitor::VisitChildren(AstNode* node) {
         (child->value()->is(AstNode::kFunction) ||
         child->value()->is(AstNode::kBlock))) {
       blocks_queue.Push(child);
+      child = child->next();
     } else {
       child->value(Visit(child->value()));
       child = child->next();
     }
   }
 
-  while (blocks_queue.length() > 0) {
-    child = blocks_queue.Shift();
+  while ((child = blocks_queue.Shift()) != NULL) {
     child->value(Visit(child->value()));
   }
 }

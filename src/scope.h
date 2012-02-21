@@ -93,7 +93,10 @@ class ScopeAnalyze : public Visitor {
   AstNode* VisitScopeDecl(AstNode* node);
   AstNode* VisitName(AstNode* node);
 
+  inline Scope* scope() { return scope_; }
+
  protected:
+  AstNode* ast_;
   Scope* scope_;
 
   friend class Scope;

@@ -70,17 +70,20 @@ void Scope::MoveToContext(const char* name, uint32_t length) {
     // Mark it as context variable in parent scope
     // Bubble up until parent will be found
     Scope* scope = parent_;
-    int32_t depth = depth_;
+    int32_t depth = type_ == kFunction;
     while (scope != NULL) {
-      if (scope->Get(name, length) != NULL)  {
-        parent_->MoveToContext(name, length);
+      if ((slot = scope->Get(name, length)) != NULL &&
+          (slot->is_stack() || slot->depth() == 0))  {
+        scope->MoveToContext(name, length);
         break;
       }
 
-      if (scope->type_ == kFunction) depth--;
+      if (scope->type_ == kFunction) depth++;
 
       scope = scope->parent_;
     }
+
+    if (scope == NULL) depth = -1;
 
     slot = new ScopeSlot(ScopeSlot::kContext, depth);
     Set(name, length, slot);
@@ -112,13 +115,21 @@ void Scope::Analyze(AstNode* ast) {
 
 
 ScopeAnalyze::ScopeAnalyze(AstNode* ast) : Visitor(kBreadthFirst),
+                                           ast_(ast),
                                            scope_(NULL) {
   Visit(ast);
 }
 
 
 AstNode* ScopeAnalyze::VisitFunction(AstNode* node) {
-  Scope scope(this, Scope::kFunction);
+  FunctionLiteral* fn = FunctionLiteral::Cast(node);
+
+  // Put variable into outer scope
+  if (fn->variable() != NULL) {
+    fn->variable(new AstValue(scope(), fn->variable()));
+  }
+
+  Scope scope(this, node == ast_ ? Scope::kBlock : Scope::kFunction);
 
   VisitChildren(node);
 
@@ -138,7 +149,7 @@ AstNode* ScopeAnalyze::VisitBlock(AstNode* node) {
 AstNode* ScopeAnalyze::VisitScopeDecl(AstNode* node) {
   AstList::Item* child = node->children()->head();
   while (child != NULL) {
-    scope_->MoveToContext(child->value()->value_, child->value()->length_);
+    scope_->MoveToContext(child->value()->value(), child->value()->length());
     child = child->next();
   }
   return node;
@@ -146,7 +157,7 @@ AstNode* ScopeAnalyze::VisitScopeDecl(AstNode* node) {
 
 
 AstNode* ScopeAnalyze::VisitName(AstNode* node) {
-  return new AstValue(scope_, node);
+  return new AstValue(scope(), node);
 }
 
 } // namespace dotlang

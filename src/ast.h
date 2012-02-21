@@ -97,8 +97,8 @@ class AstNode : public ZoneObject {
 
   // Loads token value and length into ast node
   inline AstNode* FromToken(Lexer::Token* token) {
-    value_ = token->value_;
-    length_ = token->length_;
+    value_ = token->value();
+    length_ = token->length();
 
     return this;
   }
@@ -109,7 +109,11 @@ class AstNode : public ZoneObject {
   inline AstNode* rhs() { return children()->head()->next()->value(); }
 
   inline Type type() { return type_; }
+  inline void type(Type type) { type_ = type; }
   inline bool is(Type type) { return type_ == type; }
+  inline const char* value() { return value_; }
+  inline uint32_t length() { return length_; }
+
   inline int32_t stack_slots() { return stack_count_; }
   inline int32_t context_slots() { return context_count_; }
 
@@ -150,13 +154,14 @@ class AstNode : public ZoneObject {
            ) &&
 
            (length_ == 0 ||
-           p->PrintValue(value_, length_) &&
+           p->PrintValue(value(), length()) &&
            (children()->length() == 0 || p->Print(" "))) &&
 
            PrintChildren(p, children()) &&
            p->Print("]");
   }
 
+ protected:
   Type type_;
 
   const char* value_;
@@ -190,12 +195,12 @@ class FunctionLiteral : public AstNode {
     // Function without body is a call
     if (children()->length() == 0) {
       // So it should have a name
-      if (variable_ == NULL) return false;
+      if (variable() == NULL) return false;
       return true;
     }
 
     // Name should not be "a.b.c"
-    if (variable_ != NULL && !variable_->is(kName)) return false;
+    if (variable() != NULL && !variable()->is(kName)) return false;
 
     // Arguments should be a kName, not expressions
     AstList::Item* head;
@@ -215,10 +220,10 @@ class FunctionLiteral : public AstNode {
 
   bool Print(PrintBuffer* p) {
     return p->Print("[kFunction ") &&
-           (variable_ == NULL ?
+           (variable() == NULL ?
                p->Print("(anonymous)")
                :
-               variable_->Print(p)
+               variable()->Print(p)
            ) &&
            p->Print(" @[") &&
            PrintChildren(p, args()) &&
@@ -227,6 +232,8 @@ class FunctionLiteral : public AstNode {
            p->Print("]");
   }
 
+  inline AstNode* variable() { return variable_; }
+  inline void variable(AstNode* variable) { variable_ = variable; }
   inline AstList* args() { return &args_; }
 
   AstNode* variable_;
@@ -243,12 +250,23 @@ class FunctionLiteral : public AstNode {
 class AstValue : public AstNode {
  public:
   AstValue(Scope* scope, AstNode* name) : AstNode(kValue) {
-    slot_ = scope->GetSlot(name->value_, name->length_);
+    slot_ = scope->GetSlot(name->value(), name->length());
     name_ = name;
   }
 
   static inline AstValue* Cast(AstNode* node) {
     return reinterpret_cast<AstValue*>(node);
+  }
+
+  bool Print(PrintBuffer* p) {
+    return p->Print("[") &&
+           p->PrintValue(name()->value(), name()->length()) &&
+           (slot()->is_context() ?
+              p->Print(" @context[%d]:%d", slot()->depth(), slot()->index())
+              :
+              p->Print(" @stack:%d", slot()->index())
+           ) &&
+           p->Print("]");
   }
 
   inline ScopeSlot* slot() { return slot_; }

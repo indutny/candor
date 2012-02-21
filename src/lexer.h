@@ -94,13 +94,11 @@ class Lexer {
       return type_;
     }
 
-    inline bool is(TokenType type) {
-      return type_ == type;
-    }
+    inline bool is(TokenType type) { return type_ == type; }
 
-    inline const uint32_t offset() {
-      return offset_;
-    }
+    inline const char* value() { return value_; }
+    inline uint32_t length() { return length_; }
+    inline const uint32_t offset() { return offset_; }
 
     TokenType type_;
     const char* value_;

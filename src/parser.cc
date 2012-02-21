@@ -7,6 +7,10 @@ namespace dotlang {
 
 AstNode* Parser::Execute() {
   AstNode* stmt;
+  AstNode* scope = ParseScope();
+  if (scope != NULL) {
+    ast()->children()->Push(scope);
+  }
   while ((stmt = ParseStatement()) != NULL) {
     ast()->children()->Push(stmt);
   }
@@ -162,7 +166,7 @@ AstNode* Parser::ParseExpression(int priority) {
    case kBraceOpen:
     result = ParseBlock(NULL);
     if (result == NULL) return NULL;
-    result->type_ = AstNode::kBlockExpr;
+    result->type(AstNode::kBlockExpr);
     return result;
    default:
     break;
@@ -334,7 +338,7 @@ AstNode* Parser::ParseMember() {
       Skip();
       next = ParsePrimary();
       if (next != NULL && next->is(AstNode::kName)) {
-        next->type_ = AstNode::kProperty;
+        next->type(AstNode::kProperty);
       }
     } else if (Peek()->is(kArrayOpen)) {
       // a["prop-expr"]

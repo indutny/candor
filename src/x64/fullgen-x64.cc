@@ -153,7 +153,7 @@ AstNode* Fullgen::VisitNumber(AstNode* node) {
   Operand qvalue(result(), 8);
 
   movq(qtag, Immediate(Heap::kNumber));
-  movq(qvalue, Immediate(StringToInt(node->value_, node->length_)));
+  movq(qvalue, Immediate(StringToInt(node->value(), node->length())));
 
   jmp(&finish);
   bind(&runtime_alloc);

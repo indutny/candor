@@ -37,6 +37,19 @@
       ast = NULL;\
     }
 
+#define SCOPE_TEST(code, expected)\
+  {\
+    Zone z;\
+    char out[1024];\
+    Parser p(code, strlen(code));\
+    AstNode* ast = p.Execute();\
+    Scope::Analyze(ast);\
+    p.Print(out, 1000);\
+    assert(ast != NULL);\
+    assert(strcmp(expected, out) == 0);\
+    ast = NULL;\
+  }
+
 #define BENCH_START(name, num)\
     timeval __bench_##name##_start;\
     gettimeofday(&__bench_##name##_start, NULL);
