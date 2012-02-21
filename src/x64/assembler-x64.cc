@@ -53,21 +53,24 @@ void Assembler::jmp(Label* label) {
 
 
 void Assembler::jmp(Condition cond, Label* label) {
+  emitb(0x0F);
   switch (cond) {
    case kEq:
-    emitb(0x0F);
     emitb(0x84);
     break;
    case kLt:
-    emitb(0x0F);
-    emitb(0x8c);
+    emitb(0x8C);
+    break;
+   case kLe:
+    emitb(0x8E);
     break;
    case kGt:
-    emitb(0x0F);
     emitb(0x8F);
     break;
+   case kGe:
+    emitb(0x8D);
+    break;
    case kCarry:
-    emitb(0x0F);
     emitb(0x82);
     break;
    default:

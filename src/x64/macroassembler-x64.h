@@ -17,8 +17,7 @@ class Masm : public Assembler {
   void Allocate(Register result,
                 Register result_end,
                 uint32_t size,
-                Register scratch,
-                Label* runtime_allocate);
+                Register scratch);
 
   // Allocate function context
   void AllocateContext(uint32_t slots);

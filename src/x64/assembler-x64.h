@@ -116,7 +116,9 @@ class Label {
 enum Condition {
   kEq,
   kLt,
+  kLe,
   kGt,
+  kGe,
   kCarry
 };
 

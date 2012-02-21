@@ -9,7 +9,7 @@
 
 namespace dotlang {
 
-void Label::relocate(char* pos) {
+inline void Label::relocate(char* pos) {
   // Label should be relocated only once
   assert(pos_ == NULL);
   pos_ = pos;
@@ -23,7 +23,7 @@ void Label::relocate(char* pos) {
 }
 
 
-void Label::use(char* addr) {
+inline void Label::use(char* addr) {
   if (pos_ == NULL) {
     // If label wasn't allocated - add address into queue
     addrs_.Push(addr);
@@ -34,7 +34,7 @@ void Label::use(char* addr) {
 }
 
 
-void Label::emit(char* addr) {
+inline void Label::emit(char* addr) {
   int32_t* imm = reinterpret_cast<int32_t*>(addr);
   *imm = static_cast<int32_t>(reinterpret_cast<uint64_t>(pos_) -
          reinterpret_cast<uint64_t>(addr) -
@@ -42,56 +42,57 @@ void Label::emit(char* addr) {
 }
 
 
-void Assembler::emit_rex_if_high(Register src) {
+inline void Assembler::emit_rex_if_high(Register src) {
   if (src.high() == 1) emitb(0x40 | 0x01);
 }
 
 
-void Assembler::emit_rexw(Register dst) {
+inline void Assembler::emit_rexw(Register dst) {
   emitb(0x48 | dst.high() << 2);
 }
 
 
-void Assembler::emit_rexw(Operand& dst) {
+inline void Assembler::emit_rexw(Operand& dst) {
   emitb(0x48 | dst.base().high() << 2);
 }
 
 
-void Assembler::emit_rexw(Register dst, Register src) {
+inline void Assembler::emit_rexw(Register dst, Register src) {
   emitb(0x48 | dst.high() << 2 | src.high());
 }
 
 
-void Assembler::emit_rexw(Register dst, Operand& src) {
+inline void Assembler::emit_rexw(Register dst, Operand& src) {
   emitb(0x48 | dst.high() << 2 | src.base().high());
 }
 
 
-void Assembler::emit_rexw(Operand& dst, Register src) {
+inline void Assembler::emit_rexw(Operand& dst, Register src) {
   emitb(0x48 | dst.base().high() << 2 | src.high());
 }
 
 
-void Assembler::emit_modrm(Register dst) {
+inline void Assembler::emit_modrm(Register dst) {
   emitb(0xC0 | dst.low() << 3);
 }
 
 
-void Assembler::emit_modrm(Operand &dst) {
+inline void Assembler::emit_modrm(Operand &dst) {
   if (dst.scale() == Operand::one) {
     emitb(0x80 | dst.base().low());
     emitl(dst.disp());
   } else {
+    // TODO: Support scales
   }
 }
 
 
-void Assembler::emit_modrm(Register dst, Register src) {
+inline void Assembler::emit_modrm(Register dst, Register src) {
   emitb(0xC0 | dst.low() << 3 | src.low());
 }
 
 
-void Assembler::emit_modrm(Register dst, Operand& src) {
+inline void Assembler::emit_modrm(Register dst, Operand& src) {
   if (src.scale() == Operand::one) {
     emitb(0x80 | dst.low() << 3 | src.base().low());
     emitl(src.disp());
@@ -100,40 +101,40 @@ void Assembler::emit_modrm(Register dst, Operand& src) {
 }
 
 
-void Assembler::emit_modrm(Register dst, uint32_t op) {
+inline void Assembler::emit_modrm(Register dst, uint32_t op) {
   emitb(0xC0 | op << 3 | dst.low());
 }
 
 
-void Assembler::emitb(uint8_t v) {
+inline void Assembler::emitb(uint8_t v) {
   *reinterpret_cast<uint8_t*>(pos()) = v;
   offset_ += 1;
   Grow();
 }
 
 
-void Assembler::emitw(uint16_t v) {
+inline void Assembler::emitw(uint16_t v) {
   *reinterpret_cast<uint16_t*>(pos()) = v;
   offset_ += 2;
   Grow();
 }
 
 
-void Assembler::emitl(uint32_t v) {
+inline void Assembler::emitl(uint32_t v) {
   *reinterpret_cast<uint32_t*>(pos()) = v;
   offset_ += 4;
   Grow();
 }
 
 
-void Assembler::emitq(uint64_t v) {
+inline void Assembler::emitq(uint64_t v) {
   *reinterpret_cast<uint64_t*>(pos()) = v;
   offset_ += 8;
   Grow();
 }
 
 
-void Assembler::Grow() {
+inline void Assembler::Grow() {
   if (offset_ + 32 < length_) return;
 
   char* new_buffer = new char[length_ << 1];

@@ -11,6 +11,7 @@ namespace dotlang {
 
 void Fullgen::GeneratePrologue(AstNode* stmt) {
   push(rbp);
+  push(rbx); // callee-save
   push(rsi); // context
   push(rdi); // heap
   movq(rbp, rsp);
@@ -27,7 +28,9 @@ void Fullgen::GenerateEpilogue(AstNode* stmt) {
   movq(rsp, rbp);
   pop(rdi); // restore heap
   pop(rsi); // restore context
+  pop(rbx);
   pop(rbp);
+  movq(rax, 0);
   ret(0);
 }
 
@@ -143,26 +146,15 @@ AstNode* Fullgen::VisitValue(AstNode* node) {
 AstNode* Fullgen::VisitNumber(AstNode* node) {
   assert(visiting_for_value());
 
-  Label runtime_alloc, finish;
-
   // TODO: Move this to AllocateNumber
   Register result_end = result().is(rbx) ? rax : rbx;
-  Allocate(result(), result_end, 16, scratch, &runtime_alloc);
+  Allocate(result(), result_end, 16, scratch);
 
   Operand qtag(result(), 0);
   Operand qvalue(result(), 8);
 
   movq(qtag, Immediate(Heap::kNumber));
   movq(qvalue, Immediate(StringToInt(node->value(), node->length())));
-
-  jmp(&finish);
-  bind(&runtime_alloc);
-
-  // XXX: Allocate number or run GC here
-  // actually number should be unboxed, but that'll be done later :)
-  emitb(0xcc);
-
-  bind(&finish);
 
   return node;
 }
