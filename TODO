@@ -1,0 +1,5 @@
+* Fix tree traversal in fullgen (defer generating function bodies, realloc later)
+* Minimal tests for assignment (var=num, var=var, var=var=num, etc)
+* Binary operations
+* Object literals
+* Array literals
