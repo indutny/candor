@@ -22,7 +22,7 @@ void Fullgen::FFunction::Allocate(char* addr) {
   while (item != NULL) {
     uint64_t* imm = reinterpret_cast<uint64_t*>(item->value());
     *imm = reinterpret_cast<uint64_t>(addr);
-    item->next();
+    item = item->next();
   }
 }
 
@@ -40,7 +40,13 @@ void Fullgen::Generate(AstNode* ast) {
     fn->Allocate(pos());
 
     // Generate function's body
-    Visit(fn->fn());
+    GeneratePrologue(fn->fn());
+    VisitChildren(fn->fn());
+
+    // In case if function doesn't have `return` statements
+    // we should still return `nil` value
+    movq(rax, 0);
+    GenerateEpilogue();
   }
 }
 
@@ -117,14 +123,23 @@ AstNode* Fullgen::VisitForSlot(AstNode* node, Operand* op, Register base) {
 
 
 AstNode* Fullgen::VisitFunction(AstNode* stmt) {
-  // TODO: Generation of body should be deferred
-  GeneratePrologue(stmt);
-  VisitChildren(stmt);
+  FunctionLiteral* fn = FunctionLiteral::Cast(stmt);
+  FFunction* ffn = new FFunction(fn);
+  fns_.Push(ffn);
 
-  // In case if function doesn't have `return` statements
-  // we should still return `nil` value
-  movq(rax, 0);
-  GenerateEpilogue();
+  movq(scratch, Immediate(0));
+  ffn->Use(pos() - 8);
+
+  if (visiting_for_value()) {
+    movq(result(), scratch);
+  } else {
+    // TODO: There should be a runtime error, not assertion
+    assert(fn->variable() != NULL);
+
+    Operand name(rax, 0);
+    VisitForSlot(fn->variable(), &name, scratch);
+    movq(name, scratch);
+  }
 
   return stmt;
 }
@@ -138,7 +153,7 @@ AstNode* Fullgen::VisitAssign(AstNode* stmt) {
   // Get target slot for left-hand side
   Operand lhs(rax, 0);
   ChangeAlign(1);
-  VisitForSlot(stmt->lhs(), &lhs, rax);
+  VisitForSlot(stmt->lhs(), &lhs, scratch);
   ChangeAlign(-1);
   pop(rbx);
 

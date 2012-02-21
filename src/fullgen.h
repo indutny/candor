@@ -45,7 +45,7 @@ class Fullgen : public Masm, public Visitor {
   Fullgen(Heap* heap) : Masm(heap),
                         Visitor(kPreorder),
                         heap_(heap),
-                        visitor_type_(kValue) {
+                        visitor_type_(kSlot) {
   }
 
   void Generate(AstNode* ast);

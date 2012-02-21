@@ -1,5 +1,4 @@
-* Function queuing in fullgen
-* Minimal tests for assignment (var=num, var=var, var=var=num, etc)
+* Generate stubs
 * Context should be allocated before calling function (aka functor)
 * Binary operations
 * Object literals

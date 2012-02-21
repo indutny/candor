@@ -125,7 +125,8 @@ void Masm::AllocateNumber(Register result,
   Operand qvalue(result, 8);
 
   movq(qtag, Immediate(Heap::kNumber));
-  movq(qvalue, Immediate(value));
+  movq(scratch, Immediate(value));
+  movq(qvalue, scratch);
 }
 
 } // namespace dotlang

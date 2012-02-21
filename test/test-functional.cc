@@ -1,12 +1,18 @@
 #include "test.h"
 
 TEST_START("functional test")
-  Script s;
+  FUN_TEST("a = 32\r\nreturn a", {
+    assert(result != NULL);
+    assert(HNumber::Cast(result)->value() == 32);
+  })
 
-  const char* script = "a = 32\r\nreturn a";
-  s.Compile(script, strlen(script));
-  void* result = s.Run();
-  assert(result != NULL);
-  assert(HNumber::Cast(result)->value() == 32);
+  FUN_TEST("a = b = 32\r\nreturn a", {
+    assert(result != NULL);
+    assert(HNumber::Cast(result)->value() == 32);
+  })
 
+  FUN_TEST("a = 32\r\nb = a\r\nreturn b", {
+    assert(result != NULL);
+    assert(HNumber::Cast(result)->value() == 32);
+  })
 TEST_END("functional test")

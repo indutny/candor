@@ -39,17 +39,25 @@
     }
 
 #define SCOPE_TEST(code, expected)\
-  {\
-    Zone z;\
-    char out[1024];\
-    Parser p(code, strlen(code));\
-    AstNode* ast = p.Execute();\
-    Scope::Analyze(ast);\
-    p.Print(out, 1000);\
-    assert(ast != NULL);\
-    assert(strcmp(expected, out) == 0);\
-    ast = NULL;\
-  }
+    {\
+      Zone z;\
+      char out[1024];\
+      Parser p(code, strlen(code));\
+      AstNode* ast = p.Execute();\
+      Scope::Analyze(ast);\
+      p.Print(out, 1000);\
+      assert(ast != NULL);\
+      assert(strcmp(expected, out) == 0);\
+      ast = NULL;\
+    }
+
+#define FUN_TEST(code, block)\
+    {\
+      Script s;\
+      s.Compile(code, strlen(code));\
+      void* result = s.Run();\
+      block\
+    }
 
 #define BENCH_START(name, num)\
     timeval __bench_##name##_start;\
