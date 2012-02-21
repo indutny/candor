@@ -15,6 +15,8 @@ TEST_START("parser test")
   PARSER_TEST("a + b + c", "[kAdd [a] [kAdd [b] [c]]]")
   PARSER_TEST("a + b * c", "[kAdd [a] [kMul [b] [c]]]")
   PARSER_TEST("a * b + c", "[kAdd [kMul [a] [b]] [c]]")
+  PARSER_TEST("a * b + c - d * e",
+              "[kAdd [kMul [a] [b]] [kSub [c] [kMul [d] [e]]]]")
   PARSER_TEST("(a + b) * c", "[kMul [kAdd [a] [b]] [c]]")
 
   // Prefix & Postfix
