@@ -9,7 +9,10 @@ namespace dotlang {
 
 class Masm : public Assembler {
  public:
-  Masm(Heap* heap) : result_(scratch), slot_(NULL), heap_(heap), align_(0) {
+  Masm(Heap* heap) : result_(scratch),
+                     slot_(new Operand(rax, 0)),
+                     heap_(heap),
+                     align_(0) {
   }
 
   // Save/restore all valuable register

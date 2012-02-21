@@ -1,5 +1,6 @@
-* Fix tree traversal in fullgen (defer generating function bodies, realloc later)
+* Function queuing in fullgen
 * Minimal tests for assignment (var=num, var=var, var=var=num, etc)
+* Context should be allocated before calling function (aka functor)
 * Binary operations
 * Object literals
 * Array literals

@@ -21,8 +21,8 @@ void Script::Compile(const char* source, uint32_t length) {
 }
 
 
-void Script::Run() {
-  script->Run();
+void* Script::Run() {
+  return script->Run();
 }
 
 } // namespace dotlang

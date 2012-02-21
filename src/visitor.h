@@ -28,6 +28,7 @@ class Visitor {
   virtual AstNode* VisitName(AstNode* node);
   virtual AstNode* VisitValue(AstNode* node);
   virtual AstNode* VisitNumber(AstNode* node);
+  virtual AstNode* VisitReturn(AstNode* node);
 
  private:
   Type type_;

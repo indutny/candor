@@ -2,6 +2,7 @@
 #define _TEST_TEST_H_
 
 #include <dotlang.h>
+#include <heap.h>
 #include <zone.h>
 
 #include <stdio.h>

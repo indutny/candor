@@ -41,14 +41,14 @@ void CompiledScript::Compile() {
   Scope::Analyze(ast);
 
   // Generate machine code
-  f.Visit(ast);
+  f.Generate(ast);
 
   guard_ = new Guard(f.buffer(), f.length());
 }
 
 
-void CompiledScript::Run() {
-  guard_->AsFunction()(heap_);
+void* CompiledScript::Run() {
+  return guard_->AsFunction()(heap_);
 }
 
 

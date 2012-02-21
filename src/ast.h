@@ -78,7 +78,8 @@ class AstNode : public ZoneObject {
                        value_(NULL),
                        length_(0),
                        stack_count_(0),
-                       context_count_(0) {
+                       context_count_(0),
+                       root_(false) {
   }
 
   virtual ~AstNode() {
@@ -111,6 +112,10 @@ class AstNode : public ZoneObject {
   inline Type type() { return type_; }
   inline void type(Type type) { type_ = type; }
   inline bool is(Type type) { return type_ == type; }
+
+  inline bool is_root() { return root_; }
+  inline void make_root() { root_ = true; }
+
   inline const char* value() { return value_; }
   inline uint32_t length() { return length_; }
 
@@ -169,6 +174,8 @@ class AstNode : public ZoneObject {
 
   int32_t stack_count_;
   int32_t context_count_;
+
+  bool root_;
 
   AstList children_;
 };

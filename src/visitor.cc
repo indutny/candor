@@ -5,24 +5,38 @@
 
 namespace dotlang {
 
+#define VISITOR_MAPPING_BLOCK(V)\
+    V(Function)\
+    V(Block)\
+    V(Assign)\
+    V(Member)\
+    V(Return)
+
+#define VISITOR_MAPPING_REGULAR(V)\
+    V(ScopeDecl)\
+    V(Name)\
+    V(Value)\
+    V(Number)
+
+#define VISITOR_SWITCH(V)\
+    case AstNode::k##V:\
+      return Visit##V(node);
+
+#define VISITOR_BLOCK_STUB(V)\
+    AstNode* Visitor::Visit##V(AstNode* node) {\
+      VisitChildren(node);\
+      return node;\
+    }
+
+#define VISITOR_REGULAR_STUB(V)\
+    AstNode* Visitor::Visit##V(AstNode* node) {\
+      return node;\
+    }
+
 AstNode* Visitor::Visit(AstNode* node) {
   switch (node->type()) {
-   case AstNode::kFunction:
-    return VisitFunction(node);
-   case AstNode::kBlock:
-    return VisitBlock(node);
-   case AstNode::kScopeDecl:
-    return VisitScopeDecl(node);
-   case AstNode::kAssign:
-    return VisitAssign(node);
-   case AstNode::kMember:
-    return VisitMember(node);
-   case AstNode::kName:
-    return VisitName(node);
-   case AstNode::kValue:
-    return VisitValue(node);
-   case AstNode::kNumber:
-    return VisitNumber(node);
+   VISITOR_MAPPING_BLOCK(VISITOR_SWITCH)
+   VISITOR_MAPPING_REGULAR(VISITOR_SWITCH)
    default:
     VisitChildren(node);
     return node;
@@ -52,48 +66,7 @@ void Visitor::VisitChildren(AstNode* node) {
   }
 }
 
-
-AstNode* Visitor::VisitFunction(AstNode* node) {
-  VisitChildren(node);
-  return node;
-}
-
-
-AstNode* Visitor::VisitBlock(AstNode* node) {
-  VisitChildren(node);
-  return node;
-}
-
-
-AstNode* Visitor::VisitScopeDecl(AstNode* node) {
-  return node;
-}
-
-
-AstNode* Visitor::VisitAssign(AstNode* node) {
-  VisitChildren(node);
-  return node;
-}
-
-
-AstNode* Visitor::VisitMember(AstNode* node) {
-  VisitChildren(node);
-  return node;
-}
-
-
-AstNode* Visitor::VisitName(AstNode* node) {
-  return node;
-}
-
-
-AstNode* Visitor::VisitValue(AstNode* node) {
-  return node;
-}
-
-
-AstNode* Visitor::VisitNumber(AstNode* node) {
-  return node;
-}
+VISITOR_MAPPING_BLOCK(VISITOR_BLOCK_STUB)
+VISITOR_MAPPING_REGULAR(VISITOR_REGULAR_STUB)
 
 } // namescape dotlang

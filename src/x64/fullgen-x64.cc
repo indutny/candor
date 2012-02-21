@@ -2,18 +2,54 @@
 #include "fullgen.h"
 #include "heap.h" // Heap
 #include "ast.h" // AstNode
+#include "zone.h" // ZoneObject
 #include "utils.h" // List
 
 #include <assert.h>
-#include <stdint.h>
+#include <stdint.h> // uint32_t
+#include <stdlib.h> // NULL
 
 namespace dotlang {
 
+
+void Fullgen::FFunction::Use(char* place) {
+  uses_.Push(place);
+}
+
+
+void Fullgen::FFunction::Allocate(char* addr) {
+  List<char*, EmptyClass>::Item* item = uses_.head();
+  while (item != NULL) {
+    uint64_t* imm = reinterpret_cast<uint64_t*>(item->value());
+    *imm = reinterpret_cast<uint64_t>(addr);
+    item->next();
+  }
+}
+
+
+void Fullgen::Generate(AstNode* ast) {
+  fns_.Push(new FFunction(FunctionLiteral::Cast(ast)));
+
+  FFunction* fn;
+  while ((fn = fns_.Shift()) != NULL) {
+    // Align function if needed
+    offset_ = RoundUp(offset_, 16);
+    Grow();
+
+    // Replace all function's uses by generated address
+    fn->Allocate(pos());
+
+    // Generate function's body
+    Visit(fn->fn());
+  }
+}
+
+
 void Fullgen::GeneratePrologue(AstNode* stmt) {
+  // rsi <- context (if non-root)
+  // rdi <- heap
   push(rbp);
   push(rbx); // callee-save
-  push(rsi); // context
-  push(rdi); // heap
   movq(rbp, rsp);
 
   // Allocate space for on stack variables
@@ -21,18 +57,18 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
   subq(rsp,
        Immediate(8 + RoundUp((stmt->stack_slots() + 1) * sizeof(void*), 16)));
 
-  // Allocate context
-  AllocateContext(stmt->context_slots());
+  // Main function should allocate context for itself
+  // All other functions will receive context in rsi
+  if (stmt->is_root()) AllocateContext(stmt->context_slots());
 }
 
 
-void Fullgen::GenerateEpilogue(AstNode* stmt) {
+void Fullgen::GenerateEpilogue() {
+  // rax will hold result of function
   movq(rsp, rbp);
-  pop(rdi); // restore heap
-  pop(rsi); // restore context
   pop(rbx);
   pop(rbp);
-  movq(rax, 0);
+
   ret(0);
 }
 
@@ -84,7 +120,11 @@ AstNode* Fullgen::VisitFunction(AstNode* stmt) {
   // TODO: Generation of body should be deferred
   GeneratePrologue(stmt);
   VisitChildren(stmt);
-  GenerateEpilogue(stmt);
+
+  // In case if function doesn't have `return` statements
+  // we should still return `nil` value
+  movq(rax, 0);
+  GenerateEpilogue();
 
   return stmt;
 }
@@ -150,12 +190,26 @@ AstNode* Fullgen::VisitValue(AstNode* node) {
 AstNode* Fullgen::VisitNumber(AstNode* node) {
   assert(visiting_for_value());
 
-  // TODO: Move this to AllocateNumber
   Register result_end = result().is(rbx) ? rax : rbx;
   AllocateNumber(result(),
                  result_end,
                  scratch,
                  StringToInt(node->value(), node->length()));
+  return node;
+}
+
+
+AstNode* Fullgen::VisitReturn(AstNode* node) {
+  if (node->lhs() != NULL) {
+    // Get value of expression
+    VisitForValue(node->lhs(), rax);
+  } else {
+    // Or just nullify output
+    movq(rax, Immediate(0));
+  }
+
+  GenerateEpilogue();
+
   return node;
 }
 

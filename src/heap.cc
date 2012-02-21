@@ -45,4 +45,10 @@ char* Space::Allocate(uint32_t bytes) {
   return result;
 }
 
+
+HNumber* HNumber::Cast(void* value) {
+  assert(*reinterpret_cast<uint64_t*>(value) == Heap::kNumber);
+  return new HNumber(*(reinterpret_cast<int64_t*>(value) + 1));
+}
+
 } // namespace dotlang

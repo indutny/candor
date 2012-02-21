@@ -1,8 +1,12 @@
 #include "test.h"
 
-TEST_START("Functional test")
+TEST_START("functional test")
   Script s;
 
-  s.Compile("a = 32", 6);
-  s.Run();
-TEST_END("Functional test")
+  const char* script = "a = 32\r\nreturn a";
+  s.Compile(script, strlen(script));
+  void* result = s.Run();
+  assert(result != NULL);
+  assert(HNumber::Cast(result)->value() == 32);
+
+TEST_END("functional test")

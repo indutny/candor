@@ -2,6 +2,9 @@
 #define _SRC_FULLGEN_H_
 
 #include "visitor.h"
+#include "ast.h" // AstNode, FunctionLiteral
+#include "zone.h" // ZoneObject
+#include "utils.h" // List
 
 #if __ARCH == x64
 #include "x64/macroassembler-x64.h"
@@ -18,6 +21,22 @@ class Register;
 // Generates non-optimized code by visiting each node in AST tree in-order
 class Fullgen : public Masm, public Visitor {
  public:
+  class FFunction : public ZoneObject {
+   public:
+    FFunction(FunctionLiteral* fn) : fn_(fn) {
+      uses_.allocated = true;
+    }
+
+    void Use(char* place);
+    void Allocate(char* addr);
+
+    inline FunctionLiteral* fn() { return fn_; }
+
+   protected:
+    FunctionLiteral* fn_;
+    List<char*, EmptyClass> uses_;
+  };
+
   enum VisitorType {
     kValue,
     kSlot
@@ -29,14 +48,17 @@ class Fullgen : public Masm, public Visitor {
                         visitor_type_(kValue) {
   }
 
+  void Generate(AstNode* ast);
+
   void GeneratePrologue(AstNode* stmt);
-  void GenerateEpilogue(AstNode* stmt);
+  void GenerateEpilogue();
   void GenerateLookup(AstNode* name);
 
   AstNode* VisitFunction(AstNode* stmt);
   AstNode* VisitAssign(AstNode* stmt);
   AstNode* VisitValue(AstNode* node);
   AstNode* VisitNumber(AstNode* node);
+  AstNode* VisitReturn(AstNode* node);
 
   AstNode* VisitForValue(AstNode* node, Register reg);
   AstNode* VisitForSlot(AstNode* node, Operand* op, Register base);
@@ -48,6 +70,7 @@ class Fullgen : public Masm, public Visitor {
  private:
   Heap* heap_;
   VisitorType visitor_type_;
+  List<FFunction*, ZoneObject> fns_;
 };
 
 } // namespace dotlang

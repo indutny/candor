@@ -152,7 +152,7 @@ AstNode* ScopeAnalyze::VisitFunction(AstNode* node) {
     fn->variable(new AstValue(scope(), fn->variable()));
   }
 
-  Scope scope(this, node == ast_ ? Scope::kBlock : Scope::kFunction);
+  Scope scope(this, node->is_root() ? Scope::kBlock : Scope::kFunction);
 
   VisitChildren(node);
 

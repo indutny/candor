@@ -73,6 +73,21 @@ class Heap {
   Space old_space_;
 };
 
+
+class HNumber {
+ public:
+  HNumber(int64_t value) : value_(value) {
+  }
+
+  static HNumber* Cast(void* value);
+
+  inline int64_t value() { return value_; }
+
+ protected:
+  int64_t value_;
+};
+
+
 } // namespace dotlang
 
 #endif // _SRC_HEAP_H_

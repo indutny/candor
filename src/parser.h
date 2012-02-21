@@ -14,6 +14,7 @@ class Parser : public Lexer {
  public:
   Parser(const char* source, uint32_t length) : Lexer(source, length) {
     ast_ = new FunctionLiteral(NULL, 0);
+    ast_->make_root();
   }
 
   // Used to implement lookahead
