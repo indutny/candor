@@ -64,12 +64,12 @@ src/%.o: src/%.cc
 
 TESTS += test/test-parser
 TESTS += test/test-scope
-TESTS += test/test-api
+TESTS += test/test-functional
 
 test: $(TESTS)
 	@test/test-parser
 	@test/test-scope
-	@test/test-api
+	@test/test-functional
 
 test/%: test/%.cc dotlang.a
 	$(CXX) $(CPPFLAGS) -Isrc $< -o $@ dotlang.a
