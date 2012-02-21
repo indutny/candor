@@ -403,7 +403,7 @@ AstNode* Parser::ParseScope() {
 
 void Parser::Print(char* buffer, uint32_t size) {
   PrintBuffer p(buffer, size);
-  ast()->Print(&p);
+  ast()->PrintChildren(&p, ast()->children());
   p.Finalize();
 }
 
