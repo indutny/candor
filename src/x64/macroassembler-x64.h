@@ -12,6 +12,10 @@ class Masm : public Assembler {
   Masm(Heap* heap) : result_(scratch), slot_(NULL), heap_(heap) {
   }
 
+  // Save/restore all valuable register
+  void Pushad();
+  void Popad();
+
   // Allocate some space in heap's new space current page
   // Jmp to runtime_allocate label on exhaust or fail
   void Allocate(Register result,
@@ -25,6 +29,7 @@ class Masm : public Assembler {
   // See VisitForSlot and VisitForValue in fullgen for disambiguation
   inline Register result() { return result_; }
   inline Operand* slot() { return slot_; }
+  inline Heap* heap() { return heap_; }
 
   Register result_;
   Operand* slot_;

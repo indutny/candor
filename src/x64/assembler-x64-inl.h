@@ -139,9 +139,11 @@ inline void Assembler::Grow() {
 
   char* new_buffer = new char[length_ << 1];
   memcpy(new_buffer, buffer_, length_);
-  memset(new_buffer + length_, 0x90, length_);
+  memset(new_buffer + length_, 0xCC, length_);
+
   delete[] buffer_;
   buffer_ = new_buffer;
+  length_ <<= 1;
 }
 
 } // namespace dotlang

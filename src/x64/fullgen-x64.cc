@@ -17,7 +17,9 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
   movq(rbp, rsp);
 
   // Allocate space for on stack variables
-  subq(rsp, Immediate(RoundUp((stmt->stack_slots() + 1) * sizeof(void*), 16)));
+  // and align stack
+  subq(rsp,
+       Immediate(8 + RoundUp((stmt->stack_slots() + 1) * sizeof(void*), 16)));
 
   // Allocate context
   AllocateContext(stmt->context_slots());

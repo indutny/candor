@@ -41,8 +41,8 @@ class Space {
 
   // Both top and limit are always pointing to current page's
   // top and limit.
-  inline char** top() { return top_; }
-  inline char** limit() { return limit_; }
+  inline char*** top() { return &top_; }
+  inline char*** limit() { return &limit_; }
 
  private:
   char** top_;

@@ -71,7 +71,7 @@ Guard::Guard(char* buffer, uint32_t length) {
   if (buffer_ == MAP_FAILED) abort();
 
   memcpy(buffer_, buffer, length);
-  memset(reinterpret_cast<char*>(buffer_) + length, 0x90, length_ - length);
+  memset(reinterpret_cast<char*>(buffer_) + length, 0xCC, length_ - length);
 
   guard_ = mmap(reinterpret_cast<char*>(buffer_) + length_,
                 page_size_,

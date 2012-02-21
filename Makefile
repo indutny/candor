@@ -23,11 +23,12 @@ all: dotlang.a
 OBJS += src/dotlang.o
 OBJS += src/zone.o
 OBJS += src/lexer.o
-OBJS += src/parser.o
 OBJS += src/visitor.o
-OBJS += src/heap.o
-OBJS += src/compiler.o
+OBJS += src/parser.o
 OBJS += src/scope.o
+OBJS += src/compiler.o
+OBJS += src/heap.o
+OBJS += src/runtime.o
 
 ifeq ($(ARCH),i386)
 	ifeq ($(OS),Darwin)

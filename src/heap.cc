@@ -38,7 +38,11 @@ char* Space::Allocate(uint32_t bytes) {
     select(next);
   }
 
-  return *top_;
+  char* result = *top_;
+
+  *top_ += bytes;
+
+  return result;
 }
 
 } // namespace dotlang

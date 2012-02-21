@@ -132,4 +132,11 @@ void Assembler::subq(Register dst, Immediate imm) {
   emitl(imm.value());
 }
 
+
+void Assembler::callq(Register dst) {
+  emit_rexw(rax, dst);
+  emitb(0xFF);
+  emit_modrm(dst, 2);
+}
+
 } // namespace dotlang

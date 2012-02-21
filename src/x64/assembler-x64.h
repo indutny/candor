@@ -153,6 +153,8 @@ class Assembler {
   void addq(Register dst, Immediate src);
   void subq(Register dst, Immediate imm);
 
+  void callq(Register dst);
+
   // Routines
   inline void emit_rex_if_high(Register src);
   inline void emit_rexw(Register dst);
