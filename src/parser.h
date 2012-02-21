@@ -60,6 +60,10 @@ class Parser : public Lexer {
   }
 
 
+  // Prints AST into buffer (debug purposes only)
+  void Print(char* buffer, uint32_t size);
+
+
   AstNode* Execute();
   AstNode* ParseStatement();
   AstNode* ParseExpression();

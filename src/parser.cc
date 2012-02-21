@@ -350,7 +350,10 @@ AstNode* Parser::ParseBlock(AstNode* block) {
   while (Peek()->is(kCr)) Skip();
   AstNode* result = fn ? block : new AstNode(AstNode::kBlock);
 
-  result->children()->Push(ParseScope());
+  AstNode* scope = ParseScope();
+  if (scope != NULL) {
+    result->children()->Push(scope);
+  }
 
   while (!Peek()->is(kEnd) && !Peek()->is(kBraceClose)) {
     AstNode* stmt = ParseStatement();
@@ -390,6 +393,13 @@ AstNode* Parser::ParseScope() {
   }
 
   return pos.Commit(result);
+}
+
+
+void Parser::Print(char* buffer, uint32_t size) {
+  PrintBuffer p(buffer, size);
+  ast()->Print(&p);
+  p.Finalize();
 }
 
 } // namespace dotlang

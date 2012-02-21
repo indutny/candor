@@ -16,7 +16,27 @@ class AstValue;
 // Just to simplify future use cases
 typedef List<AstNode*, ZoneObject> AstList;
 
-#define TYPE_MAPPING(V)\
+#define TYPE_MAPPING_NORMAL(V)\
+    V(kBlock)\
+    V(kBlockExpr)\
+    V(kScopeDecl)\
+    V(kMember)\
+    V(kValue)\
+    V(kMValue)\
+    V(kProperty)\
+    V(kAssign)\
+    V(kIf)\
+    V(kWhile)\
+    V(kBreak)\
+    V(kReturn)\
+    V(kFunction)\
+    V(kPreInc)\
+    V(kPreDec)\
+    V(kNot)\
+    V(kPostInc)\
+    V(kPostDec)
+
+#define TYPE_MAPPING_LEXER(V)\
     V(kName)\
     V(kNumber)\
     V(kString)\
@@ -45,32 +65,10 @@ typedef List<AstNode*, ZoneObject> AstList;
 class AstNode : public ZoneObject {
  public:
   enum Type {
-    kBlock,
-    kBlockExpr,
-    kScopeDecl,
-    kMember,
-    kValue,
-    kMValue,
-    kProperty,
-    kAssign,
-    kIf,
-    kWhile,
-    kBreak,
-    kReturn,
-    kFunction,
 
-    // Prefixes
-    kPreInc,
-    kPreDec,
-    kNot,
-
-    // Postfixes,
-    kPostInc,
-    kPostDec,
-
-    // Binop and others
 #define MAP_DF(x) x,
-    TYPE_MAPPING(MAP_DF)
+    TYPE_MAPPING_NORMAL(MAP_DF)
+    TYPE_MAPPING_LEXER(MAP_DF)
 #undef MAP_DF
 
     kNop
@@ -90,7 +88,7 @@ class AstNode : public ZoneObject {
   inline static Type ConvertType(Lexer::TokenType type) {
     switch (type) {
 #define MAP_DF(x) case Lexer::x: return x;
-      TYPE_MAPPING(MAP_DF)
+      TYPE_MAPPING_LEXER(MAP_DF)
 #undef MAP_DF
      default:
       return kNop;
@@ -122,6 +120,43 @@ class AstNode : public ZoneObject {
     context_count_ = scope->context_count();
   }
 
+  bool PrintChildren(PrintBuffer* p, AstList* children) {
+    AstList::Item* item = children->head();
+    while (item != NULL) {
+      if (!item->value()->Print(p)) return false;
+      item = item->next();
+      if (item != NULL && !p->Print(" ")) return false;
+    }
+
+    return true;
+  }
+
+  virtual bool Print(PrintBuffer* p) {
+    const char* strtype;
+    switch (type()) {
+#define MAP_DF(x) case x: strtype = #x; break;
+      TYPE_MAPPING_NORMAL(MAP_DF)
+      TYPE_MAPPING_LEXER(MAP_DF)
+#undef MAP_DF
+     default:
+      strtype = "kNop";
+      break;
+    }
+
+    return (is(kName) || is(kTrue) || is (kFalse) || is(kNumber) || is(kNil) ?
+               p->Print("[")
+               :
+               p->Print("[%s ", strtype)
+           ) &&
+
+           (length_ == 0 ||
+           p->PrintValue(value_, length_) &&
+           (children()->length() == 0 || p->Print(" "))) &&
+
+           PrintChildren(p, children()) &&
+           p->Print("]");
+  }
+
   Type type_;
 
   const char* value_;
@@ -132,7 +167,8 @@ class AstNode : public ZoneObject {
 
   AstList children_;
 };
-#undef TYPE_MAPPING
+#undef TYPE_MAPPING_NORMAL
+#undef TYPE_MAPPING_LEXER
 
 
 // Specific AST node for function,
@@ -174,6 +210,21 @@ class FunctionLiteral : public AstNode {
   inline FunctionLiteral* End(uint32_t end) {
     length_ = end - offset_;
     return this;
+  }
+
+
+  bool Print(PrintBuffer* p) {
+    return p->Print("[kFunction ") &&
+           (variable_ == NULL ?
+               p->Print("(anonymous)")
+               :
+               variable_->Print(p)
+           ) &&
+           p->Print(" @[") &&
+           PrintChildren(p, args()) &&
+           p->Print("] ") &&
+           PrintChildren(p, children()) &&
+           p->Print("]");
   }
 
   inline AstList* args() { return &args_; }

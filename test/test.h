@@ -28,8 +28,11 @@
 #define PARSER_TEST(code, block)\
     {\
       Zone z;\
+      char out[1024];\
       Parser p(code, strlen(code));\
       AstNode* ast = p.Execute();\
+      p.Print(out, 1000);\
+      fprintf(stdout, "%s\n", out);\
       assert(ast != NULL);\
       ast = NULL;\
       block\

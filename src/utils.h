@@ -2,7 +2,9 @@
 #define _SRC_UTILS_H_
 
 #include <stdlib.h> // NULL
+#include <stdarg.h> // va_list
 #include <stdint.h> // uint32_t
+#include <stdio.h> // vsnprintf
 #include <string.h> // strncmp, memset
 
 namespace dotlang {
@@ -202,6 +204,54 @@ class HashMap {
   Item* head_;
   Item* current_;
 };
+
+
+// For debug printing AST and other things
+class PrintBuffer {
+ public:
+  PrintBuffer(char* buffer, int32_t size) : buffer_(buffer),
+                                            left_(size),
+                                            total_(0) {
+  }
+
+  bool Print(const char* format, ...) {
+    va_list arguments;
+    va_start(arguments, format);
+    int32_t written = vsnprintf(buffer_, left_, format, arguments);
+    va_end(arguments);
+    return Consume(written);
+  }
+
+  bool PrintValue(const char* value, int32_t size) {
+    Consume(size);
+    if (ended()) return false;
+    memcpy(buffer_ - size, value, size);
+
+    return !ended();
+  }
+
+  bool Consume(int32_t bytes) {
+    buffer_ += bytes;
+    total_ += bytes;
+    left_ -= bytes;
+
+    return !ended();
+  }
+
+  void Finalize() {
+    if (ended()) return;
+    buffer_[total_] = 0;
+  }
+
+  inline bool ended() { return left_ <= 0; }
+  inline int32_t total() { return total_ <= 0; }
+
+ private:
+  char* buffer_;
+  int32_t left_;
+  int32_t total_;
+};
+
 
 
 // Find minimum number that's greater than value and is dividable by to
