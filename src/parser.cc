@@ -222,9 +222,12 @@ AstNode* Parser::ParseExpression() {
   TokenType type = Peek()->type();
   switch (type) {
    case kInc:
+    Skip();
+    result = Wrap(AstNode::kPostInc, result);
+    break;
    case kDec:
     Skip();
-    result = Wrap(AstNode::ConvertType(type), result);
+    result = Wrap(AstNode::kPostDec, result);
     break;
    default:
     break;
