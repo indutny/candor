@@ -9,12 +9,23 @@ namespace dotlang {
 
 class Masm : public Assembler {
  public:
-  Masm(Heap* heap) : result_(scratch), slot_(NULL), heap_(heap) {
+  Masm(Heap* heap) : result_(scratch), slot_(NULL), heap_(heap), align_(0) {
   }
 
   // Save/restore all valuable register
   void Pushad();
   void Popad();
+
+  // Alignment helpers
+  inline void ChangeAlign(int32_t slots) { align_ += slots; }
+  class Align {
+   public:
+    Align(Masm* masm);
+    ~Align();
+   private:
+    Masm* masm_;
+    int32_t align_;
+  };
 
   // Allocate some space in heap's new space current page
   // Jmp to runtime_allocate label on exhaust or fail
@@ -36,6 +47,9 @@ class Masm : public Assembler {
 
  protected:
   Heap* heap_;
+  int32_t align_;
+
+  friend class Align;
 };
 
 } // namespace dotlang

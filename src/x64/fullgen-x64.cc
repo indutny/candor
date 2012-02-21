@@ -97,7 +97,9 @@ AstNode* Fullgen::VisitAssign(AstNode* stmt) {
 
   // Get target slot for left-hand side
   Operand lhs(rax, 0);
+  ChangeAlign(1);
   VisitForSlot(stmt->lhs(), &lhs, rax);
+  ChangeAlign(-1);
   pop(rbx);
 
   // Put value into slot

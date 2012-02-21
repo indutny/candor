@@ -34,6 +34,18 @@ void Masm::Popad() {
 }
 
 
+Masm::Align::Align(Masm* masm) : masm_(masm), align_(masm->align_){
+  if (align_ % 2 == 0) return;
+  masm_->subq(rsp, align_ * 8);
+}
+
+
+Masm::Align::~Align() {
+  if (align_ % 2 == 0) return;
+  masm_->addq(rsp, align_ * 8);
+}
+
+
 void Masm::Allocate(Register result,
                     Register result_end,
                     uint32_t size,
@@ -69,14 +81,17 @@ void Masm::Allocate(Register result,
   // Invoke runtime allocation stub (and probably GC)
   bind(&runtime_allocate);
 
-  Pushad();
   RuntimeAllocateCallback allocate = &RuntimeAllocate;
 
   movq(rdi, heapref);
   movq(rsi, Immediate(size));
   movq(scratch, Immediate(*reinterpret_cast<uint64_t*>(&allocate)));
-  callq(scratch);
-  Popad();
+  {
+    Align a(this);
+    Pushad();
+    callq(scratch);
+    Popad();
+  }
 
   // Voila result and result_end are pointers
   bind(&done);
