@@ -33,12 +33,18 @@ class ScopeSlot : public ZoneObject {
 
   inline bool is_stack() { return type_ == kStack; }
   inline bool is_context() { return type_ == kContext; }
+
   inline int32_t index() { return index_; }
+  inline void index(int32_t index) { index_ = index; }
   inline int32_t depth() { return depth_; }
+
+  inline List<ScopeSlot*, ZoneObject>* uses() { return &uses_; }
 
   Type type_;
   int32_t index_;
   int32_t depth_;
+
+  List<ScopeSlot*, ZoneObject> uses_;
 };
 
 // On each block or function enter new scope is created

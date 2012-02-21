@@ -70,14 +70,24 @@ void Scope::MoveToContext(const char* name, uint32_t length) {
     // Mark it as context variable in parent scope
     // Bubble up until parent will be found
     Scope* scope = parent_;
+    ScopeSlot* source = NULL;
+
+    // If current scope is a function's scope and it doesn't have
+    // variable that we're seeking for - lookup depth should be set to 1
     int32_t depth = type_ == kFunction;
     while (scope != NULL) {
       if ((slot = scope->Get(name, length)) != NULL &&
           (slot->is_stack() || slot->depth() == 0))  {
-        scope->MoveToContext(name, length);
+        // Move parent's slot to context if it is stack allocated
+        if (slot->is_stack()) scope->MoveToContext(name, length);
+
+        source = slot;
         break;
       }
 
+      // Increase depth as we go further
+      // Contexts are allocated only in functions, so we should not
+      // increase depth when traversing block scopes
       if (scope->type_ == kFunction) depth++;
 
       scope = scope->parent_;
@@ -87,6 +97,9 @@ void Scope::MoveToContext(const char* name, uint32_t length) {
 
     slot = new ScopeSlot(ScopeSlot::kContext, depth);
     Set(name, length, slot);
+
+    // Store reference in original slot
+    if (source != NULL) source->uses()->Push(slot);
   } else if (slot->is_stack()) {
     // Variable was stored in stack, but should be moved into context
     slot->type_ = ScopeSlot::kContext;
@@ -99,10 +112,20 @@ void Scope::MoveToContext(const char* name, uint32_t length) {
 void ScopeSlot::Enumerate(void* scope, ScopeSlot* slot) {
   Scope* scope_ = reinterpret_cast<Scope*>(scope);
 
+  // Do not double process slots
+  if (slot->index() != 0) return;
+
   if (slot->is_stack()) {
-    slot->index_ = scope_->stack_index_++;
+    slot->index(scope_->stack_index_++);
   } else if (slot->is_context()) {
-    slot->index_ = scope_->context_index_++;
+    if (slot->depth() == 0) {
+      slot->index(scope_->context_index_++);
+      List<ScopeSlot*, ZoneObject>::Item* item = slot->uses()->head();
+      while (item != NULL) {
+        item->value()->index(slot->index());
+        item = item->next();
+      }
+    }
   } else {
     assert(0 && "Unreachable");
   }
