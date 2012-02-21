@@ -137,18 +137,18 @@ AstNode* Parser::ParseStatement() {
     case kMul:\
     case kDiv:
 
-#define BINOP_SWITCH(type, result, K)\
+#define BINOP_SWITCH(type, result, priority, K)\
     type = Peek()->type();\
     switch (type) {\
      K\
-      result = ParseBinOp(type, result);\
+      result = ParseBinOp(type, result, priority);\
      default:\
       break;\
     }\
     if (result == NULL) return result;
 
 
-AstNode* Parser::ParseExpression() {
+AstNode* Parser::ParseExpression(int priority) {
   AstNode* result = NULL;
 
   // Parse prefix unops and block expression
@@ -234,12 +234,25 @@ AstNode* Parser::ParseExpression() {
   }
 
   // Parse binops ordered by priority
-  BINOP_SWITCH(type, result, BINOP_PRI1)
-  BINOP_SWITCH(type, result, BINOP_PRI2)
-  BINOP_SWITCH(type, result, BINOP_PRI3)
-  BINOP_SWITCH(type, result, BINOP_PRI4)
-  BINOP_SWITCH(type, result, BINOP_PRI5)
-  BINOP_SWITCH(type, result, BINOP_PRI6)
+  AstNode* initial;
+  do {
+    initial = result;
+    switch (priority) {
+     default:
+     case 1:
+      BINOP_SWITCH(type, result, 1, BINOP_PRI1)
+     case 2:
+      BINOP_SWITCH(type, result, 2, BINOP_PRI2)
+     case 3:
+      BINOP_SWITCH(type, result, 3, BINOP_PRI3)
+     case 4:
+      BINOP_SWITCH(type, result, 4, BINOP_PRI4)
+     case 5:
+      BINOP_SWITCH(type, result, 5, BINOP_PRI5)
+     case 6:
+      BINOP_SWITCH(type, result, 6, BINOP_PRI6)
+    }
+  } while (initial != result);
 
   return pos.Commit(result);
 }
@@ -258,13 +271,13 @@ AstNode* Parser::ParsePrefixUnop(AstNode::Type type) {
 }
 
 
-AstNode* Parser::ParseBinOp(TokenType type, AstNode* lhs) {
+AstNode* Parser::ParseBinOp(TokenType type, AstNode* lhs, int priority) {
   Position pos(this);
 
   // Consume binop token
   Skip();
 
-  AstNode* rhs = ParseExpression();
+  AstNode* rhs = ParseExpression(priority);
   if (rhs == NULL) return NULL;
 
   AstNode* result = Wrap(AstNode::ConvertType(type), lhs);

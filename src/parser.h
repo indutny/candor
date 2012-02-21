@@ -66,9 +66,9 @@ class Parser : public Lexer {
 
   AstNode* Execute();
   AstNode* ParseStatement();
-  AstNode* ParseExpression();
+  AstNode* ParseExpression(int priority = 0);
   AstNode* ParsePrefixUnop(AstNode::Type type);
-  AstNode* ParseBinOp(TokenType type, AstNode* lhs);
+  AstNode* ParseBinOp(TokenType type, AstNode* lhs, int priority = 0);
   AstNode* ParsePrimary();
   AstNode* ParseMember();
   AstNode* ParseBlock(AstNode* block);

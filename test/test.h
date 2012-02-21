@@ -25,17 +25,16 @@
       return 0;\
     }
 
-#define PARSER_TEST(code, block)\
+#define PARSER_TEST(code, expected)\
     {\
       Zone z;\
       char out[1024];\
       Parser p(code, strlen(code));\
       AstNode* ast = p.Execute();\
       p.Print(out, 1000);\
-      fprintf(stdout, "%s\n", out);\
       assert(ast != NULL);\
+      assert(strcmp(expected, out) == 0);\
       ast = NULL;\
-      block\
     }
 
 #define BENCH_START(name, num)\
