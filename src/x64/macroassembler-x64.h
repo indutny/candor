@@ -37,6 +37,12 @@ class Masm : public Assembler {
   // Allocate function context
   void AllocateContext(uint32_t slots);
 
+  // Allocate heap number (XXX: should unbox numbers if possible)
+  void AllocateNumber(Register result,
+                      Register result_end,
+                      Register scratch,
+                      int64_t value);
+
   // See VisitForSlot and VisitForValue in fullgen for disambiguation
   inline Register result() { return result_; }
   inline Operand* slot() { return slot_; }

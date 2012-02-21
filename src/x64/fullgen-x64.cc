@@ -152,14 +152,10 @@ AstNode* Fullgen::VisitNumber(AstNode* node) {
 
   // TODO: Move this to AllocateNumber
   Register result_end = result().is(rbx) ? rax : rbx;
-  Allocate(result(), result_end, 16, scratch);
-
-  Operand qtag(result(), 0);
-  Operand qvalue(result(), 8);
-
-  movq(qtag, Immediate(Heap::kNumber));
-  movq(qvalue, Immediate(StringToInt(node->value(), node->length())));
-
+  AllocateNumber(result(),
+                 result_end,
+                 scratch,
+                 StringToInt(node->value(), node->length()));
   return node;
 }
 

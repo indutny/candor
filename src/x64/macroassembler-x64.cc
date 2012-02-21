@@ -114,4 +114,18 @@ void Masm::AllocateContext(uint32_t slots) {
   movq(rsi, rax);
 }
 
+
+void Masm::AllocateNumber(Register result,
+                          Register result_end,
+                          Register scratch,
+                          int64_t value) {
+  Allocate(result, result_end, 16, scratch);
+
+  Operand qtag(result, 0);
+  Operand qvalue(result, 8);
+
+  movq(qtag, Immediate(Heap::kNumber));
+  movq(qvalue, Immediate(value));
+}
+
 } // namespace dotlang
