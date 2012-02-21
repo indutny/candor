@@ -20,19 +20,11 @@ a() {
   return 1
 }
 a()
-+(b, c) {
-  return binding_plus(b, c)
-}
-b + c
-+(b, c)
-+any_stuff(b, c) {
-  return b + c
-}
-b +any_stuff c
 
 // Blocks
 {
-  scope a
+  scope a // use this to interact with variables from outer blocks
+          // NOTE: the closest one will be choosed
 }
 
 // Expr blocks
