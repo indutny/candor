@@ -317,6 +317,9 @@ AstNode* Parser::ParseMember() {
       // a.b
       Skip();
       next = ParsePrimary();
+      if (next != NULL && next->is(AstNode::kName)) {
+        next->type_ = AstNode::kProperty;
+      }
     } else if (Peek()->is(kArrayOpen)) {
       // a["prop-expr"]
       Skip();
@@ -328,7 +331,6 @@ AstNode* Parser::ParseMember() {
       }
     }
     if (next == NULL) break;
-    if (next->is(AstNode::kName)) next->type_ = AstNode::kProperty;
 
     result = Wrap(AstNode::kMember, result);
     result->children()->Push(next);
