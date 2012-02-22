@@ -203,9 +203,9 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
 
 
 AstNode* Fullgen::VisitAssign(AstNode* stmt) {
+  push(rbx);
   // Get value of right-hand side expression in rbx
   VisitForValue(stmt->rhs(), rbx);
-  push(rbx);
 
   // Get target slot for left-hand side
   Operand lhs(rax, 0);

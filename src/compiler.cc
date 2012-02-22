@@ -49,7 +49,8 @@ void CompiledScript::Compile() {
 
 
 void* CompiledScript::Run() {
-  // Context is undefined
+  // Context is undefined for main function
+  // (It'll allocate new for itself)
   return guard_->AsFunction()(NULL);
 }
 

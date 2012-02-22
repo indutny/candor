@@ -77,7 +77,14 @@ void Masm::Allocate(Register result,
   movq(scratch, limit);
   movq(scratch, scratch_op);
   cmp(result_end, scratch_op);
-  jmp(kLe, &done);
+  jmp(kGt, &runtime_allocate);
+
+  // Update top
+  movq(scratch, top);
+  movq(scratch, scratch_op);
+  movq(scratch_op, result_end);
+
+  jmp(&done);
 
   // Invoke runtime allocation stub (and probably GC)
   bind(&runtime_allocate);

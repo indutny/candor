@@ -1,6 +1,7 @@
 #include "test.h"
 
 TEST_START("functional test")
+  // Basics: return + assign
   FUN_TEST("return 1", {
     assert(result != NULL);
     assert(HNumber::Cast(result)->value() == 1);
@@ -21,6 +22,7 @@ TEST_START("functional test")
     assert(HNumber::Cast(result)->value() == 32);
   })
 
+  // Functions
   FUN_TEST("a() {}\r\nreturn a", {
     assert(result != NULL);
     assert(HFunction::Cast(result)->addr() != NULL);
@@ -31,4 +33,9 @@ TEST_START("functional test")
     assert(HNumber::Cast(result)->value() == 1);
   })
 
+  // Context slots
+  FUN_TEST("b = 13589\r\na() { scope b }\r\nreturn b", {
+    assert(result != NULL);
+    assert(HNumber::Cast(result)->value() == 13589);
+  })
 TEST_END("functional test")
