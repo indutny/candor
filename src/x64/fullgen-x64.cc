@@ -12,23 +12,27 @@
 namespace dotlang {
 
 
-void Fullgen::FFunction::Use(char* place) {
-  uses_.Push(place);
+void Fullgen::FFunction::Use(uint32_t offset) {
+  RelocationInfo* info = new RelocationInfo(
+        RelocationInfo::kAbsolute,
+        RelocationInfo::kQuad,
+        offset - 8);
+  uses_.Push(info);
+  asm_->relocation_info_.Push(info);
 }
 
 
-void Fullgen::FFunction::Allocate(char* addr) {
-  List<char*, EmptyClass>::Item* item = uses_.head();
+void Fullgen::FFunction::Allocate(uint32_t addr) {
+  List<RelocationInfo*, ZoneObject>::Item* item = uses_.head();
   while (item != NULL) {
-    uint64_t* imm = reinterpret_cast<uint64_t*>(item->value());
-    *imm = reinterpret_cast<uint64_t>(addr);
+    item->value()->target(addr);
     item = item->next();
   }
 }
 
 
 void Fullgen::Generate(AstNode* ast) {
-  fns_.Push(new FFunction(FunctionLiteral::Cast(ast)));
+  fns_.Push(new FFunction(this, FunctionLiteral::Cast(ast)));
 
   FFunction* fn;
   while ((fn = fns_.Shift()) != NULL) {
@@ -37,7 +41,7 @@ void Fullgen::Generate(AstNode* ast) {
     Grow();
 
     // Replace all function's uses by generated address
-    fn->Allocate(pos());
+    fn->Allocate(offset());
 
     // Generate function's body
     GeneratePrologue(fn->fn());
@@ -124,11 +128,11 @@ AstNode* Fullgen::VisitForSlot(AstNode* node, Operand* op, Register base) {
 
 AstNode* Fullgen::VisitFunction(AstNode* stmt) {
   FunctionLiteral* fn = FunctionLiteral::Cast(stmt);
-  FFunction* ffn = new FFunction(fn);
+  FFunction* ffn = new FFunction(this, fn);
   fns_.Push(ffn);
 
   movq(scratch, Immediate(0));
-  ffn->Use(pos() - 8);
+  ffn->Use(offset());
 
   if (visiting_for_value()) {
     movq(result(), scratch);

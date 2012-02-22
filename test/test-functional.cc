@@ -15,4 +15,9 @@ TEST_START("functional test")
     assert(result != NULL);
     assert(HNumber::Cast(result)->value() == 32);
   })
+
+  FUN_TEST("a() {}\r\nreturn a", {
+    assert(result != NULL);
+  })
+
 TEST_END("functional test")

@@ -23,18 +23,18 @@ class Fullgen : public Masm, public Visitor {
  public:
   class FFunction : public ZoneObject {
    public:
-    FFunction(FunctionLiteral* fn) : fn_(fn) {
-      uses_.allocated = true;
+    FFunction(Assembler* a, FunctionLiteral* fn) : asm_(a), fn_(fn) {
     }
 
-    void Use(char* place);
-    void Allocate(char* addr);
+    void Use(uint32_t offset);
+    void Allocate(uint32_t address);
 
     inline FunctionLiteral* fn() { return fn_; }
 
    protected:
+    Assembler* asm_;
     FunctionLiteral* fn_;
-    List<char*, EmptyClass> uses_;
+    List<RelocationInfo*, ZoneObject> uses_;
   };
 
   enum VisitorType {
