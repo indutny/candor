@@ -4,7 +4,6 @@
 #include "utils.h" // List
 #include <stdlib.h> // malloc, free, abort
 #include <sys/types.h> // size_t
-#include <unistd.h> // sysconf or getpagesize
 #include <assert.h> // assert
 
 namespace dotlang {
@@ -53,12 +52,7 @@ class Zone {
     current_ = this;
     blocks_.allocated = true;
 
-    // TODO: Move it to utils and reuse code
-#ifdef __DARWIN
-    page_size_ = getpagesize();
-#else
-    page_size_ = sysconf(_SC_PAGE_SIZE);
-#endif
+    page_size_ = GetPageSize();
 
     blocks_.Push(new ZoneBlock(page_size_));
   }

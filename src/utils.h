@@ -6,6 +6,7 @@
 #include <stdint.h> // uint32_t
 #include <stdio.h> // vsnprintf
 #include <string.h> // strncmp, memset
+#include <unistd.h> // sysconf or getpagesize
 
 namespace dotlang {
 
@@ -270,6 +271,15 @@ inline uint64_t StringToInt(const char* value, uint32_t length) {
     result += value[index] - '0';
   }
   return result;
+}
+
+
+inline uint32_t GetPageSize() {
+#ifdef __DARWIN
+  return getpagesize();
+#else
+  return sysconf(_SC_PAGE_SIZE);
+#endif
 }
 
 } // namespace dotlang
