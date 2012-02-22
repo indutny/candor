@@ -36,13 +36,13 @@ void Masm::Popad() {
 
 Masm::Align::Align(Masm* masm) : masm_(masm), align_(masm->align_){
   if (align_ % 2 == 0) return;
-  masm_->subq(rsp, align_ * 8);
+  masm_->subq(rsp, (align_ % 2) * 8);
 }
 
 
 Masm::Align::~Align() {
   if (align_ % 2 == 0) return;
-  masm_->addq(rsp, align_ * 8);
+  masm_->addq(rsp, (align_ % 2) * 8);
 }
 
 
@@ -84,12 +84,14 @@ void Masm::Allocate(Register result,
 
   RuntimeAllocateCallback allocate = &RuntimeAllocate;
 
-  movq(rdi, heapref);
-  movq(rsi, Immediate(size));
   movq(scratch, Immediate(*reinterpret_cast<uint64_t*>(&allocate)));
   {
     Align a(this);
     Pushad();
+
+    // Two arguments: heap and size
+    movq(rdi, heapref);
+    movq(rsi, Immediate(size));
     callq(scratch);
     Popad();
   }
@@ -118,7 +120,7 @@ void Masm::AllocateContext(Register result,
 
   // Move address of current context to first slot
   Operand qparent(result, 8);
-  movq(qparent, rsi);
+  movq(qparent, rdi);
 }
 
 
@@ -131,6 +133,17 @@ void Masm::AllocateNumber(Register result,
   Operand qvalue(result, 8);
   movq(scratch, Immediate(value));
   movq(qvalue, scratch);
+}
+
+
+void Masm::Call(Register fn) {
+  push(rdi);
+  movq(rdi, fn);
+
+  Operand code(rdi, 16);
+  callq(code);
+
+  pop(rdi);
 }
 
 } // namespace dotlang

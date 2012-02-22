@@ -56,8 +56,7 @@ void Fullgen::Generate(AstNode* ast) {
 
 
 void Fullgen::GeneratePrologue(AstNode* stmt) {
-  // rsi <- context (if non-root)
-  // rdi <- heap
+  // rdi <- context (if non-root)
   push(rbp);
   push(rbx); // callee-save
   movq(rbp, rsp);
@@ -68,11 +67,11 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
        Immediate(8 + RoundUp((stmt->stack_slots() + 1) * sizeof(void*), 16)));
 
   // Main function should allocate context for itself
-  // All other functions will receive context in rsi
+  // All other functions will receive context in rdi
   if (stmt->is_root()) {
     AllocateContext(rax, rbx, scratch, stmt->context_slots());
     // Set root context
-    movq(rsi, rax);
+    movq(rdi, rax);
   }
 }
 
@@ -135,23 +134,26 @@ AstNode* Fullgen::VisitFunction(AstNode* stmt) {
   FFunction* ffn = new FFunction(this, fn);
   fns_.Push(ffn);
 
-  movq(scratch, Immediate(0));
-  ffn->Use(offset());
-
   push(rax);
   push(rbx);
-  ChangeAlign(2);
+  push(rcx);
+
+  movq(rcx, Immediate(0));
+  ffn->Use(offset());
+
+  ChangeAlign(3);
 
   AllocateContext(rax, rbx, scratch, stmt->context_slots());
 
   // Put address of code chunk into second slot
   Operand code(rax, 16);
-  movq(code, scratch);
+  movq(code, rcx);
 
   if (visiting_for_value()) {
     movq(result(), rax);
   } else {
     // TODO: There should be a runtime error, not assertion
+    // Or a parse error
     assert(fn->variable() != NULL);
 
     // Get slot
@@ -162,9 +164,39 @@ AstNode* Fullgen::VisitFunction(AstNode* stmt) {
     movq(name, rax);
   }
 
-  ChangeAlign(-2);
+  ChangeAlign(-3);
+  pop(rcx);
   pop(rbx);
   pop(rax);
+
+  return stmt;
+}
+
+
+AstNode* Fullgen::VisitCall(AstNode* stmt) {
+  FunctionLiteral* fn = FunctionLiteral::Cast(stmt);
+
+  // Save rax if we're not going to overwrite it
+  if (!visiting_for_value() || !result().is(rax)) {
+    push(rax);
+  }
+
+  // Get pointer to function in a heap
+  assert(fn->variable() != NULL);
+  VisitForValue(fn->variable(), scratch);
+
+  // Generate calling code
+  Call(scratch);
+
+  // Restore rax and set result if needed
+  if (visiting_for_value()) {
+    if (!result().is(rax)) {
+      movq(result(), rax);
+      pop(rax);
+    }
+  } else {
+    pop(rax);
+  }
 
   return stmt;
 }
@@ -203,7 +235,7 @@ AstNode* Fullgen::VisitValue(AstNode* node) {
     slot()->disp(-sizeof(void*) * (value->slot()->index() + 1));
   } else {
     // Context variables
-    movq(result(), rsi);
+    movq(result(), rdi);
 
     // Lookup context
     int32_t depth = value->slot()->depth();

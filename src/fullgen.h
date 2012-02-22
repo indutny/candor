@@ -55,6 +55,7 @@ class Fullgen : public Masm, public Visitor {
   void GenerateLookup(AstNode* name);
 
   AstNode* VisitFunction(AstNode* stmt);
+  AstNode* VisitCall(AstNode* stmt);
   AstNode* VisitAssign(AstNode* stmt);
   AstNode* VisitValue(AstNode* node);
   AstNode* VisitNumber(AstNode* node);

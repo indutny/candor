@@ -57,6 +57,7 @@
       Script s;\
       s.Compile(code, strlen(code));\
       void* result = s.Run();\
+      result = result;\
       block\
     }
 

@@ -30,6 +30,7 @@ typedef List<AstNode*, ZoneObject> AstList;
     V(kBreak)\
     V(kReturn)\
     V(kFunction)\
+    V(kCall)\
     V(kPreInc)\
     V(kPreDec)\
     V(kNot)\
@@ -203,6 +204,9 @@ class FunctionLiteral : public AstNode {
     if (children()->length() == 0) {
       // So it should have a name
       if (variable() == NULL) return false;
+
+      // Transform node into a call
+      type(kCall);
       return true;
     }
 
@@ -226,7 +230,7 @@ class FunctionLiteral : public AstNode {
 
 
   bool Print(PrintBuffer* p) {
-    return p->Print("[kFunction ") &&
+    return p->Print(type() == kFunction ? "[kFunction " : "[kCall ") &&
            (variable() == NULL ?
                p->Print("(anonymous)")
                :

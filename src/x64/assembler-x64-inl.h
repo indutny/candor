@@ -99,6 +99,12 @@ inline void Assembler::emit_modrm(Register dst, uint32_t op) {
 }
 
 
+inline void Assembler::emit_modrm(Operand& dst, uint32_t op) {
+  emitb(0x80 | op << 3 | dst.base().low());
+  emitl(dst.disp());
+}
+
+
 inline void Assembler::emitb(uint8_t v) {
   *reinterpret_cast<uint8_t*>(pos()) = v;
   offset_ += 1;
@@ -124,19 +130,6 @@ inline void Assembler::emitq(uint64_t v) {
   *reinterpret_cast<uint64_t*>(pos()) = v;
   offset_ += 8;
   Grow();
-}
-
-
-inline void Assembler::Grow() {
-  if (offset_ + 32 < length_) return;
-
-  char* new_buffer = new char[length_ << 1];
-  memcpy(new_buffer, buffer_, length_);
-  memset(new_buffer + length_, 0xCC, length_);
-
-  delete[] buffer_;
-  buffer_ = new_buffer;
-  length_ <<= 1;
 }
 
 } // namespace dotlang

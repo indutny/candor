@@ -49,7 +49,8 @@ void CompiledScript::Compile() {
 
 
 void* CompiledScript::Run() {
-  return guard_->AsFunction()(heap_);
+  // Context is undefined
+  return guard_->AsFunction()(NULL);
 }
 
 

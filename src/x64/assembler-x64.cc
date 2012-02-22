@@ -40,6 +40,19 @@ void Assembler::Relocate(char* buffer) {
 }
 
 
+void Assembler::Grow() {
+  if (offset_ + 32 < length_) return;
+
+  char* new_buffer = new char[length_ << 1];
+  memcpy(new_buffer, buffer_, length_);
+  memset(new_buffer + length_, 0xCC, length_);
+
+  delete[] buffer_;
+  buffer_ = new_buffer;
+  length_ <<= 1;
+}
+
+
 void Assembler::push(Register src) {
   emit_rex_if_high(src);
   emitb(0x50 | src.low());
@@ -171,6 +184,13 @@ void Assembler::subq(Register dst, Immediate imm) {
 
 
 void Assembler::callq(Register dst) {
+  emit_rexw(rax, dst);
+  emitb(0xFF);
+  emit_modrm(dst, 2);
+}
+
+
+void Assembler::callq(Operand& dst) {
   emit_rexw(rax, dst);
   emitb(0xFF);
   emit_modrm(dst, 2);

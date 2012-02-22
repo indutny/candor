@@ -162,6 +162,11 @@ AstNode* ScopeAnalyze::VisitFunction(AstNode* node) {
 }
 
 
+AstNode* ScopeAnalyze::VisitCall(AstNode* node) {
+  return VisitFunction(node);
+}
+
+
 AstNode* ScopeAnalyze::VisitBlock(AstNode* node) {
   Scope scope(this, Scope::kBlock);
   VisitChildren(node);

@@ -26,4 +26,9 @@ TEST_START("functional test")
     assert(HFunction::Cast(result)->addr() != NULL);
   })
 
+  FUN_TEST("a() { return 1 }\r\nreturn a()", {
+    assert(result != NULL);
+    assert(HNumber::Cast(result)->value() == 1);
+  })
+
 TEST_END("functional test")

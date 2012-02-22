@@ -29,8 +29,8 @@ TEST_START("parser test")
   PARSER_TEST("++a !== b++", "[kPreInc [kStrictNe [a] [kPostInc [b]]]]")
 
   // Function delcaration and call
-  PARSER_TEST("a()", "[kFunction [a] @[] ]")
-  PARSER_TEST("a(b,c,d)", "[kFunction [a] @[[b] [c] [d]] ]")
+  PARSER_TEST("a()", "[kCall [a] @[] ]")
+  PARSER_TEST("a(b,c,d)", "[kCall [a] @[[b] [c] [d]] ]")
   PARSER_TEST("a() {}", "[kFunction [a] @[] [kNop ]]")
   PARSER_TEST("a(b, c, d) { return b }",
               "[kFunction [a] @[[b] [c] [d]] [kReturn [b]]]")
@@ -43,7 +43,7 @@ TEST_START("parser test")
               "[kProperty c]] [kProperty d]] [kProperty e]]")
   PARSER_TEST("a[b][c][d][e()]",
               "[kMember [kMember [kMember [kMember [a] [b]] [c]] [d]] "
-              "[kFunction [e] @[] ]]")
+              "[kCall [e] @[] ]]")
 
   // While
   PARSER_TEST("while(true) {}", "[kWhile [true] [kBlock [kNop ]]]")
@@ -67,10 +67,10 @@ TEST_START("parser test")
               "[kBlock [kIf [kGt [kPostInc [p]] [10]] [kBreak ]]]]")
 
   // Block expression
-  PARSER_TEST("a({})", "[kFunction [a] @[[kBlockExpr [kNop ]]] ]")
-  PARSER_TEST("a({ x + 1 })", "[kFunction [a] @[[kBlockExpr [kAdd [x] [1]]]] ]")
+  PARSER_TEST("a({})", "[kCall [a] @[[kBlockExpr [kNop ]]] ]")
+  PARSER_TEST("a({ x + 1 })", "[kCall [a] @[[kBlockExpr [kAdd [x] [1]]]] ]")
   PARSER_TEST("a({\n scope x\n x + 1 })",
-              "[kFunction [a] @[[kBlockExpr [kScopeDecl [x]] "
+              "[kCall [a] @[[kBlockExpr [kScopeDecl [x]] "
               "[kAdd [x] [1]]]] ]")
 
   // Nested scopes

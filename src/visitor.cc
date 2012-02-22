@@ -7,6 +7,7 @@ namespace dotlang {
 
 #define VISITOR_MAPPING_BLOCK(V)\
     V(Function)\
+    V(Call)\
     V(Block)\
     V(Assign)\
     V(Member)\

@@ -198,6 +198,7 @@ class Assembler {
   void subq(Register dst, Immediate imm);
 
   void callq(Register dst);
+  void callq(Operand& dst);
 
   // Routines
   inline void emit_rex_if_high(Register src);
@@ -212,6 +213,7 @@ class Assembler {
   inline void emit_modrm(Register dst, Register src);
   inline void emit_modrm(Register dst, Operand& src);
   inline void emit_modrm(Register dst, uint32_t op);
+  inline void emit_modrm(Operand& dst, uint32_t op);
 
   inline void emitb(uint8_t v);
   inline void emitw(uint16_t v);
@@ -219,7 +221,7 @@ class Assembler {
   inline void emitq(uint64_t v);
 
   // Increase buffer size automatically
-  inline void Grow();
+  void Grow();
 
   inline char* pos() { return buffer_ + offset_; }
   inline char* buffer() { return buffer_; }

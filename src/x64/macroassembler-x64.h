@@ -50,6 +50,9 @@ class Masm : public Assembler {
                       Register scratch,
                       int64_t value);
 
+  // Sets correct environment and calls function
+  void Call(Register fn);
+
   // See VisitForSlot and VisitForValue in fullgen for disambiguation
   inline Register result() { return result_; }
   inline Operand* slot() { return slot_; }

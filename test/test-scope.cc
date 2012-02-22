@@ -7,6 +7,7 @@ TEST_START("scope test")
   SCOPE_TEST("a", "[a @stack:0]")
   SCOPE_TEST("a + b", "[kAdd [a @stack:0] [b @stack:1]]")
   SCOPE_TEST("a\r\n{ b }", "[a @stack:1] [kBlock [b @stack:0]]")
+  SCOPE_TEST("a()", "[kCall [a @stack:0] @[] ]")
   SCOPE_TEST("a\r\na() { b }",
              "[a @stack:0] [kFunction [a @stack:0] @[] [b @stack:0]]")
   SCOPE_TEST("a\r\n() { scope a\r\n a }",

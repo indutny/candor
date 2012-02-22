@@ -7,7 +7,7 @@
 namespace dotlang {
 
 class Heap;
-typedef void* (*CompiledFunction)(Heap* heap);
+typedef void* (*CompiledFunction)(void* context);
 
 // Guards executable page with non-readable&non-executable page
 class Guard {

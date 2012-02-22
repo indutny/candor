@@ -95,6 +95,7 @@ class ScopeAnalyze : public Visitor {
   ScopeAnalyze(AstNode* ast);
 
   AstNode* VisitFunction(AstNode* node);
+  AstNode* VisitCall(AstNode* node);
   AstNode* VisitBlock(AstNode* node);
   AstNode* VisitScopeDecl(AstNode* node);
   AstNode* VisitName(AstNode* node);
