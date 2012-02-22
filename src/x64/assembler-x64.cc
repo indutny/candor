@@ -182,7 +182,7 @@ void Assembler::addq(Register dst, Register src) {
 
 void Assembler::addq(Register dst, Operand& src) {
   emit_rexw(dst, src);
-  emitb(0x01);
+  emitb(0x03);
   emit_modrm(dst, src);
 }
 

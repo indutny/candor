@@ -69,8 +69,10 @@ void Masm::Allocate(Heap::HeapTag tag, uint32_t size, Register result) {
   ChangeAlign(2);
   Align a(this);
 
-  push(Immediate(size));
-  push(Immediate(tag));
+  movq(rax, Immediate(size));
+  push(rax);
+  movq(rax, Immediate(tag));
+  push(rax);
   Call(stubs()->GetAllocateStub());
 
   ChangeAlign(-2);
