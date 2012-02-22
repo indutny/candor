@@ -1,5 +1,3 @@
-* Relocation for absolute addresses (and make Labels use offsets instead of pointers)
-  Asm::Relocate(void* new_addr)
 * Generate stubs (via defines)
 * Context should be allocated before calling function (aka functor)
 * Binary operations

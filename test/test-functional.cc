@@ -1,6 +1,11 @@
 #include "test.h"
 
 TEST_START("functional test")
+  FUN_TEST("return 1", {
+    assert(result != NULL);
+    assert(HNumber::Cast(result)->value() == 1);
+  })
+
   FUN_TEST("a = 32\r\nreturn a", {
     assert(result != NULL);
     assert(HNumber::Cast(result)->value() == 32);

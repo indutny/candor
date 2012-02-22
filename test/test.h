@@ -53,6 +53,7 @@
 
 #define FUN_TEST(code, block)\
     {\
+      Zone z;\
       Script s;\
       s.Compile(code, strlen(code));\
       void* result = s.Run();\

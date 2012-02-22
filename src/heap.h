@@ -10,6 +10,7 @@
 // Both spaces are lists of allocated buffers(pages) with a stack structure
 //
 
+#include "zone.h" // ZoneObject
 #include "utils.h"
 #include <stdint.h> // uint32_t
 
@@ -74,7 +75,7 @@ class Heap {
 };
 
 
-class HNumber {
+class HNumber : ZoneObject {
  public:
   HNumber(int64_t value) : value_(value) {
   }
@@ -88,7 +89,7 @@ class HNumber {
 };
 
 
-class HFunction {
+class HFunction : ZoneObject {
  public:
   HFunction(char* addr) : addr_(addr) {
   }

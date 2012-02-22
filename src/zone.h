@@ -49,6 +49,7 @@ class Zone {
 
   Zone() {
     // TODO: this should use thread id
+    parent_ = current_;
     current_ = this;
     blocks_.allocated = true;
 
@@ -62,9 +63,14 @@ class Zone {
     blocks_.Push(new ZoneBlock(page_size_));
   }
 
+  ~Zone() {
+    current_ = parent_;
+  }
+
   void* Allocate(size_t size);
 
   static Zone* current_;
+  Zone* parent_;
 
   List<ZoneBlock*, ZoneItem> blocks_;
 
