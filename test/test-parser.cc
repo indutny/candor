@@ -31,7 +31,7 @@ TEST_START("parser test")
   // Function delcaration and call
   PARSER_TEST("a()", "[kFunction [a] @[] ]")
   PARSER_TEST("a(b,c,d)", "[kFunction [a] @[[b] [c] [d]] ]")
-  PARSER_TEST("a() {}", "[kFunction [a] @[] ]")
+  PARSER_TEST("a() {}", "[kFunction [a] @[] [kNop ]]")
   PARSER_TEST("a(b, c, d) { return b }",
               "[kFunction [a] @[[b] [c] [d]] [kReturn [b]]]")
   PARSER_TEST("(b, c, d) { return b }",
@@ -46,7 +46,7 @@ TEST_START("parser test")
               "[kFunction [e] @[] ]]")
 
   // While
-  PARSER_TEST("while(true) {}", "[kWhile [true] [kBlock ]]")
+  PARSER_TEST("while(true) {}", "[kWhile [true] [kBlock [kNop ]]]")
   PARSER_TEST("while(true) { x = x + 1 }",
               "[kWhile [true] [kBlock [kAssign [x] [kAdd [x] [1]]]]]")
   PARSER_TEST("while(y * y & z) { x = x + 1 }",
@@ -54,8 +54,9 @@ TEST_START("parser test")
               "[kBlock [kAssign [x] [kAdd [x] [1]]]]]")
 
   // If
-  PARSER_TEST("if(true) {}", "[kIf [true] [kBlock ]]")
-  PARSER_TEST("if(true) {} else {}", "[kIf [true] [kBlock ] [kBlock ]]")
+  PARSER_TEST("if(true) {}", "[kIf [true] [kBlock [kNop ]]]")
+  PARSER_TEST("if(true) {} else {}",
+              "[kIf [true] [kBlock [kNop ]] [kBlock [kNop ]]]")
   PARSER_TEST("if (true) { x }", "[kIf [true] [kBlock [x]]]")
   PARSER_TEST("if (true) { x } else { y }",
               "[kIf [true] [kBlock [x]] [kBlock [y]]]")
@@ -66,12 +67,12 @@ TEST_START("parser test")
               "[kBlock [kIf [kGt [kPostInc [p]] [10]] [kBreak ]]]]")
 
   // Block expression
-  PARSER_TEST("a({})", "[kFunction [a] @[[kBlockExpr ]] ]")
+  PARSER_TEST("a({})", "[kFunction [a] @[[kBlockExpr [kNop ]]] ]")
   PARSER_TEST("a({ x + 1 })", "[kFunction [a] @[[kBlockExpr [kAdd [x] [1]]]] ]")
   PARSER_TEST("a({\n scope x\n x + 1 })",
               "[kFunction [a] @[[kBlockExpr [kScopeDecl [x]] "
               "[kAdd [x] [1]]]] ]")
 
   // Nested scopes
-  PARSER_TEST("{{{{}}}}", "[kBlock [kBlock [kBlock [kBlock ]]]]")
+  PARSER_TEST("{{{{}}}}", "[kBlock [kBlock [kBlock [kBlock [kNop ]]]]]")
 TEST_END("parser test")

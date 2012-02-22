@@ -385,6 +385,11 @@ AstNode* Parser::ParseBlock(AstNode* block) {
   if (!Peek()->is(kEnd) && !Peek()->is(kBraceClose)) return NULL;
   Skip();
 
+  // Block should not be empty
+  if (result->children()->length() == 0) {
+    result->children()->Push(new AstNode(AstNode::kNop));
+  }
+
   return pos.Commit(result);
 }
 
