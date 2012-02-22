@@ -61,7 +61,10 @@ Masm::Align::~Align() {
 
 
 void Masm::Allocate(Heap::HeapTag tag, uint32_t size, Register result) {
-  if (!result.is(rax)) push(rax);
+  if (!result.is(rax)) {
+    ChangeAlign(1);
+    push(rax);
+  }
 
   ChangeAlign(2);
   Align a(this);
@@ -75,6 +78,7 @@ void Masm::Allocate(Heap::HeapTag tag, uint32_t size, Register result) {
   if (!result.is(rax)) {
     movq(result, rax);
     pop(rax);
+    ChangeAlign(-1);
   }
 }
 
