@@ -88,6 +88,20 @@ class HNumber {
 };
 
 
+class HFunction {
+ public:
+  HFunction(char* addr) : addr_(addr) {
+  }
+
+  static HFunction* Cast(void* value);
+
+  inline char* addr() { return addr_; }
+
+ protected:
+  char* addr_;
+};
+
+
 } // namespace dotlang
 
 #endif // _SRC_HEAP_H_

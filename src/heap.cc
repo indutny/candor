@@ -51,4 +51,11 @@ HNumber* HNumber::Cast(void* value) {
   return new HNumber(*(reinterpret_cast<int64_t*>(value) + 1));
 }
 
+
+HFunction* HFunction::Cast(void* value) {
+  assert(*reinterpret_cast<uint64_t*>(value) == Heap::kContext);
+
+  return new HFunction(*(reinterpret_cast<char**>(value) + 1));
+}
+
 } // namespace dotlang

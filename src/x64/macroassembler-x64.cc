@@ -48,6 +48,7 @@ Masm::Align::~Align() {
 
 void Masm::Allocate(Register result,
                     Register result_end,
+                    Heap::HeapTag tag,
                     uint32_t size,
                     Register scratch) {
 
@@ -95,23 +96,29 @@ void Masm::Allocate(Register result,
 
   // Voila result and result_end are pointers
   bind(&done);
+
+  // Set tag
+  Operand qtag(result, 0);
+  movq(qtag, tag);
 }
 
 
-void Masm::AllocateContext(uint32_t slots) {
+void Masm::AllocateContext(Register result,
+                           Register result_end,
+                           Register scratch,
+                           uint32_t slots) {
   // We can use any registers here
   // because context allocation is performed in prelude
   // and nothing can be affected yet
-  Allocate(rax, rbx, sizeof(void*) * (slots + 2), scratch);
+  Allocate(result,
+           result_end,
+           Heap::kContext,
+           sizeof(void*) * (slots + 3),
+           scratch);
 
-  Operand qtag(rax, 0);
-  Operand qparent(rax, 8);
-
-  movq(qtag, Heap::kContext);
+  // Move address of current context to first slot
+  Operand qparent(result, 8);
   movq(qparent, rsi);
-
-  // Replace reference to context
-  movq(rsi, rax);
 }
 
 
@@ -119,12 +126,9 @@ void Masm::AllocateNumber(Register result,
                           Register result_end,
                           Register scratch,
                           int64_t value) {
-  Allocate(result, result_end, 16, scratch);
+  Allocate(result, result_end, Heap::kNumber, 16, scratch);
 
-  Operand qtag(result, 0);
   Operand qvalue(result, 8);
-
-  movq(qtag, Immediate(Heap::kNumber));
   movq(scratch, Immediate(value));
   movq(qvalue, scratch);
 }

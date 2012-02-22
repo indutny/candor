@@ -34,11 +34,15 @@ class Masm : public Assembler {
   // Jmp to runtime_allocate label on exhaust or fail
   void Allocate(Register result,
                 Register result_end,
+                Heap::HeapTag tag,
                 uint32_t size,
                 Register scratch);
 
   // Allocate function context
-  void AllocateContext(uint32_t slots);
+  void AllocateContext(Register result,
+                       Register result_end,
+                       Register scratch,
+                       uint32_t slots);
 
   // Allocate heap number (XXX: should unbox numbers if possible)
   void AllocateNumber(Register result,

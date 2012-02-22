@@ -69,7 +69,11 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
 
   // Main function should allocate context for itself
   // All other functions will receive context in rsi
-  if (stmt->is_root()) AllocateContext(stmt->context_slots());
+  if (stmt->is_root()) {
+    AllocateContext(rax, rbx, scratch, stmt->context_slots());
+    // Set root context
+    movq(rsi, rax);
+  }
 }
 
 
@@ -134,16 +138,33 @@ AstNode* Fullgen::VisitFunction(AstNode* stmt) {
   movq(scratch, Immediate(0));
   ffn->Use(offset());
 
+  push(rax);
+  push(rbx);
+  ChangeAlign(2);
+
+  AllocateContext(rax, rbx, scratch, stmt->context_slots());
+
+  // Put address of code chunk into second slot
+  Operand code(rax, 16);
+  movq(code, scratch);
+
   if (visiting_for_value()) {
-    movq(result(), scratch);
+    movq(result(), rax);
   } else {
     // TODO: There should be a runtime error, not assertion
     assert(fn->variable() != NULL);
 
+    // Get slot
     Operand name(rax, 0);
     VisitForSlot(fn->variable(), &name, scratch);
-    movq(name, scratch);
+
+    // Put context into slot
+    movq(name, rax);
   }
+
+  ChangeAlign(-2);
+  pop(rbx);
+  pop(rax);
 
   return stmt;
 }
@@ -193,8 +214,8 @@ AstNode* Fullgen::VisitValue(AstNode* node) {
 
     slot()->base(result());
     slot()->scale(Operand::one);
-    // Skip tag and reference to parent scope
-    slot()->disp(sizeof(void*) * (value->slot()->index() + 2));
+    // Skip tag, code addr and reference to parent scope
+    slot()->disp(sizeof(void*) * (value->slot()->index() + 3));
   }
 
   // If we was asked to return value - dereference slot
