@@ -39,10 +39,8 @@ TEST_START("functional test")
     assert(HNumber::Cast(result)->value() == 13589);
   })
 
-/*
   FUN_TEST("b = 13589\r\na() { scope b\r\nb = 1234 }\r\na()\r\nreturn b", {
     assert(result != NULL);
     assert(HNumber::Cast(result)->value() == 1234);
   })
-*/
 TEST_END("functional test")
