@@ -6,14 +6,17 @@
 
 namespace dotlang {
 
+// Forward declaration
 class Heap;
-typedef void* (*CompiledFunction)(void* context);
+
 
 // Guards executable page with non-readable&non-executable page
 class Guard {
  public:
   Guard(char* buffer, uint32_t length);
   ~Guard();
+
+  typedef void* (*CompiledFunction)(void* context);
 
   inline CompiledFunction AsFunction() {
     return reinterpret_cast<CompiledFunction>(buffer_);

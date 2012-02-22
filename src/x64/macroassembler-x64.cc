@@ -1,7 +1,15 @@
 #include "macroassembler-x64.h"
-#include "runtime.h"
+#include "stubs.h"
 
 namespace dotlang {
+
+Masm::Masm(Heap* heap) : result_(scratch),
+                         slot_(new Operand(rax, 0)),
+                         heap_(heap),
+                         stubs_(new Stubs(this)),
+                         align_(0) {
+}
+
 
 void Masm::Pushad() {
   // 10 registers to save (10 * 8 = 16 * 5, so stack should be aligned)
@@ -34,6 +42,12 @@ void Masm::Popad() {
 }
 
 
+void Masm::AlignCode() {
+  offset_ = RoundUp(offset_, 16);
+  Grow();
+}
+
+
 Masm::Align::Align(Masm* masm) : masm_(masm), align_(masm->align_){
   if (align_ % 2 == 0) return;
   masm_->subq(rsp, (align_ % 2) * 8);
@@ -49,72 +63,29 @@ Masm::Align::~Align() {
 void Masm::Allocate(Register result,
                     Register result_end,
                     Heap::HeapTag tag,
-                    uint32_t size,
-                    Register scratch) {
+                    uint32_t size) {
+  push(r12);
+  push(r13);
+  push(r14);
+  push(r15);
 
-  Label runtime_allocate(this), done(this);
+  movq(r14, Immediate(tag));
+  movq(r15, Immediate(size));
 
-  Immediate heapref(reinterpret_cast<uint64_t>(heap()));
-  Immediate top(reinterpret_cast<uint64_t>(heap()->new_space()->top()));
-  Immediate limit(reinterpret_cast<uint64_t>(heap()->new_space()->limit()));
+  Call(stubs()->GetAllocateStub());
 
-  Operand scratch_op(scratch, 0);
+  movq(result, r12);
+  movq(result_end, r13);
 
-  // Get pointer to current page's top
-  // (new_space()->top() is a pointer to space's property
-  // which is a pointer to page's top pointer
-  // that's why we are dereferencing it here twice
-  movq(scratch, top);
-  movq(scratch, scratch_op);
-  movq(result, scratch_op);
-  movq(result_end, result);
-
-  // Add object size to the top
-  addq(result_end, Immediate(size));
-  jmp(kCarry, &runtime_allocate);
-
-  // Check if we exhausted buffer
-  movq(scratch, limit);
-  movq(scratch, scratch_op);
-  cmp(result_end, scratch_op);
-  jmp(kGt, &runtime_allocate);
-
-  // Update top
-  movq(scratch, top);
-  movq(scratch, scratch_op);
-  movq(scratch_op, result_end);
-
-  jmp(&done);
-
-  // Invoke runtime allocation stub (and probably GC)
-  bind(&runtime_allocate);
-
-  RuntimeAllocateCallback allocate = &RuntimeAllocate;
-
-  movq(scratch, Immediate(*reinterpret_cast<uint64_t*>(&allocate)));
-  {
-    Align a(this);
-    Pushad();
-
-    // Two arguments: heap and size
-    movq(rdi, heapref);
-    movq(rsi, Immediate(size));
-    callq(scratch);
-    Popad();
-  }
-
-  // Voila result and result_end are pointers
-  bind(&done);
-
-  // Set tag
-  Operand qtag(result, 0);
-  movq(qtag, tag);
+  pop(r15);
+  pop(r14);
+  pop(r13);
+  pop(r12);
 }
 
 
 void Masm::AllocateContext(Register result,
                            Register result_end,
-                           Register scratch,
                            uint32_t slots) {
   // We can use any registers here
   // because context allocation is performed in prelude
@@ -122,8 +93,7 @@ void Masm::AllocateContext(Register result,
   Allocate(result,
            result_end,
            Heap::kContext,
-           sizeof(void*) * (slots + 3),
-           scratch);
+           sizeof(void*) * (slots + 3));
 
   // Move address of current context to first slot
   Operand qparent(result, 8);
@@ -135,7 +105,7 @@ void Masm::AllocateNumber(Register result,
                           Register result_end,
                           Register scratch,
                           int64_t value) {
-  Allocate(result, result_end, Heap::kNumber, 16, scratch);
+  Allocate(result, result_end, Heap::kNumber, 16);
 
   Operand qvalue(result, 8);
   movq(scratch, Immediate(value));
@@ -144,6 +114,7 @@ void Masm::AllocateNumber(Register result,
 
 
 void Masm::Call(Register fn) {
+  emitb(0xcc);
   push(rdi);
   movq(rdi, fn);
 
@@ -151,6 +122,14 @@ void Masm::Call(Register fn) {
   callq(code);
 
   pop(rdi);
+}
+
+
+void Masm::Call(BaseStub* stub) {
+  movq(scratch, Immediate(0));
+  stub->Use(offset());
+
+  callq(scratch);
 }
 
 } // namespace dotlang

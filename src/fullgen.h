@@ -18,23 +18,40 @@ namespace dotlang {
 class Heap;
 class Register;
 
+class FFunction : public ZoneObject {
+ public:
+  FFunction(Masm* masm) : masm_(masm){
+  }
+
+  void Use(uint32_t offset);
+  void Allocate(uint32_t address);
+  virtual void Generate() = 0;
+
+  inline Masm* masm() { return masm_; }
+
+ protected:
+  Masm* masm_;
+  List<RelocationInfo*, ZoneObject> uses_;
+};
+
 // Generates non-optimized code by visiting each node in AST tree in-order
 class Fullgen : public Masm, public Visitor {
  public:
-  class FFunction : public ZoneObject {
+  class DotFunction : public FFunction {
    public:
-    FFunction(Assembler* a, FunctionLiteral* fn) : asm_(a), fn_(fn) {
+    DotFunction(Fullgen* fullgen, FunctionLiteral* fn) : FFunction(fullgen),
+                                                         fullgen_(fullgen),
+                                                         fn_(fn) {
     }
 
-    void Use(uint32_t offset);
-    void Allocate(uint32_t address);
-
+    inline Fullgen* fullgen() { return fullgen_; }
     inline FunctionLiteral* fn() { return fn_; }
 
+    void Generate();
+
    protected:
-    Assembler* asm_;
+    Fullgen* fullgen_;
     FunctionLiteral* fn_;
-    List<RelocationInfo*, ZoneObject> uses_;
   };
 
   enum VisitorType {
@@ -42,11 +59,7 @@ class Fullgen : public Masm, public Visitor {
     kSlot
   };
 
-  Fullgen(Heap* heap) : Masm(heap),
-                        Visitor(kPreorder),
-                        heap_(heap),
-                        visitor_type_(kSlot) {
-  }
+  Fullgen(Heap* heap);
 
   void Generate(AstNode* ast);
 
@@ -67,6 +80,7 @@ class Fullgen : public Masm, public Visitor {
   inline Heap* heap() { return heap_; }
   inline bool visiting_for_value() { return visitor_type_ == kValue; }
   inline bool visiting_for_slot() { return visitor_type_ == kSlot; }
+  inline List<FFunction*, ZoneObject>* fns() { return &fns_; }
 
  private:
   Heap* heap_;

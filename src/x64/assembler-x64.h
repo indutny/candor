@@ -194,6 +194,7 @@ class Assembler {
   void movq(Register dst, Immediate src);
   void movq(Operand& dst, Immediate src);
 
+  void addq(Register dst, Register src);
   void addq(Register dst, Immediate src);
   void subq(Register dst, Immediate imm);
 

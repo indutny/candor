@@ -38,10 +38,12 @@ ifeq ($(ARCH),i386)
 	endif
 	OBJS += src/ia32/assembler-ia32.o
 	OBJS += src/ia32/macroassembler-ia32.o
+	OBJS += src/ia32/stubs-ia32.o
 	OBJS += src/ia32/fullgen-ia32.o
 else
 	OBJS += src/x64/assembler-x64.o
 	OBJS += src/x64/macroassembler-x64.o
+	OBJS += src/x64/stubs-x64.o
 	OBJS += src/x64/fullgen-x64.o
 endif
 

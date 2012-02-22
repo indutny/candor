@@ -3,6 +3,7 @@
 #include "heap.h" // Heap
 #include "ast.h" // AstNode
 #include "zone.h" // ZoneObject
+#include "stubs.h" // Stubs
 #include "utils.h" // List
 
 #include <assert.h>
@@ -12,17 +13,17 @@
 namespace dotlang {
 
 
-void Fullgen::FFunction::Use(uint32_t offset) {
+void FFunction::Use(uint32_t offset) {
   RelocationInfo* info = new RelocationInfo(
         RelocationInfo::kAbsolute,
         RelocationInfo::kQuad,
         offset - 8);
   uses_.Push(info);
-  asm_->relocation_info_.Push(info);
+  masm()->relocation_info_.Push(info);
 }
 
 
-void Fullgen::FFunction::Allocate(uint32_t addr) {
+void FFunction::Allocate(uint32_t addr) {
   List<RelocationInfo*, ZoneObject>::Item* item = uses_.head();
   while (item != NULL) {
     item->value()->target(addr);
@@ -31,26 +32,40 @@ void Fullgen::FFunction::Allocate(uint32_t addr) {
 }
 
 
+Fullgen::Fullgen(Heap* heap) : Masm(heap),
+                               Visitor(kPreorder),
+                               heap_(heap),
+                               visitor_type_(kSlot) {
+  stubs()->fullgen(this);
+}
+
+
+void Fullgen::DotFunction::Generate() {
+  // Generate function's body
+  fullgen()->GeneratePrologue(fn());
+  fullgen()->VisitChildren(fn());
+
+  // In case if function doesn't have `return` statements
+  // we should still return `nil` value
+  masm()->movq(rax, 0);
+
+  fullgen()->GenerateEpilogue();
+}
+
+
 void Fullgen::Generate(AstNode* ast) {
-  fns_.Push(new FFunction(this, FunctionLiteral::Cast(ast)));
+  fns_.Push(new DotFunction(this, FunctionLiteral::Cast(ast)));
 
   FFunction* fn;
   while ((fn = fns_.Shift()) != NULL) {
     // Align function if needed
-    offset_ = RoundUp(offset_, 16);
-    Grow();
+    AlignCode();
 
     // Replace all function's uses by generated address
     fn->Allocate(offset());
 
-    // Generate function's body
-    GeneratePrologue(fn->fn());
-    VisitChildren(fn->fn());
-
-    // In case if function doesn't have `return` statements
-    // we should still return `nil` value
-    movq(rax, 0);
-    GenerateEpilogue();
+    // Generate functions' body
+    fn->Generate();
   }
 }
 
@@ -69,7 +84,7 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
   // Main function should allocate context for itself
   // All other functions will receive context in rdi
   if (stmt->is_root()) {
-    AllocateContext(rax, rbx, scratch, stmt->context_slots());
+    AllocateContext(rax, rbx, stmt->context_slots());
     // Set root context
     movq(rdi, rax);
   }
@@ -131,7 +146,7 @@ AstNode* Fullgen::VisitForSlot(AstNode* node, Operand* op, Register base) {
 
 AstNode* Fullgen::VisitFunction(AstNode* stmt) {
   FunctionLiteral* fn = FunctionLiteral::Cast(stmt);
-  FFunction* ffn = new FFunction(this, fn);
+  FFunction* ffn = new DotFunction(this, fn);
   fns_.Push(ffn);
 
   push(rax);
@@ -143,7 +158,7 @@ AstNode* Fullgen::VisitFunction(AstNode* stmt) {
 
   ChangeAlign(3);
 
-  AllocateContext(rax, rbx, scratch, stmt->context_slots());
+  AllocateContext(rax, rbx, stmt->context_slots());
 
   // Put address of code chunk into second slot
   Operand code(rax, 16);

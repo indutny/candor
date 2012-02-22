@@ -167,6 +167,13 @@ void Assembler::movq(Operand& dst, Immediate src) {
 }
 
 
+void Assembler::addq(Register dst, Register src) {
+  emit_rexw(dst, src);
+  emitb(0x01);
+  emit_modrm(dst, src);
+}
+
+
 void Assembler::addq(Register dst, Immediate imm) {
   emit_rexw(dst);
   emitb(0x81);
