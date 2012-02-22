@@ -9,36 +9,29 @@
 
 namespace dotlang {
 
-inline void Label::relocate(char* pos) {
+inline void Label::relocate(uint32_t offset) {
   // Label should be relocated only once
-  assert(pos_ == NULL);
-  pos_ = pos;
+  assert(pos_ == 0);
+  pos_ = offset - 4;
 
   // Iterate through all label's uses and insert correct relocation info
-  List<char*, EmptyClass>::Item* item = addrs_.head();
+  List<RelocationInfo*, EmptyClass>::Item* item = uses_.head();
   while (item != NULL) {
-    emit(item->value());
+    item->value()->target(pos_);
     item = item->next();
   }
 }
 
 
-inline void Label::use(char* addr) {
-  if (pos_ == NULL) {
-    // If label wasn't allocated - add address into queue
-    addrs_.Push(addr);
-  } else {
-    // Otherwise insert correct offset
-    emit(addr);
-  }
-}
-
-
-inline void Label::emit(char* addr) {
-  int32_t* imm = reinterpret_cast<int32_t*>(addr);
-  *imm = static_cast<int32_t>(reinterpret_cast<uint64_t>(pos_) -
-         reinterpret_cast<uint64_t>(addr) -
-         sizeof(int32_t));
+inline void Label::use(uint32_t offset) {
+  RelocationInfo* info = new RelocationInfo(
+      RelocationInfo::kRelative,
+      RelocationInfo::kLong,
+      offset);
+  // If we already know target position - set it
+  if (pos_ != 0) info->target(pos_);
+  uses_.Push(info);
+  asm_->relocation_info_.Push(info);
 }
 
 

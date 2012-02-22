@@ -44,6 +44,7 @@ void CompiledScript::Compile() {
   f.Generate(ast);
 
   guard_ = new Guard(f.buffer(), f.length());
+  f.Relocate(guard_->buffer());
 }
 
 

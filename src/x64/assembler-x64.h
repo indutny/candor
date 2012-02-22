@@ -10,6 +10,9 @@
 
 namespace dotlang {
 
+// Forward declaration
+class Assembler;
+
 struct Register {
   const int high() {
     return (code_ >> 3) & 1;
@@ -98,18 +101,56 @@ class Operand : public ZoneObject {
   friend class Assembler;
 };
 
+class RelocationInfo : public ZoneObject {
+ public:
+  enum RelocationInfoSize {
+    kByte,
+    kWord,
+    kLong,
+    kQuad
+  };
+
+  enum RelocationInfoType {
+    kAbsolute,
+    kRelative
+  };
+
+  RelocationInfo(RelocationInfoType type,
+                 RelocationInfoSize size,
+                 uint32_t offset) : type_(type),
+                                    size_(size),
+                                    offset_(offset),
+                                    target_(0) {
+
+  }
+
+  void Relocate(char* buffer);
+
+  inline void target(uint32_t target) { target_ = target; }
+
+  RelocationInfoType type_;
+  RelocationInfoSize size_;
+
+  // Offset of address use in code
+  uint32_t offset_;
+
+  // Address to put
+  uint32_t target_;
+};
+
 class Label {
  public:
-  Label(): pos_(NULL) {
+  Label(Assembler* a) : pos_(NULL), asm_(a) {
   }
 
  private:
-  inline void relocate(char* pos);
-  inline void use(char* addr);
-  inline void emit(char* addr);
+  inline void relocate(uint32_t offset);
+  inline void use(uint32_t offset);
 
-  char* pos_;
-  List<char*, EmptyClass> addrs_;
+  uint32_t pos_;
+  Assembler* asm_;
+  List<RelocationInfo*, EmptyClass> uses_;
+
   friend class Assembler;
 };
 
@@ -132,6 +173,9 @@ class Assembler {
   ~Assembler() {
     delete[] buffer_;
   }
+
+  // Relocate all absolute/relative addresses in new code space
+  void Relocate(char* buffer);
 
   // Instructions
   void push(Register src);
@@ -177,21 +221,16 @@ class Assembler {
   // Increase buffer size automatically
   inline void Grow();
 
-  inline char* pos() {
-    return buffer_ + offset_;
-  }
-
-  inline char* buffer() {
-    return buffer_;
-  }
-
-  inline uint32_t length() {
-    return length_;
-  }
+  inline char* pos() { return buffer_ + offset_; }
+  inline char* buffer() { return buffer_; }
+  inline uint32_t offset() { return offset_; }
+  inline uint32_t length() { return length_; }
 
   char* buffer_;
   uint32_t offset_;
   uint32_t length_;
+
+  List<RelocationInfo*, ZoneObject> relocation_info_;
 };
 
 } // namespace dotlang

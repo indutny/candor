@@ -51,7 +51,7 @@ void Masm::Allocate(Register result,
                     uint32_t size,
                     Register scratch) {
 
-  Label runtime_allocate, done;
+  Label runtime_allocate(this), done(this);
 
   Immediate heapref(reinterpret_cast<uint64_t>(heap()));
   Immediate top(reinterpret_cast<uint64_t>(heap()->new_space()->top()));

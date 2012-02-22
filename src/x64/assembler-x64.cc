@@ -3,6 +3,43 @@
 
 namespace dotlang {
 
+void RelocationInfo::Relocate(char* buffer) {
+  uint64_t addr = 0;
+
+  if (type_ == kAbsolute) {
+    addr = reinterpret_cast<uint64_t>(buffer) + target_;
+  } else {
+    addr = target_ - offset_;
+  }
+
+  switch (size_) {
+   case kByte:
+    *reinterpret_cast<uint8_t*>(buffer + offset_) = addr;
+    break;
+   case kWord:
+    *reinterpret_cast<uint16_t*>(buffer + offset_) = addr;
+    break;
+   case kLong:
+    *reinterpret_cast<uint32_t*>(buffer + offset_) = addr;
+    break;
+   case kQuad:
+    *reinterpret_cast<uint64_t*>(buffer + offset_) = addr;
+    break;
+   default:
+    break;
+  }
+}
+
+
+void Assembler::Relocate(char* buffer) {
+  List<RelocationInfo*, ZoneObject>::Item* item = relocation_info_.head();
+  while (item != NULL) {
+    item->value()->Relocate(buffer);
+    item = item->next();
+  }
+}
+
+
 void Assembler::push(Register src) {
   emit_rex_if_high(src);
   emitb(0x50 | src.low());
@@ -27,7 +64,7 @@ void Assembler::ret(uint16_t imm) {
 
 
 void Assembler::bind(Label* label) {
-  label->relocate(pos());
+  label->relocate(offset());
 }
 
 
@@ -48,7 +85,7 @@ void Assembler::cmp(Register dst, Operand& src) {
 void Assembler::jmp(Label* label) {
   emitb(0xE9);
   emitl(0x12345678);
-  label->use(pos() - 4);
+  label->use(offset() - 4);
 }
 
 
@@ -77,7 +114,7 @@ void Assembler::jmp(Condition cond, Label* label) {
     assert(0 && "unexpected");
   }
   emitl(0x12345678);
-  label->use(pos() - 4);
+  label->use(offset() - 4);
 }
 
 

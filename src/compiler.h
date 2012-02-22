@@ -19,6 +19,8 @@ class Guard {
     return reinterpret_cast<CompiledFunction>(buffer_);
   }
 
+  inline char* buffer() { return reinterpret_cast<char*>(buffer_); }
+
  private:
   void* buffer_;
   void* guard_;
