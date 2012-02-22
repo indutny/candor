@@ -18,12 +18,15 @@ void FFunction::Use(uint32_t offset) {
         RelocationInfo::kAbsolute,
         RelocationInfo::kQuad,
         offset - 8);
+  if (addr_ != 0) info->target(addr_);
   uses_.Push(info);
   masm()->relocation_info_.Push(info);
 }
 
 
 void FFunction::Allocate(uint32_t addr) {
+  assert(addr_ == 0);
+  addr_ = addr;
   List<RelocationInfo*, ZoneObject>::Item* item = uses_.head();
   while (item != NULL) {
     item->value()->target(addr);
@@ -84,7 +87,7 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
   // Main function should allocate context for itself
   // All other functions will receive context in rdi
   if (stmt->is_root()) {
-    AllocateContext(rax, rbx, stmt->context_slots());
+    AllocateContext(stmt->context_slots(), rax);
     // Set root context
     movq(rdi, rax);
   }
@@ -150,15 +153,13 @@ AstNode* Fullgen::VisitFunction(AstNode* stmt) {
   fns_.Push(ffn);
 
   push(rax);
-  push(rbx);
   push(rcx);
+  ChangeAlign(2);
 
   movq(rcx, Immediate(0));
   ffn->Use(offset());
 
-  ChangeAlign(3);
-
-  AllocateContext(rax, rbx, stmt->context_slots());
+  AllocateContext(stmt->context_slots(), rax);
 
   // Put address of code chunk into second slot
   Operand code(rax, 16);
@@ -179,10 +180,9 @@ AstNode* Fullgen::VisitFunction(AstNode* stmt) {
     movq(name, rax);
   }
 
-  ChangeAlign(-3);
   pop(rcx);
-  pop(rbx);
   pop(rax);
+  ChangeAlign(-2);
 
   return stmt;
 }
@@ -218,22 +218,26 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
 
 
 AstNode* Fullgen::VisitAssign(AstNode* stmt) {
-  push(rbx);
+  if (!result().is(rbx)) {
+    ChangeAlign(1);
+    push(rbx);
+  }
+
   // Get value of right-hand side expression in rbx
   VisitForValue(stmt->rhs(), rbx);
 
   // Get target slot for left-hand side
   Operand lhs(rax, 0);
-  ChangeAlign(1);
   VisitForSlot(stmt->lhs(), &lhs, scratch);
-  ChangeAlign(-1);
-  pop(rbx);
 
   // Put value into slot
   movq(lhs, rbx);
-
   // Propagate result of assign operation
-  movq(result(), rbx);
+  if (!result().is(rbx)) {
+    movq(result(), rbx);
+    pop(rbx);
+    ChangeAlign(-1);
+  }
 
   return stmt;
 }
@@ -278,10 +282,7 @@ AstNode* Fullgen::VisitNumber(AstNode* node) {
   assert(visiting_for_value());
 
   Register result_end = result().is(rbx) ? rax : rbx;
-  AllocateNumber(result(),
-                 result_end,
-                 scratch,
-                 StringToInt(node->value(), node->length()));
+  AllocateNumber(StringToInt(node->value(), node->length()), scratch, result());
   return node;
 }
 

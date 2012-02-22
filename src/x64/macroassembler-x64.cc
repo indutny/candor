@@ -60,40 +60,30 @@ Masm::Align::~Align() {
 }
 
 
-void Masm::Allocate(Register result,
-                    Register result_end,
-                    Heap::HeapTag tag,
-                    uint32_t size) {
-  push(r12);
-  push(r13);
-  push(r14);
-  push(r15);
+void Masm::Allocate(Heap::HeapTag tag, uint32_t size, Register result) {
+  if (!result.is(rax)) push(rax);
 
-  movq(r14, Immediate(tag));
-  movq(r15, Immediate(size));
+  ChangeAlign(2);
+  Align a(this);
 
+  push(Immediate(size));
+  push(Immediate(tag));
   Call(stubs()->GetAllocateStub());
 
-  movq(result, r12);
-  movq(result_end, r13);
+  ChangeAlign(-2);
 
-  pop(r15);
-  pop(r14);
-  pop(r13);
-  pop(r12);
+  if (!result.is(rax)) {
+    movq(result, rax);
+    pop(rax);
+  }
 }
 
 
-void Masm::AllocateContext(Register result,
-                           Register result_end,
-                           uint32_t slots) {
+void Masm::AllocateContext(uint32_t slots, Register result) {
   // We can use any registers here
   // because context allocation is performed in prelude
   // and nothing can be affected yet
-  Allocate(result,
-           result_end,
-           Heap::kContext,
-           sizeof(void*) * (slots + 3));
+  Allocate(Heap::kContext, sizeof(void*) * (slots + 3), result);
 
   // Move address of current context to first slot
   Operand qparent(result, 8);
@@ -101,11 +91,8 @@ void Masm::AllocateContext(Register result,
 }
 
 
-void Masm::AllocateNumber(Register result,
-                          Register result_end,
-                          Register scratch,
-                          int64_t value) {
-  Allocate(result, result_end, Heap::kNumber, 16);
+void Masm::AllocateNumber(int64_t value, Register scratch, Register result) {
+  Allocate(Heap::kNumber, 16, result);
 
   Operand qvalue(result, 8);
   movq(scratch, Immediate(value));
@@ -114,7 +101,6 @@ void Masm::AllocateNumber(Register result,
 
 
 void Masm::Call(Register fn) {
-  emitb(0xcc);
   push(rdi);
   movq(rdi, fn);
 

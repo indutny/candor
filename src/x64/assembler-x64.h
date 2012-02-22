@@ -179,6 +179,7 @@ class Assembler {
 
   // Instructions
   void push(Register src);
+  void push(Immediate imm);
   void pop(Register dst);
   void ret(uint16_t imm);
 
@@ -195,6 +196,7 @@ class Assembler {
   void movq(Operand& dst, Immediate src);
 
   void addq(Register dst, Register src);
+  void addq(Register dst, Operand& src);
   void addq(Register dst, Immediate src);
   void subq(Register dst, Immediate imm);
 

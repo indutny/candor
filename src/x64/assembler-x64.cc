@@ -59,6 +59,12 @@ void Assembler::push(Register src) {
 }
 
 
+void Assembler::push(Immediate imm) {
+  emitb(0x68);
+  emitl(imm.value());
+}
+
+
 void Assembler::pop(Register dst) {
   emit_rex_if_high(dst);
   emitb(0x58 | dst.low());
@@ -168,6 +174,13 @@ void Assembler::movq(Operand& dst, Immediate src) {
 
 
 void Assembler::addq(Register dst, Register src) {
+  emit_rexw(dst, src);
+  emitb(0x01);
+  emit_modrm(dst, src);
+}
+
+
+void Assembler::addq(Register dst, Operand& src) {
   emit_rexw(dst, src);
   emitb(0x01);
   emit_modrm(dst, src);

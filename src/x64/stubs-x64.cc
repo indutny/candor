@@ -12,11 +12,15 @@ BaseStub::BaseStub(Masm* masm, StubType type) : FFunction(masm),
 
 
 void AllocateStub::Generate() {
+  __ push(rbp);
+  __ push(rbx);
+  __ movq(rbp, rsp);
+
+  // Arguments
+  Operand size(rbp, 32);
+  Operand tag(rbp, 24);
+
   Label runtime_allocate(masm()), done(masm());
-  Register result = r12;
-  Register result_end = r13;
-  Register tag = r14;
-  Register size = r15;
 
   Heap* heap = masm()->heap();
   Immediate heapref(reinterpret_cast<uint64_t>(heap));
@@ -31,23 +35,23 @@ void AllocateStub::Generate() {
   // that's why we are dereferencing it here twice
   __ movq(scratch, top);
   __ movq(scratch, scratch_op);
-  __ movq(result, scratch_op);
-  __ movq(result_end, result);
+  __ movq(rax, scratch_op);
+  __ movq(rbx, rax);
 
   // Add object size to the top
-  __ addq(result_end, size);
+  __ addq(rbx, size);
   __ jmp(kCarry, &runtime_allocate);
 
   // Check if we exhausted buffer
   __ movq(scratch, limit);
   __ movq(scratch, scratch_op);
-  __ cmp(result_end, scratch_op);
+  __ cmp(rbx, scratch_op);
   __ jmp(kGt, &runtime_allocate);
 
   // Update top
   __ movq(scratch, top);
   __ movq(scratch, scratch_op);
-  __ movq(scratch_op, result_end);
+  __ movq(scratch_op, rbx);
 
   __ jmp(&done);
 
@@ -72,10 +76,18 @@ void AllocateStub::Generate() {
   __ bind(&done);
 
   // Set tag
-  Operand qtag(result, 0);
-  __ movq(qtag, tag);
+  Operand qtag(rax, 0);
+  __ movq(scratch, tag);
+  __ movq(qtag, scratch);
 
-  __ ret(0);
+  // Rax will hold resulting pointer
+
+  __ movq(rsp, rbp);
+  __ pop(rbx);
+  __ pop(rbp);
+
+  // tag + size
+  __ ret(16);
 }
 
 } // namespace dotlang

@@ -20,11 +20,11 @@ class Register;
 
 class FFunction : public ZoneObject {
  public:
-  FFunction(Masm* masm) : masm_(masm){
+  FFunction(Masm* masm) : masm_(masm), addr_(0) {
   }
 
   void Use(uint32_t offset);
-  void Allocate(uint32_t address);
+  void Allocate(uint32_t addr);
   virtual void Generate() = 0;
 
   inline Masm* masm() { return masm_; }
@@ -32,6 +32,7 @@ class FFunction : public ZoneObject {
  protected:
   Masm* masm_;
   List<RelocationInfo*, ZoneObject> uses_;
+  uint32_t addr_;
 };
 
 // Generates non-optimized code by visiting each node in AST tree in-order
