@@ -152,7 +152,25 @@ AstNode* ScopeAnalyze::VisitFunction(AstNode* node) {
     fn->variable(new AstValue(scope(), fn->variable()));
   }
 
+  // Call takes variables from outer scope
+  if (fn->children()->length() == 0) {
+    AstList::Item* item = fn->args()->head();
+    while (item != NULL) {
+      item->value(new AstValue(scope(), item->value()));
+      item = item->next();
+    }
+  }
+
   Scope scope(this, node->is_root() ? Scope::kBlock : Scope::kFunction);
+
+  // Put variables in functions scope
+  if (fn->children()->length() != 0) {
+    AstList::Item* item = fn->args()->head();
+    while (item != NULL) {
+      item->value(new AstValue(&scope, item->value()));
+      item = item->next();
+    }
+  }
 
   VisitChildren(node);
 

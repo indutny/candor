@@ -38,4 +38,12 @@ TEST_START("scope test")
              "[kFunction (anonymous) @[] [kFunction (anonymous) @[] "
              "[kScopeDecl [b]] [b @context[2]:1]]] "
              "[kFunction (anonymous) @[] [kScopeDecl [a]] [a @context[1]:0]]")
+
+  // Function arguments
+  SCOPE_TEST("c = 0\na(a,b)",
+             "[kAssign [c @stack:0] [0]] "
+             "[kCall [a @stack:1] @[[a @stack:1] [b @stack:2]] ]")
+  SCOPE_TEST("c = 0\na(a,b) {}",
+             "[kAssign [c @stack:0] [0]] "
+             "[kFunction [a @stack:1] @[[a @stack:0] [b @stack:1]] [kNop ]]")
 TEST_END("scope test")
