@@ -19,11 +19,6 @@ class Masm : public Assembler {
   void Pushad();
   void Popad();
 
-  // Skip some bytes to make code aligned
-  void AlignCode();
-
-  // Alignment helpers
-  inline void ChangeAlign(int32_t slots) { align_ += slots; }
   class Align {
    public:
     Align(Masm* masm);
@@ -33,6 +28,12 @@ class Masm : public Assembler {
     int32_t align_;
   };
 
+  // Skip some bytes to make code aligned
+  void AlignCode();
+
+  // Alignment helpers
+  inline void ChangeAlign(int32_t slots) { align_ += slots; }
+
   // Allocate some space in heap's new space current page
   // Jmp to runtime_allocate label on exhaust or fail
   void Allocate(Heap::HeapTag tag, uint32_t size, Register result);
@@ -41,11 +42,29 @@ class Masm : public Assembler {
   void AllocateContext(uint32_t slots, Register result);
 
   // Allocate heap number (XXX: should unbox numbers if possible)
-  void AllocateNumber(int64_t value, Register scratch, Register result);
+  void AllocateNumber(Register value, Register result);
 
   // Sets correct environment and calls function
   void Call(Register fn);
   void Call(BaseStub* stub);
+
+  inline void Save(Register src) {
+    if (!result().is(src)) {
+      push(src);
+      ChangeAlign(1);
+    }
+  }
+
+  inline void Restore(Register src) {
+    if (!result().is(src)) {
+      pop(src);
+      ChangeAlign(-1);
+    }
+  }
+
+  inline void Result(Register src) {
+    if (!result().is(src)) movq(result(), src);
+  }
 
   // See VisitForSlot and VisitForValue in fullgen for disambiguation
   inline Register result() { return result_; }

@@ -11,7 +11,9 @@ namespace dotlang {
     V(Block)\
     V(Assign)\
     V(Member)\
-    V(Return)
+    V(Return)\
+    V(Add)\
+    V(Sub)
 
 #define VISITOR_MAPPING_REGULAR(V)\
     V(ScopeDecl)\

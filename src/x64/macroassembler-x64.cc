@@ -97,11 +97,12 @@ void Masm::AllocateContext(uint32_t slots, Register result) {
 }
 
 
-void Masm::AllocateNumber(int64_t value, Register scratch, Register result) {
+void Masm::AllocateNumber(Register value, Register result) {
+  push(value);
   Allocate(Heap::kNumber, 16, result);
 
+  pop(value);
   Operand qvalue(result, 8);
-  movq(scratch, Immediate(value));
   movq(qvalue, scratch);
 }
 

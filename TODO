@@ -1,5 +1,4 @@
-* Generate stubs (via defines)
-* Context should be allocated before calling function (aka functor)
 * Binary operations
+* Function arguments
 * Object literals
 * Array literals

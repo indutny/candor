@@ -192,9 +192,7 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
   FunctionLiteral* fn = FunctionLiteral::Cast(stmt);
 
   // Save rax if we're not going to overwrite it
-  if (!visiting_for_value() || !result().is(rax)) {
-    push(rax);
-  }
+  Save(rax);
 
   // Get pointer to function in a heap
   assert(fn->variable() != NULL);
@@ -204,24 +202,15 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
   Call(scratch);
 
   // Restore rax and set result if needed
-  if (visiting_for_value()) {
-    if (!result().is(rax)) {
-      movq(result(), rax);
-      pop(rax);
-    }
-  } else {
-    pop(rax);
-  }
+  Result(rax);
+  Restore(rax);
 
   return stmt;
 }
 
 
 AstNode* Fullgen::VisitAssign(AstNode* stmt) {
-  if (!result().is(rbx)) {
-    ChangeAlign(1);
-    push(rbx);
-  }
+  Save(rbx);
 
   // Get value of right-hand side expression in rbx
   VisitForValue(stmt->rhs(), rbx);
@@ -232,12 +221,10 @@ AstNode* Fullgen::VisitAssign(AstNode* stmt) {
 
   // Put value into slot
   movq(lhs, rbx);
+
   // Propagate result of assign operation
-  if (!result().is(rbx)) {
-    movq(result(), rbx);
-    pop(rbx);
-    ChangeAlign(-1);
-  }
+  Result(rbx);
+  Restore(rbx);
 
   return stmt;
 }
@@ -281,8 +268,8 @@ AstNode* Fullgen::VisitValue(AstNode* node) {
 AstNode* Fullgen::VisitNumber(AstNode* node) {
   assert(visiting_for_value());
 
-  Register result_end = result().is(rbx) ? rax : rbx;
-  AllocateNumber(StringToInt(node->value(), node->length()), scratch, result());
+  movq(scratch, Immediate(StringToInt(node->value(), node->length())));
+  AllocateNumber(scratch, result());
   return node;
 }
 
@@ -297,6 +284,23 @@ AstNode* Fullgen::VisitReturn(AstNode* node) {
   }
 
   GenerateEpilogue();
+
+  return node;
+}
+
+
+AstNode* Fullgen::VisitAdd(AstNode* node) {
+  Save(rax);
+  Save(rbx);
+
+  VisitForValue(node->lhs(), rax);
+  VisitForValue(node->rhs(), rbx);
+
+  movq(scratch, rax);
+  AllocateNumber(scratch, result());
+
+  Restore(rbx);
+  Restore(rax);
 
   return node;
 }
