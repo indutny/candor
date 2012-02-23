@@ -60,6 +60,7 @@ class Heap {
  public:
   enum HeapTag {
     kTagNone,
+    kTagFunction,
     kTagContext,
     kTagNumber
   };

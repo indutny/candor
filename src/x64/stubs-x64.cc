@@ -13,12 +13,12 @@ BaseStub::BaseStub(Masm* masm, StubType type) : FFunction(masm),
 
 void AllocateStub::Generate() {
   __ push(rbp);
-  __ push(rbx);
   __ movq(rbp, rsp);
+  __ push(rbx);
 
   // Arguments
-  Operand size(rbp, 32);
-  Operand tag(rbp, 24);
+  Operand size(rbp, 24);
+  Operand tag(rbp, 16);
 
   Label runtime_allocate(masm()), done(masm());
 
@@ -82,8 +82,8 @@ void AllocateStub::Generate() {
 
   // Rax will hold resulting pointer
 
-  __ movq(rsp, rbp);
   __ pop(rbx);
+  __ movq(rsp, rbp);
   __ pop(rbp);
 
   // tag + size

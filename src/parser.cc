@@ -193,26 +193,29 @@ AstNode* Parser::ParseExpression(int priority) {
     // member "(" ... args ... ")" block? |
     // member? "(" ... args ... ")" block
     {
-      FunctionLiteral* fn = new FunctionLiteral(member, Peek()->offset());
-      Skip();
-      member = NULL;
+      while (Peek()->is(kParenOpen) && !Peek()->is(kEnd)) {
+        FunctionLiteral* fn = new FunctionLiteral(member, Peek()->offset());
+        Skip();
+        member = NULL;
 
-      while (!Peek()->is(kParenClose) && !Peek()->is(kEnd)) {
-        AstNode* expr = ParseExpression();
-        if (expr == NULL) break;
-        fn->args()->Push(expr);
+        while (!Peek()->is(kParenClose) && !Peek()->is(kEnd)) {
+          AstNode* expr = ParseExpression();
+          if (expr == NULL) break;
+          fn->args()->Push(expr);
 
-        // Skip commas
-        if (Peek()->is(kComma)) Skip();
+          // Skip commas
+          if (Peek()->is(kComma)) Skip();
+        }
+        if (!Peek()->is(kParenClose)) break;
+        Skip();
+
+        // Optional body (for function declaration)
+        ParseBlock(reinterpret_cast<AstNode*>(fn));
+        if (!fn->CheckDeclaration()) break;
+
+        member = fn->End(Peek()->offset());
       }
-      if (!Peek()->is(kParenClose)) break;
-      Skip();
-
-      // Optional body (for function declaration)
-      ParseBlock(reinterpret_cast<AstNode*>(fn));
-      if (!fn->CheckDeclaration()) break;
-
-      result = fn->End(Peek()->offset());
+      result = member;
     }
     break;
    default:

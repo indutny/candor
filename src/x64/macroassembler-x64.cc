@@ -66,14 +66,16 @@ void Masm::Allocate(Heap::HeapTag tag, uint32_t size, Register result) {
   }
 
   ChangeAlign(2);
-  Align a(this);
+  {
+    Align a(this);
 
-  movq(rax, Immediate(size));
-  push(rax);
-  movq(rax, Immediate(tag));
-  push(rax);
-  Call(stubs()->GetAllocateStub());
-  // Stub will unwind stack
+    movq(rax, Immediate(size));
+    push(rax);
+    movq(rax, Immediate(tag));
+    push(rax);
+    Call(stubs()->GetAllocateStub());
+    // Stub will unwind stack
+  }
   ChangeAlign(-2);
 
   if (!result.is(rax)) {
@@ -83,21 +85,39 @@ void Masm::Allocate(Heap::HeapTag tag, uint32_t size, Register result) {
 }
 
 
-void Masm::AllocateContext(uint32_t slots, Register result) {
-  // We can use any registers here
-  // because context allocation is performed in prelude
-  // and nothing can be affected yet
-  Allocate(Heap::kTagContext, sizeof(void*) * (slots + 3), result);
+void Masm::AllocateContext(uint32_t slots) {
+  ChangeAlign(1);
+  push(rax);
+
+  Allocate(Heap::kTagContext, sizeof(void*) * (slots + 2), rax);
+
+  // Move address of current context to first slot
+  Operand qparent(rax, 8);
+  movq(qparent, rdi);
+
+  // Replace current context
+  // (It'll be restored by caller)
+  movq(rdi, rax);
+  pop(rax);
+  ChangeAlign(-1);
+}
+
+
+void Masm::AllocateFunction(Register addr, Register result) {
+  Allocate(Heap::kTagFunction, sizeof(void*) * 3, result);
 
   // Move address of current context to first slot
   Operand qparent(result, 8);
+  Operand qaddr(result, 16);
   movq(qparent, rdi);
+  movq(qaddr, addr);
 }
 
 
 void Masm::AllocateNumber(Register value, Register result) {
   ChangeAlign(1);
   push(value);
+
   Allocate(Heap::kTagNumber, 16, result);
 
   pop(value);
@@ -157,11 +177,14 @@ void Masm::Throw(Heap::Error error) {
 
 void Masm::Call(Register fn) {
   push(rdi);
-  movq(rdi, fn);
 
-  Operand code(rdi, 16);
-  callq(code);
+  Operand context_slot(fn, 8);
+  Operand code_slot(fn, 16);
+  movq(rdi, context_slot);
 
+  callq(code_slot);
+
+  // Restore context
   pop(rdi);
 }
 

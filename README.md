@@ -50,7 +50,8 @@ object := "{" ((objectKv ",")* objectKv)? "}"
 
 primary := name | number | string | array | object | "(" expr ")"
 member := primary ("[" expression "]" | "." name)*
-callOrFun := member "(" ((expr ",")* expr)? ")" block? |
+callOrFun := member ("(" ((expr ",")* expr)? ")")+ |
+             member "(" ((expr ",")* expr)? ")" block |
              member? "(" ((expr ",")* expr)? ")" block
 assign := member "=" expr
 

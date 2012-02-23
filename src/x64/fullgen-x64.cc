@@ -74,7 +74,7 @@ void Fullgen::Generate(AstNode* ast) {
 
 
 void Fullgen::GeneratePrologue(AstNode* stmt) {
-  // rdi <- context (if non-root)
+  // rdi <- reference to parent context (if non-root)
   push(rbp);
   push(rbx); // callee-save
   movq(rbp, rsp);
@@ -84,16 +84,11 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
   subq(rsp,
        Immediate(8 + RoundUp((stmt->stack_slots() + 1) * sizeof(void*), 16)));
 
-  // Main function should allocate context for itself
-  // All other functions will receive context in rdi
-  if (stmt->is_root()) {
-    AllocateContext(stmt->context_slots(), rax);
-    // Set root context
-    movq(rdi, rax);
+  AllocateContext(stmt->context_slots());
 
-    // Store root stack address(rbp) to heap
-    StoreRootStack();
-  }
+  // Store root stack address(rbp) to heap
+  // It's needed to unwind stack on exceptions
+  if (stmt->is_root()) StoreRootStack();
 }
 
 
@@ -155,21 +150,18 @@ AstNode* Fullgen::VisitFunction(AstNode* stmt) {
   FFunction* ffn = new DotFunction(this, fn);
   fns_.Push(ffn);
 
-  push(rax);
-  push(rcx);
-  ChangeAlign(2);
+  Save(rax);
+  Save(rcx);
 
   movq(rcx, Immediate(0));
   ffn->Use(offset());
 
-  AllocateContext(stmt->context_slots(), rax);
-
-  // Put address of code chunk into second slot
-  Operand code(rax, 16);
-  movq(code, rcx);
+  // Allocate function object that'll reference to current scope
+  // and have address of actual code
+  AllocateFunction(rcx, rax);
 
   if (visiting_for_value()) {
-    movq(result(), rax);
+    Result(rax);
   } else {
     // Declaration of anonymous function is impossible
     if (fn->variable() == NULL) {
@@ -184,9 +176,8 @@ AstNode* Fullgen::VisitFunction(AstNode* stmt) {
     }
   }
 
-  pop(rcx);
-  pop(rax);
-  ChangeAlign(-2);
+  Restore(rcx);
+  Restore(rax);
 
   return stmt;
 }
@@ -260,7 +251,7 @@ AstNode* Fullgen::VisitValue(AstNode* node) {
     slot()->base(result());
     slot()->scale(Operand::one);
     // Skip tag, code addr and reference to parent scope
-    slot()->disp(sizeof(void*) * (value->slot()->index() + 3));
+    slot()->disp(sizeof(void*) * (value->slot()->index() + 2));
   }
 
   // If we was asked to return value - dereference slot
@@ -277,6 +268,7 @@ AstNode* Fullgen::VisitNumber(AstNode* node) {
 
   movq(scratch, Immediate(StringToInt(node->value(), node->length())));
   AllocateNumber(scratch, result());
+
   return node;
 }
 
@@ -317,6 +309,7 @@ AstNode* Fullgen::VisitAdd(AstNode* node) {
 
   jmp(&done);
   bind(&not_number);
+  emitb(0xcc);
 
   bind(&done);
 
