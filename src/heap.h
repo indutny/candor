@@ -59,20 +59,36 @@ class Space {
 class Heap {
  public:
   enum HeapTag {
-    kNone,
-    kContext,
-    kNumber
+    kTagNone,
+    kTagContext,
+    kTagNumber
   };
 
-  Heap(uint32_t page_size) : new_space_(page_size), old_space_(page_size) {
+  enum Error {
+    kErrorNone,
+    kErrorUnexpectedFunction,
+    kErrorCallWithoutVariable
+  };
+
+  Heap(uint32_t page_size) : new_space_(page_size),
+                             old_space_(page_size),
+                             root_stack_(NULL),
+                             pending_exception_(NULL) {
   }
 
   inline Space* new_space() { return &new_space_; }
   inline Space* old_space() { return &old_space_; }
+  inline void** root_stack() { return &root_stack_; }
+  inline void** pending_exception() { return &pending_exception_; }
 
  private:
   Space new_space_;
   Space old_space_;
+
+  // Runtime exception support
+  // root stack address is needed to unwind stack up to root function's entry
+  void* root_stack_;
+  void* pending_exception_;
 };
 
 

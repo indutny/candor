@@ -25,4 +25,9 @@ void* Script::Run() {
   return script->Run();
 }
 
+
+bool Script::CaughtException() {
+  return script->CaughtException();
+}
+
 } // namespace dotlang

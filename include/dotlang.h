@@ -15,6 +15,8 @@ class Script {
   void Compile(const char* source, uint32_t length);
   void* Run();
 
+  bool CaughtException();
+
  private:
   CompiledScript* script;
 };

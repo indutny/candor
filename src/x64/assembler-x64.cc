@@ -101,6 +101,14 @@ void Assembler::cmp(Register dst, Operand& src) {
 }
 
 
+void Assembler::cmp(Operand& dst, Immediate src) {
+  emit_rexw(dst);
+  emitb(0x81);
+  emit_modrm(dst, 7);
+  emitl(src.value());
+}
+
+
 void Assembler::jmp(Label* label) {
   emitb(0xE9);
   emitl(0x12345678);
@@ -113,6 +121,9 @@ void Assembler::jmp(Condition cond, Label* label) {
   switch (cond) {
    case kEq:
     emitb(0x84);
+    break;
+   case kNe:
+    emitb(0x85);
     break;
    case kLt:
     emitb(0x8C);
@@ -175,7 +186,7 @@ void Assembler::movq(Operand& dst, Immediate src) {
 
 void Assembler::addq(Register dst, Register src) {
   emit_rexw(dst, src);
-  emitb(0x01);
+  emitb(0x03);
   emit_modrm(dst, src);
 }
 

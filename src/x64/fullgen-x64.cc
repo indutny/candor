@@ -90,6 +90,9 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
     AllocateContext(stmt->context_slots(), rax);
     // Set root context
     movq(rdi, rax);
+
+    // Store root stack address(rbp) to heap
+    StoreRootStack();
   }
 }
 
@@ -168,16 +171,17 @@ AstNode* Fullgen::VisitFunction(AstNode* stmt) {
   if (visiting_for_value()) {
     movq(result(), rax);
   } else {
-    // TODO: There should be a runtime error, not assertion
-    // Or a parse error
-    assert(fn->variable() != NULL);
+    // Declaration of anonymous function is impossible
+    if (fn->variable() == NULL) {
+      Throw(Heap::kErrorUnexpectedFunction);
+    } else {
+      // Get slot
+      Operand name(rax, 0);
+      VisitForSlot(fn->variable(), &name, scratch);
 
-    // Get slot
-    Operand name(rax, 0);
-    VisitForSlot(fn->variable(), &name, scratch);
-
-    // Put context into slot
-    movq(name, rax);
+      // Put context into slot
+      movq(name, rax);
+    }
   }
 
   pop(rcx);
@@ -191,19 +195,22 @@ AstNode* Fullgen::VisitFunction(AstNode* stmt) {
 AstNode* Fullgen::VisitCall(AstNode* stmt) {
   FunctionLiteral* fn = FunctionLiteral::Cast(stmt);
 
-  // Save rax if we're not going to overwrite it
-  Save(rax);
-
   // Get pointer to function in a heap
-  assert(fn->variable() != NULL);
-  VisitForValue(fn->variable(), scratch);
+  if (fn->variable() == NULL) {
+    Throw(Heap::kErrorCallWithoutVariable);
+  } else {
+    // Save rax if we're not going to overwrite it
+    Save(rax);
 
-  // Generate calling code
-  Call(scratch);
+    VisitForValue(fn->variable(), scratch);
 
-  // Restore rax and set result if needed
-  Result(rax);
-  Restore(rax);
+    // Generate calling code
+    Call(scratch);
+
+    // Restore rax and set result if needed
+    Result(rax);
+    Restore(rax);
+  }
 
   return stmt;
 }
@@ -293,11 +300,25 @@ AstNode* Fullgen::VisitAdd(AstNode* node) {
   Save(rax);
   Save(rbx);
 
+  Label not_number(this), done(this);
+
   VisitForValue(node->lhs(), rax);
   VisitForValue(node->rhs(), rbx);
 
+  IsHeapObject(Heap::kTagNumber, rax, &not_number);
+  IsHeapObject(Heap::kTagNumber, rbx, &not_number);
+
+  UnboxNumber(rax);
+  UnboxNumber(rbx);
+
   movq(scratch, rax);
+  addq(scratch, rbx);
   AllocateNumber(scratch, result());
+
+  jmp(&done);
+  bind(&not_number);
+
+  bind(&done);
 
   Restore(rbx);
   Restore(rax);

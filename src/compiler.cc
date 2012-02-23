@@ -55,6 +55,11 @@ void* CompiledScript::Run() {
 }
 
 
+bool CompiledScript::CaughtException() {
+  return heap_->pending_exception() != NULL;
+}
+
+
 Guard::Guard(char* buffer, uint32_t length) {
   page_size_ = GetPageSize();
 

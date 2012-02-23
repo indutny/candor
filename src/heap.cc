@@ -48,14 +48,14 @@ char* Space::Allocate(uint32_t bytes) {
 
 HNumber* HNumber::Cast(void* value) {
   assert(value != NULL);
-  assert(*reinterpret_cast<uint64_t*>(value) == Heap::kNumber);
+  assert(*reinterpret_cast<uint64_t*>(value) == Heap::kTagNumber);
   return new HNumber(*(reinterpret_cast<int64_t*>(value) + 1));
 }
 
 
 HFunction* HFunction::Cast(void* value) {
   assert(value != NULL);
-  assert(*reinterpret_cast<uint64_t*>(value) == Heap::kContext);
+  assert(*reinterpret_cast<uint64_t*>(value) == Heap::kTagContext);
 
   return new HFunction(*(reinterpret_cast<char**>(value) + 1));
 }

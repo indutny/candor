@@ -1,4 +1,7 @@
-* Binary operations
+* Runtime errors
 * Function arguments
+* Binary operations (Binop AST node with op field, instead of separate nodes)
+* Ast node ids
 * Object literals
 * Array literals
+* Dtrace :)

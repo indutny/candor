@@ -156,6 +156,7 @@ class Label {
 
 enum Condition {
   kEq,
+  kNe,
   kLt,
   kLe,
   kGt,
@@ -186,6 +187,7 @@ class Assembler {
   void bind(Label* label);
   void cmp(Register dst, Register src);
   void cmp(Register dst, Operand& src);
+  void cmp(Operand& dst, Immediate src);
   void jmp(Label* label);
   void jmp(Condition cond, Label* label);
 

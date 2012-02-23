@@ -62,7 +62,6 @@ Masm::Align::~Align() {
 
 void Masm::Allocate(Heap::HeapTag tag, uint32_t size, Register result) {
   if (!result.is(rax)) {
-    ChangeAlign(1);
     push(rax);
   }
 
@@ -74,13 +73,12 @@ void Masm::Allocate(Heap::HeapTag tag, uint32_t size, Register result) {
   movq(rax, Immediate(tag));
   push(rax);
   Call(stubs()->GetAllocateStub());
-
+  // Stub will unwind stack
   ChangeAlign(-2);
 
   if (!result.is(rax)) {
     movq(result, rax);
     pop(rax);
-    ChangeAlign(-1);
   }
 }
 
@@ -89,7 +87,7 @@ void Masm::AllocateContext(uint32_t slots, Register result) {
   // We can use any registers here
   // because context allocation is performed in prelude
   // and nothing can be affected yet
-  Allocate(Heap::kContext, sizeof(void*) * (slots + 3), result);
+  Allocate(Heap::kTagContext, sizeof(void*) * (slots + 3), result);
 
   // Move address of current context to first slot
   Operand qparent(result, 8);
@@ -98,12 +96,62 @@ void Masm::AllocateContext(uint32_t slots, Register result) {
 
 
 void Masm::AllocateNumber(Register value, Register result) {
+  ChangeAlign(1);
   push(value);
-  Allocate(Heap::kNumber, 16, result);
+  Allocate(Heap::kTagNumber, 16, result);
 
   pop(value);
+  ChangeAlign(-1);
   Operand qvalue(result, 8);
   movq(qvalue, scratch);
+}
+
+
+void Masm::IsHeapObject(Heap::HeapTag tag,
+                        Register reference,
+                        Label* mismatch) {
+  Operand qtag(reference, 0);
+  cmp(qtag, Immediate(tag));
+  jmp(kNe, mismatch);
+}
+
+
+void Masm::UnboxNumber(Register number) {
+  Operand qvalue(number, 8);
+  movq(number, qvalue);
+}
+
+
+void Masm::StoreRootStack() {
+  Immediate root_stack(reinterpret_cast<uint64_t>(heap()->root_stack()));
+  Operand scratch_op(scratch, 0);
+  movq(scratch, root_stack);
+  movq(scratch_op, rbp);
+}
+
+
+void Masm::Throw(Heap::Error error) {
+  Immediate pending_exception(
+      reinterpret_cast<uint64_t>(heap()->pending_exception()));
+  Immediate root_stack(reinterpret_cast<uint64_t>(heap()->root_stack()));
+
+  // Set pending exception
+  Operand scratch_op(scratch, 0);
+  movq(scratch, pending_exception);
+  movq(rax, Immediate(error));
+  movq(scratch_op, rax);
+
+  // Unwind stack to the top handler
+  movq(scratch, root_stack);
+  movq(rsp, scratch_op);
+
+  // Return NULL
+  movq(rax, 0);
+
+  // Leave to C++ land
+  pop(rbx);
+  pop(rbp);
+  ret(0);
 }
 
 

@@ -41,6 +41,8 @@ class CompiledScript {
   void Compile();
   void* Run();
 
+  bool CaughtException();
+
  private:
   Heap* heap_;
   Guard* guard_;

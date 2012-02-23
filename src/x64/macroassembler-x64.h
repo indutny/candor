@@ -44,6 +44,20 @@ class Masm : public Assembler {
   // Allocate heap number (XXX: should unbox numbers if possible)
   void AllocateNumber(Register value, Register result);
 
+  // Checks if object has passed type
+  void IsHeapObject(Heap::HeapTag tag,
+                    Register reference,
+                    Label* mismatch);
+
+  // Unboxing routines
+  void UnboxNumber(Register number);
+
+  // Store stack pointer into heap
+  void StoreRootStack();
+
+  // Runtime errors
+  void Throw(Heap::Error error);
+
   // Sets correct environment and calls function
   void Call(Register fn);
   void Call(BaseStub* stub);

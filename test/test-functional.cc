@@ -36,10 +36,13 @@ TEST_START("functional test")
     assert(HNumber::Cast(result)->value() == 1234);
   })
 
-/*
   // Binary ops
   FUN_TEST("return 1 + 2", {
     assert(HNumber::Cast(result)->value() == 3);
   })
-*/
+
+  // Runtime errors
+  FUN_TEST("() {}", {
+    assert(s.CaughtException() == true);
+  })
 TEST_END("functional test")
