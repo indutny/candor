@@ -45,6 +45,9 @@ class Masm : public Assembler {
   // Allocate heap number (XXX: should unbox numbers if possible)
   void AllocateNumber(Register value, Register result);
 
+  // Allocate object
+  void AllocateObjectLiteral(Register size, Register result);
+
   // Fill stack slots with nil
   void FillStackSlots(uint32_t slots);
 

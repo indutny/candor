@@ -83,4 +83,8 @@ TEST_START("functional test")
   FUN_TEST("() {}", {
     assert(s.CaughtException() == true);
   })
+
+  FUN_TEST("++1", {
+    assert(s.CaughtException() == true);
+  })
 TEST_END("functional test")

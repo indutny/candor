@@ -62,6 +62,7 @@ Masm::Align::~Align() {
 
 void Masm::Allocate(Heap::HeapTag tag, uint32_t size, Register result) {
   if (!result.is(rax)) {
+    ChangeAlign(1);
     push(rax);
   }
 
@@ -69,7 +70,8 @@ void Masm::Allocate(Heap::HeapTag tag, uint32_t size, Register result) {
   {
     Align a(this);
 
-    movq(rax, Immediate(size));
+    // Add tag size
+    movq(rax, Immediate(size + sizeof(void*)));
     push(rax);
     movq(rax, Immediate(tag));
     push(rax);
@@ -81,6 +83,7 @@ void Masm::Allocate(Heap::HeapTag tag, uint32_t size, Register result) {
   if (!result.is(rax)) {
     movq(result, rax);
     pop(rax);
+    ChangeAlign(-1);
   }
 }
 
@@ -89,7 +92,8 @@ void Masm::AllocateContext(uint32_t slots) {
   ChangeAlign(1);
   push(rax);
 
-  Allocate(Heap::kTagContext, sizeof(void*) * (slots + 3), rax);
+  // parent + number of slots + slots
+  Allocate(Heap::kTagContext, sizeof(void*) * (slots + 2), rax);
 
   // Move address of current context to first slot
   Operand qparent(rax, 8);
@@ -108,7 +112,8 @@ void Masm::AllocateContext(uint32_t slots) {
 
 
 void Masm::AllocateFunction(Register addr, Register result) {
-  Allocate(Heap::kTagFunction, sizeof(void*) * 3, result);
+  // context + code
+  Allocate(Heap::kTagFunction, sizeof(void*) * 2, result);
 
   // Move address of current context to first slot
   Operand qparent(result, 8);
@@ -122,12 +127,18 @@ void Masm::AllocateNumber(Register value, Register result) {
   ChangeAlign(1);
   push(value);
 
-  Allocate(Heap::kTagNumber, 16, result);
+  // int64_t value
+  Allocate(Heap::kTagNumber, 8, result);
 
   pop(value);
   ChangeAlign(-1);
   Operand qvalue(result, 8);
   movq(qvalue, scratch);
+}
+
+
+void Masm::AllocateObjectLiteral(Register size, Register result) {
+  // mask (= (size - 1) << 3) + space
 }
 
 
