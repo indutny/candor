@@ -68,8 +68,10 @@ TEST_START("parser test")
               "[kAssign [p] [0]] [kWhile [true] "
               "[kBlock [kIf [kGt [kPostInc [p]] [10]] [kBreak ]]]]")
 
+  // Object literal
+  PARSER_TEST("a({})", "[kCall [a] @[[kObjectLiteral ]] ]")
+
   // Block expression
-  PARSER_TEST("a({})", "[kCall [a] @[[kObject ]] ]")
   PARSER_TEST("a({ x + 1 })", "[kCall [a] @[[kBlockExpr [kAdd [x] [1]]]] ]")
   PARSER_TEST("a({\n scope x\n x + 1 })",
               "[kCall [a] @[[kBlockExpr [kScopeDecl [x]] "

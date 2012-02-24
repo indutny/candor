@@ -221,11 +221,33 @@ void Assembler::subq(Register dst, Register src) {
 }
 
 
-void Assembler::subq(Register dst, Immediate imm) {
+void Assembler::subq(Register dst, Immediate src) {
   emit_rexw(dst);
   emitb(0x81);
   emit_modrm(dst, 0x05);
-  emitl(imm.value());
+  emitl(src.value());
+}
+
+
+void Assembler::inc(Register dst) {
+  emit_rexw(dst);
+  emitb(0xFF);
+  emit_modrm(dst, 0x00);
+}
+
+
+void Assembler::dec(Register dst) {
+  emit_rexw(dst);
+  emitb(0xFF);
+  emit_modrm(dst, 0x01);
+}
+
+
+void Assembler::shl(Register dst, Immediate src) {
+  emit_rexw(dst);
+  emitb(0xC1);
+  emit_modrm(dst, 0x04);
+  emitb(src.value());
 }
 
 

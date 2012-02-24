@@ -11,6 +11,7 @@ namespace dotlang {
     V(Block)\
     V(Assign)\
     V(Member)\
+    V(ObjectLiteral)\
     V(Return)\
     V(UnOp)\
     V(BinOp)

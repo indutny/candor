@@ -146,7 +146,52 @@ void Masm::AllocateNumber(Register value, Register result) {
 
 
 void Masm::AllocateObjectLiteral(Register size, Register result) {
-  // mask (= (size - 1) << 3) + space
+  // mask (= (size - 1) << 3) + space = ( size * 2 * 8 bytes : key/value )
+  movq(result, size);
+  shl(result, Immediate(4));
+  inc(result);
+
+  Allocate(Heap::kTagObject, result, 0, result);
+
+  Operand qmask(result, 8);
+
+  // Compute mask and store it
+  push(size);
+  dec(size);
+  shl(size, Immediate(3));
+  movq(qmask, size);
+  pop(size);
+
+  // Fill space's key slots (first half) with nil
+  push(rcx);
+  push(result);
+
+  // Skip tag and mask
+  addq(result, Immediate(2 * sizeof(void*)));
+
+  // Calculate end of range
+  movq(rcx, result);
+  addq(rcx, size);
+
+  Label entry(this), loop(this);
+  jmp(&entry);
+  bind(&loop);
+
+  // Fill
+  Operand op(result, 0);
+  movq(op, Immediate(0));
+
+  // Move
+  addq(result, Immediate(8));
+
+  bind(&entry);
+
+  // And loop
+  cmp(result, rcx);
+  jmp(kLt, &loop);
+
+  pop(result);
+  pop(rcx);
 }
 
 

@@ -352,6 +352,21 @@ AstNode* Fullgen::VisitNil(AstNode* node) {
 }
 
 
+AstNode* Fullgen::VisitObjectLiteral(AstNode* node) {
+  Save(rax);
+  Save(rbx);
+
+  movq(rbx, Immediate(node->children()->length() << 1));
+  AllocateObjectLiteral(rbx, rax);
+
+  Result(rax);
+  Restore(rax);
+  Restore(rbx);
+
+  return node;
+}
+
+
 AstNode* Fullgen::VisitReturn(AstNode* node) {
   if (node->lhs() != NULL) {
     // Get value of expression

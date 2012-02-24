@@ -22,7 +22,7 @@ typedef List<AstNode*, ZoneObject> AstList;
     V(kBlock)\
     V(kBlockExpr)\
     V(kScopeDecl)\
-    V(kObject)\
+    V(kObjectLiteral)\
     V(kMember)\
     V(kValue)\
     V(kMValue)\
@@ -300,7 +300,7 @@ class UnOp : public AstNode {
 
 class ObjectLiteral : public AstNode {
  public:
-  ObjectLiteral() : AstNode(kObject) {
+  ObjectLiteral() : AstNode(kObjectLiteral) {
   }
 
   inline AstList* keys() { return &keys_; }

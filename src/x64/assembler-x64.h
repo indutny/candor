@@ -205,7 +205,11 @@ class Assembler {
   void addq(Register dst, Operand& src);
   void addq(Register dst, Immediate src);
   void subq(Register dst, Register src);
-  void subq(Register dst, Immediate imm);
+  void subq(Register dst, Immediate src);
+
+  void inc(Register dst);
+  void dec(Register dst);
+  void shl(Register dst, Immediate src);
 
   void callq(Register dst);
   void callq(Operand& dst);
