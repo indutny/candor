@@ -242,6 +242,11 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
 
       // Generate calling code
       Call(rax, fn->args()->length());
+
+      if (fn->args()->length() != 0) {
+        // Unwind stack
+        addq(rsp, Immediate(fn->args()->length() * sizeof(void*)));
+      }
     }
 
     // Finally restore everything

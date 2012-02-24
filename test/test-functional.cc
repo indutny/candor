@@ -27,12 +27,16 @@ TEST_START("functional test")
     assert(HNumber::Cast(result)->value() == 1);
   })
 
-  FUN_TEST("a(b) { return b }\nreturn a(3)", {
-    assert(HNumber::Cast(result)->value() == 3);
+  FUN_TEST("a(b) { return b }\nreturn a(3) + a(4)", {
+    assert(HNumber::Cast(result)->value() == 7);
   })
 
   FUN_TEST("a(b) { return b }\nreturn a()", {
     assert(result == NULL);
+  })
+
+  FUN_TEST("b() {\nreturn 1\n}\na(c) {\nreturn c()\n}\nreturn a(b)", {
+    assert(HNumber::Cast(result)->value() == 1);
   })
 
   // Context slots
