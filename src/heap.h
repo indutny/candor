@@ -67,7 +67,7 @@ class Heap {
 
   enum Error {
     kErrorNone,
-    kErrorUnexpectedFunction,
+    kErrorIncorrectLhs,
     kErrorCallWithoutVariable
   };
 

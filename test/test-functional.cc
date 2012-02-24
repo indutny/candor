@@ -70,6 +70,15 @@ TEST_START("functional test")
     assert(HNumber::Cast(result)->value() == 9);
   });
 
+  // Unary ops
+  FUN_TEST("a = 1\nreturn ++a", {
+    assert(HNumber::Cast(result)->value() == 2);
+  })
+
+  FUN_TEST("a = 1\nreturn a++ + a", {
+    assert(HNumber::Cast(result)->value() == 3);
+  })
+
   // Runtime errors
   FUN_TEST("() {}", {
     assert(s.CaughtException() == true);

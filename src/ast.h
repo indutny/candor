@@ -97,7 +97,9 @@ class AstNode : public ZoneObject {
   inline bool is_root() { return root_; }
   inline void make_root() { root_ = true; }
 
+  inline void value(const char* value) { value_ = value; }
   inline const char* value() { return value_; }
+  inline void length(uint32_t length) { length_ = length; }
   inline uint32_t length() { return length_; }
 
   inline int32_t stack_slots() { return stack_count_; }
@@ -280,6 +282,10 @@ class UnOp : public AstNode {
            p->Print("]");
   }
 
+  inline bool is_changing() {
+    return subtype_ == kPreInc || subtype_ == kPostInc ||
+           subtype_ == kPreDec || subtype_ == kPostDec;
+  }
   inline UnOpType subtype() { return subtype_; }
 
  protected:

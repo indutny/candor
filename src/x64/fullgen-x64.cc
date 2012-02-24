@@ -190,7 +190,7 @@ AstNode* Fullgen::VisitFunction(AstNode* stmt) {
   } else {
     // Declaration of anonymous function is impossible
     if (fn->variable() == NULL) {
-      Throw(Heap::kErrorUnexpectedFunction);
+      Throw(Heap::kErrorIncorrectLhs);
     } else {
       // Get slot
       Operand name(rax, 0);
@@ -321,7 +321,10 @@ AstNode* Fullgen::VisitValue(AstNode* node) {
 
 
 AstNode* Fullgen::VisitNumber(AstNode* node) {
-  assert(visiting_for_value());
+  if (!visiting_for_value()) {
+    Throw(Heap::kErrorIncorrectLhs);
+    return node;
+  }
 
   movq(scratch, Immediate(StringToInt(node->value(), node->length())));
   AllocateNumber(scratch, result());
@@ -345,8 +348,76 @@ AstNode* Fullgen::VisitReturn(AstNode* node) {
 }
 
 
+AstNode* Fullgen::VisitUnOp(AstNode* node) {
+  UnOp* op = UnOp::Cast(node);
+  Label done(this);
+
+  if (visiting_for_slot()) {
+    Throw(Heap::kErrorIncorrectLhs);
+    return node;
+  }
+
+  // Changing ops should be translated into another form
+  if (op->is_changing()) {
+    AstNode* rhs;
+    AstNode* one = new AstNode(AstNode::kNumber);
+    one->value("1");
+    one->length(1);
+
+    switch (op->subtype()) {
+     case UnOp::kPreInc:
+     case UnOp::kPostInc:
+      rhs = new BinOp(BinOp::kAdd, op->lhs(), one);
+      break;
+     case UnOp::kPreDec:
+     case UnOp::kPostDec:
+      rhs = new BinOp(BinOp::kSub, op->lhs(), one);
+      break;
+     default:
+      break;
+    }
+
+    AstNode* assign = new AstNode(AstNode::kAssign);
+    assign->children()->Push(op->lhs());
+    assign->children()->Push(rhs);
+
+    // ++a => a = a + 1
+    if (op->subtype() == UnOp::kPreInc || op->subtype() == UnOp::kPreDec) {
+      Visit(assign);
+      return node;
+    }
+
+    // a++ => $scratch = a; a = a + 1; $scratch
+    VisitForValue(op->lhs(), scratch);
+    push(scratch);
+
+    Visit(assign);
+
+    pop(scratch);
+    movq(result(), scratch);
+
+    return node;
+  }
+
+  // For `nil` any unop will return `nil`
+  VisitForValue(op->lhs(), result());
+  IsNil(result(), &done);
+
+  // TODO: Coerce to expected type and perform operation
+  emitb(0xcc);
+
+  bind(&done);
+  return node;
+}
+
+
 AstNode* Fullgen::VisitBinOp(AstNode* node) {
   BinOp* op = BinOp::Cast(node);
+
+  if (visiting_for_slot()) {
+    Throw(Heap::kErrorIncorrectLhs);
+    return node;
+  }
 
   Save(rax);
   Save(rbx);
