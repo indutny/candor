@@ -33,6 +33,8 @@ struct Register {
   int code_;
 };
 
+const Register reg_nil = { -1 };
+
 const Register rax = { 0 };
 const Register rcx = { 1 };
 const Register rdx = { 2 };

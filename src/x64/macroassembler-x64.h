@@ -37,7 +37,10 @@ class Masm : public Assembler {
 
   // Allocate some space in heap's new space current page
   // Jmp to runtime_allocate label on exhaust or fail
-  void Allocate(Heap::HeapTag tag, uint32_t size, Register result);
+  void Allocate(Heap::HeapTag tag,
+                Register size_reg,
+                uint32_t size,
+                Register result);
 
   // Allocate context and function
   void AllocateContext(uint32_t slots);
