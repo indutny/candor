@@ -1,6 +1,5 @@
-* Unary operations, Binary operations
-  (Binop AST node with op field, instead of separate nodes)
 * Ast node ids
 * Object literals
 * Array literals
+* Unary operations, Binary operations (finish)
 * Dtrace :)
