@@ -22,6 +22,7 @@ typedef List<AstNode*, ZoneObject> AstList;
     V(kBlock)\
     V(kBlockExpr)\
     V(kScopeDecl)\
+    V(kObject)\
     V(kMember)\
     V(kValue)\
     V(kMValue)\
@@ -295,6 +296,19 @@ class UnOp : public AstNode {
 };
 
 #undef TYPE_MAPPING_UNOP
+
+
+class ObjectLiteral : public AstNode {
+ public:
+  ObjectLiteral() : AstNode(kObject) {
+  }
+
+  inline AstList* keys() { return &keys_; }
+  inline AstList* values() { return children(); }
+
+ protected:
+  AstList keys_;
+};
 
 
 // Specific AST node for function,

@@ -72,6 +72,7 @@ class Parser : public Lexer {
   AstNode* ParseBinOp(TokenType type, AstNode* lhs, int priority = 0);
   AstNode* ParsePrimary();
   AstNode* ParseMember();
+  AstNode* ParseObjectLiteral();
   AstNode* ParseBlock(AstNode* block);
   AstNode* ParseScope();
 

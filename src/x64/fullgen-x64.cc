@@ -398,7 +398,6 @@ AstNode* Fullgen::VisitUnOp(AstNode* node) {
     VisitForValue(op->lhs(), result());
     push(result());
 
-    // XXX: This is a little bit hacky
     rhs->children()->head()->next()->value(new FAstRegister(result()));
     Visit(assign);
 

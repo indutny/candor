@@ -168,6 +168,9 @@ AstNode* Parser::ParseExpression(int priority) {
    case kSub:
     return ParsePrefixUnOp(UnOp::kMinus);
    case kBraceOpen:
+    result = ParseObjectLiteral();
+    if (result != NULL) return result;
+
     result = ParseBlock(NULL);
     if (result == NULL) return NULL;
     result->type(AstNode::kBlockExpr);
@@ -361,6 +364,50 @@ AstNode* Parser::ParseMember() {
     result = Wrap(AstNode::kMember, result);
     result->children()->Push(next);
   }
+
+  return pos.Commit(result);
+}
+
+
+AstNode* Parser::ParseObjectLiteral() {
+  Position pos(this);
+
+  // Skip '{'
+  if (!Peek()->is(kBraceOpen)) return NULL;
+  Skip();
+
+  ObjectLiteral* result = new ObjectLiteral();
+
+  while (!Peek()->is(kBraceClose) && !Peek()->is(kEnd)) {
+    AstNode* key;
+    if (Peek()->is(kString) || Peek()->is(kName)) {
+      key = (new AstNode(AstNode::kName))->FromToken(Peek());
+    } else {
+      return NULL;
+    }
+
+    // Skip ':'
+    if (!Peek()->is(kColon)) return NULL;
+    Skip();
+
+    // Parse expression
+    AstNode* value = ParseExpression();
+    if (value == NULL) return NULL;
+
+    result->keys()->Push(key);
+    result->values()->Push(value);
+
+    // Skip ',' or exit loop on '}'
+    if (Peek()->is(kComma)) {
+      Skip();
+    } else if (!Peek()->is(kBraceClose)) {
+      return NULL;
+    }
+  }
+
+  // Skip '}'
+  if (!Peek()->is(kBraceClose)) return NULL;
+  Skip();
 
   return pos.Commit(result);
 }
