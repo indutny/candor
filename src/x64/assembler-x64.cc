@@ -214,6 +214,13 @@ void Assembler::addq(Register dst, Immediate imm) {
 }
 
 
+void Assembler::subq(Register dst, Register src) {
+  emit_rexw(dst, src);
+  emitb(0x2B);
+  emit_modrm(dst, src);
+}
+
+
 void Assembler::subq(Register dst, Immediate imm) {
   emit_rexw(dst);
   emitb(0x81);

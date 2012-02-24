@@ -138,6 +138,12 @@ void Masm::FillStackSlots(uint32_t slots) {
 }
 
 
+void Masm::IsNil(Register reference, Label* is_nil) {
+  cmp(reference, Immediate(Heap::kTagNil));
+  jmp(kEq, is_nil);
+}
+
+
 void Masm::IsHeapObject(Heap::HeapTag tag,
                         Register reference,
                         Label* mismatch) {

@@ -48,10 +48,10 @@ class Masm : public Assembler {
   // Fill stack slots with nil
   void FillStackSlots(uint32_t slots);
 
-  // Checks if object has passed type
-  void IsHeapObject(Heap::HeapTag tag,
-                    Register reference,
-                    Label* mismatch);
+  void IsNil(Register reference, Label* is_nil);
+
+  // Checks if object has specific type
+  void IsHeapObject(Heap::HeapTag tag, Register reference, Label* mismatch);
 
   // Unboxing routines
   void UnboxNumber(Register number);

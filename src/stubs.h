@@ -14,7 +14,8 @@ class Masm;
 class RelocationInfo;
 
 #define STUBS_LIST(V)\
-    V(Allocate)
+    V(Allocate)\
+    V(CoerceType)
 
 class BaseStub : public FFunction {
  public:
@@ -39,6 +40,14 @@ class BaseStub : public FFunction {
 class AllocateStub : public BaseStub {
  public:
   AllocateStub(Masm* masm) : BaseStub(masm, kAllocate) {
+  }
+
+  void Generate();
+};
+
+class CoerceTypeStub : public BaseStub {
+ public:
+  CoerceTypeStub(Masm* masm) : BaseStub(masm, kCoerceType) {
   }
 
   void Generate();

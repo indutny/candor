@@ -351,24 +351,66 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
   Save(rax);
   Save(rbx);
 
-  Label not_number(this), done(this);
+  Label nil_result(this), not_number(this), done(this);
 
-  VisitForValue(op->lhs(), rax);
-  VisitForValue(op->rhs(), rbx);
+  VisitForValue(op->lhs(), rbx);
 
-  IsHeapObject(Heap::kTagNumber, rax, &not_number);
+  IsNil(rbx, &nil_result);
+
+  VisitForValue(op->rhs(), rax);
+
+  {
+    // Coerce types if needed
+    ChangeAlign(2);
+    Align a(this);
+
+    push(rax);
+    push(rbx);
+    Call(stubs()->GetCoerceTypeStub());
+    // rax(rhs) - will hold heap value with the same type as rbx(lhs)
+
+    ChangeAlign(-2);
+  }
+
   IsHeapObject(Heap::kTagNumber, rbx, &not_number);
 
-  UnboxNumber(rax);
-  UnboxNumber(rbx);
+  {
+    // Number (+) Number
+    UnboxNumber(rbx);
+    UnboxNumber(rax);
 
-  movq(scratch, rax);
-  addq(scratch, rbx);
-  AllocateNumber(scratch, result());
+    movq(scratch, rbx);
+
+    switch (op->subtype()) {
+     case BinOp::kAdd:
+      addq(scratch, rax);
+      break;
+     case BinOp::kSub:
+      subq(scratch, rax);
+      break;
+     default:
+      emitb(0xcc);
+      break;
+    }
+    AllocateNumber(scratch, result());
+
+    jmp(&done);
+  }
+
+  bind(&not_number);
+
+  {
+    // TODO: Implement string binary ops
+    emitb(0xcc);
+  }
 
   jmp(&done);
-  bind(&not_number);
-  emitb(0xcc);
+  bind(&nil_result);
+
+  {
+    // nil (+) nil = nil
+    movq(result(), Immediate(Heap::kTagNil));
+  }
 
   bind(&done);
 

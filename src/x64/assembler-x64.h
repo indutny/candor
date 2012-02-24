@@ -185,12 +185,13 @@ class Assembler {
   void ret(uint16_t imm);
 
   void bind(Label* label);
+  void jmp(Label* label);
+  void jmp(Condition cond, Label* label);
+
   void cmp(Register dst, Register src);
   void cmp(Register dst, Operand& src);
   void cmp(Register dst, Immediate src);
   void cmp(Operand& dst, Immediate src);
-  void jmp(Label* label);
-  void jmp(Condition cond, Label* label);
 
   void movq(Register dst, Register src);
   void movq(Register dst, Operand& src);
@@ -201,6 +202,7 @@ class Assembler {
   void addq(Register dst, Register src);
   void addq(Register dst, Operand& src);
   void addq(Register dst, Immediate src);
+  void subq(Register dst, Register src);
   void subq(Register dst, Immediate imm);
 
   void callq(Register dst);

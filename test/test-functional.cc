@@ -61,8 +61,8 @@ TEST_START("functional test")
     assert(HNumber::Cast(result)->value() == 3);
   })
 
-  FUN_TEST("a = 1\na = 1 + 1\nreturn a", {
-    assert(HNumber::Cast(result)->value() == 2);
+  FUN_TEST("a = 1\na = 1 - 1\nreturn a", {
+    assert(HNumber::Cast(result)->value() == 0);
   })
 
   FUN_TEST("a() { a = 1\nreturn b() { scope a\na = a + 1\nreturn a} }\n"

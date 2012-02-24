@@ -90,4 +90,57 @@ void AllocateStub::Generate() {
   __ ret(16);
 }
 
+
+void CoerceTypeStub::Generate() {
+  __ push(rbp);
+  __ movq(rbp, rsp);
+  __ push(rbx);
+
+  // Arguments
+  Operand lhs(rbp, 16);
+  Operand rhs(rbp, 24);
+
+  Label done(masm()), not_number(masm());
+  __ movq(rax, Immediate(0));
+
+  // Get both values
+  __ movq(rbx, lhs);
+  __ movq(rax, rhs);
+
+  // Check if their tags are equal (just return second in that case)
+  Operand qtag_lhs(rbx, 0), qtag_rhs(rax, 0);
+  __ movq(scratch, qtag_lhs);
+  __ cmp(scratch, qtag_rhs);
+  __ jmp(kEq, &done);
+
+  // If left is number
+  __ cmp(qtag_lhs, Immediate(Heap::kTagNumber));
+  __ jmp(kNe, &not_number);
+
+  {
+    // TODO: Coerce right to number
+    __ emitb(0xcc);
+  }
+
+  __ jmp(&done);
+
+  __ bind(&not_number);
+
+  {
+    // TODO: Coerce right to string
+    __ emitb(0xcc);
+  }
+
+  __ bind(&done);
+
+  // Rax will hold resulting pointer
+
+  __ pop(rbx);
+  __ movq(rsp, rbp);
+  __ pop(rbp);
+
+  // lhs + rhs
+  __ ret(16);
+}
+
 } // namespace dotlang
