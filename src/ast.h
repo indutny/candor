@@ -303,6 +303,24 @@ class ObjectLiteral : public AstNode {
   ObjectLiteral() : AstNode(kObjectLiteral) {
   }
 
+  bool Print(PrintBuffer* p) {
+    if (!p->Print("[kObjectLiteral ")) return false;
+
+    AstList::Item* key = keys()->head();
+    AstList::Item* value = values()->head();
+
+    while (key != NULL) {
+      if (!key->value()->Print(p) || !p->Print(":") ||
+          !value->value()->Print(p)) {
+        return false;
+      }
+      key = key->next();
+      value = value->next();
+    }
+
+    return p->Print("]");
+  }
+
   inline AstList* keys() { return &keys_; }
   inline AstList* values() { return children(); }
 
