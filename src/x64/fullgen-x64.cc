@@ -315,7 +315,7 @@ AstNode* Fullgen::VisitValue(AstNode* node) {
     slot()->base(result());
     slot()->scale(Operand::one);
     // Skip tag, code addr and reference to parent scope
-    slot()->disp(sizeof(void*) * (value->slot()->index() + 2));
+    slot()->disp(sizeof(void*) * (value->slot()->index() + 3));
   }
 
   // If we was asked to return value - dereference slot

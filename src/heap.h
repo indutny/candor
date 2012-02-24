@@ -62,7 +62,8 @@ class Heap {
     kTagNil,
     kTagFunction,
     kTagContext,
-    kTagNumber
+    kTagNumber,
+    kTagObject
   };
 
   enum Error {

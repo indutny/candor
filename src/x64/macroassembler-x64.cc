@@ -89,11 +89,15 @@ void Masm::AllocateContext(uint32_t slots) {
   ChangeAlign(1);
   push(rax);
 
-  Allocate(Heap::kTagContext, sizeof(void*) * (slots + 2), rax);
+  Allocate(Heap::kTagContext, sizeof(void*) * (slots + 3), rax);
 
   // Move address of current context to first slot
   Operand qparent(rax, 8);
   movq(qparent, rdi);
+
+  // Save number of slots
+  Operand qslots(rax, 16);
+  movq(qslots, Immediate(slots));
 
   // Replace current context
   // (It'll be restored by caller)
