@@ -6,6 +6,8 @@
 #include "lexer.h" // lexer
 #include "scope.h" // Scope
 
+#include <assert.h> // assert
+
 namespace dotlang {
 
 // Forward declaration
@@ -371,9 +373,17 @@ class FunctionLiteral : public AstNode {
 // (is variable on-stack or in-context, it's index, and etc)
 class AstValue : public AstNode {
  public:
-  AstValue(Scope* scope, AstNode* name) : AstNode(kValue) {
+  enum AstValueType {
+    kSlot,
+    kRegister
+  };
+
+  AstValue(Scope* scope, AstNode* name) : AstNode(kValue), type_(kSlot) {
     slot_ = scope->GetSlot(name->value(), name->length());
     name_ = name;
+  }
+
+  AstValue(AstValueType type) : AstNode(kValue), type_(type) {
   }
 
   static inline AstValue* Cast(AstNode* node) {
@@ -381,6 +391,8 @@ class AstValue : public AstNode {
   }
 
   bool Print(PrintBuffer* p) {
+    assert(!is_register());
+
     return p->Print("[") &&
            p->PrintValue(name()->value(), name()->length()) &&
            (slot()->is_context() ?
@@ -391,10 +403,15 @@ class AstValue : public AstNode {
            p->Print("]");
   }
 
+  inline bool is_slot() { return type_ == kSlot; }
+  inline bool is_register() { return type_ == kRegister; }
+
   inline ScopeSlot* slot() { return slot_; }
   inline AstNode* name() { return name_; }
 
+
  protected:
+  AstValueType type_;
   ScopeSlot* slot_;
   AstNode* name_;
 };

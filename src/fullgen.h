@@ -12,6 +12,8 @@
 #include "ia32/macroassembler-ia32.h"
 #endif
 
+#include <assert.h> // assert
+
 namespace dotlang {
 
 // Forward declaration
@@ -33,6 +35,22 @@ class FFunction : public ZoneObject {
   Masm* masm_;
   List<RelocationInfo*, ZoneObject> uses_;
   uint32_t addr_;
+};
+
+class FAstRegister : public AstValue {
+ public:
+  FAstRegister(Register reg) : AstValue(kRegister), reg_(reg) {
+  }
+
+  static inline FAstRegister* Cast(AstValue* value) {
+    assert(value->is_register());
+    return reinterpret_cast<FAstRegister*>(value);
+  }
+
+  inline Register reg() { return reg_; }
+
+ protected:
+  Register reg_;
 };
 
 // Generates non-optimized code by visiting each node in AST tree in-order

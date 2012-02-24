@@ -288,6 +288,13 @@ AstNode* Fullgen::VisitAssign(AstNode* stmt) {
 AstNode* Fullgen::VisitValue(AstNode* node) {
   AstValue* value = AstValue::Cast(node);
 
+  // If it's Fullgen generated AST Value
+  if (value->is_register()) {
+    assert(visiting_for_value());
+    movq(result(), FAstRegister::Cast(value)->reg());
+    return node;
+  }
+
   // Get pointer to slot first
   if (value->slot()->is_stack()) {
     // On stack variables
@@ -387,14 +394,15 @@ AstNode* Fullgen::VisitUnOp(AstNode* node) {
       return node;
     }
 
-    // a++ => $scratch = a; a = a + 1; $scratch
-    VisitForValue(op->lhs(), scratch);
-    push(scratch);
+    // a++ => $scratch = a; a = $scratch + 1; $scratch
+    VisitForValue(op->lhs(), result());
+    push(result());
 
+    // XXX: This is a little bit hacky
+    rhs->children()->head()->next()->value(new FAstRegister(result()));
     Visit(assign);
 
-    pop(scratch);
-    movq(result(), scratch);
+    pop(result());
 
     return node;
   }
