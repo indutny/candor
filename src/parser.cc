@@ -158,11 +158,15 @@ AstNode* Parser::ParseExpression(int priority) {
   // Parse prefix unops and block expression
   switch (Peek()->type()) {
    case kInc:
-    return ParsePrefixUnop(AstNode::kPreInc);
+    return ParsePrefixUnOp(UnOp::kPreInc);
    case kDec:
-    return ParsePrefixUnop(AstNode::kPreDec);
+    return ParsePrefixUnOp(UnOp::kPreDec);
    case kNot:
-    return ParsePrefixUnop(AstNode::kNot);
+    return ParsePrefixUnOp(UnOp::kNot);
+   case kAdd:
+    return ParsePrefixUnOp(UnOp::kAdd);
+   case kSub:
+    return ParsePrefixUnOp(UnOp::kSub);
    case kBraceOpen:
     result = ParseBlock(NULL);
     if (result == NULL) return NULL;
@@ -230,11 +234,11 @@ AstNode* Parser::ParseExpression(int priority) {
   switch (type) {
    case kInc:
     Skip();
-    result = Wrap(AstNode::kPostInc, result);
+    result = new UnOp(UnOp::kPostInc, result);
     break;
    case kDec:
     Skip();
-    result = Wrap(AstNode::kPostDec, result);
+    result = new UnOp(UnOp::kPostDec, result);
     break;
    default:
     break;
@@ -265,7 +269,7 @@ AstNode* Parser::ParseExpression(int priority) {
 }
 
 
-AstNode* Parser::ParsePrefixUnop(AstNode::Type type) {
+AstNode* Parser::ParsePrefixUnOp(UnOp::UnOpType type) {
   Position pos(this);
 
   // Consume prefix token
@@ -274,7 +278,7 @@ AstNode* Parser::ParsePrefixUnop(AstNode::Type type) {
   AstNode* expr = ParseExpression();
   if (expr == NULL) return NULL;
 
-  return pos.Commit(Wrap(type, expr));
+  return pos.Commit(new UnOp(type, expr));
 }
 
 

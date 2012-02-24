@@ -31,11 +31,7 @@ typedef List<AstNode*, ZoneObject> AstList;
     V(kReturn)\
     V(kFunction)\
     V(kCall)\
-    V(kPreInc)\
-    V(kPreDec)\
-    V(kNot)\
-    V(kPostInc)\
-    V(kPostDec)\
+    V(kUnOp)\
     V(kBinOp)
 
 #define TYPE_MAPPING_LEXER(V)\
@@ -240,6 +236,58 @@ class BinOp : public AstNode {
 };
 
 #undef TYPE_MAPPING_BINOP
+
+
+#define TYPE_MAPPING_UNOP(V)\
+    V(kPreInc)\
+    V(kPreDec)\
+    V(kNot)\
+    V(kPostInc)\
+    V(kPostDec)\
+    V(kAdd)\
+    V(kSub)
+
+class UnOp : public AstNode {
+ public:
+  enum UnOpType {
+#define MAP_DF(x) x,
+    TYPE_MAPPING_UNOP(MAP_DF)
+#undef MAP_DF
+    kNone
+  };
+
+  UnOp(UnOpType type, AstNode* expr) : AstNode(kUnOp), subtype_(type) {
+    children()->Push(expr);
+  }
+
+  static inline UnOp* Cast(AstNode* node) {
+    return reinterpret_cast<UnOp*>(node);
+  }
+
+  bool Print(PrintBuffer* p) {
+    const char* strtype;
+    switch (subtype()) {
+#define MAP_DF(x) case x: strtype = #x; break;
+      TYPE_MAPPING_UNOP(MAP_DF)
+#undef MAP_DF
+     default:
+      strtype = "kNone";
+      break;
+    }
+
+    return p->Print("[%s ", strtype) &&
+           PrintChildren(p, children()) &&
+           p->Print("]");
+  }
+
+  inline UnOpType subtype() { return subtype_; }
+
+ protected:
+  UnOpType subtype_;
+};
+
+#undef TYPE_MAPPING_UNOP
+
 
 // Specific AST node for function,
 // contains name and variables list

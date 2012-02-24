@@ -21,6 +21,7 @@ TEST_START("parser test")
 
   // Prefix & Postfix
   PARSER_TEST("++a", "[kPreInc [a]]")
+  PARSER_TEST("+a", "[kAdd [a]]")
   PARSER_TEST("!a", "[kNot [a]]")
   PARSER_TEST("a++", "[kPostInc [a]]")
 
