@@ -378,7 +378,7 @@ AstNode* Fullgen::VisitUnOp(AstNode* node) {
 
   // Changing ops should be translated into another form
   if (op->is_changing()) {
-    AstNode* rhs;
+    AstNode* rhs = NULL;
     AstNode* one = new AstNode(AstNode::kNumber);
     one->value("1");
     one->length(1);
