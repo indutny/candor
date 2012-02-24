@@ -39,6 +39,10 @@ TEST_START("functional test")
     assert(HNumber::Cast(result)->value() == 1);
   })
 
+  FUN_TEST("a(c) {\nreturn c()\n}\nreturn a(() {\nreturn 1\n})", {
+    assert(HNumber::Cast(result)->value() == 1);
+  })
+
   // Context slots
   FUN_TEST("b = 13589\na() { scope b }\nreturn b", {
     assert(HNumber::Cast(result)->value() == 13589);
