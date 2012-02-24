@@ -19,7 +19,8 @@ namespace dotlang {
     V(ScopeDecl)\
     V(Name)\
     V(Value)\
-    V(Number)
+    V(Number)\
+    V(Nil)
 
 #define VISITOR_SWITCH(V)\
     case AstNode::k##V:\

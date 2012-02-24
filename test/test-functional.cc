@@ -18,6 +18,10 @@ TEST_START("functional test")
     assert(HNumber::Cast(result)->value() == 32);
   })
 
+  FUN_TEST("a = nil\nreturn a", {
+    assert(result == NULL);
+  })
+
   // Functions
   FUN_TEST("a() {}\nreturn a", {
     assert(HFunction::Cast(result)->addr() != NULL);

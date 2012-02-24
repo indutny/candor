@@ -340,6 +340,18 @@ AstNode* Fullgen::VisitNumber(AstNode* node) {
 }
 
 
+AstNode* Fullgen::VisitNil(AstNode* node) {
+  if (!visiting_for_value()) {
+    Throw(Heap::kErrorIncorrectLhs);
+    return node;
+  }
+
+  movq(result(), Immediate(0));
+
+  return node;
+}
+
+
 AstNode* Fullgen::VisitReturn(AstNode* node) {
   if (node->lhs() != NULL) {
     // Get value of expression

@@ -2,6 +2,7 @@
 #define _SRC_X64_MARCOASSEMBLER_H_
 
 #include "assembler-x64.h"
+#include "assembler-x64-inl.h"
 #include "ast.h" // AstNode
 #include "heap.h" // HeapValue
 
