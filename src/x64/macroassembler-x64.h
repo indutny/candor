@@ -45,6 +45,9 @@ class Masm : public Assembler {
   // Allocate heap number (XXX: should unbox numbers if possible)
   void AllocateNumber(Register value, Register result);
 
+  // Fill stack slots with nil
+  void FillStackSlots(uint32_t slots);
+
   // Checks if object has passed type
   void IsHeapObject(Heap::HeapTag tag,
                     Register reference,
@@ -60,7 +63,7 @@ class Masm : public Assembler {
   void Throw(Heap::Error error);
 
   // Sets correct environment and calls function
-  void Call(Register fn);
+  void Call(Register fn, uint32_t args);
   void Call(BaseStub* stub);
 
   inline void Save(Register src) {

@@ -101,6 +101,14 @@ void Assembler::cmp(Register dst, Operand& src) {
 }
 
 
+void Assembler::cmp(Register dst, Immediate src) {
+  emit_rexw(dst);
+  emitb(0x81);
+  emit_modrm(dst, 7);
+  emitl(src.value());
+}
+
+
 void Assembler::cmp(Operand& dst, Immediate src) {
   emit_rexw(dst);
   emitb(0x81);

@@ -55,7 +55,7 @@ callOrFun := member ("(" ((expr ",")* expr)? ")")+ |
              member? "(" ((expr ",")* expr)? ")" block
 assign := member "=" expr
 
-prefix := ("!" | "--" | "++") expr
+prefix := ("!" | "--" | "++", "-", "+") expr
 postfix := expr ("--" | "++")
 
 binop1 := expr (("*" | "/") expr)*

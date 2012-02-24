@@ -59,7 +59,7 @@ class Space {
 class Heap {
  public:
   enum HeapTag {
-    kTagNone,
+    kTagNil,
     kTagFunction,
     kTagContext,
     kTagNumber

@@ -75,6 +75,7 @@ void Fullgen::Generate(AstNode* ast) {
 
 void Fullgen::GeneratePrologue(AstNode* stmt) {
   // rdi <- reference to parent context (if non-root)
+  // rsi <- arguments count
   push(rbp);
   push(rbx); // callee-save
   movq(rbp, rsp);
@@ -84,11 +85,35 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
   subq(rsp,
        Immediate(8 + RoundUp((stmt->stack_slots() + 1) * sizeof(void*), 16)));
 
+  // Allocate context and clear stack slots
   AllocateContext(stmt->context_slots());
+  FillStackSlots(stmt->stack_slots());
 
   // Store root stack address(rbp) to heap
   // It's needed to unwind stack on exceptions
   if (stmt->is_root()) StoreRootStack();
+
+  // Place all arguments into their slots
+  Label body(this);
+
+  FunctionLiteral* fn = FunctionLiteral::Cast(stmt);
+  AstList::Item* item = fn->args()->head();
+  uint32_t i = 0;
+  while (item != NULL) {
+    Operand lhs(rax, 0);
+    Operand rhs(rbp, 24 + sizeof(void*) * i++);
+
+    cmp(rsi, Immediate(i));
+    jmp(kLt, &body);
+
+    VisitForSlot(item->value(), &lhs, scratch);
+    movq(scratch, rhs);
+    movq(lhs, scratch);
+
+    item = item->next();
+  }
+
+  bind(&body);
 }
 
 
@@ -169,7 +194,7 @@ AstNode* Fullgen::VisitFunction(AstNode* stmt) {
     } else {
       // Get slot
       Operand name(rax, 0);
-      VisitForSlot(fn->variable(), &name, scratch);
+      VisitForSlot(fn->variable(), &name, rcx);
 
       // Put context into slot
       movq(name, rax);
@@ -193,10 +218,35 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
     // Save rax if we're not going to overwrite it
     Save(rax);
 
-    VisitForValue(fn->variable(), scratch);
+    // Save old context
+    Save(rdi);
 
-    // Generate calling code
-    Call(scratch);
+    VisitForValue(fn->variable(), rax);
+
+    ChangeAlign(fn->args()->length());
+
+    {
+      Align a(this);
+
+      AstList::Item* item = fn->args()->head();
+      while (item != NULL) {
+        VisitForValue(item->value(), rsi);
+
+        // Push argument and change alignment
+        push(rsi);
+        ChangeAlign(1);
+        item = item->next();
+      }
+      // Restore alignment
+      ChangeAlign(-fn->args()->length());
+
+      // Generate calling code
+      Call(rax, fn->args()->length());
+    }
+
+    // Finally restore everything
+    ChangeAlign(-fn->args()->length());
+    Restore(rdi);
 
     // Restore rax and set result if needed
     Result(rax);
@@ -208,6 +258,7 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
 
 
 AstNode* Fullgen::VisitAssign(AstNode* stmt) {
+  Save(rax);
   Save(rbx);
 
   // Get value of right-hand side expression in rbx
@@ -215,7 +266,7 @@ AstNode* Fullgen::VisitAssign(AstNode* stmt) {
 
   // Get target slot for left-hand side
   Operand lhs(rax, 0);
-  VisitForSlot(stmt->lhs(), &lhs, scratch);
+  VisitForSlot(stmt->lhs(), &lhs, rax);
 
   // Put value into slot
   movq(lhs, rbx);
@@ -223,6 +274,7 @@ AstNode* Fullgen::VisitAssign(AstNode* stmt) {
   // Propagate result of assign operation
   Result(rbx);
   Restore(rbx);
+  Restore(rax);
 
   return stmt;
 }

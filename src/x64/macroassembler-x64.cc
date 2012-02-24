@@ -127,6 +127,17 @@ void Masm::AllocateNumber(Register value, Register result) {
 }
 
 
+void Masm::FillStackSlots(uint32_t slots) {
+  if (slots == 0) return;
+
+  movq(rax, Immediate(Heap::kTagNil));
+  for (uint32_t i = 0; i < slots; i ++) {
+    Operand slot(rbp, -sizeof(void*) * (i + 1));
+    movq(slot, rax);
+  }
+}
+
+
 void Masm::IsHeapObject(Heap::HeapTag tag,
                         Register reference,
                         Label* mismatch) {
@@ -175,17 +186,13 @@ void Masm::Throw(Heap::Error error) {
 }
 
 
-void Masm::Call(Register fn) {
-  push(rdi);
-
+void Masm::Call(Register fn, uint32_t args) {
   Operand context_slot(fn, 8);
   Operand code_slot(fn, 16);
   movq(rdi, context_slot);
+  movq(rsi, Immediate(args));
 
   callq(code_slot);
-
-  // Restore context
-  pop(rdi);
 }
 
 
