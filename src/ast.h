@@ -35,7 +35,8 @@ typedef List<AstNode*, ZoneObject> AstList;
     V(kPreDec)\
     V(kNot)\
     V(kPostInc)\
-    V(kPostDec)
+    V(kPostDec)\
+    V(kBinOp)
 
 #define TYPE_MAPPING_LEXER(V)\
     V(kName)\
@@ -43,24 +44,7 @@ typedef List<AstNode*, ZoneObject> AstList;
     V(kString)\
     V(kTrue)\
     V(kFalse)\
-    V(kNil)\
-    V(kAdd)\
-    V(kSub)\
-    V(kDiv)\
-    V(kMul)\
-    V(kBAnd)\
-    V(kBOr)\
-    V(kBXor)\
-    V(kEq)\
-    V(kStrictEq)\
-    V(kNe)\
-    V(kStrictNe)\
-    V(kLt)\
-    V(kGt)\
-    V(kLe)\
-    V(kGe)\
-    V(kLOr)\
-    V(kLAnd)
+    V(kNil)
 
 // Base class
 class AstNode : public ZoneObject {
@@ -183,6 +167,79 @@ class AstNode : public ZoneObject {
 #undef TYPE_MAPPING_NORMAL
 #undef TYPE_MAPPING_LEXER
 
+
+#define TYPE_MAPPING_BINOP(V)\
+    V(kAdd)\
+    V(kSub)\
+    V(kDiv)\
+    V(kMul)\
+    V(kBAnd)\
+    V(kBOr)\
+    V(kBXor)\
+    V(kEq)\
+    V(kStrictEq)\
+    V(kNe)\
+    V(kStrictNe)\
+    V(kLt)\
+    V(kGt)\
+    V(kLe)\
+    V(kGe)\
+    V(kLOr)\
+    V(kLAnd)
+
+class BinOp : public AstNode {
+ public:
+  enum BinOpType {
+#define MAP_DF(x) x,
+    TYPE_MAPPING_BINOP(MAP_DF)
+#undef MAP_DF
+    kNone
+  };
+
+  BinOp(BinOpType type, AstNode* lhs, AstNode* rhs) : AstNode(kBinOp),
+                                                      subtype_(type) {
+    children()->Push(lhs);
+    children()->Push(rhs);
+  }
+
+  static inline BinOp* Cast(AstNode* node) {
+    return reinterpret_cast<BinOp*>(node);
+  }
+
+  // Converts lexer's token type to binop node type if possible
+  inline static BinOpType ConvertType(Lexer::TokenType type) {
+    switch (type) {
+#define MAP_DF(x) case Lexer::x: return x;
+      TYPE_MAPPING_BINOP(MAP_DF)
+#undef MAP_DF
+     default:
+      return kNone;
+    }
+  }
+
+  bool Print(PrintBuffer* p) {
+    const char* strtype;
+    switch (subtype()) {
+#define MAP_DF(x) case x: strtype = #x; break;
+      TYPE_MAPPING_BINOP(MAP_DF)
+#undef MAP_DF
+     default:
+      strtype = "kNone";
+      break;
+    }
+
+    return p->Print("[%s ", strtype) &&
+           PrintChildren(p, children()) &&
+           p->Print("]");
+  }
+
+  inline BinOpType subtype() { return subtype_; }
+
+ protected:
+  BinOpType subtype_;
+};
+
+#undef TYPE_MAPPING_BINOP
 
 // Specific AST node for function,
 // contains name and variables list

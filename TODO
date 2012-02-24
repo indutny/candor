@@ -1,4 +1,3 @@
-* Function arguments
 * Unary operations, Binary operations
   (Binop AST node with op field, instead of separate nodes)
 * Ast node ids

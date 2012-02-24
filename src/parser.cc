@@ -287,8 +287,7 @@ AstNode* Parser::ParseBinOp(TokenType type, AstNode* lhs, int priority) {
   AstNode* rhs = ParseExpression(priority);
   if (rhs == NULL) return NULL;
 
-  AstNode* result = Wrap(AstNode::ConvertType(type), lhs);
-  result->children()->Push(rhs);
+  AstNode* result = new BinOp(BinOp::ConvertType(type), lhs, rhs);
 
   return pos.Commit(result);
 }

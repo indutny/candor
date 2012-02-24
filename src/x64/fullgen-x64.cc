@@ -345,14 +345,16 @@ AstNode* Fullgen::VisitReturn(AstNode* node) {
 }
 
 
-AstNode* Fullgen::VisitAdd(AstNode* node) {
+AstNode* Fullgen::VisitBinOp(AstNode* node) {
+  BinOp* op = BinOp::Cast(node);
+
   Save(rax);
   Save(rbx);
 
   Label not_number(this), done(this);
 
-  VisitForValue(node->lhs(), rax);
-  VisitForValue(node->rhs(), rbx);
+  VisitForValue(op->lhs(), rax);
+  VisitForValue(op->rhs(), rbx);
 
   IsHeapObject(Heap::kTagNumber, rax, &not_number);
   IsHeapObject(Heap::kTagNumber, rbx, &not_number);
