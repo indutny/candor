@@ -164,9 +164,9 @@ AstNode* Parser::ParseExpression(int priority) {
    case kNot:
     return ParsePrefixUnOp(UnOp::kNot);
    case kAdd:
-    return ParsePrefixUnOp(UnOp::kAdd);
+    return ParsePrefixUnOp(UnOp::kPlus);
    case kSub:
-    return ParsePrefixUnOp(UnOp::kSub);
+    return ParsePrefixUnOp(UnOp::kMinus);
    case kBraceOpen:
     result = ParseBlock(NULL);
     if (result == NULL) return NULL;

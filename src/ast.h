@@ -241,11 +241,11 @@ class BinOp : public AstNode {
 #define TYPE_MAPPING_UNOP(V)\
     V(kPreInc)\
     V(kPreDec)\
-    V(kNot)\
     V(kPostInc)\
     V(kPostDec)\
-    V(kAdd)\
-    V(kSub)
+    V(kNot)\
+    V(kPlus)\
+    V(kMinus)
 
 class UnOp : public AstNode {
  public:

@@ -31,6 +31,7 @@ class Visitor {
   virtual AstNode* VisitNumber(AstNode* node);
   virtual AstNode* VisitReturn(AstNode* node);
 
+  virtual AstNode* VisitUnOp(AstNode* node);
   virtual AstNode* VisitBinOp(AstNode* node);
 
  private:

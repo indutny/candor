@@ -12,6 +12,7 @@ namespace dotlang {
     V(Assign)\
     V(Member)\
     V(Return)\
+    V(UnOp)\
     V(BinOp)
 
 #define VISITOR_MAPPING_REGULAR(V)\
