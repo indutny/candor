@@ -192,7 +192,7 @@ void Masm::AllocateObjectLiteral(Register size, Register result) {
   Push(size);
 
   // keys + values
-  shl(size, Immediate(1));
+  shl(size, Immediate(4));
   Allocate(Heap::kTagMap, size, 0, scratch);
   movq(qmap, scratch);
 
@@ -203,9 +203,8 @@ void Masm::AllocateObjectLiteral(Register size, Register result) {
   Operand qmapsize(result, 8);
   movq(qmapsize, size);
 
-  // Fill keys with nil
+  // Fill map with nil
   addq(result, Immediate(16));
-  shl(size, Immediate(2));
   addq(size, result);
   Fill(result, size, Immediate(Heap::kTagNil));
   Pop(result);
