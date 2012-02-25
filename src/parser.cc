@@ -381,7 +381,7 @@ AstNode* Parser::ParseObjectLiteral() {
   while (!Peek()->is(kBraceClose) && !Peek()->is(kEnd)) {
     AstNode* key;
     if (Peek()->is(kString) || Peek()->is(kName)) {
-      key = (new AstNode(AstNode::kName))->FromToken(Peek());
+      key = (new AstNode(AstNode::kProperty))->FromToken(Peek());
       Skip();
     } else {
       return NULL;

@@ -70,7 +70,11 @@ TEST_START("parser test")
 
   // Object literal
   PARSER_TEST("a({})", "[kCall [a] @[[kObjectLiteral ]] ]")
-  PARSER_TEST("a = { x : 1 }", "[kAssign [a] [kObjectLiteral [x]:[1]]]")
+  PARSER_TEST("a = { x : 1 }",
+              "[kAssign [a] [kObjectLiteral [kProperty x]:[1]]]")
+  PARSER_TEST("a = { x : 1, y: 2 }",
+              "[kAssign [a] [kObjectLiteral "
+              "[kProperty x]:[1] [kProperty y]:[2]]]")
 
   // Block expression
   PARSER_TEST("a({ x + 1 })", "[kCall [a] @[[kBlockExpr [kAdd [x] [1]]]] ]")

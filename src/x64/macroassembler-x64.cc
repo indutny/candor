@@ -28,17 +28,17 @@ void Masm::Pushad() {
 }
 
 
-void Masm::Popad() {
-  pop(r15);
-  pop(r11);
-  pop(r10);
-  pop(r9);
-  pop(r8);
-  pop(rdi);
-  pop(rsi);
-  pop(rdx);
-  pop(rcx);
-  pop(rax);
+void Masm::Popad(Register preserve) {
+  PreservePop(r15, preserve);
+  PreservePop(r11, preserve);
+  PreservePop(r10, preserve);
+  PreservePop(r9, preserve);
+  PreservePop(r8, preserve);
+  PreservePop(rdi, preserve);
+  PreservePop(rsi, preserve);
+  PreservePop(rdx, preserve);
+  PreservePop(rcx, preserve);
+  PreservePop(rax, preserve);
 }
 
 

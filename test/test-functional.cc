@@ -88,6 +88,10 @@ TEST_START("functional test")
     assert(result != NULL);
   })
 
+  FUN_TEST("return { a : 1 }", {
+    assert(result != NULL);
+  })
+
   // Runtime errors
   FUN_TEST("() {}", {
     assert(s.CaughtException() == true);

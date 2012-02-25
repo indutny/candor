@@ -4,6 +4,7 @@
 #include "ast.h" // AstNode
 #include "zone.h" // ZoneObject
 #include "stubs.h" // Stubs
+#include "runtime.h" // Runtime functions
 #include "utils.h" // List
 
 #include <assert.h>
@@ -328,32 +329,46 @@ AstNode* Fullgen::VisitValue(AstNode* node) {
 
 
 AstNode* Fullgen::VisitMember(AstNode* node) {
+  Label nil_error(this), non_object_error(this), hashing(this);
+
   VisitForValue(node->lhs(), result());
 
-  slot()->base(result());
-  if (node->rhs()->is(AstNode::kProperty) ||
-      node->rhs()->is(AstNode::kString)) {
-    // Compute key hash at compile time
-    uint32_t hash = ComputeHash(node->rhs()->value(), node->rhs()->length());
-    movq(scratch, Immediate(hash));
-  } else {
-    // TODO: Implement hashing of non-constant value
-    emitb(0xcc);
-  }
+  // Throw error if we're trying to lookup into nil object
+  IsNil(result(), &nil_error);
+  // Or into non-object
+  IsHeapObject(Heap::kTagObject, result(), &non_object_error);
 
-  Save(rax);
+  jmp(&hashing);
+  bind(&nil_error);
+
+  Throw(Heap::kErrorNilPropertyLookup);
+
+  bind(&non_object_error);
+
+  Throw(Heap::kErrorNonObjectPropertyLookup);
+
+  // Calculate hash of property
+  bind(&hashing);
+
+  RuntimeLookupPropertyCallback lookup = &RuntimeLookupProperty;
   {
+    Pushad();
+
     ChangeAlign(2);
     Align a(this);
 
-    // LookupStub(obj, hash)
-    push(scratch);
-    push(result());
+    // RuntimeLookupProperty(obj, key) -> returns addr of slot
+    movq(rdi, result());
+    VisitForValue(node->rhs(), rsi);
 
-    Call(stubs()->GetPropertyLookupStub());
+    movq(rax, Immediate(*reinterpret_cast<uint64_t*>(&lookup)));
+    callq(rax);
+    movq(result(), rax);
+
+    Popad(result());
   }
-  Result(rax);
-  Restore(rax);
+  slot()->base(result());
+  slot()->disp(0);
 
   // Unbox value if asked
   if (visiting_for_value()) {

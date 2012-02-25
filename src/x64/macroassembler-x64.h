@@ -18,7 +18,7 @@ class Masm : public Assembler {
 
   // Save/restore all valuable register
   void Pushad();
-  void Popad();
+  void Popad(Register preserve);
 
   class Align {
    public:
@@ -84,6 +84,14 @@ class Masm : public Assembler {
   inline void Pop(Register src) {
     pop(src);
     ChangeAlign(-1);
+  }
+
+  inline void PreservePop(Register src, Register preserve) {
+    if (src.is(preserve)) {
+      pop(scratch);
+    } else {
+      pop(src);
+    }
   }
 
   inline void Save(Register src) {

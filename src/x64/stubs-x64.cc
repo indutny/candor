@@ -11,9 +11,23 @@ BaseStub::BaseStub(Masm* masm, StubType type) : FFunction(masm),
 }
 
 
-void AllocateStub::Generate() {
+void BaseStub::GeneratePrologue() {
   __ push(rbp);
   __ movq(rbp, rsp);
+}
+
+
+void BaseStub::GenerateEpilogue(int args) {
+  __ movq(rsp, rbp);
+  __ pop(rbp);
+
+  // tag + size
+  __ ret(args * 8);
+}
+
+
+void AllocateStub::Generate() {
+  GeneratePrologue();
   __ push(rbx);
 
   // Arguments
@@ -60,16 +74,16 @@ void AllocateStub::Generate() {
 
   RuntimeAllocateCallback allocate = &RuntimeAllocate;
 
-  __ movq(scratch, Immediate(*reinterpret_cast<uint64_t*>(&allocate)));
   {
     Masm::Align a(masm_);
     __ Pushad();
+    __ movq(scratch, Immediate(*reinterpret_cast<uint64_t*>(&allocate)));
 
     // Two arguments: heap and size
     __ movq(rdi, heapref);
     __ movq(rsi, size);
     __ callq(scratch);
-    __ Popad();
+    __ Popad(rax);
   }
 
   // Voila result and result_end are pointers
@@ -81,19 +95,13 @@ void AllocateStub::Generate() {
   __ movq(qtag, scratch);
 
   // Rax will hold resulting pointer
-
   __ pop(rbx);
-  __ movq(rsp, rbp);
-  __ pop(rbp);
-
-  // tag + size
-  __ ret(16);
+  GenerateEpilogue(2);
 }
 
 
 void CoerceTypeStub::Generate() {
-  __ push(rbp);
-  __ movq(rbp, rsp);
+  GeneratePrologue();
   __ push(rbx);
 
   // Arguments
@@ -136,24 +144,7 @@ void CoerceTypeStub::Generate() {
   // Rax will hold resulting pointer
 
   __ pop(rbx);
-  __ movq(rsp, rbp);
-  __ pop(rbp);
-
-  // lhs + rhs
-  __ ret(16);
-}
-
-void PropertyLookupStub::Generate() {
-  __ push(rbp);
-  __ movq(rbp, rsp);
-  __ push(rbx);
-
-  __ pop(rbx);
-  __ movq(rsp, rbp);
-  __ pop(rbp);
-
-  // lhs + rhs
-  __ ret(16);
+  GenerateEpilogue(2);
 }
 
 } // namespace dotlang

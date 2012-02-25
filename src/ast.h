@@ -315,7 +315,8 @@ class ObjectLiteral : public AstNode {
 
     while (key != NULL) {
       if (!key->value()->Print(p) || !p->Print(":") ||
-          !value->value()->Print(p)) {
+          !value->value()->Print(p) ||
+          (key->next() != NULL && !p->Print(" "))) {
         return false;
       }
       key = key->next();

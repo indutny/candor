@@ -15,8 +15,7 @@ class RelocationInfo;
 
 #define STUBS_LIST(V)\
     V(Allocate)\
-    V(CoerceType)\
-    V(PropertyLookup)
+    V(CoerceType)
 
 class BaseStub : public FFunction {
  public:
@@ -28,6 +27,9 @@ class BaseStub : public FFunction {
   };
 
   BaseStub(Masm* masm, StubType type);
+
+  void GeneratePrologue();
+  void GenerateEpilogue(int args);
 
   virtual void Generate() = 0;
 
@@ -49,14 +51,6 @@ class AllocateStub : public BaseStub {
 class CoerceTypeStub : public BaseStub {
  public:
   CoerceTypeStub(Masm* masm) : BaseStub(masm, kCoerceType) {
-  }
-
-  void Generate();
-};
-
-class PropertyLookupStub : public BaseStub {
- public:
-  PropertyLookupStub(Masm* masm) : BaseStub(masm, kPropertyLookup) {
   }
 
   void Generate();
