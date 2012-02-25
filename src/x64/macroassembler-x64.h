@@ -49,8 +49,11 @@ class Masm : public Assembler {
   // Allocate heap number (XXX: should unbox numbers if possible)
   void AllocateNumber(Register value, Register result);
 
-  // Allocate object
+  // Allocate object&map
   void AllocateObjectLiteral(Register size, Register result);
+
+  // Fills memory segment with immediate value
+  void Fill(Register start, Register end, Immediate value);
 
   // Fill stack slots with nil
   void FillStackSlots(uint32_t slots);
@@ -73,18 +76,22 @@ class Masm : public Assembler {
   void Call(Register fn, uint32_t args);
   void Call(BaseStub* stub);
 
+  inline void Push(Register src) {
+    ChangeAlign(1);
+    push(src);
+  }
+
+  inline void Pop(Register src) {
+    pop(src);
+    ChangeAlign(-1);
+  }
+
   inline void Save(Register src) {
-    if (!result().is(src)) {
-      push(src);
-      ChangeAlign(1);
-    }
+    if (!result().is(src)) Push(src);
   }
 
   inline void Restore(Register src) {
-    if (!result().is(src)) {
-      pop(src);
-      ChangeAlign(-1);
-    }
+    if (!result().is(src)) Pop(src);
   }
 
   inline void Result(Register src) {

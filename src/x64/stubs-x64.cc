@@ -143,4 +143,17 @@ void CoerceTypeStub::Generate() {
   __ ret(16);
 }
 
+void PropertyLookupStub::Generate() {
+  __ push(rbp);
+  __ movq(rbp, rsp);
+  __ push(rbx);
+
+  __ pop(rbx);
+  __ movq(rsp, rbp);
+  __ pop(rbp);
+
+  // lhs + rhs
+  __ ret(16);
+}
+
 } // namespace dotlang

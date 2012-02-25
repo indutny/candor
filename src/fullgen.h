@@ -84,13 +84,13 @@ class Fullgen : public Masm, public Visitor {
 
   void GeneratePrologue(AstNode* stmt);
   void GenerateEpilogue();
-  void GenerateLookup(AstNode* name);
 
   AstNode* VisitFunction(AstNode* stmt);
   AstNode* VisitCall(AstNode* stmt);
   AstNode* VisitAssign(AstNode* stmt);
 
   AstNode* VisitValue(AstNode* node);
+  AstNode* VisitMember(AstNode* node);
   AstNode* VisitNumber(AstNode* node);
   AstNode* VisitNil(AstNode* node);
   AstNode* VisitObjectLiteral(AstNode* node);

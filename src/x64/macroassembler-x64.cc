@@ -65,8 +65,7 @@ void Masm::Allocate(Heap::HeapTag tag,
                     uint32_t size,
                     Register result) {
   if (!result.is(rax)) {
-    ChangeAlign(1);
-    push(rax);
+    Push(rax);
   }
 
   ChangeAlign(2);
@@ -90,15 +89,13 @@ void Masm::Allocate(Heap::HeapTag tag,
 
   if (!result.is(rax)) {
     movq(result, rax);
-    pop(rax);
-    ChangeAlign(-1);
+    Pop(rax);
   }
 }
 
 
 void Masm::AllocateContext(uint32_t slots) {
-  ChangeAlign(1);
-  push(rax);
+  Push(rax);
 
   // parent + number of slots + slots
   Allocate(Heap::kTagContext, reg_nil, sizeof(void*) * (slots + 2), rax);
@@ -114,8 +111,7 @@ void Masm::AllocateContext(uint32_t slots) {
   // Replace current context
   // (It'll be restored by caller)
   movq(rdi, rax);
-  pop(rax);
-  ChangeAlign(-1);
+  Pop(rax);
 }
 
 
@@ -132,76 +128,87 @@ void Masm::AllocateFunction(Register addr, Register result) {
 
 
 void Masm::AllocateNumber(Register value, Register result) {
-  ChangeAlign(1);
-  push(value);
+  Push(value);
 
   // int64_t value
   Allocate(Heap::kTagNumber, reg_nil, 8, result);
 
-  pop(value);
-  ChangeAlign(-1);
+  Pop(value);
+
   Operand qvalue(result, 8);
   movq(qvalue, scratch);
 }
 
 
 void Masm::AllocateObjectLiteral(Register size, Register result) {
-  // mask (= (size - 1) << 3) + space = ( size * 2 * 8 bytes : key/value )
-  movq(result, size);
-  shl(result, Immediate(4));
-  inc(result);
-
-  Allocate(Heap::kTagObject, result, 0, result);
+  // mask + map
+  Allocate(Heap::kTagObject, reg_nil, 16, result);
 
   Operand qmask(result, 8);
+  Operand qmap(result, 16);
 
-  // Compute mask and store it
-  push(size);
+  // Set mask
+  Push(size);
+
+  // mask (= (size - 1) << 3)
   dec(size);
   shl(size, Immediate(3));
   movq(qmask, size);
-  pop(size);
 
-  // Fill space's key slots (first half) with nil
-  push(rcx);
-  push(result);
+  Pop(size);
 
-  // Skip tag and mask
-  addq(result, Immediate(2 * sizeof(void*)));
+  // Create map
+  Push(size);
 
-  // Calculate end of range
-  movq(rcx, result);
-  addq(rcx, size);
+  // keys + values
+  shl(size, Immediate(1));
+  Allocate(Heap::kTagMap, size, 0, scratch);
+  movq(qmap, scratch);
+
+  Push(result);
+  movq(result, scratch);
+
+  // Fill keys with nil
+  addq(result, Immediate(8));
+  addq(size, result);
+  Fill(result, size, Immediate(Heap::kTagNil));
+  Pop(result);
+
+  Pop(size);
+}
+
+
+void Masm::Fill(Register start, Register end, Immediate value) {
+  Push(start);
 
   Label entry(this), loop(this);
   jmp(&entry);
   bind(&loop);
 
   // Fill
-  Operand op(result, 0);
-  movq(op, Immediate(0));
+  Operand op(start, 0);
+  movq(op, value);
 
   // Move
-  addq(result, Immediate(8));
+  addq(start, Immediate(8));
 
   bind(&entry);
 
   // And loop
-  cmp(result, rcx);
+  cmp(start, end);
   jmp(kLt, &loop);
 
-  pop(result);
-  pop(rcx);
+  Pop(start);
 }
 
 
 void Masm::FillStackSlots(uint32_t slots) {
   if (slots == 0) return;
 
-  movq(rax, Immediate(Heap::kTagNil));
+  movq(scratch, Immediate(Heap::kTagNil));
   for (uint32_t i = 0; i < slots; i ++) {
     Operand slot(rbp, -sizeof(void*) * (i + 1));
-    movq(slot, rax);
+    movq(slot, scratch);
   }
 }
 

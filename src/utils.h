@@ -10,8 +10,22 @@
 
 namespace dotlang {
 
-class EmptyClass {
-};
+inline uint32_t ComputeHash(const char* key, uint32_t length) {
+  uint32_t hash = 0;
+  for (uint32_t i = 0; i < length; i++) {
+    hash += key[i];
+    hash += (hash << 10);
+    hash ^= (hash >> 6);
+  }
+  hash += (hash << 3);
+  hash ^= (hash >> 11);
+  hash += (hash << 15);
+
+  return hash;
+}
+
+
+class EmptyClass { };
 
 template <class T, class ItemParent>
 class List {
@@ -135,23 +149,8 @@ class HashMap {
   }
 
 
-  static uint32_t Hash(const char* key, uint32_t length) {
-    uint32_t hash = 0;
-    for (uint32_t i = 0; i < length; i++) {
-      hash += key[i];
-      hash += (hash << 10);
-      hash ^= (hash >> 6);
-    }
-    hash += (hash << 3);
-    hash ^= (hash >> 11);
-    hash += (hash << 15);
-
-    return hash;
-  }
-
-
   void Set(const char* key, uint32_t length, T value) {
-    uint32_t index = Hash(key, length) & mask_;
+    uint32_t index = ComputeHash(key, length) & mask_;
     Item* i = map_[index];
     Item* next = new Item(key, length, value);
 
@@ -174,7 +173,7 @@ class HashMap {
 
 
   T Get(const char* key, uint32_t length) {
-    uint32_t index = Hash(key, length) & mask_;
+    uint32_t index = ComputeHash(key, length) & mask_;
     Item* i = map_[index];
 
     while (i != NULL) {

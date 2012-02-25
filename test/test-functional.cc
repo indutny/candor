@@ -83,6 +83,11 @@ TEST_START("functional test")
     assert(HNumber::Cast(result)->value() == 3);
   })
 
+  // Objects
+  FUN_TEST("return {}", {
+    assert(result != NULL);
+  })
+
   // Runtime errors
   FUN_TEST("() {}", {
     assert(s.CaughtException() == true);

@@ -327,6 +327,43 @@ AstNode* Fullgen::VisitValue(AstNode* node) {
 }
 
 
+AstNode* Fullgen::VisitMember(AstNode* node) {
+  VisitForValue(node->lhs(), result());
+
+  slot()->base(result());
+  if (node->rhs()->is(AstNode::kProperty) ||
+      node->rhs()->is(AstNode::kString)) {
+    // Compute key hash at compile time
+    uint32_t hash = ComputeHash(node->rhs()->value(), node->rhs()->length());
+    movq(scratch, Immediate(hash));
+  } else {
+    // TODO: Implement hashing of non-constant value
+    emitb(0xcc);
+  }
+
+  Save(rax);
+  {
+    ChangeAlign(2);
+    Align a(this);
+
+    // LookupStub(obj, hash)
+    push(scratch);
+    push(result());
+
+    Call(stubs()->GetPropertyLookupStub());
+  }
+  Result(rax);
+  Restore(rax);
+
+  // Unbox value if asked
+  if (visiting_for_value()) {
+    movq(result(), *slot());
+  }
+
+  return node;
+}
+
+
 AstNode* Fullgen::VisitNumber(AstNode* node) {
   if (!visiting_for_value()) {
     Throw(Heap::kErrorIncorrectLhs);

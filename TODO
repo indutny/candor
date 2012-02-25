@@ -1,4 +1,4 @@
-* Object literals
+* Object literals, use separate heap value for map replacement on grow
 * Array literals
 * Ast node ids
 * Unary operations, Binary operations (finish)
