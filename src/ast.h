@@ -303,6 +303,10 @@ class ObjectLiteral : public AstNode {
   ObjectLiteral() : AstNode(kObjectLiteral) {
   }
 
+  static inline ObjectLiteral* Cast(AstNode* node) {
+    return reinterpret_cast<ObjectLiteral*>(node);
+  }
+
   bool Print(PrintBuffer* p) {
     if (!p->Print("[kObjectLiteral ")) return false;
 

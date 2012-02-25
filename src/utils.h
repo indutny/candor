@@ -262,6 +262,15 @@ inline uint32_t RoundUp(uint32_t value, uint32_t to) {
 }
 
 
+inline uint32_t PowerOfTwo(uint32_t value) {
+  uint32_t result = 2;
+
+  while (result != 0 && result < value) result <<= 1;
+
+  return result;
+}
+
+
 // XXX: Naive implementation
 inline uint64_t StringToInt(const char* value, uint32_t length) {
   uint64_t result = 0;

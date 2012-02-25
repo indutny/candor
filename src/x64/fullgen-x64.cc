@@ -390,11 +390,37 @@ AstNode* Fullgen::VisitNil(AstNode* node) {
 
 
 AstNode* Fullgen::VisitObjectLiteral(AstNode* node) {
+  ObjectLiteral* obj = ObjectLiteral::Cast(node);
+
   Save(rax);
   Save(rbx);
 
-  movq(rbx, Immediate(node->children()->length() << 1));
+  // Ensure that map will be filled only by half at maximum
+  movq(rbx, Immediate(PowerOfTwo(node->children()->length() << 1)));
   AllocateObjectLiteral(rbx, rax);
+
+  // Set every key/value pair
+  assert(obj->keys()->length() == obj->values()->length());
+  AstList::Item* key = obj->keys()->head();
+  AstList::Item* value = obj->values()->head();
+  while (key != NULL) {
+    Save(rax);
+
+    AstNode* member = new AstNode(AstNode::kMember);
+    member->children()->Push(new FAstRegister(rax));
+    member->children()->Push(key->value());
+
+    AstNode* assign = new AstNode(AstNode::kAssign);
+    assign->children()->Push(member);
+    assign->children()->Push(value->value());
+
+    VisitForValue(assign, rbx);
+
+    Restore(rax);
+
+    key = key->next();
+    value = value->next();
+  }
 
   Result(rax);
   Restore(rax);
