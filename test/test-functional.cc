@@ -96,6 +96,11 @@ TEST_START("functional test")
     assert(result != NULL);
   })
 
+  FUN_TEST("a = {a:1,b:2,c:3,d:4,e:5,f:6,g:7}\n"
+           "return a.a + a.b + a.c + a.d + a.e + a.f + a.g", {
+    assert(HNumber::Cast(result)->value() == 28);
+  })
+
   // Runtime errors
   FUN_TEST("() {}", {
     assert(s.CaughtException() == true);

@@ -3,6 +3,7 @@
 
 #include <stdint.h> // uint32_t
 #include <assert.h> // assert
+#include <string.h> // strncmp
 #include <sys/types.h> // size_t
 
 namespace dotlang {
@@ -35,14 +36,14 @@ char* RuntimeLookupProperty(char* obj, char* key) {
 
       // Do circular lookup into map, rehash if we returned to the start point
       uint32_t start = hash & mask;
-      uint32_t index;
-      for (index = start; index != start - sizeof(void*); index++) {
+      uint32_t index = start;
+      for (; index != start - sizeof(void*); index += sizeof(void*)) {
         if (index > mask) {
           index = 0;
         }
 
         if (*reinterpret_cast<uint64_t*>(map + index) == 0) break;
-        if (RuntimeCompare(reinterpret_cast<char*>(map + index), key) == 0) {
+        if (RuntimeCompare(*reinterpret_cast<char**>(map + index), key) == 0) {
           break;
         }
       }
@@ -66,8 +67,20 @@ char* RuntimeLookupProperty(char* obj, char* key) {
 
 
 size_t RuntimeCompare(char* lhs, char* rhs) {
-  // XXX: Do real comparison here
-  return 0;
+  Heap::HeapTag lhs_tag = static_cast<Heap::HeapTag>(
+      *reinterpret_cast<uint64_t*>(lhs));
+  Heap::HeapTag rhs_tag = static_cast<Heap::HeapTag>(
+      *reinterpret_cast<uint64_t*>(rhs));
+
+  if (lhs_tag != Heap::kTagString) assert(0 && "Not implemented yet");
+  if (rhs_tag != Heap::kTagString) assert(0 && "Not implemented yet");
+
+  uint64_t lhs_length = *reinterpret_cast<uint64_t*>(lhs + 16);
+  uint64_t rhs_length = *reinterpret_cast<uint64_t*>(rhs + 16);
+
+  return lhs_length < rhs_length ? -1 :
+         lhs_length > rhs_length ? 1 :
+         strncmp(lhs + 24, rhs + 24, lhs_length);
 }
 
 } // namespace dotlang
