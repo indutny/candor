@@ -22,6 +22,10 @@ TEST_START("functional test")
     assert(result == NULL);
   })
 
+  FUN_TEST("return 'abcdef';", {
+    assert(strcmp(HString::Cast(result)->value(), "abcdef") == 0);
+  })
+
   // Functions
   FUN_TEST("a() {}\nreturn a", {
     assert(HFunction::Cast(result)->addr() != NULL);

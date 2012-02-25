@@ -392,6 +392,23 @@ AstNode* Fullgen::VisitNumber(AstNode* node) {
 }
 
 
+AstNode* Fullgen::VisitString(AstNode* node) {
+  if (!visiting_for_value()) {
+    Throw(Heap::kErrorIncorrectLhs);
+    return node;
+  }
+
+  AllocateString(node->value(), node->length(), result());
+  return node;
+}
+
+
+AstNode* Fullgen::VisitProperty(AstNode* node) {
+  // kProperty is essentially the same as string
+  return VisitString(node);
+}
+
+
 AstNode* Fullgen::VisitNil(AstNode* node) {
   if (!visiting_for_value()) {
     Throw(Heap::kErrorIncorrectLhs);

@@ -1,5 +1,7 @@
 #include "heap.h"
 #include <stdint.h> // uint32_t
+#include <string.h> // memcpy
+#include <zone.h> // Zone::Allocate
 #include <assert.h> // assert
 
 namespace dotlang {
@@ -50,6 +52,22 @@ HNumber* HNumber::Cast(void* value) {
   assert(value != NULL);
   assert(*reinterpret_cast<uint64_t*>(value) == Heap::kTagNumber);
   return new HNumber(*(reinterpret_cast<int64_t*>(value) + 1));
+}
+
+
+HString::HString(char* value, uint32_t length) {
+  value_ = reinterpret_cast<char*>(Zone::current()->Allocate(length + 1));
+  memcpy(value_, value, length);
+  value_[length] = 0;
+}
+
+
+HString* HString::Cast(void* value) {
+  assert(value != NULL);
+  assert(*reinterpret_cast<uint64_t*>(value) == Heap::kTagString);
+  return new HString(
+      reinterpret_cast<char*>(value) + 24,
+      *(reinterpret_cast<int64_t*>(value) + 2));
 }
 
 

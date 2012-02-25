@@ -64,6 +64,8 @@ class Zone {
   void* Allocate(size_t size);
 
   static Zone* current_;
+  static inline Zone* current() { return current_; }
+
   Zone* parent_;
 
   List<ZoneBlock*, ZoneItem> blocks_;
@@ -75,7 +77,7 @@ class Zone {
 class ZoneObject {
  public:
   inline void* operator new(size_t size) {
-    return Zone::current_->Allocate(size);
+    return Zone::current()->Allocate(size);
   }
 
   inline void operator delete(void*, size_t size) {

@@ -63,6 +63,7 @@ class Heap {
     kTagFunction,
     kTagContext,
     kTagNumber,
+    kTagString,
     kTagObject,
     kTagMap
   };
@@ -108,6 +109,19 @@ class HNumber : ZoneObject {
 
  protected:
   int64_t value_;
+};
+
+
+class HString : ZoneObject {
+ public:
+  HString(char* value, uint32_t length);
+
+  static HString* Cast(void* value);
+
+  inline char* value() { return value_; }
+
+ protected:
+  char* value_;
 };
 
 

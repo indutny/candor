@@ -1,5 +1,6 @@
 #include "macroassembler-x64.h"
 #include "stubs.h"
+#include "utils.h" // ComputeHash
 
 namespace dotlang {
 
@@ -128,6 +129,7 @@ void Masm::AllocateFunction(Register addr, Register result) {
 
 
 void Masm::AllocateNumber(Register value, Register result) {
+  // Value is often a scratch register, so store it before doing a stub call
   Push(value);
 
   // int64_t value
@@ -136,7 +138,36 @@ void Masm::AllocateNumber(Register value, Register result) {
   Pop(value);
 
   Operand qvalue(result, 8);
-  movq(qvalue, scratch);
+  movq(qvalue, value);
+}
+
+
+void Masm::AllocateString(const char* value,
+                          uint32_t length,
+                          Register result) {
+  // hash(8) + length(8)
+  Allocate(Heap::kTagString, reg_nil, 16 + length, result);
+
+  Operand qhash(result, 8);
+  Operand qlength(result, 16);
+
+  movq(qhash, Immediate(ComputeHash(value, length)));
+  movq(qlength, Immediate(length));
+
+  // Copy the value into (inlined)
+
+  // By words first
+  uint32_t i;
+  for (i = 0; i < length - (length % 4); i += 4) {
+    Operand lpos(result, 24 + i);
+    movl(lpos, Immediate(*reinterpret_cast<const uint32_t*>(value + i)));
+  }
+
+  // And by bytes for last chars
+  for (; i < length; i++) {
+    Operand bpos(result, 24 + i);
+    movb(bpos, Immediate(value[i]));
+  }
 }
 
 
@@ -168,8 +199,13 @@ void Masm::AllocateObjectLiteral(Register size, Register result) {
   Push(result);
   movq(result, scratch);
 
+  // Save map size for GC
+  Operand qmapsize(result, 8);
+  movq(qmapsize, size);
+
   // Fill keys with nil
-  addq(result, Immediate(8));
+  addq(result, Immediate(16));
+  shl(size, Immediate(2));
   addq(size, result);
   Fill(result, size, Immediate(Heap::kTagNil));
   Pop(result);
@@ -180,6 +216,7 @@ void Masm::AllocateObjectLiteral(Register size, Register result) {
 
 void Masm::Fill(Register start, Register end, Immediate value) {
   Push(start);
+  movq(scratch, value);
 
   Label entry(this), loop(this);
   jmp(&entry);
@@ -187,7 +224,7 @@ void Masm::Fill(Register start, Register end, Immediate value) {
 
   // Fill
   Operand op(start, 0);
-  movq(op, value);
+  movq(op, scratch);
 
   // Move
   addq(start, Immediate(8));

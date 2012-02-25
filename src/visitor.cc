@@ -21,6 +21,8 @@ namespace dotlang {
     V(Name)\
     V(Value)\
     V(Number)\
+    V(Property)\
+    V(String)\
     V(Nil)
 
 #define VISITOR_SWITCH(V)\

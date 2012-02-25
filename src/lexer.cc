@@ -118,10 +118,8 @@ Lexer::Token* Lexer::Consume() {
 
   // String
   if (get(0) == '"' || get(0) == '\'') {
-    offset_++;
-
-    uint32_t start = offset_;
     char endchar = get(0);
+    uint32_t start = ++offset_;
 
     while (has(1)) {
       if (get(0) == endchar) break;
@@ -136,7 +134,7 @@ Lexer::Token* Lexer::Consume() {
     if (!has(1) || get(0) != endchar) return new Token(kEnd, offset_);
 
     // Note: token value will contain \c escaped chars
-    return new Token(kString, source_ + start, offset_ - 1 - start, start);
+    return new Token(kString, source_ + start, offset_ - start, start);
   }
 
   // Math

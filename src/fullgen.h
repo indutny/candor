@@ -90,9 +90,13 @@ class Fullgen : public Masm, public Visitor {
   AstNode* VisitAssign(AstNode* stmt);
 
   AstNode* VisitValue(AstNode* node);
-  AstNode* VisitMember(AstNode* node);
+
   AstNode* VisitNumber(AstNode* node);
   AstNode* VisitNil(AstNode* node);
+  AstNode* VisitString(AstNode* node);
+  AstNode* VisitProperty(AstNode* node);
+
+  AstNode* VisitMember(AstNode* node);
   AstNode* VisitObjectLiteral(AstNode* node);
 
   AstNode* VisitReturn(AstNode* node);

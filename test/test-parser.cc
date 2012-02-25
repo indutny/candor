@@ -4,7 +4,7 @@
 
 TEST_START("parser test")
   // Basic
-  PARSER_TEST("a", "[a]")
+  PARSER_TEST("'a'", "[kString a]")
 
   // Eq
   PARSER_TEST("a = 1", "[kAssign [a] [1]]")

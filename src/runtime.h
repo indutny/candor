@@ -11,8 +11,8 @@ class Heap;
 typedef char* (*RuntimeAllocateCallback)(Heap* heap, uint32_t bytes);
 char* RuntimeAllocate(Heap* heap, uint32_t bytes);
 
-typedef char* (*RuntimeLookupPropertyCallback)(void* obj, void* key);
-char* RuntimeLookupProperty(void* obj, void* key);
+typedef char* (*RuntimeLookupPropertyCallback)(char* obj, char* key);
+char* RuntimeLookupProperty(char* obj, char* key);
 
 } // namespace dotlang
 
