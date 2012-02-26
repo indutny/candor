@@ -21,7 +21,7 @@ void Script::Compile(const char* source, uint32_t length) {
 }
 
 
-void* Script::Run() {
+char* Script::Run() {
   return script->Run();
 }
 

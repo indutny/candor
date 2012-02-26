@@ -1,6 +1,8 @@
 #ifndef _SRC_COMPILER_H_
 #define _SRC_COMPILER_H_
 
+#include "zone.h" // Zone
+
 #include <stdint.h> // uint32_t
 #include <string.h> // memcpy
 
@@ -16,7 +18,7 @@ class Guard {
   Guard(char* buffer, uint32_t length);
   ~Guard();
 
-  typedef void* (*CompiledFunction)(void* context);
+  typedef char* (*CompiledFunction)(void* context, uint32_t args);
 
   inline CompiledFunction AsFunction() {
     return reinterpret_cast<CompiledFunction>(buffer_);
@@ -39,11 +41,12 @@ class CompiledScript {
   ~CompiledScript();
 
   void Compile();
-  void* Run();
+  char* Run();
 
   bool CaughtException();
 
  private:
+  Zone zone_;
   Heap* heap_;
   Guard* guard_;
 

@@ -31,27 +31,29 @@ void CompiledScript::Compile() {
   // XXX: Hardcoded page size here
   heap_ = new Heap(1024 * 1024);
 
-  Zone zone;
-  Parser p(source_, length_);
-  Fullgen f(heap_);
+  {
+    Zone zone;
+    Parser p(source_, length_);
+    Fullgen f(heap_);
 
-  AstNode* ast = p.Execute();
+    AstNode* ast = p.Execute();
 
-  // Add scope information to variables (i.e. stack vs context, and indexes)
-  Scope::Analyze(ast);
+    // Add scope information to variables (i.e. stack vs context, and indexes)
+    Scope::Analyze(ast);
 
-  // Generate machine code
-  f.Generate(ast);
+    // Generate machine code
+    f.Generate(ast);
 
-  guard_ = new Guard(f.buffer(), f.length());
-  f.Relocate(guard_->buffer());
+    guard_ = new Guard(f.buffer(), f.length());
+    f.Relocate(guard_->buffer());
+  }
 }
 
 
-void* CompiledScript::Run() {
+char* CompiledScript::Run() {
   // Context is undefined for main function
   // (It'll allocate new for itself)
-  return guard_->AsFunction()(NULL);
+  return guard_->AsFunction()(NULL, 0);
 }
 
 

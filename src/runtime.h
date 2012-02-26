@@ -9,12 +9,19 @@ namespace dotlang {
 // Forward declarations
 class Heap;
 
+// Wrapper for heap()->new_space()->Allocate()
 typedef char* (*RuntimeAllocateCallback)(Heap* heap, uint32_t bytes);
 char* RuntimeAllocate(Heap* heap, uint32_t bytes);
 
-typedef char* (*RuntimeLookupPropertyCallback)(char* obj, char* key);
-char* RuntimeLookupProperty(char* obj, char* key);
+// Performs lookup into a hashmap
+// if insert=1 - inserts key into map space
+typedef char* (*RuntimeLookupPropertyCallback)(Heap* heap,
+                                               char* obj,
+                                               char* key,
+                                               off_t insert);
+char* RuntimeLookupProperty(Heap* heap, char* obj, char* key, off_t insert);
 
+// Compares two heap values
 typedef size_t (*RuntimeCompareCallback)(char* lhs, char* rhs);
 size_t RuntimeCompare(char* lhs, char* rhs);
 

@@ -6,6 +6,8 @@
 
 namespace dotlang {
 
+Heap* Heap::current_ = NULL;
+
 Space::Space(uint32_t page_size) : page_size_(page_size) {
   // Create the first page
   pages_.Push(new Page(page_size));
@@ -22,10 +24,6 @@ void Space::select(Page* page) {
 
 
 char* Space::Allocate(uint32_t bytes) {
-  // This function should be called only if current page
-  // was exhausted
-  assert(*top_ + bytes > *limit_);
-
   // Go through all pages to find gap
   List<Page*, EmptyClass>::Item* item = pages_.head();
   while (*top_ + bytes > *limit_ && item->next() != NULL) {
@@ -48,34 +46,24 @@ char* Space::Allocate(uint32_t bytes) {
 }
 
 
-HNumber* HNumber::Cast(void* value) {
-  assert(value != NULL);
-  assert(*reinterpret_cast<uint64_t*>(value) == Heap::kTagNumber);
-  return new HNumber(*(reinterpret_cast<int64_t*>(value) + 1));
+HValue::HValue(char* addr) : addr_(addr) {
+  tag_ = static_cast<Heap::HeapTag>(*reinterpret_cast<uint64_t*>(addr));
+  heap_ = Heap::Current();
 }
 
 
-HString::HString(char* value, uint32_t length) {
-  value_ = reinterpret_cast<char*>(Zone::current()->Allocate(length + 1));
-  memcpy(value_, value, length);
-  value_[length] = 0;
+HNumber::HNumber(char* addr) : HValue(addr) {
+  value_ = *reinterpret_cast<int64_t*>(addr + 8);
 }
 
 
-HString* HString::Cast(void* value) {
-  assert(value != NULL);
-  assert(*reinterpret_cast<uint64_t*>(value) == Heap::kTagString);
-  return new HString(
-      reinterpret_cast<char*>(value) + 24,
-      *(reinterpret_cast<int64_t*>(value) + 2));
+HString::HString(char* addr) : HValue(addr) {
+  hash_ = *reinterpret_cast<uint32_t*>(addr + 8);
+  length_ = *reinterpret_cast<uint32_t*>(addr + 16);
+  value_ = *reinterpret_cast<char**>(addr + 24);
 }
 
-
-HFunction* HFunction::Cast(void* value) {
-  assert(value != NULL);
-  assert(*reinterpret_cast<uint64_t*>(value) == Heap::kTagFunction);
-
-  return new HFunction(*(reinterpret_cast<char**>(value) + 2));
+HFunction::HFunction(char* addr) : HValue(addr) {
 }
 
 } // namespace dotlang

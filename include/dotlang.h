@@ -13,7 +13,7 @@ class Script {
   ~Script();
 
   void Compile(const char* source, uint32_t length);
-  void* Run();
+  char* Run();
 
   bool CaughtException();
 

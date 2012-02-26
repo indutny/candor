@@ -80,12 +80,16 @@ class Heap {
                              old_space_(page_size),
                              root_stack_(NULL),
                              pending_exception_(NULL) {
+    current_ = this;
   }
+
+  // TODO: Use thread id
+  static inline Heap* Current() { return current_; }
 
   inline Space* new_space() { return &new_space_; }
   inline Space* old_space() { return &old_space_; }
-  inline void** root_stack() { return &root_stack_; }
-  inline void** pending_exception() { return &pending_exception_; }
+  inline char** root_stack() { return &root_stack_; }
+  inline char** pending_exception() { return &pending_exception_; }
 
  private:
   Space new_space_;
@@ -93,49 +97,82 @@ class Heap {
 
   // Runtime exception support
   // root stack address is needed to unwind stack up to root function's entry
-  void* root_stack_;
-  void* pending_exception_;
+  char* root_stack_;
+  char* pending_exception_;
+
+  static Heap* current_;
 };
 
 
-class HNumber : ZoneObject {
+class HValue : public ZoneObject {
  public:
-  HNumber(int64_t value) : value_(value) {
+  HValue(char* addr);
+
+  template <class T>
+  static inline T* Cast(char* addr) {
+    assert(addr != NULL);
+    assert(*reinterpret_cast<uint64_t*>(addr) == T::class_tag);
+    return new T(addr);
   }
 
-  static HNumber* Cast(void* value);
+  inline Heap::HeapTag tag() { return tag_; }
+  inline void tag(Heap::HeapTag tag) { tag_ = tag; }
+
+  inline char* addr() { return addr_; }
+  inline void addr(char* addr) { addr_ = addr; }
+
+  inline Heap* heap() { return heap_; }
+
+ protected:
+  Heap::HeapTag tag_;
+  char* addr_;
+  Heap* heap_;
+};
+
+
+class HNumber : public HValue {
+ public:
+  HNumber(char* addr);
 
   inline int64_t value() { return value_; }
+
+  static const Heap::HeapTag class_tag = Heap::kTagNumber;
 
  protected:
   int64_t value_;
 };
 
 
-class HString : ZoneObject {
+class HString : public HValue {
  public:
-  HString(char* value, uint32_t length);
-
-  static HString* Cast(void* value);
+  HString(char* addr);
 
   inline char* value() { return value_; }
+  inline uint32_t length() { return length_; }
+  inline uint32_t hash() { return hash_; }
+
+  static const Heap::HeapTag class_tag = Heap::kTagString;
 
  protected:
   char* value_;
+  uint32_t length_;
+  uint32_t hash_;
 };
 
 
-class HFunction : ZoneObject {
+class HObject : public HValue {
  public:
-  HFunction(char* addr) : addr_(addr) {
-  }
+  HObject(char* addr);
 
-  static HFunction* Cast(void* value);
+  static const Heap::HeapTag class_tag = Heap::kTagObject;
+};
 
-  inline char* addr() { return addr_; }
 
- protected:
-  char* addr_;
+class HFunction : public HValue {
+ public:
+  HFunction(char* addr);
+
+  static const Heap::HeapTag class_tag = Heap::kTagFunction;
 };
 
 

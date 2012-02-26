@@ -193,6 +193,8 @@ void Masm::AllocateObjectLiteral(Register size, Register result) {
 
   // keys + values
   shl(size, Immediate(4));
+  // + size
+  addq(size, Immediate(8));
   Allocate(Heap::kTagMap, size, 0, scratch);
   movq(qmap, scratch);
 
