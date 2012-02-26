@@ -106,10 +106,18 @@ class Heap {
 
 class HValue : public ZoneObject {
  public:
+  HValue(Heap* heap, char* addr);
   HValue(char* addr);
 
   template <class T>
-  static inline T* Cast(char* addr) {
+  static inline T* As(Heap* heap, char* addr) {
+    assert(addr != NULL);
+    assert(*reinterpret_cast<uint64_t*>(addr) == T::class_tag);
+    return new T(heap, addr);
+  }
+
+  template <class T>
+  static inline T* As(char* addr) {
     assert(addr != NULL);
     assert(*reinterpret_cast<uint64_t*>(addr) == T::class_tag);
     return new T(addr);
@@ -162,7 +170,9 @@ class HString : public HValue {
 
 class HObject : public HValue {
  public:
-  HObject(char* addr);
+  HObject(Heap* heap, char* addr);
+
+  char* GetSlot(HString* key, bool insert);
 
   static const Heap::HeapTag class_tag = Heap::kTagObject;
 };

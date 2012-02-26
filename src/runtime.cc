@@ -14,7 +14,8 @@ char* RuntimeAllocate(Heap* heap, uint32_t bytes) {
 
 
 char* RuntimeLookupProperty(Heap* heap, char* obj, char* key, off_t insert) {
-  return 0;
+  return HValue::As<HObject>(heap, obj)->
+      GetSlot(new HString(key), insert == 1);
 }
 
 
