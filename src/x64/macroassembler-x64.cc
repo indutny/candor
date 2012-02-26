@@ -179,14 +179,12 @@ void Masm::AllocateObjectLiteral(Register size, Register result) {
   Operand qmap(result, 16);
 
   // Set mask
-  Push(size);
+  movq(scratch, size);
 
   // mask (= (size - 1) << 3)
-  dec(size);
-  shl(size, Immediate(3));
-  movq(qmask, size);
-
-  Pop(size);
+  dec(scratch);
+  shl(scratch, Immediate(3));
+  movq(qmask, scratch);
 
   // Create map
   Push(size);
@@ -198,6 +196,9 @@ void Masm::AllocateObjectLiteral(Register size, Register result) {
   Allocate(Heap::kTagMap, size, 0, scratch);
   movq(qmap, scratch);
 
+  Pop(size);
+
+  Push(size);
   Push(result);
   movq(result, scratch);
 
@@ -206,11 +207,11 @@ void Masm::AllocateObjectLiteral(Register size, Register result) {
   movq(qmapsize, size);
 
   // Fill map with nil
+  shl(size, Immediate(4));
   addq(result, Immediate(16));
   addq(size, result);
   Fill(result, size, Immediate(Heap::kTagNil));
   Pop(result);
-
   Pop(size);
 }
 

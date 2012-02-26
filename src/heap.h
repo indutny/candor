@@ -172,8 +172,6 @@ class HObject : public HValue {
  public:
   HObject(Heap* heap, char* addr);
 
-  char* GetSlot(HString* key, bool insert);
-
   static const Heap::HeapTag class_tag = Heap::kTagObject;
 };
 

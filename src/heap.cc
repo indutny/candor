@@ -1,5 +1,8 @@
 #include "heap.h"
+#include "runtime.h" // RuntimeCompare
+
 #include <stdint.h> // uint32_t
+#include <stdlib.h> // NULL
 #include <string.h> // memcpy
 #include <zone.h> // Zone::Allocate
 #include <assert.h> // assert
@@ -51,8 +54,9 @@ HValue::HValue(Heap* heap, char* addr) : addr_(addr), heap_(heap) {
 }
 
 
-HValue::HValue(char* addr) {
-  HValue::HValue(Heap::Current(), addr);
+HValue::HValue(char* addr) : addr_(addr), heap_(Heap::Current()) {
+  // XXX: A little bit of copy-paste here
+  tag_ = static_cast<Heap::HeapTag>(*reinterpret_cast<uint64_t*>(addr));
 }
 
 
@@ -62,18 +66,20 @@ HNumber::HNumber(char* addr) : HValue(addr) {
 
 
 HString::HString(char* addr) : HValue(addr) {
-  hash_ = *reinterpret_cast<uint32_t*>(addr + 8);
   length_ = *reinterpret_cast<uint32_t*>(addr + 16);
   value_ = addr + 24;
+
+  // Compute hash lazily
+  uint32_t* hash_addr = reinterpret_cast<uint32_t*>(addr + 8);
+  hash_ = *hash_addr;
+  if (hash_ == 0) {
+    hash_ = ComputeHash(value_, length_);
+    *hash_addr = hash_;
+  }
 }
 
 
-HObject::HObject(Heap* heap, char* addr) : HValue(heap, addr){
-}
-
-
-char* HObject::GetSlot(HString* key, bool insert) {
-  return 0;
+HObject::HObject(Heap* heap, char* addr) : HValue(heap, addr) {
 }
 
 

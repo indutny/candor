@@ -244,21 +244,21 @@ void Assembler::subq(Register dst, Immediate src) {
 
 
 void Assembler::inc(Register dst) {
-  emit_rexw(dst);
+  emit_rexw(rax, dst);
   emitb(0xFF);
   emit_modrm(dst, 0x00);
 }
 
 
 void Assembler::dec(Register dst) {
-  emit_rexw(dst);
+  emit_rexw(rax, dst);
   emitb(0xFF);
   emit_modrm(dst, 0x01);
 }
 
 
 void Assembler::shl(Register dst, Immediate src) {
-  emit_rexw(dst);
+  emit_rexw(rax, dst);
   emitb(0xC1);
   emit_modrm(dst, 0x04);
   emitb(src.value());
