@@ -115,7 +115,7 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
     Operand lhs(rax, 0);
     Operand rhs(rbp, 24 + sizeof(void*) * i++);
 
-    cmp(rsi, Immediate(i));
+    cmpq(rsi, Immediate(i));
     jmp(kLt, &body);
 
     VisitForSlot(item->value(), &lhs, scratch);

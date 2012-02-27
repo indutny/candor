@@ -190,10 +190,12 @@ class Assembler {
   void jmp(Label* label);
   void jmp(Condition cond, Label* label);
 
-  void cmp(Register dst, Register src);
-  void cmp(Register dst, Operand& src);
-  void cmp(Register dst, Immediate src);
-  void cmp(Operand& dst, Immediate src);
+  void cmpq(Register dst, Register src);
+  void cmpq(Register dst, Operand& src);
+  void cmpq(Register dst, Immediate src);
+  void cmpq(Operand& dst, Immediate src);
+  void cmpb(Register dst, Operand& src);
+  void cmpb(Operand& dst, Immediate src);
 
   void movq(Register dst, Register src);
   void movq(Register dst, Operand& src);

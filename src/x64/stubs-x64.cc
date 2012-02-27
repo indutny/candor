@@ -60,7 +60,7 @@ void AllocateStub::Generate() {
   // Check if we exhausted buffer
   __ movq(scratch, limit);
   __ movq(scratch, scratch_op);
-  __ cmp(rbx, scratch_op);
+  __ cmpq(rbx, scratch_op);
   __ jmp(kGt, &runtime_allocate);
 
   // Update top
@@ -121,11 +121,11 @@ void CoerceTypeStub::Generate() {
   // Check if their tags are equal (just return second in that case)
   Operand qtag_lhs(rbx, 0), qtag_rhs(rax, 0);
   __ movq(scratch, qtag_lhs);
-  __ cmp(scratch, qtag_rhs);
+  __ cmpb(scratch, qtag_rhs);
   __ jmp(kEq, &done);
 
   // If left is number
-  __ cmp(qtag_lhs, Immediate(Heap::kTagNumber));
+  __ cmpq(qtag_lhs, Immediate(Heap::kTagNumber));
   __ jmp(kNe, &not_number);
 
   {

@@ -87,21 +87,21 @@ void Assembler::bind(Label* label) {
 }
 
 
-void Assembler::cmp(Register dst, Register src) {
+void Assembler::cmpq(Register dst, Register src) {
   emit_rexw(dst, src);
   emitb(0x3B);
   emit_modrm(dst, src);
 }
 
 
-void Assembler::cmp(Register dst, Operand& src) {
+void Assembler::cmpq(Register dst, Operand& src) {
   emit_rexw(dst, src);
   emitb(0x3B);
   emit_modrm(dst, src);
 }
 
 
-void Assembler::cmp(Register dst, Immediate src) {
+void Assembler::cmpq(Register dst, Immediate src) {
   emit_rexw(dst);
   emitb(0x81);
   emit_modrm(dst, 7);
@@ -109,11 +109,26 @@ void Assembler::cmp(Register dst, Immediate src) {
 }
 
 
-void Assembler::cmp(Operand& dst, Immediate src) {
+void Assembler::cmpq(Operand& dst, Immediate src) {
   emit_rexw(dst);
   emitb(0x81);
   emit_modrm(dst, 7);
   emitl(src.value());
+}
+
+
+void Assembler::cmpb(Register dst, Operand& src) {
+  emit_rexw(dst, src);
+  emitb(0x3A);
+  emit_modrm(dst, src);
+}
+
+
+void Assembler::cmpb(Operand& dst, Immediate src) {
+  emit_rexw(dst);
+  emitb(0x80);
+  emit_modrm(dst, 7);
+  emitb(src.value());
 }
 
 

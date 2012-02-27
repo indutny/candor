@@ -127,14 +127,14 @@ class HValue : public ZoneObject {
   template <class T>
   static inline T* As(Heap* heap, char* addr) {
     assert(addr != NULL);
-    assert(*reinterpret_cast<uint64_t*>(addr) == T::class_tag);
+    assert(*reinterpret_cast<uint8_t*>(addr) == T::class_tag);
     return new T(heap, addr);
   }
 
   template <class T>
   static inline T* As(char* addr) {
     assert(addr != NULL);
-    assert(*reinterpret_cast<uint64_t*>(addr) == T::class_tag);
+    assert(*reinterpret_cast<uint8_t*>(addr) == T::class_tag);
     return new T(addr);
   }
 

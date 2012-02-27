@@ -107,9 +107,9 @@ char* RuntimeGrowObject(Heap* heap, char* context, char* obj) {
 
 size_t RuntimeCompare(char* lhs, char* rhs) {
   Heap::HeapTag lhs_tag = static_cast<Heap::HeapTag>(
-      *reinterpret_cast<off_t*>(lhs));
+      *reinterpret_cast<uint8_t*>(lhs));
   Heap::HeapTag rhs_tag = static_cast<Heap::HeapTag>(
-      *reinterpret_cast<off_t*>(rhs));
+      *reinterpret_cast<uint8_t*>(rhs));
 
   if (lhs_tag != Heap::kTagString) assert(0 && "Not implemented yet");
   if (rhs_tag != Heap::kTagString) assert(0 && "Not implemented yet");

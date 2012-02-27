@@ -238,7 +238,7 @@ void Masm::Fill(Register start, Register end, Immediate value) {
   bind(&entry);
 
   // And loop
-  cmp(start, end);
+  cmpq(start, end);
   jmp(kLt, &loop);
 
   Pop(start);
@@ -257,7 +257,7 @@ void Masm::FillStackSlots(uint32_t slots) {
 
 
 void Masm::IsNil(Register reference, Label* is_nil) {
-  cmp(reference, Immediate(Heap::kTagNil));
+  cmpq(reference, Immediate(Heap::kTagNil));
   jmp(kEq, is_nil);
 }
 
@@ -266,7 +266,7 @@ void Masm::IsHeapObject(Heap::HeapTag tag,
                         Register reference,
                         Label* mismatch) {
   Operand qtag(reference, 0);
-  cmp(qtag, Immediate(tag));
+  cmpb(qtag, Immediate(tag));
   jmp(kNe, mismatch);
 }
 
