@@ -10,19 +10,19 @@ namespace dotlang {
 
 char* RuntimeAllocate(Heap* heap,
                       uint32_t bytes,
-                      char* context) {
-  return heap->new_space()->Allocate(bytes, context);
+                      char* stack_top) {
+  return heap->new_space()->Allocate(bytes, stack_top);
 }
 
 
-void RuntimeCollectGarbage(Heap* heap, char* context) {
+void RuntimeCollectGarbage(Heap* heap, char* stack_top) {
   Zone gc_zone;
-  heap->gc()->CollectGarbage(HValue::As<HContext>(context));
+  heap->gc()->CollectGarbage(stack_top);
 }
 
 
 char* RuntimeLookupProperty(Heap* heap,
-                            char* context,
+                            char* stack_top,
                             char* obj,
                             char* key,
                             off_t insert) {
@@ -56,8 +56,8 @@ char* RuntimeLookupProperty(Heap* heap,
   // All key slots are filled - rehash and lookup again
   if (index == end) {
     assert(insert);
-    RuntimeGrowObject(heap, context, obj);
-    return RuntimeLookupProperty(heap, context, obj, key, insert);
+    RuntimeGrowObject(heap, stack_top, obj);
+    return RuntimeLookupProperty(heap, stack_top, obj, key, insert);
   }
 
   if (insert) {
@@ -68,12 +68,14 @@ char* RuntimeLookupProperty(Heap* heap,
 }
 
 
-char* RuntimeGrowObject(Heap* heap, char* context, char* obj) {
+char* RuntimeGrowObject(Heap* heap, char* stack_top, char* obj) {
   char** map_addr = reinterpret_cast<char**>(obj + 16);
   char* map = *map_addr;
   uint32_t size = *reinterpret_cast<uint32_t*>(map + 8);
 
-  char* new_map = heap->AllocateTagged(Heap::kTagMap, 8 + (size << 5), context);
+  char* new_map = heap->AllocateTagged(Heap::kTagMap,
+                                       8 + (size << 5),
+                                       stack_top);
   // Set map size
   *(uint32_t*)(new_map + 8) = size << 1;
 
@@ -97,7 +99,7 @@ char* RuntimeGrowObject(Heap* heap, char* context, char* obj) {
     char* value = *reinterpret_cast<char**>(space + index + (size << 3));
     assert(value != NULL);
 
-    char* slot = RuntimeLookupProperty(heap, context, obj, key, true);
+    char* slot = RuntimeLookupProperty(heap, stack_top, obj, key, true);
     *reinterpret_cast<char**>(slot) = value;
   }
 

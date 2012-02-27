@@ -247,9 +247,9 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
 
       Align a(this);
 
-      // RuntimeLookupProperty(heap, context, obj, key, change)
+      // RuntimeLookupProperty(heap, stack_top, obj, key, change)
       // (returns addr of slot)
-      movq(rsi, rdi);
+      movq(rsi, rsp);
       movq(rdi, Immediate(reinterpret_cast<uint64_t>(heap())));
 
       movq(rax, Immediate(*reinterpret_cast<uint64_t*>(&gc)));
@@ -412,10 +412,10 @@ AstNode* Fullgen::VisitMember(AstNode* node) {
 
     Align a(this);
 
-    // RuntimeLookupProperty(heap, context, obj, key, change)
+    // RuntimeLookupProperty(heap, stack_top, obj, key, change)
     // (returns addr of slot)
     movq(rdx, result());
-    movq(rsi, rdi);
+    movq(rsi, rsp);
     movq(rdi, Immediate(reinterpret_cast<uint64_t>(heap())));
     movq(r8, Immediate(visiting_for_slot()));
 

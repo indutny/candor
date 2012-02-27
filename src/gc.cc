@@ -5,9 +5,20 @@
 
 namespace dotlang {
 
-void GC::CollectGarbage(HContext* context) {
+void GC::GCValue::Relocate(char* address) {
+  if (slot_ != NULL) {
+    *slot_ = address;
+    value()->SetGCMark(address);
+  }
+}
+
+void GC::CollectGarbage(char* stack_top) {
   assert(grey_items()->length() == 0);
-  grey_items()->Push(new GCValue(context, NULL));
+
+  // Temporary space which will contain copies of all visited objects
+  Space space(heap(), heap()->new_space()->page_size());
+
+  // Go through the stack, down to the root_stack() address
 
   // Visit all grey items as list grows
   GCList::Item* item = grey_items()->head();
@@ -15,8 +26,8 @@ void GC::CollectGarbage(HContext* context) {
     GCValue* value = item->value();
 
     if (!value->value()->IsGCMarked()) {
-      GC::VisitValue(value->value());
-      value->value()->SetGCMark(0);
+      // Every visiting function returns new address of object
+      value->Relocate(GC::VisitValue(value->value()));
     }
 
     item = item->next();
@@ -30,7 +41,7 @@ void GC::CollectGarbage(HContext* context) {
 }
 
 
-void GC::VisitValue(HValue* value) {
+char* GC::VisitValue(HValue* value) {
   switch (value->tag()) {
    case Heap::kTagContext:
     return VisitContext(value->As<HContext>());
@@ -40,11 +51,13 @@ void GC::VisitValue(HValue* value) {
 }
 
 
-void GC::VisitContext(HContext* context) {
+char* GC::VisitContext(HContext* context) {
   for (uint32_t i = 0; i < context->slots(); i++) {
     HValue* value = context->GetSlot(i);
     grey_items()->Push(new GCValue(value, context->GetSlotAddress(i)));
   }
+
+  return NULL;
 }
 
 } // namespace dotlang

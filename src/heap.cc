@@ -27,7 +27,7 @@ void Space::select(Page* page) {
 }
 
 
-char* Space::Allocate(uint32_t bytes, char* context) {
+char* Space::Allocate(uint32_t bytes, char* stack_top) {
   // If current page was exhausted - run GC
   bool need_gc = *top_ + bytes > *limit_;
 
@@ -50,15 +50,15 @@ char* Space::Allocate(uint32_t bytes, char* context) {
 
   if (need_gc) {
     Zone gc_zone;
-    heap()->gc()->CollectGarbage(HValue::As<HContext>(context));
+    heap()->gc()->CollectGarbage(stack_top);
   }
 
   return result;
 }
 
 
-char* Heap::AllocateTagged(HeapTag tag, uint32_t bytes, char* context) {
-  char* result = new_space()->Allocate(bytes + 8, context);
+char* Heap::AllocateTagged(HeapTag tag, uint32_t bytes, char* stack_top) {
+  char* result = new_space()->Allocate(bytes + 8, stack_top);
   *reinterpret_cast<uint64_t*>(result) = tag;
 
   return result;

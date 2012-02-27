@@ -18,6 +18,8 @@ class GC {
     GCValue(HValue* value, char** slot) : value_(value), slot_(slot) {
     }
 
+    void Relocate(char* address);
+
     inline HValue* value() { return value_; }
 
    protected:
@@ -26,14 +28,19 @@ class GC {
   };
   typedef List<GCValue*, ZoneObject> GCList;
 
-  void CollectGarbage(HContext* context);
-  void VisitValue(HValue* value);
-  void VisitContext(HContext* context);
+  GC(Heap* heap) : heap_(heap) {
+  }
+
+  void CollectGarbage(char* stack_top);
+  char* VisitValue(HValue* value);
+  char* VisitContext(HContext* context);
 
   inline GCList* grey_items() { return &grey_items_; }
+  inline Heap* heap() { return heap_; }
 
  protected:
   GCList grey_items_;
+  Heap* heap_;
 };
 
 } // namespace dotlang

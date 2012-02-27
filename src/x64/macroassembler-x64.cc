@@ -86,7 +86,7 @@ void Masm::Allocate(Heap::HeapTag tag,
     push(rax);
 
     // Push context
-    push(rdi);
+    push(rsp);
     Call(stubs()->GetAllocateStub());
     // Stub will unwind stack
   }

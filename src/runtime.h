@@ -12,30 +12,30 @@ class Heap;
 // Wrapper for heap()->new_space()->Allocate()
 typedef char* (*RuntimeAllocateCallback)(Heap* heap,
                                          uint32_t bytes,
-                                         char* context);
-char* RuntimeAllocate(Heap* heap, uint32_t bytes, char* context);
+                                         char* stack_top);
+char* RuntimeAllocate(Heap* heap, uint32_t bytes, char* stack_top);
 
-typedef void (*RuntimeCollectGarbageCallback)(Heap* heap, char* context);
-void RuntimeCollectGarbage(Heap* heap, char* context);
+typedef void (*RuntimeCollectGarbageCallback)(Heap* heap, char* stack_top);
+void RuntimeCollectGarbage(Heap* heap, char* stack_top);
 
 // Performs lookup into a hashmap
 // if insert=1 - inserts key into map space
 typedef char* (*RuntimeLookupPropertyCallback)(Heap* heap,
-                                               char* context,
+                                               char* stack_top,
                                                char* obj,
                                                char* key,
                                                off_t insert);
 char* RuntimeLookupProperty(Heap* heap,
-                            char* context,
+                            char* stack_top,
                             char* obj,
                             char* key,
                             off_t insert);
 
 typedef char* (*RuntimeGrowObjectCallback)(Heap* heap,
-                                           char* context,
+                                           char* stack_top,
                                            char* obj);
 char* RuntimeGrowObject(Heap* heap,
-                        char* context,
+                        char* stack_top,
                         char* obj);
 
 // Compares two heap values

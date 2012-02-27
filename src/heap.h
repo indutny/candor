@@ -43,7 +43,7 @@ class Space {
 
   // Move to next page where are at least `bytes` free
   // Otherwise allocate new page
-  char* Allocate(uint32_t bytes, char* context);
+  char* Allocate(uint32_t bytes, char* stack_top);
 
   inline Heap* heap() { return heap_; }
 
@@ -51,6 +51,8 @@ class Space {
   // top and limit.
   inline char*** top() { return &top_; }
   inline char*** limit() { return &limit_; }
+
+  inline uint32_t page_size() { return page_size_; }
 
  private:
   Heap* heap_;
@@ -88,14 +90,15 @@ class Heap {
   Heap(uint32_t page_size) : new_space_(this, page_size),
                              old_space_(this, page_size),
                              root_stack_(NULL),
-                             pending_exception_(NULL) {
+                             pending_exception_(NULL),
+                             gc_(this) {
     current_ = this;
   }
 
   // TODO: Use thread id
   static inline Heap* Current() { return current_; }
 
-  char* AllocateTagged(HeapTag tag, uint32_t bytes, char* context);
+  char* AllocateTagged(HeapTag tag, uint32_t bytes, char* stack_top);
 
   inline Space* new_space() { return &new_space_; }
   inline Space* old_space() { return &old_space_; }
