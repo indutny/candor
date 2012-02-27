@@ -67,6 +67,10 @@ class Fullgen : public Masm, public Visitor {
     inline Fullgen* fullgen() { return fullgen_; }
     inline FunctionLiteral* fn() { return fn_; }
 
+    static inline DotFunction* Cast(void* value) {
+      return reinterpret_cast<DotFunction*>(value);
+    }
+
     void Generate();
 
    protected:
@@ -84,7 +88,7 @@ class Fullgen : public Masm, public Visitor {
   void Generate(AstNode* ast);
 
   void GeneratePrologue(AstNode* stmt);
-  void GenerateEpilogue();
+  void GenerateEpilogue(AstNode* stmt);
 
   AstNode* VisitFunction(AstNode* stmt);
   AstNode* VisitCall(AstNode* stmt);
@@ -112,11 +116,14 @@ class Fullgen : public Masm, public Visitor {
   inline bool visiting_for_value() { return visitor_type_ == kValue; }
   inline bool visiting_for_slot() { return visitor_type_ == kSlot; }
   inline List<FFunction*, ZoneObject>* fns() { return &fns_; }
+  inline void current_function(DotFunction* fn) { current_function_ = fn; }
+  inline DotFunction* current_function() { return current_function_; }
 
  private:
   Heap* heap_;
   VisitorType visitor_type_;
   List<FFunction*, ZoneObject> fns_;
+  DotFunction* current_function_;
 };
 
 } // namespace dotlang

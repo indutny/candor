@@ -39,7 +39,8 @@ void FFunction::Allocate(uint32_t addr) {
 Fullgen::Fullgen(Heap* heap) : Masm(heap),
                                Visitor(kPreorder),
                                heap_(heap),
-                               visitor_type_(kSlot) {
+                               visitor_type_(kSlot),
+                               current_function_(NULL) {
   stubs()->fullgen(this);
 }
 
@@ -53,7 +54,7 @@ void Fullgen::DotFunction::Generate() {
   // we should still return `nil` value
   masm()->movq(rax, 0);
 
-  fullgen()->GenerateEpilogue();
+  fullgen()->GenerateEpilogue(fn());
 }
 
 
@@ -62,6 +63,8 @@ void Fullgen::Generate(AstNode* ast) {
 
   FFunction* fn;
   while ((fn = fns_.Shift()) != NULL) {
+    current_function(DotFunction::Cast(fn));
+
     // Align function if needed
     AlignCode();
 
@@ -78,7 +81,16 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
   // rdi <- reference to parent context (if non-root)
   // rsi <- arguments count
   push(rbp);
-  push(rbx); // callee-save
+
+  // callee-save registers
+  push(rbx);
+  // Store additional only on C++ - Dotlang boundary
+  if (stmt->is_root()) {
+    push(r12);
+    push(r13);
+    push(r14);
+    push(r15);
+  }
   movq(rbp, rsp);
 
   // Allocate space for on stack variables
@@ -118,9 +130,17 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
 }
 
 
-void Fullgen::GenerateEpilogue() {
+void Fullgen::GenerateEpilogue(AstNode* stmt) {
   // rax will hold result of function
   movq(rsp, rbp);
+
+  // Restore callee save registers
+  if (stmt->is_root()) {
+    pop(r15);
+    pop(r14);
+    pop(r13);
+    pop(r12);
+  }
   pop(rbx);
   pop(rbp);
 
@@ -475,7 +495,7 @@ AstNode* Fullgen::VisitReturn(AstNode* node) {
     movq(rax, Immediate(0));
   }
 
-  GenerateEpilogue();
+  GenerateEpilogue(current_function()->fn());
 
   return node;
 }

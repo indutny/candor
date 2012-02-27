@@ -24,6 +24,7 @@ TEST_START("functional test")
 
   FUN_TEST("return 'abcdef';", {
     HString* str = HValue::As<HString>(result);
+    str = str;
     assert(str->length() == 6);
     assert(strncmp(str->value(), "abcdef", str->length()) == 0);
   })
