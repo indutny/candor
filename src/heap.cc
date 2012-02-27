@@ -57,6 +57,23 @@ char* Space::Allocate(uint32_t bytes, char* stack_top) {
 }
 
 
+void Space::Swap(Space* space) {
+  // Remove self pages
+  Clear();
+
+  while (space->pages_.length() != 0) {
+    pages_.Push(space->pages_.Shift());
+  }
+}
+
+
+void Space::Clear() {
+  while (pages_.length() != 0) {
+    delete pages_.Shift();
+  }
+}
+
+
 char* Heap::AllocateTagged(HeapTag tag, uint32_t bytes, char* stack_top) {
   char* result = new_space()->Allocate(bytes + 8, stack_top);
   *reinterpret_cast<uint64_t*>(result) = tag;

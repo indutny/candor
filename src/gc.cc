@@ -52,6 +52,8 @@ void GC::CollectGarbage(char* stack_top) {
   while (black_items()->length() != 0) {
     black_items()->Shift()->ResetGCMark();
   }
+
+  heap()->new_space()->Swap(&space);
 }
 
 

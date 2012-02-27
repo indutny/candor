@@ -45,6 +45,12 @@ class Space {
   // Otherwise allocate new page
   char* Allocate(uint32_t bytes, char* stack_top);
 
+  // Deallocate all pages and take all from the `space`
+  void Swap(Space* space);
+
+  // Remove all pages
+  void Clear();
+
   inline Heap* heap() { return heap_; }
 
   // Both top and limit are always pointing to current page's
@@ -54,7 +60,7 @@ class Space {
 
   inline uint32_t page_size() { return page_size_; }
 
- private:
+ protected:
   Heap* heap_;
 
   char** top_;
