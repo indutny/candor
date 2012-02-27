@@ -1,6 +1,7 @@
 #include "test.h"
 
 TEST_START("GC test")
-  FUN_TEST("__$gc()", {
+  // Basic test with a context variable
+  FUN_TEST("y() {scope x}\nx = 1\nx = 2\n__$gc()\nreturn x", {
   })
 TEST_END("GC test")

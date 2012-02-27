@@ -23,7 +23,7 @@ void Masm::Pushad() {
   push(r8);
   push(r9);
   push(r10);
-  push(r11);
+  push(r12);
 
   // Last one just for alignment
   push(r15);
@@ -32,7 +32,7 @@ void Masm::Pushad() {
 
 void Masm::Popad(Register preserve) {
   PreservePop(r15, preserve);
-  PreservePop(r11, preserve);
+  PreservePop(r12, preserve);
   PreservePop(r10, preserve);
   PreservePop(r9, preserve);
   PreservePop(r8, preserve);

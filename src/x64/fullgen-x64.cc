@@ -89,17 +89,32 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
     push(r13);
     push(r14);
     push(r15);
+
+    // Nullify all registers to help GC distinguish on-stack values
+    xorq(rax, rax);
+    xorq(rbx, rbx);
+    xorq(rcx, rcx);
+    xorq(rdx, rdx);
+    xorq(r8, r8);
+    xorq(r9, r9);
+    xorq(r10, r10);
+    xorq(r11, r11);
+    xorq(r12, r12);
+    xorq(r13, r13);
+    xorq(r14, r14);
+    xorq(r15, r15);
   }
   movq(rbp, rsp);
 
   // Allocate space for on stack variables
   // and align stack
-  subq(rsp,
-       Immediate(8 + RoundUp((stmt->stack_slots() + 1) * sizeof(void*), 16)));
+  uint32_t on_stack_size = 8 +
+      RoundUp((stmt->stack_slots() + 1) * sizeof(void*), 16);
+  subq(rsp, Immediate(on_stack_size));
 
   // Allocate context and clear stack slots
   AllocateContext(stmt->context_slots());
-  FillStackSlots(stmt->stack_slots());
+  FillStackSlots(on_stack_size);
 
   // Store root stack address(rbp) to heap
   // It's needed to unwind stack on exceptions
@@ -126,6 +141,10 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
   }
 
   bind(&body);
+
+  // Cleanup junk
+  xorq(rsi, rsi);
+  xorq(scratch, scratch);
 }
 
 

@@ -29,7 +29,7 @@ void Space::select(Page* page) {
 
 char* Space::Allocate(uint32_t bytes, char* stack_top) {
   // If current page was exhausted - run GC
-  bool need_gc = *top_ + bytes > *limit_;
+  bool need_gc = stack_top != NULL && *top_ + bytes > *limit_;
 
   // Go through all pages to find gap
   List<Page*, EmptyClass>::Item* item = pages_.head();
@@ -66,7 +66,7 @@ char* Heap::AllocateTagged(HeapTag tag, uint32_t bytes, char* stack_top) {
 
 
 Heap::HeapTag HValue::GetTag(char* addr) {
-  return static_cast<Heap::HeapTag>(*reinterpret_cast<uint64_t*>(addr));
+  return static_cast<Heap::HeapTag>(*reinterpret_cast<uint8_t*>(addr));
 }
 
 
@@ -93,6 +93,44 @@ HValue* HValue::New(char* addr) {
 }
 
 
+HValue* HValue::CopyTo(Space* space) {
+  uint32_t size = 8;
+  switch (tag()) {
+   case Heap::kTagContext:
+    // parent + slots
+    size += 8 + As<HContext>()->slots() * 8;
+    break;
+   case Heap::kTagFunction:
+    // parent + body
+    size += 16;
+    break;
+   case Heap::kTagNumber:
+    // value
+    size += 8;
+    break;
+   case Heap::kTagString:
+    // hash + length + bytes
+    size += 16 + As<HString>()->length();
+    break;
+   case Heap::kTagObject:
+    // mask + map
+    size += 16;
+    break;
+   case Heap::kTagMap:
+    // size + space
+    size += 8 + As<HMap>()->size() * 8;
+    break;
+   default:
+    assert(0 && "Unexpected");
+  }
+
+  char* result = space->Allocate(size, NULL);
+  memcpy(result, addr(), size);
+
+  return HValue::New(result);
+}
+
+
 bool HValue::IsGCMarked() {
   return (*reinterpret_cast<uint64_t*>(addr()) & 0x100) == 0x100;
 }
@@ -110,7 +148,9 @@ void HValue::SetGCMark(char* new_addr) {
 
 
 void HValue::ResetGCMark() {
-  *reinterpret_cast<uint64_t*>(addr()) ^= 0x100;
+  if (IsGCMarked()) {
+    *reinterpret_cast<uint64_t*>(addr()) ^= 0x100;
+  }
 }
 
 
@@ -152,7 +192,13 @@ HObject::HObject(char* addr) : HValue(addr) {
 }
 
 
+HMap::HMap(char* addr) : HValue(addr) {
+  size_ = *reinterpret_cast<uint64_t*>(addr + 8);
+}
+
+
 HFunction::HFunction(char* addr) : HValue(addr) {
+  parent_slot_ = reinterpret_cast<char**>(addr + 8);
 }
 
 

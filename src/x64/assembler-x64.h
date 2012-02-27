@@ -211,6 +211,8 @@ class Assembler {
   void subq(Register dst, Register src);
   void subq(Register dst, Immediate src);
 
+  void xorq(Register dst, Register src);
+
   void inc(Register dst);
   void dec(Register dst);
   void shl(Register dst, Immediate src);

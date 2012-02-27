@@ -141,6 +141,8 @@ class HValue : public ZoneObject {
     return reinterpret_cast<T*>(this);
   }
 
+  HValue* CopyTo(Space* space);
+
   bool IsGCMarked();
   char* GetGCMark();
 
@@ -215,11 +217,30 @@ class HObject : public HValue {
 };
 
 
+class HMap : public HValue {
+ public:
+  HMap(char* addr);
+
+  inline uint32_t size() { return size_; }
+
+  static const Heap::HeapTag class_tag = Heap::kTagMap;
+
+ protected:
+  uint32_t size_;
+};
+
+
 class HFunction : public HValue {
  public:
   HFunction(char* addr);
 
+  inline char* parent() { return *parent_slot_; }
+  inline char** parent_slot() { return parent_slot_; }
+
   static const Heap::HeapTag class_tag = Heap::kTagFunction;
+
+ protected:
+  char** parent_slot_;
 };
 
 

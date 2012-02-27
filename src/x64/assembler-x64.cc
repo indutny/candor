@@ -258,6 +258,13 @@ void Assembler::subq(Register dst, Immediate src) {
 }
 
 
+void Assembler::xorq(Register dst, Register src) {
+  emit_rexw(dst, src);
+  emitb(0x33);
+  emit_modrm(dst, src);
+}
+
+
 void Assembler::inc(Register dst) {
   emit_rexw(rax, dst);
   emitb(0xFF);

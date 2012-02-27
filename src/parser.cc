@@ -472,6 +472,7 @@ AstNode* Parser::ParseScope() {
   if (!Peek()->is(kCr) && !Peek()->is(kBraceClose)) {
     result = NULL;
   }
+  if (Peek()->is(kCr)) Skip();
 
   return pos.Commit(result);
 }
