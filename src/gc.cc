@@ -40,7 +40,7 @@ void GC::CollectGarbage(char* stack_top) {
 
     if (!value->value()->IsGCMarked()) {
       HValue* hvalue = value->value()->CopyTo(&space);
-      value->Relocate(reinterpret_cast<char*>(hvalue));
+      value->Relocate(hvalue->addr());
       GC::VisitValue(hvalue);
       black_items()->Push(hvalue);
     } else {

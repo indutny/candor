@@ -118,7 +118,7 @@ HValue* HValue::CopyTo(Space* space) {
   switch (tag()) {
    case Heap::kTagContext:
     // parent + slots
-    size += 8 + As<HContext>()->slots() * 8;
+    size += 16 + As<HContext>()->slots() * 8;
     break;
    case Heap::kTagFunction:
     // parent + body
