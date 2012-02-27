@@ -125,7 +125,7 @@ void CoerceTypeStub::Generate() {
   __ jmp(kEq, &done);
 
   // If left is number
-  __ cmpq(qtag_lhs, Immediate(Heap::kTagNumber));
+  __ cmpb(qtag_lhs, Immediate(Heap::kTagNumber));
   __ jmp(kNe, &not_number);
 
   {
