@@ -206,11 +206,28 @@ HString::HString(char* addr) : HValue(addr) {
 
 
 HObject::HObject(char* addr) : HValue(addr) {
+  map_slot_ = reinterpret_cast<char**>(addr + 16);
 }
 
 
 HMap::HMap(char* addr) : HValue(addr) {
   size_ = *reinterpret_cast<uint64_t*>(addr + 8);
+  space_ = addr + 16;
+}
+
+
+bool HMap::IsEmptySlot(uint32_t index) {
+  return *GetSlotAddress(index) == NULL;
+}
+
+
+HValue* HMap::GetSlot(uint32_t index) {
+  return HValue::New(*GetSlotAddress(index));
+}
+
+
+char** HMap::GetSlotAddress(uint32_t index) {
+  return reinterpret_cast<char**>(space_ + index * 8);
 }
 
 

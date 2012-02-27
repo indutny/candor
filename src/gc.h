@@ -11,6 +11,8 @@ class Heap;
 class HValue;
 class HContext;
 class HFunction;
+class HObject;
+class HMap;
 
 class GC {
  public:
@@ -38,6 +40,8 @@ class GC {
   void VisitValue(HValue* value);
   void VisitContext(HContext* context);
   void VisitFunction(HFunction* fn);
+  void VisitObject(HObject* obj);
+  void VisitMap(HMap* map);
 
   inline GCList* grey_items() { return &grey_items_; }
   inline GCRawList* black_items() { return &black_items_; }

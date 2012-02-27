@@ -219,7 +219,13 @@ class HObject : public HValue {
  public:
   HObject(char* addr);
 
+  inline char* map() { return *map_slot_; }
+  inline char** map_slot() { return map_slot_; }
+
   static const Heap::HeapTag class_tag = Heap::kTagObject;
+
+ protected:
+  char** map_slot_;
 };
 
 
@@ -227,12 +233,17 @@ class HMap : public HValue {
  public:
   HMap(char* addr);
 
+  bool IsEmptySlot(uint32_t index);
+  HValue* GetSlot(uint32_t index);
+  char** GetSlotAddress(uint32_t index);
+
   inline uint32_t size() { return size_; }
 
   static const Heap::HeapTag class_tag = Heap::kTagMap;
 
  protected:
   uint32_t size_;
+  char* space_;
 };
 
 

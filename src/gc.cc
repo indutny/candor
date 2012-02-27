@@ -63,6 +63,10 @@ void GC::VisitValue(HValue* value) {
     return VisitContext(value->As<HContext>());
    case Heap::kTagFunction:
     return VisitFunction(value->As<HFunction>());
+   case Heap::kTagObject:
+    return VisitObject(value->As<HObject>());
+   case Heap::kTagMap:
+    return VisitMap(value->As<HMap>());
 
    // String and numbers ain't referencing anyone
    case Heap::kTagString:
@@ -84,6 +88,20 @@ void GC::VisitContext(HContext* context) {
 
 void GC::VisitFunction(HFunction* fn) {
   grey_items()->Push(new GCValue(HValue::New(fn->parent()), fn->parent_slot()));
+}
+
+
+void GC::VisitObject(HObject* obj) {
+  grey_items()->Push(new GCValue(HValue::New(obj->map()), obj->map_slot()));
+}
+
+
+void GC::VisitMap(HMap* map) {
+  for (uint32_t i = 0; i < map->size(); i++) {
+    if (map->IsEmptySlot(i)) continue;
+    grey_items()->Push(new GCValue(map->GetSlot(i),
+                                   map->GetSlotAddress(i)));
+  }
 }
 
 } // namespace dotlang
