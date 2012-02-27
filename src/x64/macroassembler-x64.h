@@ -79,55 +79,16 @@ class Masm : public Assembler {
   void Call(Register fn, uint32_t args);
   void Call(BaseStub* stub);
 
-  inline void Push(Register src) {
-    ChangeAlign(1);
-    push(src);
-  }
-
-  inline void Pop(Register src) {
-    pop(src);
-    ChangeAlign(-1);
-  }
-
-  inline void PushTagged(Register src) {
-    shl(src, 1);
-    inc(src);
-    Push(src);
-    shr(src, 1);
-  }
-
-  inline void PopTagged(Register src) {
-    Pop(src);
-    shr(src, 1);
-  }
-
-  inline void PreservePop(Register src, Register preserve) {
-    if (src.is(preserve)) {
-      pop(scratch);
-    } else {
-      pop(src);
-    }
-  }
-
-  inline void Save(Register src) {
-    if (!result().is(src)) Push(src);
-  }
-
-  inline void Restore(Register src) {
-    if (!result().is(src)) Pop(src);
-  }
-
-  inline void Result(Register src) {
-    if (!result().is(src)) movq(result(), src);
-  }
-
-  inline uint64_t TagNumber(uint64_t number) {
-    return number << 1 | 1;
-  }
-
-  inline void Untag(Register src) {
-    shr(src, 1);
-  }
+  inline void Push(Register src);
+  inline void Pop(Register src);
+  inline void PushTagged(Register src);
+  inline void PopTagged(Register src);
+  inline void PreservePop(Register src, Register preserve);
+  inline void Save(Register src);
+  inline void Restore(Register src);
+  inline void Result(Register src);
+  inline uint64_t TagNumber(uint64_t number);
+  inline void Untag(Register src);
 
   // See VisitForSlot and VisitForValue in fullgen for disambiguation
   inline Register result() { return result_; }

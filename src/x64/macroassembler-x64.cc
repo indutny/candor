@@ -1,4 +1,5 @@
 #include "macroassembler-x64.h"
+#include "macroassembler-x64-inl.h"
 #include "stubs.h"
 #include "utils.h" // ComputeHash
 
