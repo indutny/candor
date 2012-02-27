@@ -114,6 +114,14 @@ TEST_START("functional test")
     assert(result == NULL);
   })
 
+  FUN_TEST("a = { a: 1, b: 2 }\nreturn a.c = (2 + a.a) + a.b", {
+    assert(HValue::As<HNumber>(result)->value() == 5);
+  })
+
+  FUN_TEST("a = { a: { b: 2 } }\nreturn a.a.b", {
+    assert(HValue::As<HNumber>(result)->value() == 2);
+  })
+
   // Runtime errors
   FUN_TEST("() {}", {
     assert(s.CaughtException() == true);

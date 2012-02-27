@@ -72,6 +72,9 @@ TEST_START("parser test")
   PARSER_TEST("a({})", "[kCall [a] @[[kObjectLiteral ]] ]")
   PARSER_TEST("a = { x : 1 }",
               "[kAssign [a] [kObjectLiteral [kProperty x]:[1]]]")
+  PARSER_TEST("a = { x : { y: 1 } }",
+              "[kAssign [a] [kObjectLiteral [kProperty x]:"
+              "[kObjectLiteral [kProperty y]:[1]]]]")
   PARSER_TEST("a = { x : 1, y: 2 }",
               "[kAssign [a] [kObjectLiteral "
               "[kProperty x]:[1] [kProperty y]:[2]]]")
