@@ -11,7 +11,7 @@ namespace dotlang {
 char* RuntimeAllocate(Heap* heap,
                       uint32_t bytes,
                       char* context) {
-  return heap->new_space()->Allocate(bytes);
+  return heap->new_space()->Allocate(bytes, context);
 }
 
 
@@ -67,7 +67,7 @@ char* RuntimeGrowObject(Heap* heap, char* context, char* obj) {
   char* map = *map_addr;
   uint32_t size = *reinterpret_cast<uint32_t*>(map + 8);
 
-  char* new_map = heap->AllocateTagged(Heap::kTagMap, 8 + (size << 5));
+  char* new_map = heap->AllocateTagged(Heap::kTagMap, 8 + (size << 5), context);
   // Set map size
   *(uint32_t*)(new_map + 8) = size << 1;
 

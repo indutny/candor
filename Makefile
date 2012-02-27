@@ -27,6 +27,7 @@ OBJS += src/visitor.o
 OBJS += src/parser.o
 OBJS += src/scope.o
 OBJS += src/compiler.o
+OBJS += src/gc.o
 OBJS += src/heap.o
 OBJS += src/runtime.o
 

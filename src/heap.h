@@ -11,11 +11,15 @@
 //
 
 #include "zone.h" // ZoneObject
+#include "gc.h" // GC
 #include "utils.h"
 
 #include <stdint.h> // uint32_t
 
 namespace dotlang {
+
+// Forward declarations
+class Heap;
 
 class Space {
  public:
@@ -35,11 +39,13 @@ class Space {
     char* limit_;
   };
 
-  Space(uint32_t page_size);
+  Space(Heap* heap, uint32_t page_size);
 
   // Move to next page where are at least `bytes` free
   // Otherwise allocate new page
-  char* Allocate(uint32_t bytes);
+  char* Allocate(uint32_t bytes, char* context);
+
+  inline Heap* heap() { return heap_; }
 
   // Both top and limit are always pointing to current page's
   // top and limit.
@@ -47,6 +53,8 @@ class Space {
   inline char*** limit() { return &limit_; }
 
  private:
+  Heap* heap_;
+
   char** top_;
   char** limit_;
 
@@ -76,8 +84,8 @@ class Heap {
     kErrorNonObjectPropertyLookup
   };
 
-  Heap(uint32_t page_size) : new_space_(page_size),
-                             old_space_(page_size),
+  Heap(uint32_t page_size) : new_space_(this, page_size),
+                             old_space_(this, page_size),
                              root_stack_(NULL),
                              pending_exception_(NULL) {
     current_ = this;
@@ -86,12 +94,14 @@ class Heap {
   // TODO: Use thread id
   static inline Heap* Current() { return current_; }
 
-  char* AllocateTagged(HeapTag tag, uint32_t bytes);
+  char* AllocateTagged(HeapTag tag, uint32_t bytes, char* context);
 
   inline Space* new_space() { return &new_space_; }
   inline Space* old_space() { return &old_space_; }
   inline char** root_stack() { return &root_stack_; }
   inline char** pending_exception() { return &pending_exception_; }
+
+  inline GC* gc() { return &gc_; }
 
  private:
   Space new_space_;
@@ -101,6 +111,8 @@ class Heap {
   // root stack address is needed to unwind stack up to root function's entry
   char* root_stack_;
   char* pending_exception_;
+
+  GC gc_;
 
   static Heap* current_;
 };
@@ -137,6 +149,16 @@ class HValue : public ZoneObject {
   Heap::HeapTag tag_;
   char* addr_;
   Heap* heap_;
+};
+
+
+class HContext : public HValue {
+ public:
+  HContext(char* addr);
+
+  static const Heap::HeapTag class_tag = Heap::kTagContext;
+
+ protected:
 };
 
 

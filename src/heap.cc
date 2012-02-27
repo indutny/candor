@@ -11,7 +11,8 @@ namespace dotlang {
 
 Heap* Heap::current_ = NULL;
 
-Space::Space(uint32_t page_size) : page_size_(page_size) {
+Space::Space(Heap* heap, uint32_t page_size) : heap_(heap),
+                                               page_size_(page_size) {
   // Create the first page
   pages_.Push(new Page(page_size));
   pages_.allocated = true;
@@ -26,7 +27,10 @@ void Space::select(Page* page) {
 }
 
 
-char* Space::Allocate(uint32_t bytes) {
+char* Space::Allocate(uint32_t bytes, char* context) {
+  // If current page was exhausted - run GC
+  bool need_gc = *top_ + bytes > *limit_;
+
   // Go through all pages to find gap
   List<Page*, EmptyClass>::Item* item = pages_.head();
   while (*top_ + bytes > *limit_ && item->next() != NULL) {
@@ -42,15 +46,18 @@ char* Space::Allocate(uint32_t bytes) {
   }
 
   char* result = *top_;
-
   *top_ += bytes;
+
+  if (need_gc) {
+    heap()->gc()->CollectGarbage(HValue::As<HContext>(context));
+  }
 
   return result;
 }
 
 
-char* Heap::AllocateTagged(HeapTag tag, uint32_t bytes) {
-  char* result = new_space()->Allocate(bytes + 8);
+char* Heap::AllocateTagged(HeapTag tag, uint32_t bytes, char* context) {
+  char* result = new_space()->Allocate(bytes + 8, context);
   *reinterpret_cast<uint64_t*>(result) = tag;
 
   return result;
@@ -65,6 +72,10 @@ HValue::HValue(Heap* heap, char* addr) : addr_(addr), heap_(heap) {
 HValue::HValue(char* addr) : addr_(addr), heap_(Heap::Current()) {
   // XXX: A little bit of copy-paste here
   tag_ = static_cast<Heap::HeapTag>(*reinterpret_cast<uint64_t*>(addr));
+}
+
+
+HContext::HContext(char* addr) : HValue(addr) {
 }
 
 
