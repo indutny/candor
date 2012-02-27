@@ -138,6 +138,8 @@ class HValue : public ZoneObject {
     return new T(addr);
   }
 
+  static Heap::HeapTag GetTag(char* addr);
+
   inline Heap::HeapTag tag() { return tag_; }
   inline void tag(Heap::HeapTag tag) { tag_ = tag; }
 

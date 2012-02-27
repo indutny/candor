@@ -65,14 +65,19 @@ char* Heap::AllocateTagged(HeapTag tag, uint32_t bytes, char* context) {
 }
 
 
+Heap::HeapTag HValue::GetTag(char* addr) {
+  return static_cast<Heap::HeapTag>(*reinterpret_cast<uint64_t*>(addr));
+}
+
+
 HValue::HValue(Heap* heap, char* addr) : addr_(addr), heap_(heap) {
-  tag_ = static_cast<Heap::HeapTag>(*reinterpret_cast<uint64_t*>(addr));
+  tag_ = HValue::GetTag(addr);
 }
 
 
 HValue::HValue(char* addr) : addr_(addr), heap_(Heap::Current()) {
   // XXX: A little bit of copy-paste here
-  tag_ = static_cast<Heap::HeapTag>(*reinterpret_cast<uint64_t*>(addr));
+  tag_ = HValue::GetTag(addr);
 }
 
 
