@@ -21,6 +21,9 @@ typedef char* (*RuntimeLookupPropertyCallback)(Heap* heap,
                                                off_t insert);
 char* RuntimeLookupProperty(Heap* heap, char* obj, char* key, off_t insert);
 
+typedef char* (*RuntimeGrowObjectCallback)(Heap* heap, char* obj);
+char* RuntimeGrowObject(Heap* heap, char* obj);
+
 // Compares two heap values
 typedef size_t (*RuntimeCompareCallback)(char* lhs, char* rhs);
 size_t RuntimeCompare(char* lhs, char* rhs);

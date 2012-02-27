@@ -44,7 +44,8 @@ char* RuntimeLookupProperty(Heap* heap, char* obj, char* key, off_t insert) {
   // All key slots are filled - rehash and lookup again
   if (index == end) {
     assert(insert);
-    return 0;
+    RuntimeGrowObject(heap, obj);
+    return RuntimeLookupProperty(heap, obj, key, insert);
   }
 
   if (insert) {
@@ -52,6 +53,43 @@ char* RuntimeLookupProperty(Heap* heap, char* obj, char* key, off_t insert) {
   }
 
   return space + index + (mask + 8);
+}
+
+
+char* RuntimeGrowObject(Heap* heap, char* obj) {
+  char** map_addr = reinterpret_cast<char**>(obj + 16);
+  char* map = *map_addr;
+  uint32_t size = *reinterpret_cast<uint32_t*>(map + 8);
+
+  char* new_map = heap->AllocateTagged(Heap::kTagMap, 8 + (size << 5));
+  // Set map size
+  *(uint32_t*)(new_map + 8) = size << 1;
+
+  // Fill new map with zeroes
+  memset(new_map + 16, 0, size << 5);
+
+  // Replace old map with a new
+  *map_addr = new_map;
+
+  // Change mask
+  uint32_t mask = (size << 4) - 8;
+  *reinterpret_cast<uint32_t*>(obj + 8) = mask;
+
+  char* space = map + 16;
+
+  // And rehash properties to new map
+  for (uint32_t index = 0; index < size << 3; index += 8) {
+    char* key= *reinterpret_cast<char**>(space + index);
+    if (key== NULL) continue;
+
+    char* value = *reinterpret_cast<char**>(space + index + (size << 3));
+    assert(value != NULL);
+
+    char* slot = RuntimeLookupProperty(heap, obj, key, true);
+    *reinterpret_cast<char**>(slot) = value;
+  }
+
+  return 0;
 }
 
 

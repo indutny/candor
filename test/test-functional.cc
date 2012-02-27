@@ -103,8 +103,15 @@ TEST_START("functional test")
     assert(HValue::As<HNumber>(result)->value() == 28);
   })
 
-  FUN_TEST("a = {}\na.x = 1\na.y = 2\na.z = 3\nreturn a.x", {
-    assert(HValue::As<HNumber>(result)->value() == 1);
+  // Rehash and growing
+  FUN_TEST("a = {}\n"
+           "a.a = a.b = a.c = a.d = a.e = a.f = a.g = a.h = 1\n"
+           "return a.a + a.b + a.c + a.d + a.e + a.f + a.g + a.h", {
+    assert(HValue::As<HNumber>(result)->value() == 8);
+  })
+
+  FUN_TEST("a = { a: 1, b: 2 }\nreturn a.c", {
+    assert(result == NULL);
   })
 
   // Runtime errors

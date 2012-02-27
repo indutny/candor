@@ -49,6 +49,14 @@ char* Space::Allocate(uint32_t bytes) {
 }
 
 
+char* Heap::AllocateTagged(HeapTag tag, uint32_t bytes) {
+  char* result = new_space()->Allocate(bytes + 8);
+  *reinterpret_cast<uint64_t*>(result) = tag;
+
+  return result;
+}
+
+
 HValue::HValue(Heap* heap, char* addr) : addr_(addr), heap_(heap) {
   tag_ = static_cast<Heap::HeapTag>(*reinterpret_cast<uint64_t*>(addr));
 }

@@ -86,6 +86,8 @@ class Heap {
   // TODO: Use thread id
   static inline Heap* Current() { return current_; }
 
+  char* AllocateTagged(HeapTag tag, uint32_t bytes);
+
   inline Space* new_space() { return &new_space_; }
   inline Space* old_space() { return &old_space_; }
   inline char** root_stack() { return &root_stack_; }
