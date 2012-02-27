@@ -173,14 +173,20 @@ class HContext : public HValue {
  public:
   HContext(char* addr);
 
+  bool HasSlot(uint32_t index);
   HValue* GetSlot(uint32_t index);
   char** GetSlotAddress(uint32_t index);
 
+  bool HasParent();
+
+  inline char* parent() { return *parent_slot_; }
+  inline char** parent_slot() { return parent_slot_; }
   inline uint32_t slots() { return slots_; }
 
   static const Heap::HeapTag class_tag = Heap::kTagContext;
 
  protected:
+  char** parent_slot_;
   uint32_t slots_;
 };
 

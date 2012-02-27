@@ -79,7 +79,14 @@ void GC::VisitValue(HValue* value) {
 
 
 void GC::VisitContext(HContext* context) {
+  if (context->HasParent()) {
+    grey_items()->Push(
+        new GCValue(HValue::New(context->parent()), context->parent_slot()));
+  }
+
   for (uint32_t i = 0; i < context->slots(); i++) {
+    if (!context->HasSlot(i)) continue;
+
     HValue* value = context->GetSlot(i);
     grey_items()->Push(new GCValue(value, context->GetSlotAddress(i)));
   }

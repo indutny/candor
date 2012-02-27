@@ -104,6 +104,8 @@ HValue* HValue::New(char* addr) {
     return HValue::As<HString>(addr);
    case Heap::kTagObject:
     return HValue::As<HObject>(addr);
+   case Heap::kTagMap:
+    return HValue::As<HMap>(addr);
    default:
     assert(0 && "Not implemented");
   }
@@ -173,7 +175,18 @@ void HValue::ResetGCMark() {
 
 
 HContext::HContext(char* addr) : HValue(addr) {
-  slots_ = *reinterpret_cast<uint64_t*>(addr + 8);
+  parent_slot_ = reinterpret_cast<char**>(addr + 8);
+  slots_ = *reinterpret_cast<uint64_t*>(addr + 16);
+}
+
+
+bool HContext::HasParent() {
+  return *parent_slot_ != NULL;
+}
+
+
+bool HContext::HasSlot(uint32_t index) {
+  return *GetSlotAddress(index) != NULL;
 }
 
 
@@ -183,7 +196,7 @@ HValue* HContext::GetSlot(uint32_t index) {
 
 
 char** HContext::GetSlotAddress(uint32_t index) {
-  return reinterpret_cast<char**>(addr() + 16 + index * 8);
+  return reinterpret_cast<char**>(addr() + 24 + index * 8);
 }
 
 
