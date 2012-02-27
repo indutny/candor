@@ -8,12 +8,18 @@
 
 namespace dotlang {
 
-char* RuntimeAllocate(Heap* heap, uint32_t bytes) {
+char* RuntimeAllocate(Heap* heap,
+                      uint32_t bytes,
+                      char* context) {
   return heap->new_space()->Allocate(bytes);
 }
 
 
-char* RuntimeLookupProperty(Heap* heap, char* obj, char* key, off_t insert) {
+char* RuntimeLookupProperty(Heap* heap,
+                            char* context,
+                            char* obj,
+                            char* key,
+                            off_t insert) {
   char* map = *reinterpret_cast<char**>(obj + 16);
   char* space = map + 16;
   uint32_t mask = *reinterpret_cast<uint64_t*>(obj + 8);
@@ -44,8 +50,8 @@ char* RuntimeLookupProperty(Heap* heap, char* obj, char* key, off_t insert) {
   // All key slots are filled - rehash and lookup again
   if (index == end) {
     assert(insert);
-    RuntimeGrowObject(heap, obj);
-    return RuntimeLookupProperty(heap, obj, key, insert);
+    RuntimeGrowObject(heap, context, obj);
+    return RuntimeLookupProperty(heap, context, obj, key, insert);
   }
 
   if (insert) {
@@ -56,7 +62,7 @@ char* RuntimeLookupProperty(Heap* heap, char* obj, char* key, off_t insert) {
 }
 
 
-char* RuntimeGrowObject(Heap* heap, char* obj) {
+char* RuntimeGrowObject(Heap* heap, char* context, char* obj) {
   char** map_addr = reinterpret_cast<char**>(obj + 16);
   char* map = *map_addr;
   uint32_t size = *reinterpret_cast<uint32_t*>(map + 8);
@@ -85,7 +91,7 @@ char* RuntimeGrowObject(Heap* heap, char* obj) {
     char* value = *reinterpret_cast<char**>(space + index + (size << 3));
     assert(value != NULL);
 
-    char* slot = RuntimeLookupProperty(heap, obj, key, true);
+    char* slot = RuntimeLookupProperty(heap, context, obj, key, true);
     *reinterpret_cast<char**>(slot) = value;
   }
 

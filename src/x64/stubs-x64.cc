@@ -31,8 +31,9 @@ void AllocateStub::Generate() {
   __ push(rbx);
 
   // Arguments
-  Operand size(rbp, 24);
-  Operand tag(rbp, 16);
+  Operand size(rbp, 32);
+  Operand tag(rbp, 24);
+  Operand context(rbp, 16);
 
   Label runtime_allocate(masm()), done(masm());
 
@@ -79,9 +80,10 @@ void AllocateStub::Generate() {
     __ Pushad();
     __ movq(scratch, Immediate(*reinterpret_cast<uint64_t*>(&allocate)));
 
-    // Two arguments: heap and size
+    // Three arguments: heap, size, context
     __ movq(rdi, heapref);
     __ movq(rsi, size);
+    __ movq(rdx, context);
     __ callq(scratch);
     __ Popad(rax);
   }
@@ -96,7 +98,7 @@ void AllocateStub::Generate() {
 
   // Rax will hold resulting pointer
   __ pop(rbx);
-  GenerateEpilogue(2);
+  GenerateEpilogue(3);
 }
 
 
