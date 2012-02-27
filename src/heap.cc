@@ -107,6 +107,7 @@ HValue* HValue::New(char* addr) {
    default:
     assert(0 && "Not implemented");
   }
+  return NULL;
 }
 
 

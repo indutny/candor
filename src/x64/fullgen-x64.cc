@@ -114,7 +114,7 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
 
   // Allocate context and clear stack slots
   AllocateContext(stmt->context_slots());
-  FillStackSlots(on_stack_size);
+  FillStackSlots(on_stack_size >> 3);
 
   // Store root stack address(rbp) to heap
   // It's needed to unwind stack on exceptions
