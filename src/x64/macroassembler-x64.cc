@@ -304,6 +304,10 @@ void Masm::Throw(Heap::Error error) {
   movq(rax, 0);
 
   // Leave to C++ land
+  pop(r15);
+  pop(r14);
+  pop(r13);
+  pop(r12);
   pop(rbx);
   pop(rbp);
   ret(0);

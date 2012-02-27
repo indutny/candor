@@ -81,10 +81,9 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
   // rdi <- reference to parent context (if non-root)
   // rsi <- arguments count
   push(rbp);
-
-  // callee-save registers
   push(rbx);
-  // Store additional only on C++ - Dotlang boundary
+
+  // Store callee-save registers only on C++ - Dotlang boundary
   if (stmt->is_root()) {
     push(r12);
     push(r13);
