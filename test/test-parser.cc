@@ -78,6 +78,10 @@ TEST_START("parser test")
   PARSER_TEST("a = { x : 1, y: 2 }",
               "[kAssign [a] [kObjectLiteral "
               "[kProperty x]:[1] [kProperty y]:[2]]]")
+  PARSER_TEST("key() {\nreturn 'key'\n}\na = { key: 2 }\nreturn a.key",
+              "[kFunction [key] @[] [kReturn [kString key]]] "
+              "[kAssign [a] [kObjectLiteral [kProperty key]:[2]]] "
+              "[kReturn [kMember [a] [kProperty key]]]")
 
   // Block expression
   PARSER_TEST("a({ x + 1 })", "[kCall [a] @[[kBlockExpr [kAdd [x] [1]]]] ]")

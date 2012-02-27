@@ -132,9 +132,11 @@ Lexer::Token* Lexer::Consume() {
     }
 
     if (!has(1) || get(0) != endchar) return new Token(kEnd, offset_);
+    // Skip endchar
+    offset_++;
 
     // Note: token value will contain \c escaped chars
-    return new Token(kString, source_ + start, offset_ - start, start);
+    return new Token(kString, source_ + start, offset_ - 1 - start, start);
   }
 
   // Math

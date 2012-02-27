@@ -122,6 +122,10 @@ TEST_START("functional test")
     assert(HValue::As<HNumber>(result)->value() == 2);
   })
 
+  FUN_TEST("key() {\nreturn 'key'\n}\na = { key: 2 }\nreturn a[key()]", {
+    assert(HValue::As<HNumber>(result)->value() == 2);
+  })
+
   // Runtime errors
   FUN_TEST("() {}", {
     assert(s.CaughtException() == true);

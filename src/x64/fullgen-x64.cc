@@ -354,13 +354,14 @@ AstNode* Fullgen::VisitMember(AstNode* node) {
   {
     Pushad();
 
+    VisitForValue(node->rhs(), rdx);
+
     ChangeAlign(2);
     Align a(this);
 
     // RuntimeLookupProperty(heap, obj, key, change) -> returns addr of slot
     movq(rsi, result());
     movq(rdi, Immediate(reinterpret_cast<uint64_t>(heap())));
-    VisitForValue(node->rhs(), rdx);
     movq(rcx, Immediate(visiting_for_slot()));
 
     movq(rax, Immediate(*reinterpret_cast<uint64_t*>(&lookup)));
