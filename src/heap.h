@@ -80,6 +80,7 @@ class Heap {
     kErrorNone,
     kErrorIncorrectLhs,
     kErrorCallWithoutVariable,
+    kErrorCallNonFunction,
     kErrorNilPropertyLookup,
     kErrorNonObjectPropertyLookup
   };
@@ -156,9 +157,12 @@ class HContext : public HValue {
  public:
   HContext(char* addr);
 
+  inline uint32_t slots() { return slots_; }
+
   static const Heap::HeapTag class_tag = Heap::kTagContext;
 
  protected:
+  uint32_t slots_;
 };
 
 

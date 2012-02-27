@@ -15,6 +15,12 @@ char* RuntimeAllocate(Heap* heap,
 }
 
 
+void RuntimeCollectGarbage(Heap* heap, char* context) {
+  Zone gc_zone;
+  heap->gc()->CollectGarbage(HValue::As<HContext>(context));
+}
+
+
 char* RuntimeLookupProperty(Heap* heap,
                             char* context,
                             char* obj,

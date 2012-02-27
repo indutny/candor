@@ -231,10 +231,36 @@ AstNode* Fullgen::VisitFunction(AstNode* stmt) {
 AstNode* Fullgen::VisitCall(AstNode* stmt) {
   FunctionLiteral* fn = FunctionLiteral::Cast(stmt);
 
+  Label not_function(this), done(this);
+
   // Get pointer to function in a heap
   if (fn->variable() == NULL) {
     Throw(Heap::kErrorCallWithoutVariable);
   } else {
+    AstNode* name = AstValue::Cast(fn->variable())->name();
+
+    // handle __$gc() call
+    if (fn->variable()->is(AstNode::kValue) &&
+        name->length() == 5 && strncmp(name->value(), "__$gc", 5) == 0) {
+      RuntimeCollectGarbageCallback gc = &RuntimeCollectGarbage;
+      Pushad();
+
+      Align a(this);
+
+      // RuntimeLookupProperty(heap, context, obj, key, change)
+      // (returns addr of slot)
+      movq(rsi, rdi);
+      movq(rdi, Immediate(reinterpret_cast<uint64_t>(heap())));
+
+      movq(rax, Immediate(*reinterpret_cast<uint64_t*>(&gc)));
+      callq(rax);
+
+      Popad(reg_nil);
+      movq(result(), Immediate(0));
+
+      return stmt;
+    }
+
     // Save rax if we're not going to overwrite it
     Save(rax);
 
@@ -242,6 +268,8 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
     Save(rdi);
 
     VisitForValue(fn->variable(), rax);
+    IsNil(rax, &not_function);
+    IsHeapObject(Heap::kTagFunction, rax, &not_function);
 
     ChangeAlign(fn->args()->length());
 
@@ -277,6 +305,13 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
     Result(rax);
     Restore(rax);
   }
+
+  jmp(&done);
+  bind(&not_function);
+
+  Throw(Heap::kErrorCallNonFunction);
+
+  bind(&done);
 
   return stmt;
 }

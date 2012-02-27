@@ -49,6 +49,7 @@ char* Space::Allocate(uint32_t bytes, char* context) {
   *top_ += bytes;
 
   if (need_gc) {
+    Zone gc_zone;
     heap()->gc()->CollectGarbage(HValue::As<HContext>(context));
   }
 
@@ -76,6 +77,7 @@ HValue::HValue(char* addr) : addr_(addr), heap_(Heap::Current()) {
 
 
 HContext::HContext(char* addr) : HValue(addr) {
+  slots_ = *reinterpret_cast<uint64_t*>(addr + 8);
 }
 
 

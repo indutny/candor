@@ -91,4 +91,7 @@ TEST_START("parser test")
 
   // Nested scopes
   PARSER_TEST("{{{{}}}}", "[kBlock [kBlock [kBlock [kBlock [kNop ]]]]]")
+
+  // Complex names
+  PARSER_TEST("__$gc()", "[kCall [__$gc] @[] ]")
 TEST_END("parser test")
