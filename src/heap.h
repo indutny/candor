@@ -121,15 +121,9 @@ class Heap {
 
 class HValue : public ZoneObject {
  public:
-  HValue(Heap* heap, char* addr);
   HValue(char* addr);
 
-  template <class T>
-  static inline T* As(Heap* heap, char* addr) {
-    assert(addr != NULL);
-    assert(*reinterpret_cast<uint8_t*>(addr) == T::class_tag);
-    return new T(heap, addr);
-  }
+  static HValue* New(char* addr);
 
   template <class T>
   static inline T* As(char* addr) {
@@ -137,6 +131,18 @@ class HValue : public ZoneObject {
     assert(*reinterpret_cast<uint8_t*>(addr) == T::class_tag);
     return new T(addr);
   }
+
+  template <class T>
+  inline T* As() {
+    assert(tag() == T::class_tag);
+    return reinterpret_cast<T*>(this);
+  }
+
+  bool IsGCMarked();
+  char* GetGCMark();
+
+  void SetGCMark(char* new_addr);
+  void ResetGCMark();
 
   static Heap::HeapTag GetTag(char* addr);
 
@@ -146,18 +152,18 @@ class HValue : public ZoneObject {
   inline char* addr() { return addr_; }
   inline void addr(char* addr) { addr_ = addr; }
 
-  inline Heap* heap() { return heap_; }
-
  protected:
   Heap::HeapTag tag_;
   char* addr_;
-  Heap* heap_;
 };
 
 
 class HContext : public HValue {
  public:
   HContext(char* addr);
+
+  HValue* GetSlot(uint32_t index);
+  char** GetSlotAddress(uint32_t index);
 
   inline uint32_t slots() { return slots_; }
 
@@ -200,7 +206,7 @@ class HString : public HValue {
 
 class HObject : public HValue {
  public:
-  HObject(Heap* heap, char* addr);
+  HObject(char* addr);
 
   static const Heap::HeapTag class_tag = Heap::kTagObject;
 };

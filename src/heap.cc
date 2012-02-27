@@ -70,19 +70,62 @@ Heap::HeapTag HValue::GetTag(char* addr) {
 }
 
 
-HValue::HValue(Heap* heap, char* addr) : addr_(addr), heap_(heap) {
+HValue::HValue(char* addr) : addr_(addr) {
   tag_ = HValue::GetTag(addr);
 }
 
 
-HValue::HValue(char* addr) : addr_(addr), heap_(Heap::Current()) {
-  // XXX: A little bit of copy-paste here
-  tag_ = HValue::GetTag(addr);
+HValue* HValue::New(char* addr) {
+  switch (HValue::GetTag(addr)) {
+   case Heap::kTagContext:
+    return HValue::As<HContext>(addr);
+   case Heap::kTagFunction:
+    return HValue::As<HFunction>(addr);
+   case Heap::kTagNumber:
+    return HValue::As<HNumber>(addr);
+   case Heap::kTagString:
+    return HValue::As<HString>(addr);
+   case Heap::kTagObject:
+    return HValue::As<HObject>(addr);
+   default:
+    assert(0 && "Not implemented");
+  }
+}
+
+
+bool HValue::IsGCMarked() {
+  return (*reinterpret_cast<uint64_t*>(addr()) & 0x100) == 0x100;
+}
+
+
+char* HValue::GetGCMark() {
+  assert(IsGCMarked());
+  return *reinterpret_cast<char**>(addr() + 8);
+}
+
+
+void HValue::SetGCMark(char* new_addr) {
+  *reinterpret_cast<uint64_t*>(addr()) |= 0x100;
+}
+
+
+void HValue::ResetGCMark() {
+  *reinterpret_cast<uint64_t*>(addr()) ^= 0x100;
 }
 
 
 HContext::HContext(char* addr) : HValue(addr) {
   slots_ = *reinterpret_cast<uint64_t*>(addr + 8);
+}
+
+
+HValue* HContext::GetSlot(uint32_t index) {
+  return HValue::New(*GetSlotAddress(index));
+}
+
+
+char** HContext::GetSlotAddress(uint32_t index) {
+  return reinterpret_cast<char**>(addr() + 16 + index * 8);
 }
 
 
@@ -105,7 +148,7 @@ HString::HString(char* addr) : HValue(addr) {
 }
 
 
-HObject::HObject(Heap* heap, char* addr) : HValue(heap, addr) {
+HObject::HObject(char* addr) : HValue(addr) {
 }
 
 
