@@ -89,6 +89,18 @@ class Masm : public Assembler {
     ChangeAlign(-1);
   }
 
+  inline void PushTagged(Register src) {
+    shl(src, 1);
+    inc(src);
+    Push(src);
+    shr(src, 1);
+  }
+
+  inline void PopTagged(Register src) {
+    Pop(src);
+    shr(src, 1);
+  }
+
   inline void PreservePop(Register src, Register preserve) {
     if (src.is(preserve)) {
       pop(scratch);
@@ -107,6 +119,14 @@ class Masm : public Assembler {
 
   inline void Result(Register src) {
     if (!result().is(src)) movq(result(), src);
+  }
+
+  inline uint64_t TagNumber(uint64_t number) {
+    return number << 1 | 1;
+  }
+
+  inline void Untag(Register src) {
+    shr(src, 1);
   }
 
   // See VisitForSlot and VisitForValue in fullgen for disambiguation

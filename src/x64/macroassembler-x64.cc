@@ -81,7 +81,7 @@ void Masm::Allocate(Heap::HeapTag tag,
       addq(rax, Immediate(sizeof(void*)));
     }
     push(rax);
-    movq(rax, Immediate(tag));
+    movq(rax, Immediate(TagNumber(tag)));
     push(rax);
 
     // Push context
@@ -190,7 +190,7 @@ void Masm::AllocateObjectLiteral(Register size, Register result) {
   movq(qmask, scratch);
 
   // Create map
-  Push(size);
+  PushTagged(size);
 
   // keys + values
   shl(size, Immediate(4));
@@ -199,9 +199,9 @@ void Masm::AllocateObjectLiteral(Register size, Register result) {
   Allocate(Heap::kTagMap, size, 0, scratch);
   movq(qmap, scratch);
 
-  Pop(size);
+  PopTagged(size);
 
-  Push(size);
+  PushTagged(size);
   Push(result);
   movq(result, scratch);
 
@@ -215,7 +215,7 @@ void Masm::AllocateObjectLiteral(Register size, Register result) {
   addq(size, result);
   Fill(result, size, Immediate(Heap::kTagNil));
   Pop(result);
-  Pop(size);
+  PopTagged(size);
 }
 
 

@@ -94,6 +94,7 @@ void AllocateStub::Generate() {
   // Set tag
   Operand qtag(rax, 0);
   __ movq(scratch, tag);
+  __ Untag(scratch);
   __ movq(qtag, scratch);
 
   // Rax will hold resulting pointer
