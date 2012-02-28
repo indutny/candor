@@ -80,6 +80,7 @@ class Heap {
     kTagContext,
     kTagNumber,
     kTagString,
+    kTagBoolean,
     kTagObject,
     kTagMap,
 
@@ -204,6 +205,20 @@ class HNumber : public HValue {
 
  protected:
   int64_t value_;
+};
+
+
+class HBoolean : public HValue {
+ public:
+  HBoolean(char* addr);
+
+  inline bool is_true() { return value_; }
+  inline bool is_false() { return !value_; }
+
+  static const Heap::HeapTag class_tag = Heap::kTagBoolean;
+
+ protected:
+  bool value_;
 };
 
 

@@ -24,7 +24,9 @@ namespace dotlang {
     V(Number)\
     V(Property)\
     V(String)\
-    V(Nil)
+    V(Nil)\
+    V(True)\
+    V(False)
 
 #define VISITOR_SWITCH(V)\
     case AstNode::k##V:\

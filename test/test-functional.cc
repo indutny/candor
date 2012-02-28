@@ -29,6 +29,15 @@ TEST_START("functional test")
     assert(strncmp(str->value(), "abcdef", str->length()) == 0);
   })
 
+  // Boolean
+  FUN_TEST("return true", {
+    assert(HValue::As<HBoolean>(result)->is_true());
+  })
+
+  FUN_TEST("return false", {
+    assert(HValue::As<HBoolean>(result)->is_false());
+  })
+
   // Functions
   FUN_TEST("a() {}\nreturn a", {
     assert(HValue::As<HFunction>(result) != NULL);

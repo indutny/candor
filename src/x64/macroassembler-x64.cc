@@ -146,6 +146,19 @@ void Masm::AllocateNumber(Register value, Register result) {
 }
 
 
+void Masm::AllocateBoolean(Register value, Register result) {
+  // Value is often a scratch register, so store it before doing a stub call
+  Push(value);
+
+  Allocate(Heap::kTagBoolean, reg_nil, 1, result);
+
+  Pop(value);
+
+  Operand qvalue(result, 8);
+  movb(qvalue, value);
+}
+
+
 void Masm::AllocateString(const char* value,
                           uint32_t length,
                           Register result) {

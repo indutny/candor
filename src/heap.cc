@@ -214,6 +214,11 @@ HNumber::HNumber(char* addr) : HValue(addr) {
 }
 
 
+HBoolean::HBoolean(char* addr) : HValue(addr) {
+  value_ = *reinterpret_cast<int8_t*>(addr + 8) == 1;
+}
+
+
 HString::HString(char* addr) : HValue(addr) {
   length_ = *reinterpret_cast<uint32_t*>(addr + 16);
   value_ = addr + 24;

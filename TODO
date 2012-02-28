@@ -1,4 +1,3 @@
-* Array literals (consider creating using hashmaps)
 * Booleans
 * If statements
 * Ast node ids

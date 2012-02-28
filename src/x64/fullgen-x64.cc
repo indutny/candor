@@ -498,6 +498,32 @@ AstNode* Fullgen::VisitNil(AstNode* node) {
 }
 
 
+AstNode* Fullgen::VisitTrue(AstNode* node) {
+  if (visiting_for_slot()) {
+    Throw(Heap::kErrorIncorrectLhs);
+    return node;
+  }
+
+  movb(scratch, Immediate(1));
+  AllocateBoolean(scratch, result());
+
+  return node;
+}
+
+
+AstNode* Fullgen::VisitFalse(AstNode* node) {
+  if (visiting_for_slot()) {
+    Throw(Heap::kErrorIncorrectLhs);
+    return node;
+  }
+
+  movb(scratch, Immediate(0));
+  AllocateBoolean(scratch, result());
+
+  return node;
+}
+
+
 AstNode* Fullgen::VisitObjectLiteral(AstNode* node) {
   if (visiting_for_slot()) {
     Throw(Heap::kErrorIncorrectLhs);
