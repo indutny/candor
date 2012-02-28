@@ -16,7 +16,8 @@ class RelocationInfo;
 #define STUBS_LIST(V)\
     V(Allocate)\
     V(CoerceType)\
-    V(Throw)
+    V(Throw)\
+    V(LookupProperty)
 
 class BaseStub : public FFunction {
  public:
@@ -60,6 +61,14 @@ class CoerceTypeStub : public BaseStub {
 class ThrowStub : public BaseStub {
  public:
   ThrowStub(Masm* masm) : BaseStub(masm, kThrow) {
+  }
+
+  void Generate();
+};
+
+class LookupPropertyStub : public BaseStub {
+ public:
+  LookupPropertyStub(Masm* masm) : BaseStub(masm, kLookupProperty) {
   }
 
   void Generate();

@@ -423,27 +423,27 @@ AstNode* Fullgen::VisitMember(AstNode* node) {
   // Calculate hash of property
   bind(&hashing);
 
-  RuntimeLookupPropertyCallback lookup = &RuntimeLookupProperty;
+  Save(rax);
   {
-    Pushad();
-
-    VisitForValue(node->rhs(), rcx);
-
+    // Stub(change, property, object)
+    ChangeAlign(3);
     Align a(this);
 
-    // RuntimeLookupProperty(heap, stack_top, obj, key, change)
-    // (returns addr of slot)
-    movq(rdx, result());
-    movq(rsi, rsp);
-    movq(rdi, Immediate(reinterpret_cast<uint64_t>(heap())));
-    movq(r8, Immediate(visiting_for_slot()));
+    push(result());
 
-    movq(rax, Immediate(*reinterpret_cast<uint64_t*>(&lookup)));
-    callq(rax);
-    movq(result(), rax);
+    VisitForValue(node->rhs(), result());
+    push(result());
 
-    Popad(result());
+    movq(result(), Immediate(visiting_for_slot()));
+    push(result());
+
+    Call(stubs()->GetLookupPropertyStub());
+    // Stub will unwind stack automatically
+    ChangeAlign(-3);
   }
+  Result(rax);
+  Restore(rax);
+
   slot()->base(result());
   slot()->disp(0);
 

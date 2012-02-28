@@ -181,4 +181,30 @@ void ThrowStub::Generate() {
   __ ret(0);
 }
 
+
+void LookupPropertyStub::Generate() {
+  GeneratePrologue();
+  RuntimeLookupPropertyCallback lookup = &RuntimeLookupProperty;
+
+  // Arguments
+  Operand object(rbp, 32);
+  Operand property(rbp, 24);
+  Operand change(rbp, 16);
+
+  __ Pushad();
+
+  // RuntimeLookupProperty(heap, stack_top, obj, key, change)
+  // (returns addr of slot)
+  __ movq(rdi, Immediate(reinterpret_cast<uint64_t>(masm()->heap())));
+  __ movq(rsi, rsp);
+  __ movq(rdx, object);
+  __ movq(rcx, property);
+  __ movq(r8, change);
+  __ movq(rax, Immediate(*reinterpret_cast<uint64_t*>(&lookup)));
+  __ callq(rax);
+
+  __ Popad(rax);
+  GenerateEpilogue(3);
+}
+
 } // namespace dotlang
