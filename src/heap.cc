@@ -29,24 +29,28 @@ void Space::select(Page* page) {
 
 char* Space::Allocate(uint32_t bytes, char* stack_top) {
   // If current page was exhausted - run GC
-  bool need_gc = stack_top != NULL && *top_ + bytes > *limit_;
+  uint32_t even_bytes = bytes + (bytes & 0x01);
+  bool place_in_current = *top_ + even_bytes > *limit_;
+  bool need_gc = stack_top != NULL && place_in_current;
 
-  // Go through all pages to find gap
-  List<Page*, EmptyClass>::Item* item = pages_.head();
-  while (*top_ + bytes > *limit_ && item->next() != NULL) {
-    item = item->next();
-    select(item->value());
-  }
+  if (!place_in_current) {
+    // Go through all pages to find gap
+    List<Page*, EmptyClass>::Item* item = pages_.head();
+    while (*top_ + even_bytes > *limit_ && item->next() != NULL) {
+      item = item->next();
+      select(item->value());
+    }
 
-  // No gap was found - allocate new page
-  if (*top_ + bytes > *limit_) {
-    Page* next = new Page(RoundUp(bytes, page_size_));
-    pages_.Push(next);
-    select(next);
+    // No gap was found - allocate new page
+    if (*top_ + even_bytes > *limit_) {
+      Page* next = new Page(RoundUp(even_bytes, page_size_));
+      pages_.Push(next);
+      select(next);
+    }
   }
 
   char* result = *top_;
-  *top_ += bytes;
+  *top_ += even_bytes;
 
   if (need_gc) {
     Zone gc_zone;

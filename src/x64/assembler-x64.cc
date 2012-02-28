@@ -132,6 +132,14 @@ void Assembler::cmpb(Operand& dst, Immediate src) {
 }
 
 
+void Assembler::testb(Register dst, Immediate src) {
+  emit_rexw(dst);
+  emitb(0xF6);
+  emit_modrm(dst, 0);
+  emitb(src.value());
+}
+
+
 void Assembler::jmp(Label* label) {
   emitb(0xE9);
   emitl(0x12345678);

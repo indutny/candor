@@ -197,6 +197,8 @@ class Assembler {
   void cmpb(Register dst, Operand& src);
   void cmpb(Operand& dst, Immediate src);
 
+  void testb(Register dst, Immediate src);
+
   void movq(Register dst, Register src);
   void movq(Register dst, Operand& src);
   void movq(Operand& dst, Register src);

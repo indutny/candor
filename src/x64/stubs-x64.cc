@@ -63,6 +63,17 @@ void AllocateStub::Generate() {
   __ cmpq(rbx, scratch_op);
   __ jmp(kGt, &runtime_allocate);
 
+  // We should allocate only even amount of bytes
+  Label already_even(masm());
+
+  __ testb(rbx, Immediate(0x01));
+  __ jmp(kEq, &already_even);
+
+  // Add one byte
+  __ inc(rbx);
+
+  __ bind(&already_even);
+
   // Update top
   __ movq(scratch, top);
   __ movq(scratch, scratch_op);
