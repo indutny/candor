@@ -64,6 +64,8 @@ void Space::Swap(Space* space) {
   while (space->pages_.length() != 0) {
     pages_.Push(space->pages_.Shift());
   }
+
+  select(pages_.head()->value());
 }
 
 
