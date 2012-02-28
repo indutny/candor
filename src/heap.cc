@@ -214,8 +214,26 @@ HNumber::HNumber(char* addr) : HValue(addr) {
 }
 
 
+char* HNumber::New(Heap* heap, int64_t value) {
+  char* result = heap->AllocateTagged(Heap::kTagNumber, 8, NULL);
+
+  *reinterpret_cast<int64_t*>(result + 8) = value;
+
+  return result;
+}
+
+
 HBoolean::HBoolean(char* addr) : HValue(addr) {
   value_ = *reinterpret_cast<int8_t*>(addr + 8) == 1;
+}
+
+
+char* HBoolean::New(Heap* heap, bool value) {
+  char* result = heap->AllocateTagged(Heap::kTagBoolean, 8, NULL);
+
+  *reinterpret_cast<int8_t*>(result + 8) = value ? 1 : 0;
+
+  return result;
 }
 
 

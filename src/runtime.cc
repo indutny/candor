@@ -121,15 +121,83 @@ char* RuntimeToString(Heap* heap, char* value) {
    case Heap::kTagObject:
    case Heap::kTagNil:
     return HString::New(heap, "", 0);
+   case Heap::kTagBoolean:
+    {
+      uint8_t is_true = *reinterpret_cast<uint8_t*>(value + 8);
+      if (is_true) {
+        return HString::New(heap, "true", 4);
+      } else {
+        return HString::New(heap, "false", 5);
+      }
+    }
    case Heap::kTagNumber:
     {
-      uint64_t num = *reinterpret_cast<uint64_t*>(value + 8);
+      int64_t num = *reinterpret_cast<int64_t*>(value + 8);
       // Maximum int64 value may contain only 20 chars, last one for '\0'
       char str[32];
       uint32_t len = IntToString(num, str);
 
       // And create new string
       return HString::New(heap, str, len);
+    }
+   default:
+    assert(0 && "Unexpected");
+  }
+
+  return NULL;
+}
+
+
+char* RuntimeToNumber(Heap* heap, char* value) {
+  Heap::HeapTag tag = static_cast<Heap::HeapTag>(
+      *reinterpret_cast<uint8_t*>(value));
+
+  switch (tag) {
+   case Heap::kTagString:
+    {
+      char* str = value + 24;
+      uint32_t length = *reinterpret_cast<uint32_t*>(value + 16);
+
+      return HNumber::New(heap, StringToInt(str, length));
+    }
+   case Heap::kTagBoolean:
+    return HNumber::New(heap, *reinterpret_cast<uint8_t*>(value + 8));
+   case Heap::kTagFunction:
+   case Heap::kTagObject:
+   case Heap::kTagNil:
+    return HNumber::New(heap, 0);
+   case Heap::kTagNumber:
+    return value;
+   default:
+    assert(0 && "Unexpected");
+  }
+
+  return NULL;
+}
+
+
+char* RuntimeToBoolean(Heap* heap, char* value) {
+  Heap::HeapTag tag = static_cast<Heap::HeapTag>(
+      *reinterpret_cast<uint8_t*>(value));
+
+  switch (tag) {
+   case Heap::kTagString:
+    {
+      uint32_t length = *reinterpret_cast<uint32_t*>(value + 16);
+
+      return HBoolean::New(heap, length > 0);
+    }
+   case Heap::kTagBoolean:
+    return value;
+   case Heap::kTagFunction:
+   case Heap::kTagObject:
+    return HBoolean::New(heap, true);
+   case Heap::kTagNil:
+    return HBoolean::New(heap, false);
+   case Heap::kTagNumber:
+    {
+      uint64_t num = *reinterpret_cast<int64_t*>(value + 8);
+      return HNumber::New(heap, num != 0);
     }
    default:
     assert(0 && "Unexpected");

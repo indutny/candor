@@ -39,7 +39,11 @@ char* RuntimeGrowObject(Heap* heap,
                         char* obj);
 
 typedef char* (*RuntimeToStringCallback)(Heap* heap, char* value);
+typedef char* (*RuntimeToNumberCallback)(Heap* heap, char* value);
+typedef char* (*RuntimeToBooleanCallback)(Heap* heap, char* value);
 char* RuntimeToString(Heap* heap, char* value);
+char* RuntimeToNumber(Heap* heap, char* value);
+char* RuntimeToBoolean(Heap* heap, char* value);
 
 // Compares two heap values
 typedef size_t (*RuntimeCompareCallback)(char* lhs, char* rhs);

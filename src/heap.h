@@ -199,6 +199,8 @@ class HNumber : public HValue {
  public:
   HNumber(char* addr);
 
+  static char* New(Heap* heap, int64_t value);
+
   inline int64_t value() { return value_; }
 
   static const Heap::HeapTag class_tag = Heap::kTagNumber;
@@ -211,6 +213,8 @@ class HNumber : public HValue {
 class HBoolean : public HValue {
  public:
   HBoolean(char* addr);
+
+  static char* New(Heap* heap, bool value);
 
   inline bool is_true() { return value_; }
   inline bool is_false() { return !value_; }
