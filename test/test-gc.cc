@@ -7,6 +7,10 @@ TEST_START("GC test")
   })
 
   // Objects
+  FUN_TEST("x = { y : 1 }\nx.y = 2\n__$gc()\nreturn x.y", {
+    assert(HValue::As<HNumber>(result)->value() == 2);
+  })
+
   FUN_TEST("x = { y : { z : 1 }}\nx.y = { z : 2 }\n__$gc()\nreturn x.y.z", {
     assert(HValue::As<HNumber>(result)->value() == 2);
   })

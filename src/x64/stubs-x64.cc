@@ -150,4 +150,35 @@ void CoerceTypeStub::Generate() {
   GenerateEpilogue(2);
 }
 
+
+void ThrowStub::Generate() {
+  Immediate pending_exception(
+      reinterpret_cast<uint64_t>(masm()->heap()->pending_exception()));
+  Immediate root_stack(
+      reinterpret_cast<uint64_t>(masm()->heap()->root_stack()));
+
+  // Arguments: rax - exception num
+
+  // Set pending exception
+  Operand scratch_op(scratch, 0);
+  __ movq(scratch, pending_exception);
+  __ movq(scratch_op, rax);
+
+  // Unwind stack to the top handler
+  __ movq(scratch, root_stack);
+  __ movq(rsp, scratch_op);
+
+  // Return NULL
+  __ movq(rax, 0);
+
+  // Leave to C++ land
+  __ pop(r15);
+  __ pop(r14);
+  __ pop(r13);
+  __ pop(r12);
+  __ pop(rbx);
+  __ pop(rbp);
+  __ ret(0);
+}
+
 } // namespace dotlang

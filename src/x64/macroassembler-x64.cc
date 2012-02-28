@@ -286,31 +286,8 @@ void Masm::StoreRootStack() {
 
 
 void Masm::Throw(Heap::Error error) {
-  Immediate pending_exception(
-      reinterpret_cast<uint64_t>(heap()->pending_exception()));
-  Immediate root_stack(reinterpret_cast<uint64_t>(heap()->root_stack()));
-
-  // Set pending exception
-  Operand scratch_op(scratch, 0);
-  movq(scratch, pending_exception);
   movq(rax, Immediate(error));
-  movq(scratch_op, rax);
-
-  // Unwind stack to the top handler
-  movq(scratch, root_stack);
-  movq(rsp, scratch_op);
-
-  // Return NULL
-  movq(rax, 0);
-
-  // Leave to C++ land
-  pop(r15);
-  pop(r14);
-  pop(r13);
-  pop(r12);
-  pop(rbx);
-  pop(rbp);
-  ret(0);
+  Call(stubs()->GetThrowStub());
 }
 
 

@@ -108,6 +108,8 @@ void GC::VisitMap(HMap* map) {
     if (map->IsEmptySlot(i)) continue;
     grey_items()->Push(new GCValue(map->GetSlot(i),
                                    map->GetSlotAddress(i)));
+    grey_items()->Push(new GCValue(map->GetSlot(i + map->size()),
+                                   map->GetSlotAddress(i + map->size())));
   }
 }
 

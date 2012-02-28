@@ -137,8 +137,8 @@ HValue* HValue::CopyTo(Space* space) {
     size += 16;
     break;
    case Heap::kTagMap:
-    // size + space
-    size += 8 + As<HMap>()->size() * 8;
+    // size + space ( keys + values )
+    size += 8 + As<HMap>()->size() << 4;
     break;
    default:
     assert(0 && "Unexpected");
@@ -164,6 +164,7 @@ char* HValue::GetGCMark() {
 
 void HValue::SetGCMark(char* new_addr) {
   *reinterpret_cast<uint64_t*>(addr()) |= 0x100;
+  *reinterpret_cast<char**>(addr() + 8) = new_addr;
 }
 
 
