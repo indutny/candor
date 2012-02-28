@@ -218,4 +218,24 @@ void LookupPropertyStub::Generate() {
   GenerateEpilogue(3);
 }
 
+
+void CoerceToBooleanStub::Generate() {
+  GeneratePrologue();
+  RuntimeToBooleanCallback to_boolean = &RuntimeToBoolean;
+
+  // Arguments
+  Operand object(rbp, 16);
+
+  __ Pushad();
+
+  __ movq(rdi, Immediate(reinterpret_cast<uint64_t>(masm()->heap())));
+  __ movq(rsi, rsp);
+  __ movq(rdx, object);
+  __ movq(rax, Immediate(*reinterpret_cast<uint64_t*>(&to_boolean)));
+  __ callq(rax);
+
+  __ Popad(rax);
+  GenerateEpilogue(1);
+}
+
 } // namespace dotlang

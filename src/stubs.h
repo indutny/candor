@@ -17,7 +17,8 @@ class RelocationInfo;
     V(Allocate)\
     V(CoerceType)\
     V(Throw)\
-    V(LookupProperty)
+    V(LookupProperty)\
+    V(CoerceToBoolean)
 
 class BaseStub : public FFunction {
  public:
@@ -42,37 +43,14 @@ class BaseStub : public FFunction {
   StubType type_;
 };
 
-class AllocateStub : public BaseStub {
- public:
-  AllocateStub(Masm* masm) : BaseStub(masm, kAllocate) {
-  }
-
-  void Generate();
-};
-
-class CoerceTypeStub : public BaseStub {
- public:
-  CoerceTypeStub(Masm* masm) : BaseStub(masm, kCoerceType) {
-  }
-
-  void Generate();
-};
-
-class ThrowStub : public BaseStub {
- public:
-  ThrowStub(Masm* masm) : BaseStub(masm, kThrow) {
-  }
-
-  void Generate();
-};
-
-class LookupPropertyStub : public BaseStub {
- public:
-  LookupPropertyStub(Masm* masm) : BaseStub(masm, kLookupProperty) {
-  }
-
-  void Generate();
-};
+#define STUB_CLASS_DECL(V)\
+    class V##Stub : public BaseStub {\
+     public:\
+      V##Stub(Masm* masm) : BaseStub(masm, k##V) {}\
+      void Generate();\
+    };
+STUBS_LIST(STUB_CLASS_DECL)
+#undef STUB_CLASS_DECL
 
 #define STUB_LAZY_ALLOCATOR(V)\
     V##Stub* Get##V##Stub() {\

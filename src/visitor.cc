@@ -9,6 +9,8 @@ namespace dotlang {
     V(Function)\
     V(Call)\
     V(Block)\
+    V(If)\
+    V(While)\
     V(Assign)\
     V(Member)\
     V(ObjectLiteral)\

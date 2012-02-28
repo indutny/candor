@@ -150,6 +150,35 @@ TEST_START("functional test")
     assert(HValue::As<HNumber>(result)->value() == 4);
   })
 
+  // If
+  FUN_TEST("if (true) {\n return 1\n} else {\nreturn 2\n}", {
+    assert(HValue::As<HNumber>(result)->value() == 1);
+  })
+
+  FUN_TEST("if (false) {\n return 1\n} else {\nreturn 2\n}", {
+    assert(HValue::As<HNumber>(result)->value() == 2);
+  })
+
+  FUN_TEST("if (1) {\n return 1\n} else {\nreturn 2\n}", {
+    assert(HValue::As<HNumber>(result)->value() == 1);
+  })
+
+  FUN_TEST("if (0) {\n return 1\n} else {\nreturn 2\n}", {
+    assert(HValue::As<HNumber>(result)->value() == 2);
+  })
+
+  FUN_TEST("if ('123') {\n return 1\n} else {\nreturn 2\n}", {
+    assert(HValue::As<HNumber>(result)->value() == 1);
+  })
+
+  FUN_TEST("if ('') {\n return 1\n} else {\nreturn 2\n}", {
+    assert(HValue::As<HNumber>(result)->value() == 2);
+  })
+
+  FUN_TEST("if (nil) {\n return 1\n} else {\nreturn 2\n}", {
+    assert(HValue::As<HNumber>(result)->value() == 2);
+  })
+
   // Runtime errors
   FUN_TEST("() {}", {
     assert(s.CaughtException() == true);

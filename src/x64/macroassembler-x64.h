@@ -64,11 +64,15 @@ class Masm : public Assembler {
   // Fill stack slots with nil
   void FillStackSlots(uint32_t slots);
 
-  void IsNil(Register reference, Label* is_nil);
-  void IsUnboxed(Register reference, Label* not_unboxed);
+  void IsNil(Register reference, Label* not_nil, Label* is_nil);
+  void IsUnboxed(Register reference, Label* not_unboxed, Label* boxed);
 
   // Checks if object has specific type
-  void IsHeapObject(Heap::HeapTag tag, Register reference, Label* mismatch);
+  void IsHeapObject(Heap::HeapTag tag,
+                    Register reference,
+                    Label* mismatch,
+                    Label* match);
+  void IsTrue(Register reference, Label* is_false, Label* is_true);
 
   // Unboxing routines
   void UnboxNumber(Register number);

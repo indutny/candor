@@ -287,8 +287,8 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
     Save(rdi);
 
     VisitForValue(fn->variable(), rax);
-    IsNil(rax, &not_function);
-    IsHeapObject(Heap::kTagFunction, rax, &not_function);
+    IsNil(rax, NULL, &not_function);
+    IsHeapObject(Heap::kTagFunction, rax, &not_function, NULL);
 
     ChangeAlign(fn->args()->length());
 
@@ -407,9 +407,9 @@ AstNode* Fullgen::VisitMember(AstNode* node) {
   VisitForValue(node->lhs(), result());
 
   // Throw error if we're trying to lookup into nil object
-  IsNil(result(), &nil_error);
+  IsNil(result(), NULL, &nil_error);
   // Or into non-object
-  IsHeapObject(Heap::kTagObject, result(), &non_object_error);
+  IsHeapObject(Heap::kTagObject, result(), &non_object_error, NULL);
 
   jmp(&hashing);
   bind(&nil_error);
@@ -471,7 +471,7 @@ AstNode* Fullgen::VisitNumber(AstNode* node) {
 
 
 AstNode* Fullgen::VisitString(AstNode* node) {
-  if (!visiting_for_value()) {
+  if (visiting_for_slot()) {
     Throw(Heap::kErrorIncorrectLhs);
     return node;
   }
@@ -484,6 +484,57 @@ AstNode* Fullgen::VisitString(AstNode* node) {
 AstNode* Fullgen::VisitProperty(AstNode* node) {
   // kProperty is essentially the same as string
   return VisitString(node);
+}
+
+
+AstNode* Fullgen::VisitIf(AstNode* node) {
+  Label not_bool(this), coerced_type(this), fail_body(this), done(this);
+
+  AstNode* expr = node->lhs();
+  AstNode* success = node->rhs();
+  AstList::Item* fail_item = node->children()->head()->next()->next();
+  AstNode* fail = NULL;
+  if (fail_item != NULL) fail = fail_item->value();
+
+  VisitForValue(expr, result());
+
+  // Check type and coerce if not boolean
+  IsNil(result(), NULL, &not_bool);
+  IsUnboxed(result(), NULL, &not_bool);
+  IsHeapObject(Heap::kTagBoolean, result(), &not_bool, NULL);
+
+  jmp(&coerced_type);
+  bind(&not_bool);
+
+  // Coerce type to boolean
+  Save(rax);
+  {
+    // Stub(value)
+    ChangeAlign(1);
+    Align a(this);
+
+    push(result());
+    Call(stubs()->GetCoerceToBooleanStub());
+    // Stub will unwind stack automatically
+    ChangeAlign(-1);
+  }
+  Result(rax);
+  Restore(rax);
+
+  bind(&coerced_type);
+
+  IsTrue(result(), &fail_body, NULL);
+
+  VisitForValue(success, result());
+
+  jmp(&done);
+  bind(&fail_body);
+
+  if (fail != NULL) VisitForValue(fail, result());
+
+  bind(&done);
+
+  return node;
 }
 
 
@@ -702,7 +753,7 @@ AstNode* Fullgen::VisitUnOp(AstNode* node) {
 
   // For `nil` any unop will return `nil`
   VisitForValue(op->lhs(), result());
-  IsNil(result(), &done);
+  IsNil(result(), NULL, &done);
 
   // TODO: Coerce to expected type and perform operation
   emitb(0xcc);
@@ -727,11 +778,11 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
 
   VisitForValue(op->lhs(), rbx);
 
-  IsNil(rbx, &nil_result);
+  IsNil(rbx, NULL, &nil_result);
 
   VisitForValue(op->rhs(), rax);
 
-  IsUnboxed(rbx, &not_unboxed);
+  IsUnboxed(rbx, &not_unboxed, NULL);
 
   {
     Untag(rax);

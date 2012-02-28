@@ -31,7 +31,7 @@ char* RuntimeLookupProperty(Heap* heap,
   char* space = map + 16;
   uint32_t mask = *reinterpret_cast<uint64_t*>(obj + 8);
 
-  char* strkey = RuntimeToString(heap, key);
+  char* strkey = RuntimeToString(heap, stack_top, key);
 
   // Compute hash lazily
   uint32_t* hash_addr = reinterpret_cast<uint32_t*>(strkey + 8);
@@ -110,7 +110,7 @@ char* RuntimeGrowObject(Heap* heap, char* stack_top, char* obj) {
 }
 
 
-char* RuntimeToString(Heap* heap, char* value) {
+char* RuntimeToString(Heap* heap, char* stack_top, char* value) {
   Heap::HeapTag tag = HValue::GetTag(value);
 
   switch (tag) {
@@ -119,14 +119,14 @@ char* RuntimeToString(Heap* heap, char* value) {
    case Heap::kTagFunction:
    case Heap::kTagObject:
    case Heap::kTagNil:
-    return HString::New(heap, "", 0);
+    return HString::New(heap, stack_top, "", 0);
    case Heap::kTagBoolean:
     {
       uint8_t is_true = *reinterpret_cast<uint8_t*>(value + 8);
       if (is_true) {
-        return HString::New(heap, "true", 4);
+        return HString::New(heap, stack_top, "true", 4);
       } else {
-        return HString::New(heap, "false", 5);
+        return HString::New(heap, stack_top, "false", 5);
       }
     }
    case Heap::kTagNumber:
@@ -138,7 +138,7 @@ char* RuntimeToString(Heap* heap, char* value) {
       uint32_t len = IntToString(num, str);
 
       // And create new string
-      return HString::New(heap, str, len);
+      return HString::New(heap, stack_top, str, len);
     }
    default:
     assert(0 && "Unexpected");
@@ -148,7 +148,7 @@ char* RuntimeToString(Heap* heap, char* value) {
 }
 
 
-char* RuntimeToNumber(Heap* heap, char* value) {
+char* RuntimeToNumber(Heap* heap, char* stack_top, char* value) {
   Heap::HeapTag tag = HValue::GetTag(value);
 
   switch (tag) {
@@ -157,14 +157,17 @@ char* RuntimeToNumber(Heap* heap, char* value) {
       char* str = value + 24;
       uint32_t length = *reinterpret_cast<uint32_t*>(value + 16);
 
-      return HNumber::New(heap, StringToInt(str, length));
+      return HNumber::New(heap, stack_top, StringToInt(str, length));
     }
    case Heap::kTagBoolean:
-    return HNumber::New(heap, *reinterpret_cast<uint8_t*>(value + 8));
+    {
+      uint8_t val = *reinterpret_cast<uint8_t*>(value + 8);
+      return HNumber::New(heap, stack_top, val);
+    }
    case Heap::kTagFunction:
    case Heap::kTagObject:
    case Heap::kTagNil:
-    return HNumber::New(heap, 0);
+    return HNumber::New(heap, stack_top, 0);
    case Heap::kTagNumber:
     return value;
    default:
@@ -175,7 +178,7 @@ char* RuntimeToNumber(Heap* heap, char* value) {
 }
 
 
-char* RuntimeToBoolean(Heap* heap, char* value) {
+char* RuntimeToBoolean(Heap* heap, char* stack_top, char* value) {
   Heap::HeapTag tag = HValue::GetTag(value);
 
   switch (tag) {
@@ -183,20 +186,20 @@ char* RuntimeToBoolean(Heap* heap, char* value) {
     {
       uint32_t length = *reinterpret_cast<uint32_t*>(value + 16);
 
-      return HBoolean::New(heap, length > 0);
+      return HBoolean::New(heap, stack_top, length > 0);
     }
    case Heap::kTagBoolean:
     return value;
    case Heap::kTagFunction:
    case Heap::kTagObject:
-    return HBoolean::New(heap, true);
+    return HBoolean::New(heap, stack_top, true);
    case Heap::kTagNil:
-    return HBoolean::New(heap, false);
+    return HBoolean::New(heap, stack_top, false);
    case Heap::kTagNumber:
     {
       // TODO: Handle boxed numbers here too
-      uint64_t num = reinterpret_cast<int64_t>(value);
-      return HNumber::New(heap, num != 0);
+      int64_t num = HNumber::Untag(reinterpret_cast<int64_t>(value));
+      return HBoolean::New(heap, stack_top, num != 0);
     }
    default:
     assert(0 && "Unexpected");

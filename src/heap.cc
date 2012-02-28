@@ -89,6 +89,8 @@ char* Heap::AllocateTagged(HeapTag tag, uint32_t bytes, char* stack_top) {
 
 
 Heap::HeapTag HValue::GetTag(char* addr) {
+  if (addr == NULL) return Heap::kTagNil;
+
   if (IsUnboxed(addr)) {
     return Heap::kTagNumber;
   }
@@ -229,7 +231,7 @@ HNumber::HNumber(char* addr) : HValue(addr) {
 }
 
 
-char* HNumber::New(Heap* heap, int64_t value) {
+char* HNumber::New(Heap* heap, char* stack_top, int64_t value) {
   return reinterpret_cast<char*>(Tag(value));
 }
 
@@ -249,8 +251,8 @@ HBoolean::HBoolean(char* addr) : HValue(addr) {
 }
 
 
-char* HBoolean::New(Heap* heap, bool value) {
-  char* result = heap->AllocateTagged(Heap::kTagBoolean, 8, NULL);
+char* HBoolean::New(Heap* heap, char* stack_top, bool value) {
+  char* result = heap->AllocateTagged(Heap::kTagBoolean, 8, stack_top);
 
   *reinterpret_cast<int8_t*>(result + 8) = value ? 1 : 0;
 
@@ -272,8 +274,11 @@ HString::HString(char* addr) : HValue(addr) {
 }
 
 
-char* HString::New(Heap* heap, const char* value, uint32_t length) {
-  char* result = heap->AllocateTagged(Heap::kTagString, length + 24, NULL);
+char* HString::New(Heap* heap,
+                   char* stack_top,
+                   const char* value,
+                   uint32_t length) {
+  char* result = heap->AllocateTagged(Heap::kTagString, length + 24, stack_top);
 
   // Zero hash
   *reinterpret_cast<uint64_t*>(result + 8) = 0;

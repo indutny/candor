@@ -103,6 +103,8 @@ class Fullgen : public Masm, public Visitor {
   AstNode* VisitString(AstNode* node);
   AstNode* VisitProperty(AstNode* node);
 
+  AstNode* VisitIf(AstNode* node);
+
   AstNode* VisitMember(AstNode* node);
   AstNode* VisitObjectLiteral(AstNode* node);
   AstNode* VisitArrayLiteral(AstNode* node);

@@ -205,7 +205,7 @@ class HNumber : public HValue {
  public:
   HNumber(char* addr);
 
-  static char* New(Heap* heap, int64_t value);
+  static char* New(Heap* heap, char* stack_top, int64_t value);
   static int64_t Untag(int64_t value);
   static int64_t Tag(int64_t value);
 
@@ -222,7 +222,7 @@ class HBoolean : public HValue {
  public:
   HBoolean(char* addr);
 
-  static char* New(Heap* heap, bool value);
+  static char* New(Heap* heap, char* stack_top, bool value);
 
   inline bool is_true() { return value_; }
   inline bool is_false() { return !value_; }
@@ -238,7 +238,10 @@ class HString : public HValue {
  public:
   HString(char* addr);
 
-  static char* New(Heap* heap, const char* value, uint32_t length);
+  static char* New(Heap* heap,
+                   char* stack_top,
+                   const char* value,
+                   uint32_t length);
 
   inline char* value() { return value_; }
   inline uint32_t length() { return length_; }

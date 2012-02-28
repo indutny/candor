@@ -3,9 +3,11 @@
 #include "stubs.h"
 #include "utils.h" // ComputeHash
 
+#include <stdlib.h> // NULL
+
 namespace dotlang {
 
-Masm::Masm(Heap* heap) : result_(scratch),
+Masm::Masm(Heap* heap) : result_(rax),
                          slot_(new Operand(rax, 0)),
                          heap_(heap),
                          stubs_(new Stubs(this)),
@@ -260,24 +262,38 @@ void Masm::FillStackSlots(uint32_t slots) {
 }
 
 
-void Masm::IsNil(Register reference, Label* is_nil) {
+void Masm::IsNil(Register reference, Label* not_nil, Label* is_nil) {
   cmpq(reference, Immediate(Heap::kTagNil));
-  jmp(kEq, is_nil);
+  if (is_nil != NULL) jmp(kEq, is_nil);
+  if (not_nil != NULL) jmp(kNe, not_nil);
 }
 
 
-void Masm::IsUnboxed(Register reference, Label* not_unboxed) {
+void Masm::IsUnboxed(Register reference, Label* not_unboxed, Label* boxed) {
   testb(reference, Immediate(0x01));
-  jmp(kEq, not_unboxed);
+  if (not_unboxed != NULL) jmp(kEq, not_unboxed);
+  if (boxed != NULL) jmp(kNe, boxed);
 }
 
 
 void Masm::IsHeapObject(Heap::HeapTag tag,
                         Register reference,
-                        Label* mismatch) {
+                        Label* mismatch,
+                        Label* match) {
   Operand qtag(reference, 0);
   cmpb(qtag, Immediate(tag));
-  jmp(kNe, mismatch);
+  if (mismatch != NULL) jmp(kNe, mismatch);
+  if (match != NULL) jmp(kEq, match);
+}
+
+
+void Masm::IsTrue(Register reference, Label* is_false, Label* is_true) {
+  // reference is definitely a boolean value
+  // so no need to check it's type here
+  Operand bvalue(reference, 8);
+  cmpb(bvalue, Immediate(0));
+  if (is_false != NULL) jmp(kEq, is_false);
+  if (is_true != NULL) jmp(kNe, is_true);
 }
 
 
