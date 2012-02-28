@@ -21,4 +21,12 @@ TEST_START("GC test")
            "return a()", {
     assert(HValue::As<HNumber>(result)->value() == 2);
   })
+
+  FUN_TEST("x = { y : { z : 3 } }\n"
+           "a() {\n"
+           "return (() {\nscope x\nx.y = 2\n__$gc()\nreturn x.y\n})()\n"
+           "}\n"
+           "return a()", {
+    assert(HValue::As<HNumber>(result)->value() == 2);
+  })
 TEST_END("GC test")
