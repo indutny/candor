@@ -29,4 +29,9 @@ TEST_START("GC test")
            "return a()", {
     assert(HValue::As<HNumber>(result)->value() == 2);
   })
+
+  // Stress test
+  FUN_TEST("x = 10000000\nwhile(--x) { a = { x: { y: 1 } } }\nreturn x", {
+    assert(HValue::As<HNumber>(result)->value() == 0);
+  })
 TEST_END("GC test")
