@@ -1,6 +1,8 @@
 * GC
 * Numeric keys for object literals, see task below
 * Array literals (consider creating using hashmaps)
+* Booleans
+* If statements
 * Ast node ids
 * Unary operations, Binary operations (finish)
 * Dtrace :)
