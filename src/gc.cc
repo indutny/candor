@@ -77,6 +77,7 @@ void GC::VisitValue(HValue* value) {
    // String and numbers ain't referencing anyone
    case Heap::kTagString:
    case Heap::kTagNumber:
+   case Heap::kTagBoolean:
     return;
    default:
     assert(0 && "Not implemented yet");

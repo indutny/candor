@@ -83,6 +83,7 @@ void Masm::Allocate(Heap::HeapTag tag,
       movq(rax, size_reg);
       addq(rax, Immediate(sizeof(void*)));
     }
+    TagNumber(rax);
     push(rax);
     movq(rax, Immediate(TagNumber(tag)));
     push(rax);
@@ -147,11 +148,11 @@ void Masm::AllocateNumber(Register value, Register result) {
 
 void Masm::AllocateBoolean(Register value, Register result) {
   // Value is often a scratch register, so store it before doing a stub call
-  Push(value);
+  PushTagged(value);
 
-  Allocate(Heap::kTagBoolean, reg_nil, 1, result);
+  Allocate(Heap::kTagBoolean, reg_nil, 8, result);
 
-  Pop(value);
+  PopTagged(value);
 
   Operand qvalue(result, 8);
   movb(qvalue, value);

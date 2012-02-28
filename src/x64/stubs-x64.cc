@@ -51,10 +51,11 @@ void AllocateStub::Generate() {
   __ movq(scratch, top);
   __ movq(scratch, scratch_op);
   __ movq(rax, scratch_op);
-  __ movq(rbx, rax);
+  __ movq(rbx, size);
+  __ Untag(rbx);
 
   // Add object size to the top
-  __ addq(rbx, size);
+  __ addq(rbx, rax);
   __ jmp(kCarry, &runtime_allocate);
 
   // Check if we exhausted buffer

@@ -116,6 +116,8 @@ HValue* HValue::New(char* addr) {
     return HValue::As<HFunction>(addr);
    case Heap::kTagNumber:
     return HValue::As<HNumber>(addr);
+   case Heap::kTagBoolean:
+    return HValue::As<HBoolean>(addr);
    case Heap::kTagString:
     return HValue::As<HString>(addr);
    case Heap::kTagObject:
@@ -147,6 +149,9 @@ HValue* HValue::CopyTo(Space* space) {
     // value
     assert(0 && "Not implemented");
     break;
+   case Heap::kTagBoolean:
+    size += 8;
+    break;
    case Heap::kTagString:
     // hash + length + bytes
     size += 16 + As<HString>()->length();
@@ -157,7 +162,7 @@ HValue* HValue::CopyTo(Space* space) {
     break;
    case Heap::kTagMap:
     // size + space ( keys + values )
-    size += 8 + As<HMap>()->size() << 4;
+    size += 8 + (As<HMap>()->size() << 4);
     break;
    default:
     assert(0 && "Unexpected");
@@ -172,7 +177,7 @@ HValue* HValue::CopyTo(Space* space) {
 
 bool HValue::IsGCMarked() {
   if (IsUnboxed(addr())) return false;
-  return (*reinterpret_cast<uint64_t*>(addr()) & 0x100) == 0x100;
+  return (*reinterpret_cast<uint64_t*>(addr()) & 0x80000000) == 0x80000000;
 }
 
 
@@ -183,14 +188,14 @@ char* HValue::GetGCMark() {
 
 
 void HValue::SetGCMark(char* new_addr) {
-  *reinterpret_cast<uint64_t*>(addr()) |= 0x100;
+  *reinterpret_cast<uint64_t*>(addr()) |= 0x80000000;
   *reinterpret_cast<char**>(addr() + 8) = new_addr;
 }
 
 
 void HValue::ResetGCMark() {
   if (IsGCMarked()) {
-    *reinterpret_cast<uint64_t*>(addr()) ^= 0x100;
+    *reinterpret_cast<uint64_t*>(addr()) ^= 0x80000000;
   }
 }
 
@@ -252,7 +257,7 @@ HBoolean::HBoolean(char* addr) : HValue(addr) {
 
 
 char* HBoolean::New(Heap* heap, char* stack_top, bool value) {
-  char* result = heap->AllocateTagged(Heap::kTagBoolean, 1, stack_top);
+  char* result = heap->AllocateTagged(Heap::kTagBoolean, 8, stack_top);
   *reinterpret_cast<int8_t*>(result + 8) = value ? 1 : 0;
 
   return result;
