@@ -12,6 +12,7 @@ namespace dotlang {
     V(Assign)\
     V(Member)\
     V(ObjectLiteral)\
+    V(ArrayLiteral)\
     V(Return)\
     V(UnOp)\
     V(BinOp)

@@ -488,7 +488,7 @@ AstNode* Fullgen::VisitProperty(AstNode* node) {
 
 
 AstNode* Fullgen::VisitNil(AstNode* node) {
-  if (!visiting_for_value()) {
+  if (visiting_for_slot()) {
     Throw(Heap::kErrorIncorrectLhs);
     return node;
   }
@@ -500,6 +500,11 @@ AstNode* Fullgen::VisitNil(AstNode* node) {
 
 
 AstNode* Fullgen::VisitObjectLiteral(AstNode* node) {
+  if (visiting_for_slot()) {
+    Throw(Heap::kErrorIncorrectLhs);
+    return node;
+  }
+
   ObjectLiteral* obj = ObjectLiteral::Cast(node);
 
   Save(rax);
@@ -514,8 +519,6 @@ AstNode* Fullgen::VisitObjectLiteral(AstNode* node) {
   AstList::Item* key = obj->keys()->head();
   AstList::Item* value = obj->values()->head();
   while (key != NULL) {
-    Save(rax);
-
     AstNode* member = new AstNode(AstNode::kMember);
     member->children()->Push(new FAstRegister(rax));
     member->children()->Push(key->value());
@@ -526,10 +529,75 @@ AstNode* Fullgen::VisitObjectLiteral(AstNode* node) {
 
     VisitForValue(assign, rbx);
 
-    Restore(rax);
-
     key = key->next();
     value = value->next();
+  }
+
+  Result(rax);
+  Restore(rax);
+  Restore(rbx);
+
+  return node;
+}
+
+
+AstNode* Fullgen::VisitArrayLiteral(AstNode* node) {
+  if (visiting_for_slot()) {
+    Throw(Heap::kErrorIncorrectLhs);
+    return node;
+  }
+
+  Save(rax);
+  Save(rbx);
+
+  // Ensure that map will be filled only by half at maximum
+  // (items + `length` property)
+  movq(rbx, Immediate(PowerOfTwo((node->children()->length() + 1) << 1)));
+  AllocateObjectLiteral(rbx, rax);
+
+  AstList::Item* item = node->children()->head();
+  uint64_t index = 0;
+  while (item != NULL) {
+    char keystr[32];
+    AstNode* key = new AstNode(AstNode::kProperty);
+    key->value(keystr);
+    key->length(IntToString(index, keystr));
+
+    AstNode* member = new AstNode(AstNode::kMember);
+    member->children()->Push(new FAstRegister(rax));
+    member->children()->Push(key);
+
+    AstNode* assign = new AstNode(AstNode::kAssign);
+    assign->children()->Push(member);
+    assign->children()->Push(item->value());
+
+    VisitForValue(assign, rbx);
+
+    item = item->next();
+    index++;
+  }
+
+  {
+    // Set `length`
+    AstNode* key = new AstNode(AstNode::kProperty);
+    key->value("length");
+    key->length(6);
+
+    char lenstr[32];
+    AstNode* value = new AstNode(AstNode::kNumber);
+    value->value(lenstr);
+    value->length(IntToString(index, lenstr));
+
+    // arr.length = num
+    AstNode* member = new AstNode(AstNode::kMember);
+    member->children()->Push(new FAstRegister(rax));
+    member->children()->Push(key);
+
+    AstNode* assign = new AstNode(AstNode::kAssign);
+    assign->children()->Push(member);
+    assign->children()->Push(value);
+
+    VisitForValue(assign, rbx);
   }
 
   Result(rax);

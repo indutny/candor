@@ -30,6 +30,7 @@ class Visitor {
   virtual AstNode* VisitValue(AstNode* node);
   virtual AstNode* VisitNumber(AstNode* node);
   virtual AstNode* VisitObjectLiteral(AstNode* node);
+  virtual AstNode* VisitArrayLiteral(AstNode* node);
   virtual AstNode* VisitNil(AstNode* node);
   virtual AstNode* VisitReturn(AstNode* node);
   virtual AstNode* VisitProperty(AstNode* node);
