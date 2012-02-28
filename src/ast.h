@@ -23,6 +23,7 @@ typedef List<AstNode*, ZoneObject> AstList;
     V(kBlockExpr)\
     V(kScopeDecl)\
     V(kObjectLiteral)\
+    V(kArrayLiteral)\
     V(kMember)\
     V(kValue)\
     V(kMValue)\

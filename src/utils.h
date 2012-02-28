@@ -282,6 +282,27 @@ inline uint64_t StringToInt(const char* value, uint32_t length) {
 }
 
 
+inline uint32_t IntToString(uint64_t value, char* str) {
+  uint32_t len;
+  uint64_t num = value;
+
+  // Insert reversed value 1234 => '4321'
+  for (len = 0; num > 0; len++, num = num / 10) {
+    str[len] = (num % 10) + '0';
+  }
+
+  // Reverse it
+  for (uint32_t i = 0; i < len >> 1; i++) {
+    char t = str[i];
+    str[i] = str[len - i - 1];
+    str[len - i - 1] = t;
+  }
+  str[len] = 0;
+
+  return len;
+}
+
+
 inline uint32_t GetPageSize() {
 #ifdef __DARWIN
   return getpagesize();

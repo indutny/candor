@@ -73,6 +73,7 @@ class Parser : public Lexer {
   AstNode* ParsePrimary();
   AstNode* ParseMember();
   AstNode* ParseObjectLiteral();
+  AstNode* ParseArrayLiteral();
   AstNode* ParseBlock(AstNode* block);
   AstNode* ParseScope();
 

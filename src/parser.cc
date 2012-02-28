@@ -175,6 +175,8 @@ AstNode* Parser::ParseExpression(int priority) {
     if (result == NULL) return NULL;
     result->type(AstNode::kBlockExpr);
     return result;
+   case kArrayOpen:
+    return ParseArrayLiteral();
    default:
     break;
   }
@@ -411,6 +413,38 @@ AstNode* Parser::ParseObjectLiteral() {
 
   // Skip '}'
   if (!Peek()->is(kBraceClose)) return NULL;
+  Skip();
+
+  return pos.Commit(result);
+}
+
+
+AstNode* Parser::ParseArrayLiteral() {
+  Position pos(this);
+
+  // Skip '['
+  if (!Peek()->is(kArrayOpen)) return NULL;
+  Skip();
+
+  AstNode* result = new AstNode(AstNode::kArrayLiteral);
+
+  while (!Peek()->is(kArrayClose) && !Peek()->is(kEnd)) {
+    // Parse expression
+    AstNode* value = ParseExpression();
+    if (value == NULL) return NULL;
+
+    result->children()->Push(value);
+
+    // Skip ',' or exit loop on ']'
+    if (Peek()->is(kComma)) {
+      Skip();
+    } else if (!Peek()->is(kArrayClose)) {
+      return NULL;
+    }
+  }
+
+  // Skip '}'
+  if (!Peek()->is(kArrayClose)) return NULL;
   Skip();
 
   return pos.Commit(result);

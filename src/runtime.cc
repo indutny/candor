@@ -1,5 +1,6 @@
 #include "runtime.h"
 #include "heap.h" // Heap
+#include "utils.h" // IntToString
 
 #include <stdint.h> // uint32_t
 #include <assert.h> // assert
@@ -125,19 +126,7 @@ char* RuntimeToString(Heap* heap, char* value) {
       uint64_t num = *reinterpret_cast<uint64_t*>(value + 8);
       // Maximum int64 value may contain only 20 chars, last one for '\0'
       char str[32];
-      uint32_t len;
-      // Insert reversed value 1234 => '4321'
-      for (len = 0; num > 0; len++, num = num / 10) {
-        str[len] = (num % 10) + '0';
-      }
-
-      // Reverse it
-      for (uint32_t i = 0; i < len >> 1; i++) {
-        char t = str[i];
-        str[i] = str[len - i - 1];
-        str[len - i - 1] = t;
-      }
-      str[len] = 0;
+      uint32_t len = IntToString(num, str);
 
       // And create new string
       return HString::New(heap, str, len);
