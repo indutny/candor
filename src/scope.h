@@ -23,10 +23,12 @@ class ScopeSlot : public ZoneObject {
     kContext
   };
 
-  ScopeSlot(Type type) : type_(type), index_(0), depth_(0) {
+  ScopeSlot(Type type) : type_(type), index_(-1), depth_(0) {
   }
 
-  ScopeSlot(Type type, uint32_t depth) : type_(type), index_(0), depth_(depth) {
+  ScopeSlot(Type type, uint32_t depth) : type_(type),
+                                         index_(-1),
+                                         depth_(depth) {
   }
 
   static void Enumerate(void* scope, ScopeSlot* slot);

@@ -115,6 +115,12 @@ void Masm::AllocateContext(uint32_t slots) {
   Operand qslots(rax, 16);
   movq(qslots, Immediate(slots));
 
+  // Clear context
+  for (uint32_t i = 0; i < slots; i++) {
+    Operand qslot(rax, 24 + i * sizeof(void*));
+    movq(qslot, Immediate(0));
+  }
+
   // Replace current context
   // (It'll be restored by caller)
   movq(rdi, rax);

@@ -179,6 +179,13 @@ TEST_START("functional test")
     assert(HValue::As<HNumber>(result)->value() == 2);
   })
 
+  // While
+  FUN_TEST("i = 10\nj = 0\n"
+           "while (i--) {scope i, j\nj = j + 1\n}\n"
+           "return j", {
+    assert(HValue::As<HNumber>(result)->value() == 10);
+  })
+
   // Runtime errors
   FUN_TEST("() {}", {
     assert(s.CaughtException() == true);

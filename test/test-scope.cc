@@ -41,6 +41,17 @@ TEST_START("scope test")
              "[kScopeDecl [b]] [b @context[2]:1]]] "
              "[kFunction (anonymous) @[] [kScopeDecl [a]] [a @context[1]:0]]")
 
+  // While
+  SCOPE_TEST("i = 1\nj = 1\n"
+             "while (--i) {scope i, j\nj = j + 1\n}\n"
+             "return j",
+             "[kAssign [i @context[0]:0] [1]] "
+             "[kAssign [j @context[0]:1] [1]] "
+             "[kWhile [kPreDec [i @context[0]:0]] "
+             "[kBlock [kScopeDecl [i] [j]] "
+             "[kAssign [j @context[0]:1] [kAdd [j @context[0]:1] [1]]]]] "
+             "[kReturn [j @context[0]:1]]")
+
   // Function arguments
   SCOPE_TEST("c = 0\na(a,b)",
              "[kAssign [c @stack:0] [0]] "

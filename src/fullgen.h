@@ -54,6 +54,22 @@ class FAstRegister : public AstValue {
   Register reg_;
 };
 
+class FAstOperand : public AstValue {
+ public:
+  FAstOperand(Operand* op) : AstValue(kOperand), op_(op) {
+  }
+
+  static inline FAstOperand* Cast(AstValue* value) {
+    assert(value->is_operand());
+    return reinterpret_cast<FAstOperand*>(value);
+  }
+
+  inline Operand* op() { return op_; }
+
+ protected:
+  Operand* op_;
+};
+
 // Generates non-optimized code by visiting each node in AST tree in-order
 class Fullgen : public Masm, public Visitor {
  public:
@@ -103,7 +119,10 @@ class Fullgen : public Masm, public Visitor {
   AstNode* VisitString(AstNode* node);
   AstNode* VisitProperty(AstNode* node);
 
+  void ConvertToBoolean();
+
   AstNode* VisitIf(AstNode* node);
+  AstNode* VisitWhile(AstNode* node);
 
   AstNode* VisitMember(AstNode* node);
   AstNode* VisitObjectLiteral(AstNode* node);

@@ -413,6 +413,7 @@ class AstValue : public AstNode {
  public:
   enum AstValueType {
     kSlot,
+    kOperand,
     kRegister
   };
 
@@ -442,6 +443,7 @@ class AstValue : public AstNode {
   }
 
   inline bool is_slot() { return type_ == kSlot; }
+  inline bool is_operand() { return type_ == kOperand; }
   inline bool is_register() { return type_ == kRegister; }
 
   inline ScopeSlot* slot() { return slot_; }

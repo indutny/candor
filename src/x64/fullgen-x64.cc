@@ -369,6 +369,13 @@ AstNode* Fullgen::VisitValue(AstNode* node) {
     return node;
   }
 
+  if (value->is_operand()) {
+    assert(visiting_for_slot());
+    slot()->base(FAstOperand::Cast(value)->op()->base());
+    slot()->disp(FAstOperand::Cast(value)->op()->disp());
+    return node;
+  }
+
   // Get pointer to slot first
   if (value->slot()->is_stack()) {
     // On stack variables
@@ -487,16 +494,8 @@ AstNode* Fullgen::VisitProperty(AstNode* node) {
 }
 
 
-AstNode* Fullgen::VisitIf(AstNode* node) {
-  Label not_bool(this), coerced_type(this), fail_body(this), done(this);
-
-  AstNode* expr = node->lhs();
-  AstNode* success = node->rhs();
-  AstList::Item* fail_item = node->children()->head()->next()->next();
-  AstNode* fail = NULL;
-  if (fail_item != NULL) fail = fail_item->value();
-
-  VisitForValue(expr, result());
+void Fullgen::ConvertToBoolean() {
+  Label not_bool(this), coerced_type(this);
 
   // Check type and coerce if not boolean
   IsNil(result(), NULL, &not_bool);
@@ -522,6 +521,21 @@ AstNode* Fullgen::VisitIf(AstNode* node) {
   Restore(rax);
 
   bind(&coerced_type);
+}
+
+
+AstNode* Fullgen::VisitIf(AstNode* node) {
+  Label fail_body(this), done(this);
+
+  AstNode* expr = node->lhs();
+  AstNode* success = node->rhs();
+  AstList::Item* fail_item = node->children()->head()->next()->next();
+  AstNode* fail = NULL;
+  if (fail_item != NULL) fail = fail_item->value();
+
+  VisitForValue(expr, result());
+
+  ConvertToBoolean();
 
   IsTrue(result(), &fail_body, NULL);
 
@@ -533,6 +547,30 @@ AstNode* Fullgen::VisitIf(AstNode* node) {
   if (fail != NULL) VisitForValue(fail, result());
 
   bind(&done);
+
+  return node;
+}
+
+
+AstNode* Fullgen::VisitWhile(AstNode* node) {
+  Label loop_start(this), loop_end(this);
+
+  AstNode* expr = node->lhs();
+  AstNode* body = node->rhs();
+
+  bind(&loop_start);
+
+  VisitForValue(expr, result());
+
+  ConvertToBoolean();
+
+  IsTrue(result(), &loop_end, NULL);
+
+  VisitForValue(body, result());
+
+  jmp(&loop_start);
+
+  bind(&loop_end);
 
   return node;
 }
@@ -740,13 +778,29 @@ AstNode* Fullgen::VisitUnOp(AstNode* node) {
     }
 
     // a++ => $scratch = a; a = $scratch + 1; $scratch
-    VisitForValue(op->lhs(), result());
-    push(result());
+    Operand result_slot(result(), 0);
+    VisitForSlot(op->lhs(), &result_slot, result());
 
-    rhs->children()->head()->next()->value(new FAstRegister(result()));
-    Visit(assign);
+    movq(scratch, result_slot);
 
-    pop(result());
+    Push(scratch);
+    Save(rax);
+    Save(rbx);
+
+    // Put slot into rax
+    movq(rax, result_slot.base());
+    result_slot.base(rax);
+
+    // Put slot's value into rbx
+    movq(rbx, result_slot);
+
+    assign->children()->head()->value(new FAstOperand(&result_slot));
+    rhs->children()->head()->value(new FAstRegister(rbx));
+    VisitForValue(assign, result());
+
+    Restore(rbx);
+    Restore(rax);
+    Pop(result());
 
     return node;
   }

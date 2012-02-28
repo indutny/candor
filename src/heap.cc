@@ -33,6 +33,11 @@ char* Space::Allocate(uint32_t bytes, char* stack_top) {
   bool place_in_current = *top_ + even_bytes > *limit_;
   bool need_gc = stack_top != NULL && place_in_current;
 
+  if (need_gc) {
+    Zone gc_zone;
+    heap()->gc()->CollectGarbage(stack_top);
+  }
+
   if (!place_in_current) {
     // Go through all pages to find gap
     List<Page*, EmptyClass>::Item* item = pages_.head();
@@ -51,11 +56,6 @@ char* Space::Allocate(uint32_t bytes, char* stack_top) {
 
   char* result = *top_;
   *top_ += even_bytes;
-
-  if (need_gc) {
-    Zone gc_zone;
-    heap()->gc()->CollectGarbage(stack_top);
-  }
 
   return result;
 }
@@ -252,8 +252,7 @@ HBoolean::HBoolean(char* addr) : HValue(addr) {
 
 
 char* HBoolean::New(Heap* heap, char* stack_top, bool value) {
-  char* result = heap->AllocateTagged(Heap::kTagBoolean, 8, stack_top);
-
+  char* result = heap->AllocateTagged(Heap::kTagBoolean, 1, stack_top);
   *reinterpret_cast<int8_t*>(result + 8) = value ? 1 : 0;
 
   return result;

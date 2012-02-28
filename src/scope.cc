@@ -113,14 +113,26 @@ void ScopeSlot::Enumerate(void* scope, ScopeSlot* slot) {
   Scope* scope_ = reinterpret_cast<Scope*>(scope);
 
   // Do not double process slots
-  if (slot->index() != 0) return;
+  if (slot->index() != -1) return;
 
   if (slot->is_stack()) {
     slot->index(scope_->stack_index_++);
   } else if (slot->is_context()) {
-    if (slot->depth() == 0) {
-      slot->index(scope_->context_index_++);
+    if (slot->depth() <= 0) {
       List<ScopeSlot*, ZoneObject>::Item* item = slot->uses()->head();
+
+      // Find if we've already indexed some of uses
+      while (item != NULL) {
+        if (item->value()->index() != -1) {
+          slot->index(item->value()->index());
+          break;
+        }
+        item = item->next();
+      }
+
+      if (slot->index() == -1) slot->index(scope_->context_index_++);
+
+      item = slot->uses()->head();
       while (item != NULL) {
         item->value()->index(slot->index());
         item = item->next();
