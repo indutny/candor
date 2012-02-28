@@ -384,7 +384,7 @@ AstNode* Parser::ParseObjectLiteral() {
       key = (new AstNode(AstNode::kProperty))->FromToken(Peek());
       Skip();
     } else if (Peek()->is(kNumber)) {
-      key = (new AstNode(AstNode::kNumber))->FromToken(Peek());
+      key = (new AstNode(AstNode::kProperty))->FromToken(Peek());
       Skip();
     } else {
       return NULL;

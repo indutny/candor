@@ -1,5 +1,3 @@
-* GC
-* Numeric keys for object literals, see task below
 * Array literals (consider creating using hashmaps)
 * Booleans
 * If statements

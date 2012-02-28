@@ -81,7 +81,10 @@ class Heap {
     kTagNumber,
     kTagString,
     kTagObject,
-    kTagMap
+    kTagMap,
+
+    // For GC (return addresses on stack will point to the JIT code
+    kTagCode = 0x90
   };
 
   enum Error {

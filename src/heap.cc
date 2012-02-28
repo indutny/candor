@@ -112,6 +112,8 @@ HValue* HValue::New(char* addr) {
     return HValue::As<HObject>(addr);
    case Heap::kTagMap:
     return HValue::As<HMap>(addr);
+   case Heap::kTagCode:
+    return NULL;
    default:
     assert(0 && "Not implemented");
   }

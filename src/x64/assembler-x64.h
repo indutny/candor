@@ -181,6 +181,8 @@ class Assembler {
   void Relocate(char* buffer);
 
   // Instructions
+  void nop();
+
   void push(Register src);
   void push(Immediate imm);
   void pop(Register dst);

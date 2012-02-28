@@ -32,7 +32,11 @@ void GC::CollectGarbage(char* stack_top) {
       continue;
     }
 
-    grey_items()->Push(new GCValue(HValue::New(value), slot));
+    // Ignore return addresses
+    HValue* hvalue = HValue::New(value);
+    if (hvalue == NULL) continue;
+
+    grey_items()->Push(new GCValue(hvalue, slot));
   }
 
   while (grey_items()->length() != 0) {

@@ -298,6 +298,7 @@ void Masm::Call(Register fn, uint32_t args) {
   movq(rsi, Immediate(args));
 
   callq(code_slot);
+  nop();
 }
 
 
@@ -306,6 +307,7 @@ void Masm::Call(BaseStub* stub) {
   stub->Use(offset());
 
   callq(scratch);
+  nop();
 }
 
 } // namespace dotlang

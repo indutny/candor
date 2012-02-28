@@ -53,6 +53,11 @@ void Assembler::Grow() {
 }
 
 
+void Assembler::nop() {
+  emitb(0x90);
+}
+
+
 void Assembler::push(Register src) {
   emit_rex_if_high(src);
   emitb(0x50 | src.low());

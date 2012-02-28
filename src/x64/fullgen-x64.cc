@@ -273,6 +273,7 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
 
       movq(rax, Immediate(*reinterpret_cast<uint64_t*>(&gc)));
       callq(rax);
+      nop();
 
       Popad(reg_nil);
       movq(result(), Immediate(0));
