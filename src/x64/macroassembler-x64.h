@@ -76,6 +76,8 @@ class Masm : public Assembler {
   void Throw(Heap::Error error);
 
   // Sets correct environment and calls function
+  void Call(Register addr);
+  void Call(Operand& addr);
   void Call(Register fn, uint32_t args);
   void Call(BaseStub* stub);
 

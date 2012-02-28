@@ -291,14 +291,31 @@ void Masm::Throw(Heap::Error error) {
 }
 
 
+void Masm::Call(Register addr) {
+  while ((offset() & 0xf) != 0xd) {
+    nop();
+  }
+  callq(addr);
+  nop();
+}
+
+
+void Masm::Call(Operand& addr) {
+  while ((offset() & 0xf) != 0x9) {
+    nop();
+  }
+  callq(addr);
+  nop();
+}
+
+
 void Masm::Call(Register fn, uint32_t args) {
   Operand context_slot(fn, 8);
   Operand code_slot(fn, 16);
   movq(rdi, context_slot);
   movq(rsi, Immediate(args));
 
-  callq(code_slot);
-  nop();
+  Call(code_slot);
 }
 
 
@@ -306,8 +323,7 @@ void Masm::Call(BaseStub* stub) {
   movq(scratch, Immediate(0));
   stub->Use(offset());
 
-  callq(scratch);
-  nop();
+  Call(scratch);
 }
 
 } // namespace dotlang
