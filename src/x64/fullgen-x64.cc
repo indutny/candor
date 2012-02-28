@@ -462,8 +462,9 @@ AstNode* Fullgen::VisitNumber(AstNode* node) {
     return node;
   }
 
-  movq(scratch, Immediate(StringToInt(node->value(), node->length())));
-  AllocateNumber(scratch, result());
+  // TODO: Support heap numbers too
+  int64_t value = StringToInt(node->value(), node->length());
+  movq(result(), Immediate(TagNumber(value)));
 
   return node;
 }
@@ -722,7 +723,7 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
   Save(rax);
   Save(rbx);
 
-  Label nil_result(this), not_number(this), done(this);
+  Label nil_result(this), not_unboxed(this), done(this);
 
   VisitForValue(op->lhs(), rbx);
 
@@ -730,26 +731,13 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
 
   VisitForValue(op->rhs(), rax);
 
-  {
-    // Coerce types if needed
-    ChangeAlign(2);
-    Align a(this);
-
-    push(rax);
-    push(rbx);
-    Call(stubs()->GetCoerceTypeStub());
-    // rax(rhs) - will hold heap value with the same type as rbx(lhs)
-
-    ChangeAlign(-2);
-  }
-
-  IsHeapObject(Heap::kTagNumber, rbx, &not_number);
+  IsUnboxed(rbx, &not_unboxed);
 
   {
+    Untag(rax);
+    Untag(rbx);
+
     // Number (+) Number
-    UnboxNumber(rbx);
-    UnboxNumber(rax);
-
     movq(scratch, rbx);
 
     switch (op->subtype()) {
@@ -763,15 +751,16 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
       emitb(0xcc);
       break;
     }
-    AllocateNumber(scratch, result());
+    TagNumber(scratch);
+    movq(result(), scratch);
 
     jmp(&done);
   }
 
-  bind(&not_number);
+  bind(&not_unboxed);
 
   {
-    // TODO: Implement string binary ops
+    // TODO: Coerce here if needed and implement other binary ops
     emitb(0xcc);
   }
 

@@ -60,6 +60,12 @@ inline uint64_t Masm::TagNumber(uint64_t number) {
 }
 
 
+inline void Masm::TagNumber(Register src) {
+  shl(src, Immediate(1));
+  inc(src);
+}
+
+
 inline void Masm::Untag(Register src) {
   shr(src, 1);
 }

@@ -89,7 +89,15 @@ char* Heap::AllocateTagged(HeapTag tag, uint32_t bytes, char* stack_top) {
 
 
 Heap::HeapTag HValue::GetTag(char* addr) {
+  if (IsUnboxed(addr)) {
+    return Heap::kTagNumber;
+  }
   return static_cast<Heap::HeapTag>(*reinterpret_cast<uint8_t*>(addr));
+}
+
+
+bool HValue::IsUnboxed(char* addr) {
+  return (reinterpret_cast<uint64_t>(addr) & 0x01) == 0x01;
 }
 
 
@@ -133,8 +141,9 @@ HValue* HValue::CopyTo(Space* space) {
     size += 16;
     break;
    case Heap::kTagNumber:
+    // TODO: Implement real
     // value
-    size += 8;
+    assert(0 && "Not implemented");
     break;
    case Heap::kTagString:
     // hash + length + bytes
@@ -160,6 +169,7 @@ HValue* HValue::CopyTo(Space* space) {
 
 
 bool HValue::IsGCMarked() {
+  if (IsUnboxed(addr())) return false;
   return (*reinterpret_cast<uint64_t*>(addr()) & 0x100) == 0x100;
 }
 
@@ -210,16 +220,27 @@ char** HContext::GetSlotAddress(uint32_t index) {
 
 
 HNumber::HNumber(char* addr) : HValue(addr) {
-  value_ = *reinterpret_cast<int64_t*>(addr + 8);
+  if ((reinterpret_cast<uint64_t>(addr) & 0x01) == 0x01) {
+    // Unboxed value
+    value_ = reinterpret_cast<int64_t>(addr) >> 1;
+  } else {
+    assert(0 && "Not implemented yet");
+  }
 }
 
 
 char* HNumber::New(Heap* heap, int64_t value) {
-  char* result = heap->AllocateTagged(Heap::kTagNumber, 8, NULL);
+  return reinterpret_cast<char*>(Tag(value));
+}
 
-  *reinterpret_cast<int64_t*>(result + 8) = value;
 
-  return result;
+int64_t HNumber::Untag(int64_t value) {
+  return value >> 1;
+}
+
+
+int64_t HNumber::Tag(int64_t value) {
+  return (value << 1) | 1;
 }
 
 

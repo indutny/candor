@@ -111,8 +111,7 @@ char* RuntimeGrowObject(Heap* heap, char* stack_top, char* obj) {
 
 
 char* RuntimeToString(Heap* heap, char* value) {
-  Heap::HeapTag tag = static_cast<Heap::HeapTag>(
-      *reinterpret_cast<uint8_t*>(value));
+  Heap::HeapTag tag = HValue::GetTag(value);
 
   switch (tag) {
    case Heap::kTagString:
@@ -132,7 +131,8 @@ char* RuntimeToString(Heap* heap, char* value) {
     }
    case Heap::kTagNumber:
     {
-      int64_t num = *reinterpret_cast<int64_t*>(value + 8);
+      // TODO: Handle boxed numbers here too
+      int64_t num = HNumber::Untag(reinterpret_cast<int64_t>(value));
       // Maximum int64 value may contain only 20 chars, last one for '\0'
       char str[32];
       uint32_t len = IntToString(num, str);
@@ -149,8 +149,7 @@ char* RuntimeToString(Heap* heap, char* value) {
 
 
 char* RuntimeToNumber(Heap* heap, char* value) {
-  Heap::HeapTag tag = static_cast<Heap::HeapTag>(
-      *reinterpret_cast<uint8_t*>(value));
+  Heap::HeapTag tag = HValue::GetTag(value);
 
   switch (tag) {
    case Heap::kTagString:
@@ -177,8 +176,7 @@ char* RuntimeToNumber(Heap* heap, char* value) {
 
 
 char* RuntimeToBoolean(Heap* heap, char* value) {
-  Heap::HeapTag tag = static_cast<Heap::HeapTag>(
-      *reinterpret_cast<uint8_t*>(value));
+  Heap::HeapTag tag = HValue::GetTag(value);
 
   switch (tag) {
    case Heap::kTagString:
@@ -196,7 +194,8 @@ char* RuntimeToBoolean(Heap* heap, char* value) {
     return HBoolean::New(heap, false);
    case Heap::kTagNumber:
     {
-      uint64_t num = *reinterpret_cast<int64_t*>(value + 8);
+      // TODO: Handle boxed numbers here too
+      uint64_t num = reinterpret_cast<int64_t>(value);
       return HNumber::New(heap, num != 0);
     }
    default:
@@ -208,10 +207,8 @@ char* RuntimeToBoolean(Heap* heap, char* value) {
 
 
 size_t RuntimeCompare(char* lhs, char* rhs) {
-  Heap::HeapTag lhs_tag = static_cast<Heap::HeapTag>(
-      *reinterpret_cast<uint8_t*>(lhs));
-  Heap::HeapTag rhs_tag = static_cast<Heap::HeapTag>(
-      *reinterpret_cast<uint8_t*>(rhs));
+  Heap::HeapTag lhs_tag = HValue::GetTag(lhs);
+  Heap::HeapTag rhs_tag = HValue::GetTag(rhs);
 
   if (lhs_tag != Heap::kTagString) assert(0 && "Not implemented yet");
   if (rhs_tag != Heap::kTagString) assert(0 && "Not implemented yet");

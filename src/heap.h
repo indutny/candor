@@ -140,6 +140,11 @@ class HValue : public ZoneObject {
 
   template <class T>
   static inline T* As(char* addr) {
+    // Handle unboxed values
+    if (IsUnboxed(addr)) {
+      return new T(addr);
+    }
+
     assert(addr != NULL);
     assert(*reinterpret_cast<uint8_t*>(addr) == T::class_tag);
     return new T(addr);
@@ -160,6 +165,7 @@ class HValue : public ZoneObject {
   void ResetGCMark();
 
   static Heap::HeapTag GetTag(char* addr);
+  static bool IsUnboxed(char* addr);
 
   inline Heap::HeapTag tag() { return tag_; }
   inline void tag(Heap::HeapTag tag) { tag_ = tag; }
@@ -200,6 +206,8 @@ class HNumber : public HValue {
   HNumber(char* addr);
 
   static char* New(Heap* heap, int64_t value);
+  static int64_t Untag(int64_t value);
+  static int64_t Tag(int64_t value);
 
   inline int64_t value() { return value_; }
 

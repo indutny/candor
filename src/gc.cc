@@ -27,8 +27,7 @@ void GC::CollectGarbage(char* stack_top) {
     char* value = *slot;
 
     // Skip NULL pointers, non-pointer values and rbp pushes
-    if (value == NULL || (reinterpret_cast<off_t>(value) & 0x01 == 1) ||
-        value > top && value <= *heap()->root_stack()) {
+    if (value == NULL || value > top && value <= *heap()->root_stack()) {
       continue;
     }
 
@@ -41,6 +40,9 @@ void GC::CollectGarbage(char* stack_top) {
 
   while (grey_items()->length() != 0) {
     GCValue* value = grey_items()->Shift();
+
+    // Skip unboxed address
+    if (HValue::IsUnboxed(value->value()->addr())) continue;
 
     if (!value->value()->IsGCMarked()) {
       HValue* hvalue = value->value()->CopyTo(&space);

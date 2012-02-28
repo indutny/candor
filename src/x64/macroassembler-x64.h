@@ -65,6 +65,7 @@ class Masm : public Assembler {
   void FillStackSlots(uint32_t slots);
 
   void IsNil(Register reference, Label* is_nil);
+  void IsUnboxed(Register reference, Label* not_unboxed);
 
   // Checks if object has specific type
   void IsHeapObject(Heap::HeapTag tag, Register reference, Label* mismatch);
@@ -93,6 +94,7 @@ class Masm : public Assembler {
   inline void Restore(Register src);
   inline void Result(Register src);
   inline uint64_t TagNumber(uint64_t number);
+  inline void TagNumber(Register src);
   inline void Untag(Register src);
 
   // See VisitForSlot and VisitForValue in fullgen for disambiguation

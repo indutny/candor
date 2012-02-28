@@ -133,16 +133,7 @@ void Masm::AllocateFunction(Register addr, Register result) {
 
 
 void Masm::AllocateNumber(Register value, Register result) {
-  // Value is often a scratch register, so store it before doing a stub call
-  Push(value);
-
-  // int64_t value
-  Allocate(Heap::kTagNumber, reg_nil, 8, result);
-
-  Pop(value);
-
-  Operand qvalue(result, 8);
-  movq(qvalue, value);
+  assert(0 && "Not implemented yet");
 }
 
 
@@ -275,6 +266,12 @@ void Masm::IsNil(Register reference, Label* is_nil) {
 }
 
 
+void Masm::IsUnboxed(Register reference, Label* not_unboxed) {
+  testb(reference, Immediate(0x01));
+  jmp(kEq, not_unboxed);
+}
+
+
 void Masm::IsHeapObject(Heap::HeapTag tag,
                         Register reference,
                         Label* mismatch) {
@@ -285,8 +282,7 @@ void Masm::IsHeapObject(Heap::HeapTag tag,
 
 
 void Masm::UnboxNumber(Register number) {
-  Operand qvalue(number, 8);
-  movq(number, qvalue);
+  assert(0 && "Not implemented");
 }
 
 
