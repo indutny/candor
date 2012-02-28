@@ -208,6 +208,8 @@ class HString : public HValue {
  public:
   HString(char* addr);
 
+  static char* New(Heap* heap, const char* value, uint32_t length);
+
   inline char* value() { return value_; }
   inline uint32_t length() { return length_; }
   inline uint32_t hash() { return hash_; }

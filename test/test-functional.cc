@@ -127,6 +127,11 @@ TEST_START("functional test")
     assert(HValue::As<HNumber>(result)->value() == 2);
   })
 
+  // Numeric keys
+  FUN_TEST("a = { 1: 2, 2: 3}\nreturn a[1] + a[2] + a['1'] + a['2']", {
+    assert(HValue::As<HNumber>(result)->value() == 10);
+  });
+
   // Runtime errors
   FUN_TEST("() {}", {
     assert(s.CaughtException() == true);

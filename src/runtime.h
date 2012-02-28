@@ -38,6 +38,9 @@ char* RuntimeGrowObject(Heap* heap,
                         char* stack_top,
                         char* obj);
 
+typedef char* (*RuntimeToStringCallback)(Heap* heap, char* value);
+char* RuntimeToString(Heap* heap, char* value);
+
 // Compares two heap values
 typedef size_t (*RuntimeCompareCallback)(char* lhs, char* rhs);
 size_t RuntimeCompare(char* lhs, char* rhs);

@@ -30,11 +30,13 @@ char* RuntimeLookupProperty(Heap* heap,
   char* space = map + 16;
   uint32_t mask = *reinterpret_cast<uint64_t*>(obj + 8);
 
+  char* strkey = RuntimeToString(heap, key);
+
   // Compute hash lazily
-  uint32_t* hash_addr = reinterpret_cast<uint32_t*>(key + 8);
+  uint32_t* hash_addr = reinterpret_cast<uint32_t*>(strkey + 8);
   uint32_t hash = *hash_addr;
   if (hash == 0) {
-    hash = ComputeHash(key + 24, *reinterpret_cast<uint32_t*>(key + 16));
+    hash = ComputeHash(strkey + 24, *reinterpret_cast<uint32_t*>(strkey + 16));
     *hash_addr = hash;
   }
 
@@ -47,7 +49,7 @@ char* RuntimeLookupProperty(Heap* heap,
   while (index != end) {
     key_slot = *reinterpret_cast<char**>(space + index);
     if (key_slot == NULL) break;
-    if (RuntimeCompare(key_slot, key) == 0) break;
+    if (RuntimeCompare(key_slot, strkey) == 0) break;
 
     index += 8;
     if (index > mask) index = 0;
@@ -57,11 +59,11 @@ char* RuntimeLookupProperty(Heap* heap,
   if (index == end) {
     assert(insert);
     RuntimeGrowObject(heap, stack_top, obj);
-    return RuntimeLookupProperty(heap, stack_top, obj, key, insert);
+    return RuntimeLookupProperty(heap, stack_top, obj, strkey, insert);
   }
 
   if (insert) {
-    *reinterpret_cast<char**>(space + index) = key;
+    *reinterpret_cast<char**>(space + index) = strkey;
   }
 
   return space + index + (mask + 8);
@@ -104,6 +106,47 @@ char* RuntimeGrowObject(Heap* heap, char* stack_top, char* obj) {
   }
 
   return 0;
+}
+
+
+char* RuntimeToString(Heap* heap, char* value) {
+  Heap::HeapTag tag = static_cast<Heap::HeapTag>(
+      *reinterpret_cast<uint8_t*>(value));
+
+  switch (tag) {
+   case Heap::kTagString:
+    return value;
+   case Heap::kTagFunction:
+   case Heap::kTagObject:
+   case Heap::kTagNil:
+    return HString::New(heap, "", 0);
+   case Heap::kTagNumber:
+    {
+      uint64_t num = *reinterpret_cast<uint64_t*>(value + 8);
+      // Maximum int64 value may contain only 20 chars, last one for '\0'
+      char str[32];
+      uint32_t len;
+      // Insert reversed value 1234 => '4321'
+      for (len = 0; num > 0; len++, num = num / 10) {
+        str[len] = (num % 10) + '0';
+      }
+
+      // Reverse it
+      for (uint32_t i = 0; i < len >> 1; i++) {
+        char t = str[i];
+        str[i] = str[len - i - 1];
+        str[len - i - 1] = t;
+      }
+      str[len] = 0;
+
+      // And create new string
+      return HString::New(heap, str, len);
+    }
+   default:
+    assert(0 && "Unexpected");
+  }
+
+  return NULL;
 }
 
 

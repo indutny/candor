@@ -226,6 +226,20 @@ HString::HString(char* addr) : HValue(addr) {
 }
 
 
+char* HString::New(Heap* heap, const char* value, uint32_t length) {
+  char* result = heap->AllocateTagged(Heap::kTagString, length + 24, NULL);
+
+  // Zero hash
+  *reinterpret_cast<uint64_t*>(result + 8) = 0;
+  // Set length
+  *reinterpret_cast<uint64_t*>(result + 16) = length;
+  // Copy value
+  memcpy(result + 24, value, length);
+
+  return result;
+}
+
+
 HObject::HObject(char* addr) : HValue(addr) {
   map_slot_ = reinterpret_cast<char**>(addr + 16);
 }
