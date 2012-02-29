@@ -907,6 +907,7 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
     }
 
     // Call stub on overflow
+    // TODO: Translate to heap numbers first
     jmp(kOverflow, &not_unboxed);
 
     TagNumber(rax);
@@ -924,6 +925,9 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
   BaseStub* stub = NULL;
   switch (op->subtype()) {
    case BinOp::kAdd: stub = stubs()->GetBinaryAddStub(); break;
+   case BinOp::kSub: stub = stubs()->GetBinarySubStub(); break;
+   case BinOp::kMul: stub = stubs()->GetBinaryMulStub(); break;
+   case BinOp::kDiv: stub = stubs()->GetBinaryDivStub(); break;
    default: emitb(0xcc); break;
   }
 

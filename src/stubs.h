@@ -2,6 +2,7 @@
 #define _SRC_STUBS_H_
 
 #include "fullgen.h" // FFunction
+#include "ast.h" // BinOpType
 #include "zone.h" // ZoneObject
 
 #include <stdlib.h> // NULL
@@ -19,7 +20,10 @@ class RelocationInfo;
     V(Throw)\
     V(LookupProperty)\
     V(CoerceToBoolean)\
-    V(BinaryAdd)
+    V(BinaryAdd)\
+    V(BinarySub)\
+    V(BinaryMul)\
+    V(BinaryDiv)
 
 class BaseStub : public FFunction {
  public:
@@ -53,6 +57,21 @@ class BaseStub : public FFunction {
 STUBS_LIST(STUB_CLASS_DECL)
 #undef STUB_CLASS_DECL
 
+class BinaryOpStub : public BaseStub {
+ public:
+  // TODO: Use some type instead of kNone
+  BinaryOpStub(Masm* masm, BinOp::BinOpType type) : BaseStub(masm, kNone),
+                                                    type_(type) {
+  }
+
+  BinOp::BinOpType type() { return type_; }
+
+  void Generate();
+
+ protected:
+  BinOp::BinOpType type_;
+};
+
 #define STUB_LAZY_ALLOCATOR(V)\
     V##Stub* Get##V##Stub() {\
       if (stub_##V##_ == NULL) {\
@@ -82,6 +101,7 @@ class Stubs : public ZoneObject {
   STUBS_LIST(STUB_PROPERTY)
 };
 #undef STUB_LAZY_ALLOCATOR
+#undef SUTB_PROPERTY_INIT
 #undef STUB_PROPERTY
 
 

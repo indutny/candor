@@ -277,6 +277,9 @@ class Assembler {
   void movqd(DoubleRegister dst, Register src);
   void movqd(Register dst, DoubleRegister src);
   void addqd(DoubleRegister dst, DoubleRegister src);
+  void subqd(DoubleRegister dst, DoubleRegister src);
+  void mulqd(DoubleRegister dst, DoubleRegister src);
+  void divqd(DoubleRegister dst, DoubleRegister src);
 
   // Routines
   inline void emit_rex_if_high(Register src);

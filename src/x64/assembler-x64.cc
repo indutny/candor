@@ -406,5 +406,27 @@ void Assembler::addqd(DoubleRegister dst, DoubleRegister src) {
 }
 
 
+void Assembler::subqd(DoubleRegister dst, DoubleRegister src) {
+  emitb(0xF2);
+  emitb(0x0F);
+  emitb(0x5C);
+  emit_modrm(dst, src);
+}
+
+
+void Assembler::mulqd(DoubleRegister dst, DoubleRegister src) {
+  emitb(0xF2);
+  emitb(0x0F);
+  emitb(0x59);
+  emit_modrm(dst, src);
+}
+
+
+void Assembler::divqd(DoubleRegister dst, DoubleRegister src) {
+  emitb(0xF2);
+  emitb(0x0F);
+  emitb(0x5E);
+  emit_modrm(dst, src);
+}
 
 } // namespace dotlang

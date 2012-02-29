@@ -252,7 +252,7 @@ char** HContext::GetSlotAddress(uint32_t index) {
 HNumber::HNumber(char* addr) : HValue(addr) {
   if ((reinterpret_cast<uint64_t>(addr) & 0x01) == 0x01) {
     // Unboxed value
-    value_ = reinterpret_cast<uint64_t>(addr) >> 1;
+    value_ = reinterpret_cast<int64_t>(addr) >> 1;
   } else {
     value_ = *reinterpret_cast<double*>(addr + 8);
   }

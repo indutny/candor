@@ -1,5 +1,6 @@
 #include "stubs.h"
-#include "macroassembler-x64.h"
+#include "ast.h" // BinOp
+#include "macroassembler-x64.h" // Masm
 #include "runtime.h"
 
 namespace dotlang {
@@ -258,6 +259,26 @@ void CoerceToBooleanStub::Generate() {
 
 
 void BinaryAddStub::Generate() {
+  (new BinaryOpStub(masm(), BinOp::kAdd))->Generate();
+}
+
+
+void BinarySubStub::Generate() {
+  (new BinaryOpStub(masm(), BinOp::kSub))->Generate();
+}
+
+
+void BinaryMulStub::Generate() {
+  (new BinaryOpStub(masm(), BinOp::kMul))->Generate();
+}
+
+
+void BinaryDivStub::Generate() {
+  (new BinaryOpStub(masm(), BinOp::kDiv))->Generate();
+}
+
+
+void BinaryOpStub::Generate() {
   GeneratePrologue();
   __ subq(rsp, Immediate(8));
   __ push(rbx);
@@ -280,7 +301,14 @@ void BinaryAddStub::Generate() {
   __ movq(rbx, rvalue);
   __ movqd(xmm1, rax);
   __ movqd(xmm2, rbx);
-  __ addqd(xmm1, xmm2);
+
+  switch (type()) {
+   case BinOp::kAdd: __ addqd(xmm1, xmm2); break;
+   case BinOp::kSub: __ subqd(xmm1, xmm2); break;
+   case BinOp::kMul: __ mulqd(xmm1, xmm2); break;
+   case BinOp::kDiv: __ divqd(xmm1, xmm2); break;
+   default: __ emitb(0xcc); break;
+  }
 
   __ movqd(rbx, xmm1);
   __ AllocateNumber(rbx, rax);
