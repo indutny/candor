@@ -180,6 +180,10 @@ class HContext : public HValue {
  public:
   HContext(char* addr);
 
+  static char* New(Heap* heap,
+                   char* stack_top,
+                   List<char*, ZoneObject>* values);
+
   bool HasSlot(uint32_t index);
   HValue* GetSlot(uint32_t index);
   char** GetSlotAddress(uint32_t index);

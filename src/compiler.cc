@@ -29,7 +29,7 @@ CompiledScript::~CompiledScript() {
 
 void CompiledScript::Compile() {
   // XXX: Hardcoded page size here
-  heap_ = new Heap(1024 * 1024);
+  heap_ = new Heap(2 * 1024 * 1024);
 
   {
     Zone zone;
@@ -44,6 +44,9 @@ void CompiledScript::Compile() {
     // Generate machine code
     f.Generate(ast);
 
+    // Allocate root context
+    root_context_ = f.AllocateRoot();
+
     guard_ = new Guard(f.buffer(), f.length());
     f.Relocate(guard_->buffer());
   }
@@ -53,7 +56,7 @@ void CompiledScript::Compile() {
 char* CompiledScript::Run() {
   // Context is undefined for main function
   // (It'll allocate new for itself)
-  return guard_->AsFunction()(NULL, 0);
+  return guard_->AsFunction()(NULL, 0, root_context_);
 }
 
 

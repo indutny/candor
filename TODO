@@ -1,6 +1,5 @@
-* Fix excessive context propagation
-* Root register (strings, numbers, true, false and global object)
 * Global lookup
 * Binary operations, Unary operations
+* gdbjit
 * Ast node ids
 * Dtrace :)

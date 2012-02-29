@@ -209,6 +209,30 @@ HContext::HContext(char* addr) : HValue(addr) {
 }
 
 
+char* HContext::New(Heap* heap,
+                    char* stack_top,
+                    List<char*, ZoneObject>* values) {
+  char* result = heap->AllocateTagged(Heap::kTagContext,
+                                      16 + values->length() * 8,
+                                      stack_top);
+
+  // Zero parent
+  *reinterpret_cast<char**>(result + 8) = NULL;
+
+  // Put size
+  *reinterpret_cast<uint64_t*>(result + 16) = values->length();
+
+  // Put all values
+  char* slot = result + 24;
+  while (values->length() != 0) {
+    *reinterpret_cast<char**>(slot) = values->Shift();
+    slot += 8;
+  }
+
+  return result;
+}
+
+
 bool HContext::HasParent() {
   return *parent_slot_ != NULL;
 }

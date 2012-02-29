@@ -78,8 +78,9 @@ void Fullgen::Generate(AstNode* ast) {
 
 
 void Fullgen::GeneratePrologue(AstNode* stmt) {
-  // rdi <- reference to parent context (if non-root)
+  // rdi <- reference to parent context (zero for root)
   // rsi <- arguments count
+  // rdx <- (root only) address of root context
   push(rbp);
   push(rbx);
 
@@ -90,6 +91,9 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
     push(r14);
     push(r15);
 
+    // Store address of root context
+    movq(root_reg, rdx);
+
     // Nullify all registers to help GC distinguish on-stack values
     xorq(rax, rax);
     xorq(rbx, rbx);
@@ -97,7 +101,7 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
     xorq(rdx, rdx);
     xorq(r8, r8);
     xorq(r9, r9);
-    xorq(r10, r10);
+    // r10 is a root register
     xorq(r11, r11);
     xorq(r12, r12);
     xorq(r13, r13);
@@ -108,8 +112,7 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
 
   // Allocate space for on stack variables
   // and align stack
-  uint32_t on_stack_size = 8 +
-      RoundUp((stmt->stack_slots() + 1) * sizeof(void*), 16);
+  uint32_t on_stack_size = 8 + RoundUp((stmt->stack_slots() + 1) * 8, 16);
   subq(rsp, Immediate(on_stack_size));
 
   // Allocate context and clear stack slots
@@ -128,7 +131,7 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
   uint32_t i = 0;
   while (item != NULL) {
     Operand lhs(rax, 0);
-    Operand rhs(rbp, 24 + sizeof(void*) * i++);
+    Operand rhs(rbp, 24 + 8 * i++);
 
     cmpq(rsi, Immediate(i));
     jmp(kLt, &body);
@@ -163,6 +166,19 @@ void Fullgen::GenerateEpilogue(AstNode* stmt) {
   pop(rbp);
 
   ret(0);
+}
+
+
+void Fullgen::PlaceInRoot(char* addr) {
+  Operand root_op(root_reg, 8 * (3 + root_context()->length()));
+  movq(result(), root_op);
+
+  root_context()->Push(addr);
+}
+
+
+char* Fullgen::AllocateRoot() {
+  return HContext::New(heap(), NULL, root_context());
 }
 
 
@@ -311,7 +327,7 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
 
       if (fn->args()->length() != 0) {
         // Unwind stack
-        addq(rsp, Immediate(fn->args()->length() * sizeof(void*)));
+        addq(rsp, Immediate(fn->args()->length() * 8));
       }
     }
 
@@ -375,27 +391,39 @@ AstNode* Fullgen::VisitValue(AstNode* node) {
     return node;
   }
 
+  slot()->scale(Operand::one);
+
   // Get pointer to slot first
   if (value->slot()->is_stack()) {
     // On stack variables
     slot()->base(rbp);
-    slot()->scale(Operand::one);
-    slot()->disp(-sizeof(void*) * (value->slot()->index() + 1));
+    slot()->disp(-8 * (value->slot()->index() + 1));
   } else {
-    // Context variables
-    movq(result(), rdi);
-
-    // Lookup context
     int32_t depth = value->slot()->depth();
-    while (--depth >= 0) {
-      Operand parent(result(), 8);
-      movq(result(), parent);
-    }
 
-    slot()->base(result());
-    slot()->scale(Operand::one);
-    // Skip tag, code addr and reference to parent scope
-    slot()->disp(sizeof(void*) * (value->slot()->index() + 3));
+    if (depth == -2) {
+      // Root register lookup
+      slot()->base(root_reg);
+      slot()->disp(8 * (value->slot()->index() + 3));
+    } else if (depth == -1) {
+      // Global lookup
+      // TODO: Implement me
+      emitb(0xcc);
+    } else {
+      // Context variables
+      movq(result(), rdi);
+
+      // Lookup context
+      while (--depth >= 0) {
+        Operand parent(result(), 8);
+        movq(result(), parent);
+      }
+
+      slot()->base(result());
+      slot()->scale(Operand::one);
+      // Skip tag, code addr and reference to parent scope
+      slot()->disp(8 * (value->slot()->index() + 3));
+    }
   }
 
   // If we was asked to return value - dereference slot
@@ -483,7 +511,8 @@ AstNode* Fullgen::VisitString(AstNode* node) {
     return node;
   }
 
-  AllocateString(node->value(), node->length(), result());
+  PlaceInRoot(HString::New(heap(), NULL, node->value(), node->length()));
+
   return node;
 }
 
@@ -594,8 +623,7 @@ AstNode* Fullgen::VisitTrue(AstNode* node) {
     return node;
   }
 
-  movb(scratch, Immediate(1));
-  AllocateBoolean(scratch, result());
+  PlaceInRoot(HBoolean::New(heap(), NULL, true));
 
   return node;
 }
@@ -607,8 +635,7 @@ AstNode* Fullgen::VisitFalse(AstNode* node) {
     return node;
   }
 
-  movb(scratch, Immediate(0));
-  AllocateBoolean(scratch, result());
+  PlaceInRoot(HBoolean::New(heap(), NULL, false));
 
   return node;
 }

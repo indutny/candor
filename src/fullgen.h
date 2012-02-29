@@ -106,6 +106,12 @@ class Fullgen : public Masm, public Visitor {
   void GeneratePrologue(AstNode* stmt);
   void GenerateEpilogue(AstNode* stmt);
 
+  // Stores reference to HValue inside root context
+  void PlaceInRoot(char* addr);
+
+  // Alloctes HContext object for root variables
+  char* AllocateRoot();
+
   AstNode* VisitFunction(AstNode* stmt);
   AstNode* VisitCall(AstNode* stmt);
   AstNode* VisitAssign(AstNode* stmt);
@@ -142,12 +148,14 @@ class Fullgen : public Masm, public Visitor {
   inline List<FFunction*, ZoneObject>* fns() { return &fns_; }
   inline void current_function(DotFunction* fn) { current_function_ = fn; }
   inline DotFunction* current_function() { return current_function_; }
+  inline List<char*, ZoneObject>* root_context() { return &root_context_; }
 
  private:
   Heap* heap_;
   VisitorType visitor_type_;
   List<FFunction*, ZoneObject> fns_;
   DotFunction* current_function_;
+  List<char*, ZoneObject> root_context_;
 };
 
 } // namespace dotlang

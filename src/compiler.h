@@ -18,7 +18,7 @@ class Guard {
   Guard(char* buffer, uint32_t length);
   ~Guard();
 
-  typedef char* (*CompiledFunction)(void* context, uint32_t args);
+  typedef char* (*CompiledFunction)(void* context, uint32_t args, char* root);
 
   inline CompiledFunction AsFunction() {
     return reinterpret_cast<CompiledFunction>(buffer_);
@@ -52,6 +52,8 @@ class CompiledScript {
 
   char* source_;
   uint32_t length_;
+
+  char* root_context_;
 };
 
 } // namespace dotlang

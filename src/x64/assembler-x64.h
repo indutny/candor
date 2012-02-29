@@ -54,6 +54,7 @@ const Register r14 = { 14 };
 const Register r15 = { 15 };
 
 const Register scratch = r11;
+const Register root_reg = r10;
 
 class Immediate : public ZoneObject {
  public:

@@ -24,6 +24,7 @@ void Masm::Pushad() {
   push(rdi);
   push(r8);
   push(r9);
+  // Root register
   push(r10);
   push(r12);
 
@@ -78,13 +79,13 @@ void Masm::Allocate(Heap::HeapTag tag,
 
     // Add tag size
     if (size_reg.is(reg_nil)) {
-      movq(rax, Immediate(size + sizeof(void*)));
+      movq(rax, Immediate(TagNumber(size + 8)));
     } else {
       movq(rax, size_reg);
       Untag(rax);
-      addq(rax, Immediate(sizeof(void*)));
+      addq(rax, Immediate(8));
+      TagNumber(rax);
     }
-    TagNumber(rax);
     push(rax);
     movq(rax, Immediate(TagNumber(tag)));
     push(rax);
@@ -105,7 +106,7 @@ void Masm::AllocateContext(uint32_t slots) {
   Push(rax);
 
   // parent + number of slots + slots
-  Allocate(Heap::kTagContext, reg_nil, sizeof(void*) * (slots + 2), rax);
+  Allocate(Heap::kTagContext, reg_nil, 8 * (slots + 2), rax);
 
   // Move address of current context to first slot
   Operand qparent(rax, 8);
@@ -117,7 +118,7 @@ void Masm::AllocateContext(uint32_t slots) {
 
   // Clear context
   for (uint32_t i = 0; i < slots; i++) {
-    Operand qslot(rax, 24 + i * sizeof(void*));
+    Operand qslot(rax, 24 + i * 8);
     movq(qslot, Immediate(0));
   }
 
@@ -130,7 +131,7 @@ void Masm::AllocateContext(uint32_t slots) {
 
 void Masm::AllocateFunction(Register addr, Register result) {
   // context + code
-  Allocate(Heap::kTagFunction, reg_nil, sizeof(void*) * 2, result);
+  Allocate(Heap::kTagFunction, reg_nil, 8 * 2, result);
 
   // Move address of current context to first slot
   Operand qparent(result, 8);
@@ -268,7 +269,7 @@ void Masm::FillStackSlots(uint32_t slots) {
 
   movq(scratch, Immediate(Heap::kTagNil));
   for (uint32_t i = 0; i < slots; i ++) {
-    Operand slot(rbp, -sizeof(void*) * (i + 1));
+    Operand slot(rbp, -8 * (i + 1));
     movq(slot, scratch);
   }
 }
