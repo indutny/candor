@@ -287,17 +287,17 @@ void Assembler::subq(Register dst, Immediate src) {
 }
 
 
-void Assembler::mulq(Register src) {
+void Assembler::imulq(Register src) {
   emit_rexw(rax, src);
   emitb(0xF7);
-  emit_modrm(src, 0x04);
+  emit_modrm(src, 0x05);
 }
 
 
-void Assembler::divq(Register src) {
+void Assembler::idivq(Register src) {
   emit_rexw(rax, src);
   emitb(0xF7);
-  emit_modrm(src, 0x06);
+  emit_modrm(src, 0x07);
 }
 
 
@@ -372,5 +372,19 @@ void Assembler::callq(Operand& dst) {
   emitb(0xFF);
   emit_modrm(dst, 2);
 }
+
+
+// Floating point instructions
+
+
+void Assembler::movqd(DoubleRegister dst, Register src) {
+  emitb(0x66);
+  emit_rexw(dst, src);
+  emitb(0x0F);
+  emitb(0x6E);
+  emit_modrm(dst, src);
+}
+
+
 
 } // namespace dotlang

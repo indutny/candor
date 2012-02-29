@@ -46,7 +46,7 @@ class Masm : public Assembler {
   void AllocateContext(uint32_t slots);
   void AllocateFunction(Register addr, Register result);
 
-  // Allocate heap number (XXX: should unbox numbers if possible)
+  // Allocate heap numbers
   void AllocateNumber(Register value, Register result);
 
   // Allocate boolean value, `value` should be either 0 or 1

@@ -271,7 +271,16 @@ inline uint32_t PowerOfTwo(uint32_t value) {
 }
 
 
-// XXX: Naive implementation
+// Naive only for lexer generated number strings
+inline bool StringIsDouble(const char* value, uint32_t length) {
+  for (uint32_t index = 0; index < length; index++) {
+    if (value[index] == '.') return true;
+  }
+
+  return false;
+}
+
+
 inline uint64_t StringToInt(const char* value, uint32_t length) {
   uint64_t result = 0;
   for (uint32_t index = 0; index < length; index++) {
@@ -279,6 +288,28 @@ inline uint64_t StringToInt(const char* value, uint32_t length) {
     result += value[index] - '0';
   }
   return result;
+}
+
+
+inline double StringToDouble(const char* value, uint32_t length) {
+  double integral = 0;
+  double floating = 0;
+
+  uint32_t index;
+  for (index = 0; index < length; index++) {
+    if (value[index] == '.') break;
+    integral *= 10;
+    integral += value[index] - '0';
+  }
+
+  if (index < length) {
+    for (uint32_t i = length - 1; i > index; i--) {
+      floating += value[i] - '0';
+      floating /= 10;
+    }
+  }
+
+  return integral + floating;
 }
 
 

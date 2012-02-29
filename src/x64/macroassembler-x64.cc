@@ -142,7 +142,10 @@ void Masm::AllocateFunction(Register addr, Register result) {
 
 
 void Masm::AllocateNumber(Register value, Register result) {
-  assert(0 && "Not implemented yet");
+  Allocate(Heap::kTagNumber, reg_nil, 8, result);
+
+  Operand qvalue(result, 8);
+  movq(qvalue, value);
 }
 
 

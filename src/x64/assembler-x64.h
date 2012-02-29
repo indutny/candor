@@ -56,6 +56,45 @@ const Register r15 = { 15 };
 const Register scratch = r11;
 const Register root_reg = r10;
 
+struct DoubleRegister {
+  const int high() {
+    return (code_ >> 3) & 1;
+  };
+
+  const int low() {
+    return code_ & 7;
+  };
+
+  const int code() {
+    return code_;
+  }
+
+  inline bool is(DoubleRegister reg) {
+    return code_ == reg.code();
+  }
+
+  int code_;
+};
+
+const DoubleRegister xmm0 = { 0 };
+const DoubleRegister xmm1 = { 1 };
+const DoubleRegister xmm2 = { 2 };
+const DoubleRegister xmm3 = { 3 };
+const DoubleRegister xmm4 = { 4 };
+const DoubleRegister xmm5 = { 5 };
+const DoubleRegister xmm6 = { 6 };
+const DoubleRegister xmm7 = { 7 };
+const DoubleRegister xmm8 = { 8 };
+const DoubleRegister xmm9 = { 9 };
+const DoubleRegister xmm10 = { 10 };
+const DoubleRegister xmm11 = { 11 };
+const DoubleRegister xmm12 = { 12 };
+const DoubleRegister xmm13 = { 13 };
+const DoubleRegister xmm14 = { 14 };
+const DoubleRegister xmm15 = { 15 };
+
+const DoubleRegister fscratch = xmm11;
+
 class Immediate : public ZoneObject {
  public:
   Immediate(uint64_t value) : value_(value) {
@@ -217,8 +256,8 @@ class Assembler {
   void addq(Register dst, Immediate src);
   void subq(Register dst, Register src);
   void subq(Register dst, Immediate src);
-  void mulq(Register src);
-  void divq(Register src);
+  void imulq(Register src);
+  void idivq(Register src);
 
   void andq(Register dst, Register src);
   void orq(Register dst, Register src);
@@ -233,6 +272,9 @@ class Assembler {
   void callq(Register dst);
   void callq(Operand& dst);
 
+  // Floating point instructions
+  void movqd(DoubleRegister dst, Register src);
+
   // Routines
   inline void emit_rex_if_high(Register src);
   inline void emit_rexw(Register dst);
@@ -240,6 +282,7 @@ class Assembler {
   inline void emit_rexw(Register dst, Register src);
   inline void emit_rexw(Register dst, Operand& src);
   inline void emit_rexw(Operand& dst, Register src);
+  inline void emit_rexw(DoubleRegister dst, Register src);
 
   inline void emit_modrm(Register dst);
   inline void emit_modrm(Operand &dst);
@@ -247,6 +290,7 @@ class Assembler {
   inline void emit_modrm(Register dst, Operand& src);
   inline void emit_modrm(Register dst, uint32_t op);
   inline void emit_modrm(Operand& dst, uint32_t op);
+  inline void emit_modrm(DoubleRegister dst, Register src);
 
   inline void emitb(uint8_t v);
   inline void emitw(uint16_t v);

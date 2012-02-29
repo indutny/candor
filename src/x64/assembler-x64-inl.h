@@ -65,6 +65,11 @@ inline void Assembler::emit_rexw(Operand& dst, Register src) {
 }
 
 
+inline void Assembler::emit_rexw(DoubleRegister dst, Register src) {
+  emitb(0x48 | dst.high() << 2 | src.high());
+}
+
+
 inline void Assembler::emit_modrm(Register dst) {
   emitb(0xC0 | dst.low() << 3);
 }
@@ -102,6 +107,11 @@ inline void Assembler::emit_modrm(Register dst, uint32_t op) {
 inline void Assembler::emit_modrm(Operand& dst, uint32_t op) {
   emitb(0x80 | op << 3 | dst.base().low());
   emitl(dst.disp());
+}
+
+
+inline void Assembler::emit_modrm(DoubleRegister dst, Register src) {
+  emitb(0xC0 | dst.low() << 3 | src.low());
 }
 
 

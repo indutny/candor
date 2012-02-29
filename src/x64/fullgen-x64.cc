@@ -509,9 +509,16 @@ AstNode* Fullgen::VisitNumber(AstNode* node) {
     return node;
   }
 
-  // TODO: Support heap numbers too
-  int64_t value = StringToInt(node->value(), node->length());
-  movq(result(), Immediate(TagNumber(value)));
+  if (StringIsDouble(node->value(), node->length())) {
+    // Allocate boxed heap number
+    double value = StringToDouble(node->value(), node->length());
+
+    PlaceInRoot(HNumber::New(heap(), NULL, value));
+  } else {
+    // Allocate unboxed number
+    int64_t value = StringToInt(node->value(), node->length());
+    movq(result(), Immediate(TagNumber(value)));
+  }
 
   return node;
 }
@@ -870,12 +877,13 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
 
   Label nil_result(this), not_unboxed(this), done(this);
 
-  VisitForValue(op->lhs(), rbx);
+  VisitForValue(op->lhs(), rax);
 
-  IsNil(rbx, NULL, &nil_result);
+  IsNil(rax, NULL, &nil_result);
 
-  VisitForValue(op->rhs(), rax);
+  VisitForValue(op->rhs(), rbx);
 
+  IsUnboxed(rax, &not_unboxed, NULL);
   IsUnboxed(rbx, &not_unboxed, NULL);
 
   {
@@ -884,48 +892,21 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
     Untag(rbx);
 
     switch (op->subtype()) {
-     case BinOp::kAdd:
-      movq(scratch, rbx);
-      addq(scratch, rax);
-      break;
-     case BinOp::kSub:
-      movq(scratch, rbx);
-      subq(scratch, rax);
-      break;
-     case BinOp::kMul:
-      Push(rdx);
-      movq(scratch, rax);
-      movq(rax, rbx);
-      mulq(scratch);
-      Pop(rdx);
-      movq(scratch, rax);
-      break;
-     case BinOp::kDiv:
-      Push(rdx);
-      movq(scratch, rax);
-      movq(rax, rbx);
-      divq(scratch);
-      Pop(rdx);
-      movq(scratch, rax);
-      break;
-     case BinOp::kBAnd:
-      movq(scratch, rbx);
-      andq(scratch, rax);
-      break;
-     case BinOp::kBOr:
-      movq(scratch, rbx);
-      orq(scratch, rax);
-      break;
-     case BinOp::kBXor:
-      movq(scratch, rbx);
-      xorq(scratch, rax);
-      break;
+     case BinOp::kAdd: addq(rax, rbx); break;
+     case BinOp::kSub: subq(rax, rbx); break;
+     case BinOp::kMul: push(rdx); imulq(rbx); pop(rdx); break;
+     case BinOp::kDiv: push(rdx); idivq(rbx); pop(rdx); break;
+     case BinOp::kBAnd: andq(rax, rbx); break;
+     case BinOp::kBOr: orq(rax, rbx); break;
+     case BinOp::kBXor: xorq(rax, rbx); break;
+
      default:
       emitb(0xcc);
       break;
     }
-    TagNumber(scratch);
-    movq(result(), scratch);
+
+    TagNumber(rax);
+    movq(result(), rax);
 
     jmp(&done);
   }

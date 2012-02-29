@@ -79,7 +79,6 @@ class Heap {
     kTagFunction,
     kTagContext,
     kTagNumber,
-    kTagHeapNumber,
     kTagString,
     kTagBoolean,
     kTagObject,

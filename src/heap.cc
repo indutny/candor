@@ -148,10 +148,6 @@ HValue* HValue::CopyTo(Space* space) {
     size += 16;
     break;
    case Heap::kTagNumber:
-    // TODO: Implement real
-    // value
-    assert(0 && "Not implemented");
-    break;
    case Heap::kTagBoolean:
     size += 8;
     break;
@@ -269,7 +265,7 @@ char* HNumber::New(Heap* heap, char* stack_top, uint64_t value) {
 
 
 char* HNumber::New(Heap* heap, char* stack_top, double value) {
-  char* result = heap->AllocateTagged(Heap::kTagHeapNumber, 8, stack_top);
+  char* result = heap->AllocateTagged(Heap::kTagNumber, 8, stack_top);
   *reinterpret_cast<double*>(result + 8) = value;
   return result;
 }
