@@ -112,7 +112,20 @@ Lexer::Token* Lexer::Consume() {
   // Number
   if (get(0) >= '0' && get(0) <= '9') {
     uint32_t start = offset_;
-    do { offset_++; } while (has(1) && get(0) >= '0' && get(0) <= '9');
+
+    // Parse integral part
+    while (has(1) && get(0) >= '0' && get(0) <= '9' && get(0) != '.') {
+      offset_++;
+    }
+
+    // Parse float part
+    if (has(1) && get(0) == '.') {
+      offset_++;
+      do {
+        offset_++;
+      } while (has(1) && get(0) >= '0' && get(0) <= '9');
+    }
+
     return new Token(kNumber, source_ + start, offset_ - start, start);
   }
 

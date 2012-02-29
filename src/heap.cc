@@ -256,24 +256,31 @@ char** HContext::GetSlotAddress(uint32_t index) {
 HNumber::HNumber(char* addr) : HValue(addr) {
   if ((reinterpret_cast<uint64_t>(addr) & 0x01) == 0x01) {
     // Unboxed value
-    value_ = reinterpret_cast<int64_t>(addr) >> 1;
+    value_ = reinterpret_cast<uint64_t>(addr) >> 1;
   } else {
-    assert(0 && "Not implemented yet");
+    value_ = *reinterpret_cast<double*>(addr + 8);
   }
 }
 
 
-char* HNumber::New(Heap* heap, char* stack_top, int64_t value) {
+char* HNumber::New(Heap* heap, char* stack_top, uint64_t value) {
   return reinterpret_cast<char*>(Tag(value));
 }
 
 
-int64_t HNumber::Untag(int64_t value) {
+char* HNumber::New(Heap* heap, char* stack_top, double value) {
+  char* result = heap->AllocateTagged(Heap::kTagHeapNumber, 8, stack_top);
+  *reinterpret_cast<double*>(result + 8) = value;
+  return result;
+}
+
+
+uint64_t HNumber::Untag(uint64_t value) {
   return value >> 1;
 }
 
 
-int64_t HNumber::Tag(int64_t value) {
+uint64_t HNumber::Tag(uint64_t value) {
   return (value << 1) | 1;
 }
 

@@ -79,6 +79,7 @@ class Heap {
     kTagFunction,
     kTagContext,
     kTagNumber,
+    kTagHeapNumber,
     kTagString,
     kTagBoolean,
     kTagObject,
@@ -206,16 +207,18 @@ class HNumber : public HValue {
  public:
   HNumber(char* addr);
 
-  static char* New(Heap* heap, char* stack_top, int64_t value);
-  static int64_t Untag(int64_t value);
-  static int64_t Tag(int64_t value);
+  static char* New(Heap* heap, char* stack_top, uint64_t value);
+  static char* New(Heap* heap, char* stack_top, double value);
 
-  inline int64_t value() { return value_; }
+  static uint64_t Untag(uint64_t value);
+  static uint64_t Tag(uint64_t value);
+
+  inline double value() { return value_; }
 
   static const Heap::HeapTag class_tag = Heap::kTagNumber;
 
  protected:
-  int64_t value_;
+  double value_;
 };
 
 

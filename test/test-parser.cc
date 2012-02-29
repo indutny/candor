@@ -5,6 +5,10 @@
 TEST_START("parser test")
   // Basic
   PARSER_TEST("'a'", "[kString a]")
+  PARSER_TEST("1", "[1]")
+  PARSER_TEST("1.23", "[1.23]")
+  PARSER_TEST("-1.23", "[kMinus [1.23]]")
+  PARSER_TEST("1 -1.23", "[kSub [1] [1.23]]")
 
   // Eq
   PARSER_TEST("a = 1", "[kAssign [a] [1]]")

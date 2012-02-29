@@ -161,13 +161,13 @@ char* RuntimeToNumber(Heap* heap, char* stack_top, char* value) {
     }
    case Heap::kTagBoolean:
     {
-      uint8_t val = *reinterpret_cast<uint8_t*>(value + 8);
+      uint64_t val = *reinterpret_cast<uint8_t*>(value + 8);
       return HNumber::New(heap, stack_top, val);
     }
    case Heap::kTagFunction:
    case Heap::kTagObject:
    case Heap::kTagNil:
-    return HNumber::New(heap, stack_top, 0);
+    return HNumber::New(heap, stack_top, static_cast<uint64_t>(0));
    case Heap::kTagNumber:
     return value;
    default:
