@@ -91,10 +91,7 @@ class Heap {
   enum Error {
     kErrorNone,
     kErrorIncorrectLhs,
-    kErrorCallWithoutVariable,
-    kErrorCallNonFunction,
-    kErrorNilPropertyLookup,
-    kErrorNonObjectPropertyLookup
+    kErrorCallWithoutVariable
   };
 
   Heap(uint32_t page_size) : new_space_(this, page_size),

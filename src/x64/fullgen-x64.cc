@@ -327,7 +327,7 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
   jmp(&done);
   bind(&not_function);
 
-  Throw(Heap::kErrorCallNonFunction);
+  movq(result(), Immediate(Heap::kTagNil));
 
   bind(&done);
 
@@ -408,28 +408,18 @@ AstNode* Fullgen::VisitValue(AstNode* node) {
 
 
 AstNode* Fullgen::VisitMember(AstNode* node) {
-  Label nil_error(this), non_object_error(this), hashing(this);
+  Label nil_error(this), non_object_error(this), done(this);
 
   VisitForValue(node->lhs(), result());
 
   // Throw error if we're trying to lookup into nil object
-  IsNil(result(), NULL, &nil_error);
+  IsNil(result(), NULL, &non_object_error);
   IsUnboxed(result(), NULL, &non_object_error);
 
   // Or into non-object
   IsHeapObject(Heap::kTagObject, result(), &non_object_error, NULL);
 
-  jmp(&hashing);
-  bind(&nil_error);
-
-  Throw(Heap::kErrorNilPropertyLookup);
-
-  bind(&non_object_error);
-
-  Throw(Heap::kErrorNonObjectPropertyLookup);
-
   // Calculate hash of property
-  bind(&hashing);
 
   Save(rax);
   {
@@ -459,6 +449,15 @@ AstNode* Fullgen::VisitMember(AstNode* node) {
   if (visiting_for_value()) {
     movq(result(), *slot());
   }
+
+  jmp(&done);
+
+  bind(&non_object_error);
+
+  // Non object lookups will return nil
+  movq(result(), Immediate(Heap::kTagNil));
+
+  bind(&done);
 
   return node;
 }
