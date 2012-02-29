@@ -203,7 +203,8 @@ enum Condition {
   kLe,
   kGt,
   kGe,
-  kCarry
+  kCarry,
+  kOverflow
 };
 
 class Assembler {
@@ -274,6 +275,8 @@ class Assembler {
 
   // Floating point instructions
   void movqd(DoubleRegister dst, Register src);
+  void movqd(Register dst, DoubleRegister src);
+  void addqd(DoubleRegister dst, DoubleRegister src);
 
   // Routines
   inline void emit_rex_if_high(Register src);
@@ -283,6 +286,7 @@ class Assembler {
   inline void emit_rexw(Register dst, Operand& src);
   inline void emit_rexw(Operand& dst, Register src);
   inline void emit_rexw(DoubleRegister dst, Register src);
+  inline void emit_rexw(Register dst, DoubleRegister src);
 
   inline void emit_modrm(Register dst);
   inline void emit_modrm(Operand &dst);
@@ -291,6 +295,8 @@ class Assembler {
   inline void emit_modrm(Register dst, uint32_t op);
   inline void emit_modrm(Operand& dst, uint32_t op);
   inline void emit_modrm(DoubleRegister dst, Register src);
+  inline void emit_modrm(Register dst, DoubleRegister src);
+  inline void emit_modrm(DoubleRegister dst, DoubleRegister src);
 
   inline void emitb(uint8_t v);
   inline void emitw(uint16_t v);

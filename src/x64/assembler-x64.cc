@@ -176,6 +176,9 @@ void Assembler::jmp(Condition cond, Label* label) {
    case kCarry:
     emitb(0x82);
     break;
+   case kOverflow:
+    emitb(0x80);
+    break;
    default:
     assert(0 && "unexpected");
   }
@@ -382,6 +385,23 @@ void Assembler::movqd(DoubleRegister dst, Register src) {
   emit_rexw(dst, src);
   emitb(0x0F);
   emitb(0x6E);
+  emit_modrm(dst, src);
+}
+
+
+void Assembler::movqd(Register dst, DoubleRegister src) {
+  emitb(0x66);
+  emit_rexw(src, dst);
+  emitb(0x0F);
+  emitb(0x7E);
+  emit_modrm(src, dst);
+}
+
+
+void Assembler::addqd(DoubleRegister dst, DoubleRegister src) {
+  emitb(0xF2);
+  emitb(0x0F);
+  emitb(0x58);
   emit_modrm(dst, src);
 }
 

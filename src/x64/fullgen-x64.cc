@@ -875,13 +875,16 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
   Save(rax);
   Save(rbx);
 
-  Label nil_result(this), not_unboxed(this), done(this);
+  Label not_unboxed(this), done(this);
 
   VisitForValue(op->lhs(), rax);
-
-  IsNil(rax, NULL, &nil_result);
-
   VisitForValue(op->rhs(), rbx);
+
+  Push(rax);
+  Push(rbx);
+
+  IsNil(rax, NULL, &not_unboxed);
+  IsNil(rbx, NULL, &not_unboxed);
 
   IsUnboxed(rax, &not_unboxed, NULL);
   IsUnboxed(rbx, &not_unboxed, NULL);
@@ -900,31 +903,33 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
      case BinOp::kBOr: orq(rax, rbx); break;
      case BinOp::kBXor: xorq(rax, rbx); break;
 
-     default:
-      emitb(0xcc);
-      break;
+     default: emitb(0xcc); break;
     }
+
+    // Call stub on overflow
+    jmp(kOverflow, &not_unboxed);
 
     TagNumber(rax);
     movq(result(), rax);
+
+    // Unwind stored rax and rbx
+    addq(rsp, 16);
+    ChangeAlign(-2);
 
     jmp(&done);
   }
 
   bind(&not_unboxed);
 
-  {
-    // TODO: Coerce here if needed and implement other binary ops
-    emitb(0xcc);
+  BaseStub* stub = NULL;
+  switch (op->subtype()) {
+   case BinOp::kAdd: stub = stubs()->GetBinaryAddStub(); break;
+   default: emitb(0xcc); break;
   }
 
-  jmp(&done);
-  bind(&nil_result);
-
-  {
-    // nil (+) nil = nil
-    movq(result(), Immediate(Heap::kTagNil));
-  }
+  // rax and rbx are already on stack
+  // so just call stub
+  if (stub != NULL) Call(stub);
 
   bind(&done);
 

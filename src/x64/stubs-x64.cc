@@ -256,4 +256,47 @@ void CoerceToBooleanStub::Generate() {
   GenerateEpilogue(1);
 }
 
+
+void BinaryAddStub::Generate() {
+  GeneratePrologue();
+  __ subq(rsp, Immediate(8));
+  __ push(rbx);
+
+  // Arguments
+  Operand lhs(rbp, 24);
+  Operand rhs(rbp, 16);
+
+  Label call_runtime(masm()), done(masm());
+
+  __ movq(rax, lhs);
+  __ movq(rbx, rhs);
+  __ IsHeapObject(Heap::kTagNumber, rax, &call_runtime, NULL);
+  __ IsHeapObject(Heap::kTagNumber, rbx, &call_runtime, NULL);
+
+  // We're adding two heap numbers
+  Operand lvalue(rax, 8);
+  Operand rvalue(rbx, 8);
+  __ movq(rax, lvalue);
+  __ movq(rbx, rvalue);
+  __ movqd(xmm1, rax);
+  __ movqd(xmm2, rbx);
+  __ addqd(xmm1, xmm2);
+
+  __ movqd(rbx, xmm1);
+  __ AllocateNumber(rbx, rax);
+
+  __ jmp(&done);
+  __ bind(&call_runtime);
+
+  // TODO: Implement me
+  __ emitb(0xcc);
+
+  __ bind(&done);
+
+  __ pop(rbx);
+
+  // Caller should unwind stack
+  GenerateEpilogue(0);
+}
+
 } // namespace dotlang

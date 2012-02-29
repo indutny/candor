@@ -18,7 +18,8 @@ class RelocationInfo;
     V(CoerceType)\
     V(Throw)\
     V(LookupProperty)\
-    V(CoerceToBoolean)
+    V(CoerceToBoolean)\
+    V(BinaryAdd)
 
 class BaseStub : public FFunction {
  public:
