@@ -1,6 +1,11 @@
 #include "test.h"
 
 TEST_START("GC test")
+  // Only roots
+  FUN_TEST("return __$gc()", {
+    assert(result == NULL);
+  })
+
   // Basic test with a context variable
   FUN_TEST("y() {scope x}\nx = 1\nx = 2\n__$gc()\nreturn x", {
     assert(HValue::As<HNumber>(result)->value() == 2);

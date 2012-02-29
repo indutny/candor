@@ -261,6 +261,8 @@ class HObject : public HValue {
  public:
   HObject(char* addr);
 
+  static char* NewEmpty(Heap* heap, char* stack_top);
+
   inline char* map() { return *map_slot_; }
   inline char** map_slot() { return map_slot_; }
 

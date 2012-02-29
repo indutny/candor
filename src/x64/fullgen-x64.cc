@@ -42,6 +42,9 @@ Fullgen::Fullgen(Heap* heap) : Masm(heap),
                                visitor_type_(kSlot),
                                current_function_(NULL) {
   stubs()->fullgen(this);
+
+  // Create a `global` object
+  root_context()->Push(HObject::NewEmpty(heap, NULL));
 }
 
 
@@ -385,9 +388,13 @@ AstNode* Fullgen::VisitValue(AstNode* node) {
   }
 
   if (value->is_operand()) {
-    assert(visiting_for_slot());
     slot()->base(FAstOperand::Cast(value)->op()->base());
     slot()->disp(FAstOperand::Cast(value)->op()->disp());
+
+    if (visiting_for_value()) {
+      movq(result(), *slot());
+    }
+
     return node;
   }
 
@@ -407,8 +414,13 @@ AstNode* Fullgen::VisitValue(AstNode* node) {
       slot()->disp(8 * (value->slot()->index() + 3));
     } else if (depth == -1) {
       // Global lookup
-      // TODO: Implement me
-      emitb(0xcc);
+      slot()->base(root_reg);
+      slot()->disp(24);
+
+      AstNode* member = new AstNode(AstNode::kMember);
+      member->children()->Push(new FAstOperand(slot()));
+      member->children()->Push(value->name());
+      VisitForSlot(member, slot(), result());
     } else {
       // Context variables
       movq(result(), rdi);

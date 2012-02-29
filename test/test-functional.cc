@@ -156,6 +156,11 @@ TEST_START("functional test")
     assert(HValue::As<HNumber>(result)->value() == 4);
   })
 
+  // Global lookup
+  FUN_TEST("scope a\na = 1\nreturn a", {
+    assert(HValue::As<HNumber>(result)->value() == 1);
+  })
+
   // If
   FUN_TEST("if (true) {\n return 1\n} else {\nreturn 2\n}", {
     assert(HValue::As<HNumber>(result)->value() == 1);

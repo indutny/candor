@@ -327,6 +327,29 @@ HObject::HObject(char* addr) : HValue(addr) {
 }
 
 
+char* HObject::NewEmpty(Heap* heap, char* stack_top) {
+  uint32_t size = 128;
+
+  char* obj = heap->AllocateTagged(Heap::kTagObject, 16, stack_top);
+  // NOTE: We're not passing stack_top here, because we don't want
+  // GC to run until all object's fields will be filled
+  char* map = heap->AllocateTagged(Heap::kTagMap, (size << 4) + 8, NULL);
+
+  // Set mask
+  *reinterpret_cast<uint64_t*>(obj + 8) = (size - 1) << 3;
+  // Set map
+  *reinterpret_cast<char**>(obj + 16) = map;
+
+  // Set map's size
+  *reinterpret_cast<uint64_t*>(map + 8) = size;
+
+  // Nullify all map's slots (both keys and values)
+  memset(map + 16, 0, size << 4);
+
+  return obj;
+}
+
+
 HMap::HMap(char* addr) : HValue(addr) {
   size_ = *reinterpret_cast<uint64_t*>(addr + 8);
   space_ = addr + 16;
