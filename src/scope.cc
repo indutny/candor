@@ -78,6 +78,16 @@ void Scope::MoveToContext(const char* name, uint32_t length) {
     while (scope != NULL) {
       if ((slot = scope->Get(name, length)) != NULL &&
           (slot->is_stack() || slot->depth() == 0))  {
+
+        // Check if slot is on the same depth with parent
+        // i.e. a = 1\n{ scope a }
+        // In such case it should not be moved to context
+        if (depth == 0 && slot->is_stack()) {
+          // Source should be reused instead
+          Set(name, length, slot);
+          return;
+        }
+
         // Move parent's slot to context if it is stack allocated
         if (slot->is_stack()) scope->MoveToContext(name, length);
 
