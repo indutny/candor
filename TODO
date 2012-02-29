@@ -1,5 +1,6 @@
 * Fix excessive context propagation
-* Binary operations
+* Root register (strings, numbers, true, false and global object)
+* Global lookup
+* Binary operations, Unary operations
 * Ast node ids
-* Unary operations, Binary operations (finish)
 * Dtrace :)
