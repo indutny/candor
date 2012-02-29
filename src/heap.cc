@@ -328,7 +328,7 @@ HObject::HObject(char* addr) : HValue(addr) {
 
 
 char* HObject::NewEmpty(Heap* heap, char* stack_top) {
-  uint32_t size = 128;
+  uint32_t size = 16;
 
   char* obj = heap->AllocateTagged(Heap::kTagObject, 16, stack_top);
   // NOTE: We're not passing stack_top here, because we don't want

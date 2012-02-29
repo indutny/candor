@@ -879,18 +879,46 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
   IsUnboxed(rbx, &not_unboxed, NULL);
 
   {
+    // Number (+) Number
     Untag(rax);
     Untag(rbx);
 
-    // Number (+) Number
-    movq(scratch, rbx);
-
     switch (op->subtype()) {
      case BinOp::kAdd:
+      movq(scratch, rbx);
       addq(scratch, rax);
       break;
      case BinOp::kSub:
+      movq(scratch, rbx);
       subq(scratch, rax);
+      break;
+     case BinOp::kMul:
+      Push(rdx);
+      movq(scratch, rax);
+      movq(rax, rbx);
+      mulq(scratch);
+      Pop(rdx);
+      movq(scratch, rax);
+      break;
+     case BinOp::kDiv:
+      Push(rdx);
+      movq(scratch, rax);
+      movq(rax, rbx);
+      divq(scratch);
+      Pop(rdx);
+      movq(scratch, rax);
+      break;
+     case BinOp::kBAnd:
+      movq(scratch, rbx);
+      andq(scratch, rax);
+      break;
+     case BinOp::kBOr:
+      movq(scratch, rbx);
+      orq(scratch, rax);
+      break;
+     case BinOp::kBXor:
+      movq(scratch, rbx);
+      xorq(scratch, rax);
       break;
      default:
       emitb(0xcc);

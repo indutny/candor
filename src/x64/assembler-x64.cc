@@ -287,6 +287,42 @@ void Assembler::subq(Register dst, Immediate src) {
 }
 
 
+void Assembler::mulq(Register src) {
+  emit_rexw(rax, src);
+  emitb(0xF7);
+  emit_modrm(src, 0x04);
+}
+
+
+void Assembler::divq(Register src) {
+  emit_rexw(rax, src);
+  emitb(0xF7);
+  emit_modrm(src, 0x06);
+}
+
+
+void Assembler::andq(Register dst, Register src) {
+  emit_rexw(dst, src);
+  emitb(0x23);
+  emit_modrm(dst, src);
+}
+
+
+void Assembler::orq(Register dst, Register src) {
+  emit_rexw(dst, src);
+  emitb(0x0B);
+  emit_modrm(dst, src);
+}
+
+
+void Assembler::orqb(Register dst, Immediate src) {
+  emit_rexw(rax, dst);
+  emitb(0x83);
+  emit_modrm(dst, 0x01);
+  emitb(src.value());
+}
+
+
 void Assembler::xorq(Register dst, Register src) {
   emit_rexw(dst, src);
   emitb(0x33);

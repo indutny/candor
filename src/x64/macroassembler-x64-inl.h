@@ -18,16 +18,16 @@ inline void Masm::Pop(Register src) {
 
 
 inline void Masm::PushTagged(Register src) {
-  shl(src, 1);
-  inc(src);
+  shl(src, Immediate(1));
+  orqb(src, Immediate(1));
   Push(src);
-  shr(src, 1);
+  shr(src, Immediate(1));
 }
 
 
 inline void Masm::PopTagged(Register src) {
   Pop(src);
-  shr(src, 1);
+  shr(src, Immediate(1));
 }
 
 
@@ -62,12 +62,12 @@ inline uint64_t Masm::TagNumber(uint64_t number) {
 
 inline void Masm::TagNumber(Register src) {
   shl(src, Immediate(1));
-  inc(src);
+  orqb(src, Immediate(1));
 }
 
 
 inline void Masm::Untag(Register src) {
-  shr(src, 1);
+  shr(src, Immediate(1));
 }
 
 } // namespace dotlang

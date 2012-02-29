@@ -77,8 +77,8 @@ TEST_START("functional test")
   });
 
   // Binary ops
-  FUN_TEST("return 1 + 2", {
-    assert(HValue::As<HNumber>(result)->value() == 3);
+  FUN_TEST("return 1 + 2 * 3 + 4 / 2 + (3 | 2) + (5 & 3) + (3 ^ 2)", {
+    assert(HValue::As<HNumber>(result)->value() == 14);
   })
 
   FUN_TEST("a = 1\na = 1 - 1\nreturn a", {
