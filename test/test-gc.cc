@@ -39,7 +39,7 @@ TEST_START("GC test")
   })
 
   // Stress test
-  FUN_TEST("a = 0\nx = 10000\n"
+  FUN_TEST("a = 0\nx = 100000\n"
            "while(--x) {\n"
            "scope a \n"
            "a = { x: { y: a } }\n"

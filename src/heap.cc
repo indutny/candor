@@ -165,7 +165,7 @@ HValue* HValue::CopyTo(Space* space) {
     break;
    case Heap::kTagMap:
     // size + space ( keys + values )
-    size += 8 + (As<HMap>()->size() << 5);
+    size += 8 + (As<HMap>()->size() << 4);
     break;
    default:
     assert(0 && "Unexpected");
