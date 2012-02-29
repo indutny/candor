@@ -39,12 +39,17 @@ TEST_START("GC test")
   })
 
   // Stress test
-  FUN_TEST("a = 0\nx = 100000\n"
-           "while(--x) {\n"
-           "scope a \n"
-           "a = { x: { y: a } }\n"
-           "}\n"
+  FUN_TEST("a = 0\ny = 100\n"
+           "while(--y) {\n"
+           "  scope a\n"
+           "  a = 0\n"
+           "  x = 10000\n"
+           "  while(--x) {\n"
+           "    scope a \n"
+           "    a = { x: { y: a } }\n"
+           "  }\n"
            "__$gc()\n"
+           "}\n"
            "return a.x.y", {
     assert(HValue::As<HObject>(result) != NULL);
   })
