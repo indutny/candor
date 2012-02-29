@@ -30,8 +30,8 @@ void Space::select(Page* page) {
 char* Space::Allocate(uint32_t bytes, char* stack_top) {
   // If current page was exhausted - run GC
   uint32_t even_bytes = bytes + (bytes & 0x01);
-  bool place_in_current = *top_ + even_bytes > *limit_;
-  bool need_gc = stack_top != NULL && place_in_current;
+  bool place_in_current = *top_ + even_bytes <= *limit_;
+  bool need_gc = stack_top != NULL && !place_in_current;
 
   if (need_gc) {
     Zone gc_zone;
@@ -47,7 +47,7 @@ char* Space::Allocate(uint32_t bytes, char* stack_top) {
     }
 
     // No gap was found - allocate new page
-    if (*top_ + even_bytes > *limit_) {
+    if (item->next() == NULL) {
       Page* next = new Page(RoundUp(even_bytes, page_size_));
       pages_.Push(next);
       select(next);
@@ -124,6 +124,9 @@ HValue* HValue::New(char* addr) {
     return HValue::As<HObject>(addr);
    case Heap::kTagMap:
     return HValue::As<HMap>(addr);
+   case Heap::kTagNil:
+    // Nil has a NULL address
+    assert(0 && "Unexpected");
    case Heap::kTagCode:
     return NULL;
    default:
@@ -162,7 +165,7 @@ HValue* HValue::CopyTo(Space* space) {
     break;
    case Heap::kTagMap:
     // size + space ( keys + values )
-    size += 8 + (As<HMap>()->size() << 4);
+    size += 8 + (As<HMap>()->size() << 5);
     break;
    default:
     assert(0 && "Unexpected");

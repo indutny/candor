@@ -81,6 +81,7 @@ void Masm::Allocate(Heap::HeapTag tag,
       movq(rax, Immediate(size + sizeof(void*)));
     } else {
       movq(rax, size_reg);
+      Untag(rax);
       addq(rax, Immediate(sizeof(void*)));
     }
     TagNumber(rax);
@@ -88,8 +89,6 @@ void Masm::Allocate(Heap::HeapTag tag,
     movq(rax, Immediate(TagNumber(tag)));
     push(rax);
 
-    // Push context
-    push(rsp);
     Call(stubs()->GetAllocateStub());
     // Stub will unwind stack
   }
@@ -199,28 +198,34 @@ void Masm::AllocateObjectLiteral(Register size, Register result) {
   movq(scratch, size);
 
   // mask (= (size - 1) << 3)
+  Untag(scratch);
   dec(scratch);
   shl(scratch, Immediate(3));
   movq(qmask, scratch);
+  xorq(scratch, scratch);
 
   // Create map
-  PushTagged(size);
+  Push(size);
 
+  Untag(size);
   // keys + values
   shl(size, Immediate(4));
   // + size
   addq(size, Immediate(8));
+  TagNumber(size);
+
   Allocate(Heap::kTagMap, size, 0, scratch);
   movq(qmap, scratch);
 
-  PopTagged(size);
+  Pop(size);
 
-  PushTagged(size);
+  Push(size);
   Push(result);
   movq(result, scratch);
 
   // Save map size for GC
   Operand qmapsize(result, 8);
+  Untag(size);
   movq(qmapsize, size);
 
   // Fill map with nil
@@ -229,7 +234,7 @@ void Masm::AllocateObjectLiteral(Register size, Register result) {
   addq(size, result);
   Fill(result, size, Immediate(Heap::kTagNil));
   Pop(result);
-  PopTagged(size);
+  Pop(size);
 }
 
 

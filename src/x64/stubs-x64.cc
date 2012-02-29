@@ -28,12 +28,13 @@ void BaseStub::GenerateEpilogue(int args) {
 
 void AllocateStub::Generate() {
   GeneratePrologue();
+  // Align stack
+  __ subq(rsp, Immediate(8));
   __ push(rbx);
 
   // Arguments
-  Operand size(rbp, 32);
-  Operand tag(rbp, 24);
-  Operand context(rbp, 16);
+  Operand size(rbp, 24);
+  Operand tag(rbp, 16);
 
   Label runtime_allocate(masm()), done(masm());
 
@@ -85,17 +86,32 @@ void AllocateStub::Generate() {
   // Invoke runtime allocation stub (and probably GC)
   __ bind(&runtime_allocate);
 
+  // Remove junk from registers
+  __ xorq(rax, rax);
+  __ xorq(rbx, rbx);
+
   RuntimeAllocateCallback allocate = &RuntimeAllocate;
 
   {
+    Label call(masm());
+
     Masm::Align a(masm_);
     __ Pushad();
-    __ movq(scratch, Immediate(*reinterpret_cast<uint64_t*>(&allocate)));
 
-    // Three arguments: heap, size, context
+    // Three arguments: heap, size, top_stack
     __ movq(rdi, heapref);
     __ movq(rsi, size);
-    __ movq(rdx, context);
+    __ movq(rdx, rsp);
+
+    // Objects are allocated in pairs with maps
+    // do not let GC run in the middle of the process
+    __ cmpb(tag, Immediate(masm()->TagNumber(Heap::kTagMap)));
+    __ jmp(kNe, &call);
+    __ xorq(rdx, rdx);
+
+    __ bind(&call);
+    __ movq(scratch, Immediate(*reinterpret_cast<uint64_t*>(&allocate)));
+
     __ callq(scratch);
     __ Popad(rax);
   }
@@ -111,12 +127,13 @@ void AllocateStub::Generate() {
 
   // Rax will hold resulting pointer
   __ pop(rbx);
-  GenerateEpilogue(3);
+  GenerateEpilogue(2);
 }
 
 
 void CoerceTypeStub::Generate() {
   GeneratePrologue();
+  __ subq(rsp, Immediate(8));
   __ push(rbx);
 
   // Arguments

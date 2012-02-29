@@ -113,6 +113,12 @@ TEST_START("functional test")
     assert(HValue::As<HNumber>(result)->value() == 28);
   })
 
+  FUN_TEST("a = { a : { b : 1 } }\n"
+           "a = { x: { y: a } }\n"
+           "return a.x.y.a.b", {
+    assert(HValue::As<HNumber>(result)->value() == 1);
+  })
+
   // Rehash and growing
   FUN_TEST("a = {}\n"
            "a.a = a.b = a.c = a.d = a.e = a.f = a.g = a.h = 1\n"

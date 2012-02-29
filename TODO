@@ -1,4 +1,5 @@
-* If statements
+* Fix excessive context propagation
+* Binary operations
 * Ast node ids
 * Unary operations, Binary operations (finish)
 * Dtrace :)

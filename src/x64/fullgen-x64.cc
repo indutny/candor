@@ -266,8 +266,7 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
 
       Align a(this);
 
-      // RuntimeLookupProperty(heap, stack_top, obj, key, change)
-      // (returns addr of slot)
+      // RuntimeCollectGarbage(heap, stack_top)
       movq(rsi, rsp);
       movq(rdi, Immediate(reinterpret_cast<uint64_t>(heap())));
 
@@ -415,6 +414,8 @@ AstNode* Fullgen::VisitMember(AstNode* node) {
 
   // Throw error if we're trying to lookup into nil object
   IsNil(result(), NULL, &nil_error);
+  IsUnboxed(result(), NULL, &non_object_error);
+
   // Or into non-object
   IsHeapObject(Heap::kTagObject, result(), &non_object_error, NULL);
 
@@ -626,7 +627,7 @@ AstNode* Fullgen::VisitObjectLiteral(AstNode* node) {
   Save(rbx);
 
   // Ensure that map will be filled only by half at maximum
-  movq(rbx, Immediate(PowerOfTwo(node->children()->length() << 1)));
+  movq(rbx, Immediate(TagNumber(PowerOfTwo(node->children()->length() << 1))));
   AllocateObjectLiteral(rbx, rax);
 
   // Set every key/value pair
@@ -667,7 +668,8 @@ AstNode* Fullgen::VisitArrayLiteral(AstNode* node) {
 
   // Ensure that map will be filled only by half at maximum
   // (items + `length` property)
-  movq(rbx, Immediate(PowerOfTwo((node->children()->length() + 1) << 1)));
+  movq(rbx,
+       Immediate(TagNumber(PowerOfTwo((node->children()->length() + 1) << 1))));
   AllocateObjectLiteral(rbx, rax);
 
   AstList::Item* item = node->children()->head();

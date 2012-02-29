@@ -30,8 +30,22 @@ TEST_START("GC test")
     assert(HValue::As<HNumber>(result)->value() == 2);
   })
 
+  FUN_TEST("a = { a : { b : 1 } }\n"
+           "a = { x: { y: a } }\n"
+           "a = { u: { v: a } }\n"
+           "__$gc()\n"
+           "return a.u.v.x.y.a.b", {
+    assert(HValue::As<HNumber>(result)->value() == 1);
+  })
+
   // Stress test
-  FUN_TEST("x = 10000000\nwhile(--x) { a = { x: { y: 1 } } }\nreturn x", {
-    assert(HValue::As<HNumber>(result)->value() == 0);
+  FUN_TEST("a = 0\nx = 10000\n"
+           "while(--x) {\n"
+           "scope a \n"
+           "a = { x: { y: a } }\n"
+           "}\n"
+           "__$gc()\n"
+           "return a.x.y", {
+    assert(HValue::As<HObject>(result) != NULL);
   })
 TEST_END("GC test")
