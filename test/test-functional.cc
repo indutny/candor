@@ -22,7 +22,7 @@ TEST_START("functional test")
     assert(result == NULL);
   })
 
-  FUN_TEST("return 'abcdef';", {
+  FUN_TEST("return 'abcdef'", {
     HString* str = HValue::As<HString>(result);
     str = str;
     assert(str->length() == 6);
