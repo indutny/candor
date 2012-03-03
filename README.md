@@ -70,6 +70,8 @@ Things to come:
 
 * Finishing binary and unary operations
 * String concatenation
+* On-stack replacement and profile-based optimizations
+* Incremental GC
 * See [TODO](https://github.com/indutny/dotlang/blob/master/TODO) for more
   up-to-date tasks
 
