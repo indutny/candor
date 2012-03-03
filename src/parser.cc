@@ -158,15 +158,11 @@ AstNode* Parser::ParseExpression(int priority) {
   // Parse prefix unops and block expression
   switch (Peek()->type()) {
    case kInc:
-    return ParsePrefixUnOp(UnOp::kPreInc);
    case kDec:
-    return ParsePrefixUnOp(UnOp::kPreDec);
    case kNot:
-    return ParsePrefixUnOp(UnOp::kNot);
    case kAdd:
-    return ParsePrefixUnOp(UnOp::kPlus);
    case kSub:
-    return ParsePrefixUnOp(UnOp::kMinus);
+    return ParsePrefixUnOp(Peek()->type());
    case kBraceOpen:
     result = ParseObjectLiteral();
     if (result != NULL) return result;
@@ -274,16 +270,22 @@ AstNode* Parser::ParseExpression(int priority) {
 }
 
 
-AstNode* Parser::ParsePrefixUnOp(UnOp::UnOpType type) {
+AstNode* Parser::ParsePrefixUnOp(TokenType type) {
   Position pos(this);
 
   // Consume prefix token
   Skip();
 
-  AstNode* expr = ParseExpression();
+  AstNode* expr;
+  {
+    NegateSign n(this, type);
+
+    expr = ParseExpression();
+  }
+
   if (expr == NULL) return NULL;
 
-  return pos.Commit(new UnOp(type, expr));
+  return pos.Commit(new UnOp(UnOp::ConvertPrefixType(NegateType(type)), expr));
 }
 
 
@@ -293,10 +295,16 @@ AstNode* Parser::ParseBinOp(TokenType type, AstNode* lhs, int priority) {
   // Consume binop token
   Skip();
 
-  AstNode* rhs = ParseExpression(priority);
+  AstNode* rhs;
+  {
+    NegateSign n(this, type);
+
+    rhs = ParseExpression(priority);
+  }
+
   if (rhs == NULL) return NULL;
 
-  AstNode* result = new BinOp(BinOp::ConvertType(type), lhs, rhs);
+  AstNode* result = new BinOp(BinOp::ConvertType(NegateType(type)), lhs, rhs);
 
   return pos.Commit(result);
 }

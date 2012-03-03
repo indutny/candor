@@ -270,6 +270,24 @@ class UnOp : public AstNode {
     return reinterpret_cast<UnOp*>(node);
   }
 
+  // Converts lexer's token type to unop node type if possible
+  inline static UnOpType ConvertPrefixType(Lexer::TokenType type) {
+    switch (type) {
+     case Lexer::kAdd:
+      return kPlus;
+     case Lexer::kSub:
+      return kMinus;
+     case Lexer::kNot:
+      return kNot;
+     case Lexer::kInc:
+      return kPreInc;
+     case Lexer::kDec:
+      return kPreDec;
+     default:
+      assert(0 && "Unexpected");
+    }
+  }
+
   bool Print(PrintBuffer* p) {
     const char* strtype;
     switch (subtype()) {

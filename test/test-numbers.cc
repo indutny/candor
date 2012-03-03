@@ -27,6 +27,10 @@ TEST_START("numbers test")
     assert(HValue::As<HNumber>(result)->value() == -1);
   })
 
+  FUN_TEST("return 0 - 1 - 2", {
+    assert(HValue::As<HNumber>(result)->value() == -3);
+  })
+
   // Conversion to heap
   FUN_TEST("return 5 + 0.5", {
     assert(HValue::As<HNumber>(result)->value() == 5.5);
@@ -44,5 +48,10 @@ TEST_START("numbers test")
   FUN_TEST("return 4611686018427387904 + 4611686018427387904 + "
            "4611686018427387904 + 4611686018427387904", {
     assert(HValue::As<HNumber>(result)->value() == 18446744073709551616.0);
+  })
+
+  FUN_TEST("return 0 - 4611686018427387904 - 4611686018427387904 - "
+           "4611686018427387904 - 4611686018427387904", {
+    assert(HValue::As<HNumber>(result)->value() == -18446744073709551616.0);
   })
 TEST_END("numbers test")

@@ -16,6 +16,8 @@ TEST_START("parser test")
 
   // Binop
   PARSER_TEST("a + b", "[kAdd [a] [b]]")
+  PARSER_TEST("a - b - c", "[kSub [a] [kAdd [b] [c]]]")
+  PARSER_TEST("a - b - c - d", "[kSub [a] [kAdd [b] [kAdd [c] [d]]]]")
   PARSER_TEST("a + b + c", "[kAdd [a] [kAdd [b] [c]]]")
   PARSER_TEST("a + b * c", "[kAdd [a] [kMul [b] [c]]]")
   PARSER_TEST("a * b + c", "[kAdd [kMul [a] [b]] [c]]")
