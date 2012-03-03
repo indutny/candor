@@ -1,5 +1,11 @@
 * Heap numbers
 * Binary operations, Unary operations
+* Finishing binary and unary operations
+* String concatenation
+* On-stack replacement and profile-based optimizations
+* Incremental GC
+* Usage in multiple-threads (aka isolates)
+* Calling C++/C functions from dotlang
 * gdbjit
 * Ast node ids
 * Dtrace :)

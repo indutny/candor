@@ -101,7 +101,7 @@ Things to come:
 * On-stack replacement and profile-based optimizations
 * Incremental GC
 * Usage in multiple-threads (aka isolates)
-* Calling C++ functions from dotlang
+* Calling C++/C functions from dotlang
 * See [TODO](https://github.com/indutny/dotlang/blob/master/TODO) for more
   up-to-date tasks
 
