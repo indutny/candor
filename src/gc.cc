@@ -27,7 +27,7 @@ void GC::CollectGarbage(char* stack_top) {
     char* value = *slot;
 
     // Skip NULL pointers, non-pointer values and rbp pushes
-    if (value == NULL || value > top && value <= *heap()->root_stack()) {
+    if (value == NULL || (value > top && value <= *heap()->root_stack())) {
       continue;
     }
 
