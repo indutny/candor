@@ -243,6 +243,9 @@ void BinaryOpStub::Generate() {
   __ movq(rax, lhs);
   __ movq(rbx, rhs);
 
+  __ IsNil(rax, NULL, &call_runtime);
+  __ IsNil(rbx, NULL, &call_runtime);
+
   __ IsHeapObject(Heap::kTagNumber, rax, &call_runtime, NULL);
   __ IsHeapObject(Heap::kTagNumber, rbx, &call_runtime, NULL);
 

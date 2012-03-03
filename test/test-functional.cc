@@ -151,6 +151,11 @@ TEST_START("functional test")
     assert(HValue::As<HNumber>(result)->value() == 10);
   });
 
+  FUN_TEST("a = { 1.1: 2, 2.2: 3}\n"
+           "return a[1.1] + a[2.2] + a['1.1'] + a['2.2']", {
+    assert(HValue::As<HNumber>(result)->value() == 10);
+  });
+
   // Arrays
   FUN_TEST("a = [ 1, 2, 3, 4 ]\nreturn a[0] + a[1] + a[2] + a[3]", {
     assert(HValue::As<HNumber>(result)->value() == 10);

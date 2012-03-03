@@ -1,10 +1,10 @@
 #include "runtime.h"
 #include "heap.h" // Heap
-#include "utils.h" // IntToString
+#include "utils.h" // ComputeHash, etc
 
 #include <stdint.h> // uint32_t
 #include <assert.h> // assert
-#include <string.h> // strncmp
+#include <string.h> // strncmp, snprintf
 #include <sys/types.h> // size_t
 
 namespace dotlang {
@@ -131,11 +131,17 @@ char* RuntimeToString(Heap* heap, char* stack_top, char* value) {
     }
    case Heap::kTagNumber:
     {
-      // TODO: Handle boxed numbers here too
-      int64_t num = HNumber::Untag(reinterpret_cast<int64_t>(value));
-      // Maximum int64 value may contain only 20 chars, last one for '\0'
-      char str[32];
-      uint32_t len = IntToString(num, str);
+      char str[128];
+      uint32_t len;
+
+      if (HValue::IsUnboxed(value)) {
+        int64_t num = HNumber::Untag(reinterpret_cast<int64_t>(value));
+        // Maximum int64 value may contain only 20 chars, last one for '\0'
+        len = snprintf(str, sizeof(str), "%lld", num);
+      } else {
+        double num = *reinterpret_cast<double*>(value + 8);
+        len = snprintf(str, sizeof(str), "%g", num);
+      }
 
       // And create new string
       return HString::New(heap, stack_top, str, len);
