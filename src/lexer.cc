@@ -48,6 +48,29 @@ void Lexer::Skip() {
 
 
 Lexer::Token* Lexer::Consume() {
+  // One-line comment
+  if (has(2) && get(0) == '/' && get(1) == '/') {
+    offset_ += 2;
+    while (has(1) && get(0) != '\r' && get(0) != '\n') offset_++;
+  }
+
+  // Multi-line comment
+  if (has(2) && get(0) == '/' && get(1) == '*') {
+    offset_ += 2;
+    while (has(2) && get(0) != '*' && get(1) != '/') {
+      // Skip escaped chars
+      if (has(2) && get(0) == '\\') {
+        offset_ += 2;
+      } else {
+        // Or skip a regular char
+        offset_++;
+      }
+    }
+    offset_ += 2;
+  }
+
+  LENGTH_CHECK
+
   // Skip spaces and detect CR
   bool cr = false;
   while (has(1) && (get(0) == ' ' || get(0) == '\r' || get(0) == '\n')) {
@@ -58,15 +81,6 @@ Lexer::Token* Lexer::Consume() {
   if (cr) return new Token(kCr, offset_ - 1);
 
   LENGTH_CHECK
-
-  // One-line comment
-  if (has(2) && get(0) == '/' && get(1) == '/') {
-    offset_ += 2;
-    uint32_t start = offset_;
-    while (offset_ < length_ && get(0) != '\r' && get(0) != '\n') offset_++;
-
-    return new Token(kComment, source_ + start, offset_ - start, start);
-  }
 
   // One-char tokens
   {

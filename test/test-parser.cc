@@ -10,6 +10,11 @@ TEST_START("parser test")
   PARSER_TEST("-1.23", "[kMinus [1.23]]")
   PARSER_TEST("1 -1.23", "[kSub [1] [1.23]]")
 
+  // Comments
+  PARSER_TEST("1// comment", "[1]")
+  PARSER_TEST("1// comment\nreturn 1", "[1] [kReturn [1]]")
+  PARSER_TEST("1/* comment */ + 1", "[kAdd [1] [1]]")
+
   // Eq
   PARSER_TEST("a = 1", "[kAssign [a] [1]]")
   PARSER_TEST("a = 1\r\nb=1", "[kAssign [a] [1]] [kAssign [b] [1]]")
