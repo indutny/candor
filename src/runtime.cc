@@ -4,7 +4,8 @@
 
 #include <stdint.h> // uint32_t
 #include <assert.h> // assert
-#include <string.h> // strncmp, snprintf
+#include <string.h> // strncmp
+#include <stdio.h> // snprintf
 #include <sys/types.h> // size_t
 
 namespace dotlang {

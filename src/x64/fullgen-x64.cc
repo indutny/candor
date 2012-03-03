@@ -10,7 +10,7 @@
 #include <assert.h>
 #include <stdint.h> // uint32_t
 #include <stdlib.h> // NULL
-#include <string.h> // snprintf
+#include <stdio.h> // snprintf
 
 namespace dotlang {
 
