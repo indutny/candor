@@ -40,4 +40,9 @@ TEST_START("numbers test")
   FUN_TEST("return 4611686018427387904 * 1000000", {
     assert(HValue::As<HNumber>(result)->value() == 4611686018427387904000000.0);
   })
+
+  FUN_TEST("return 4611686018427387904 + 4611686018427387904 + "
+           "4611686018427387904 + 4611686018427387904", {
+    assert(HValue::As<HNumber>(result)->value() == 18446744073709551616.0);
+  })
 TEST_END("numbers test")

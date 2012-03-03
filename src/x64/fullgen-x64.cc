@@ -875,14 +875,15 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
   Save(rax);
   Save(rbx);
 
-  Label not_unboxed(this);
-  Label lhs_to_heap(this), rhs_to_heap(this), done(this);
+  Label not_unboxed(this), done(this);
+  Label lhs_to_heap(this), rhs_to_heap(this);
 
   VisitForValue(op->lhs(), rax);
   VisitForValue(op->rhs(), rbx);
 
-  Push(rax);
-  Push(rbx);
+  // Push values to do runtime call later
+  push(rax);
+  push(rbx);
 
   IsNil(rax, NULL, &not_unboxed);
   IsNil(rbx, NULL, &not_unboxed);
@@ -908,10 +909,11 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
     }
 
     // Call stub on overflow
-    // TODO: Translate to heap numbers first
     jmp(kOverflow, &lhs_to_heap);
 
     TagNumber(rax);
+    jmp(kCarry, &lhs_to_heap);
+
     movq(result(), rax);
 
     // Unwind stored rax and rbx
@@ -923,8 +925,8 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
 
   bind(&lhs_to_heap);
 
-  Pop(rbx);
-  Pop(rax);
+  pop(rbx);
+  pop(rax);
 
   Untag(rax);
 
@@ -933,8 +935,9 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
   cvtsi2sd(xmm1, rax);
   AllocateNumber(xmm1, rax);
 
-  Push(rax);
-  Push(rbx);
+  // Replace on-stack value of rax
+  push(rax);
+  push(rbx);
 
   bind(&rhs_to_heap);
 
@@ -942,7 +945,7 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
   // i.e. we may came from this case: 1 + 3.5
   IsUnboxed(rbx, &not_unboxed, NULL);
 
-  Pop(rbx);
+  pop(rbx);
   Untag(rbx);
 
   // Translate rhs to heap number
@@ -951,7 +954,8 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
 
   AllocateNumber(xmm1, rbx);
 
-  Push(rbx);
+  // Replace on-stack value of rbx
+  push(rbx);
 
   bind(&not_unboxed);
 
@@ -964,9 +968,17 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
    default: emitb(0xcc); break;
   }
 
+  // We already have rax and rbx on-stack
+  ChangeAlign(2);
+
   // rax and rbx are already on stack
   // so just call stub
   if (stub != NULL) Call(stub);
+  Result(rax);
+
+  // Unwind stored rax and rbx
+  addq(rsp, 16);
+  ChangeAlign(-2);
 
   bind(&done);
 
