@@ -68,7 +68,7 @@ factorial(10)
 ## Building
 
 ```bash
-git clone git://github.com/indunty/dotlang.git
+git clone git://github.com/indutny/dotlang.git
 cd dotlang
 make ARCH=x64 test
 ```
