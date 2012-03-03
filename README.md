@@ -2,8 +2,8 @@
 
 Experimental implementation of DOT language VM.
 
-** Danger! This whole project is not stable at all, many things are broken and
-may/will change in future **
+**Danger! This whole project is not stable at all, many things are broken and
+may/will change in future**
 
 ## Language basics
 
