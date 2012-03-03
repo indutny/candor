@@ -38,15 +38,9 @@ char* RuntimeGrowObject(Heap* heap,
                         char* stack_top,
                         char* obj);
 
-typedef char* (*RuntimeToStringCallback)(Heap* heap,
-                                         char* stack_top,
-                                         char* value);
-typedef char* (*RuntimeToNumberCallback)(Heap* heap,
-                                         char* stack_top,
-                                         char* value);
-typedef char* (*RuntimeToBooleanCallback)(Heap* heap,
-                                          char* stack_top,
-                                          char* value);
+typedef char* (*RuntimeCoerceCallback)(Heap* heap,
+                                       char* stack_top,
+                                       char* value);
 char* RuntimeToString(Heap* heap, char* stack_top, char* value);
 char* RuntimeToNumber(Heap* heap, char* stack_top, char* value);
 char* RuntimeToBoolean(Heap* heap, char* stack_top, char* value);
@@ -54,6 +48,17 @@ char* RuntimeToBoolean(Heap* heap, char* stack_top, char* value);
 // Compares two heap values
 typedef size_t (*RuntimeCompareCallback)(char* lhs, char* rhs);
 size_t RuntimeCompare(char* lhs, char* rhs);
+
+char* RuntimeCoerceType(Heap* heap,
+                        char* stack_top,
+                        char* required,
+                        char* expr);
+
+typedef char* (*RuntimeBinOpCallback)(Heap* heap,
+                                      char* stack_top,
+                                      char* lhs,
+                                      char* rhs);
+char* RuntimeBinOpAdd(Heap* heap, char* stack_top, char* lhs, char* rhs);
 
 } // namespace dotlang
 

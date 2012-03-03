@@ -16,7 +16,6 @@ class RelocationInfo;
 
 #define STUBS_LIST(V)\
     V(Allocate)\
-    V(CoerceType)\
     V(Throw)\
     V(LookupProperty)\
     V(CoerceToBoolean)\

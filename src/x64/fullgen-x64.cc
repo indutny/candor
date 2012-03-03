@@ -874,111 +874,114 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
     return node;
   }
 
-  // lhs and rhs values will be pushed later
-  ChangeAlign(2);
-  Align a(this);
-
   Save(rax);
   Save(rbx);
 
-  Label not_unboxed(this), done(this);
-  Label lhs_to_heap(this), rhs_to_heap(this);
-
-  VisitForValue(op->lhs(), rax);
-  VisitForValue(op->rhs(), rbx);
-
-  push(rax);
-  push(rbx);
-
-  IsNil(rax, NULL, &not_unboxed);
-  IsNil(rbx, NULL, &not_unboxed);
-
-  IsUnboxed(rax, &rhs_to_heap, NULL);
-  IsUnboxed(rbx, &lhs_to_heap, NULL);
-
   {
-    // Number (+) Number
+    // lhs and rhs values will be pushed later
+    ChangeAlign(2);
+    Align a(this);
+
+    Label not_unboxed(this), done(this);
+    Label lhs_to_heap(this), rhs_to_heap(this);
+
+    VisitForValue(op->lhs(), rax);
+    VisitForValue(op->rhs(), rbx);
+
+    // No need to change align here, because it was already changed above
+    push(rax);
+    push(rbx);
+
+    IsNil(rax, NULL, &not_unboxed);
+    IsNil(rbx, NULL, &not_unboxed);
+
+    IsUnboxed(rax, &rhs_to_heap, NULL);
+    IsUnboxed(rbx, &lhs_to_heap, NULL);
+
+    {
+      // Number (+) Number
+      Untag(rax);
+      Untag(rbx);
+
+      switch (op->subtype()) {
+       case BinOp::kAdd: addq(rax, rbx); break;
+       case BinOp::kSub: subq(rax, rbx); break;
+       case BinOp::kMul: push(rdx); imulq(rbx); pop(rdx); break;
+       case BinOp::kDiv: push(rdx); idivq(rbx); pop(rdx); break;
+       case BinOp::kBAnd: andq(rax, rbx); break;
+       case BinOp::kBOr: orq(rax, rbx); break;
+       case BinOp::kBXor: xorq(rax, rbx); break;
+
+       default: emitb(0xcc); break;
+      }
+
+      // Call stub on overflow
+      jmp(kOverflow, &lhs_to_heap);
+
+      TagNumber(rax);
+      jmp(kCarry, &lhs_to_heap);
+
+      movq(result(), rax);
+
+      jmp(&done);
+    }
+
+    bind(&lhs_to_heap);
+
+    Pop(rbx);
+    Pop(rax);
+
     Untag(rax);
+
+    // Translate lhs to heap number
+    xorqd(xmm1, xmm1);
+    cvtsi2sd(xmm1, rax);
+    AllocateNumber(xmm1, rax);
+
+    // Replace on-stack value of rax
+    Push(rax);
+    Push(rbx);
+
+    bind(&rhs_to_heap);
+
+    // Check if rhs was unboxed after all
+    // i.e. we may came from this case: 1 + 3.5
+    IsUnboxed(rbx, &not_unboxed, NULL);
+
+    Pop(rbx);
+
     Untag(rbx);
 
-    switch (op->subtype()) {
-     case BinOp::kAdd: addq(rax, rbx); break;
-     case BinOp::kSub: subq(rax, rbx); break;
-     case BinOp::kMul: push(rdx); imulq(rbx); pop(rdx); break;
-     case BinOp::kDiv: push(rdx); idivq(rbx); pop(rdx); break;
-     case BinOp::kBAnd: andq(rax, rbx); break;
-     case BinOp::kBOr: orq(rax, rbx); break;
-     case BinOp::kBXor: xorq(rax, rbx); break;
+    // Translate rhs to heap number
+    xorqd(xmm1, xmm1);
+    cvtsi2sd(xmm1, rbx);
 
+    AllocateNumber(xmm1, rbx);
+
+    // Replace on-stack value of rbx
+    Push(rbx);
+
+    bind(&not_unboxed);
+
+    BaseStub* stub = NULL;
+    switch (op->subtype()) {
+     case BinOp::kAdd: stub = stubs()->GetBinaryAddStub(); break;
+     case BinOp::kSub: stub = stubs()->GetBinarySubStub(); break;
+     case BinOp::kMul: stub = stubs()->GetBinaryMulStub(); break;
+     case BinOp::kDiv: stub = stubs()->GetBinaryDivStub(); break;
      default: emitb(0xcc); break;
     }
 
-    // Call stub on overflow
-    jmp(kOverflow, &lhs_to_heap);
+    // rax and rbx are already on stack
+    // so just call stub
+    if (stub != NULL) Call(stub);
 
-    TagNumber(rax);
-    jmp(kCarry, &lhs_to_heap);
+    bind(&done);
 
-    movq(result(), rax);
-
-    jmp(&done);
+    // Unwind stored rax and rbx
+    addq(rsp, 16);
+    ChangeAlign(-2);
   }
-
-  bind(&lhs_to_heap);
-
-  Pop(rbx);
-  Pop(rax);
-
-  Untag(rax);
-
-  // Translate lhs to heap number
-  xorqd(xmm1, xmm1);
-  cvtsi2sd(xmm1, rax);
-  AllocateNumber(xmm1, rax);
-
-  // Replace on-stack value of rax
-  Push(rax);
-  Push(rbx);
-
-  bind(&rhs_to_heap);
-
-  // Check if rhs was unboxed after all
-  // i.e. we may came from this case: 1 + 3.5
-  IsUnboxed(rbx, &not_unboxed, NULL);
-
-  Pop(rbx);
-
-  Untag(rbx);
-
-  // Translate rhs to heap number
-  xorqd(xmm1, xmm1);
-  cvtsi2sd(xmm1, rbx);
-
-  AllocateNumber(xmm1, rbx);
-
-  // Replace on-stack value of rbx
-  Push(rbx);
-
-  bind(&not_unboxed);
-
-  BaseStub* stub = NULL;
-  switch (op->subtype()) {
-   case BinOp::kAdd: stub = stubs()->GetBinaryAddStub(); break;
-   case BinOp::kSub: stub = stubs()->GetBinarySubStub(); break;
-   case BinOp::kMul: stub = stubs()->GetBinaryMulStub(); break;
-   case BinOp::kDiv: stub = stubs()->GetBinaryDivStub(); break;
-   default: emitb(0xcc); break;
-  }
-
-  // rax and rbx are already on stack
-  // so just call stub
-  if (stub != NULL) Call(stub);
-
-  bind(&done);
-
-  // Unwind stored rax and rbx
-  addq(rsp, 16);
-  ChangeAlign(-2);
 
   Result(rax);
   Restore(rbx);

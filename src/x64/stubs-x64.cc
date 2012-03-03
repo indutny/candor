@@ -96,7 +96,7 @@ void AllocateStub::Generate() {
   {
     Label call(masm());
 
-    Masm::Align a(masm_);
+    Masm::Align a(masm());
     __ Pushad();
 
     // Three arguments: heap, size, top_stack
@@ -127,55 +127,6 @@ void AllocateStub::Generate() {
   __ movq(qtag, scratch);
 
   // Rax will hold resulting pointer
-  __ pop(rbx);
-  GenerateEpilogue(2);
-}
-
-
-void CoerceTypeStub::Generate() {
-  GeneratePrologue();
-  __ subq(rsp, Immediate(8));
-  __ push(rbx);
-
-  // Arguments
-  Operand lhs(rbp, 16);
-  Operand rhs(rbp, 24);
-
-  Label done(masm()), not_number(masm());
-  __ movq(rax, Immediate(0));
-
-  // Get both values
-  __ movq(rbx, lhs);
-  __ movq(rax, rhs);
-
-  // Check if their tags are equal (just return second in that case)
-  Operand qtag_lhs(rbx, 0), qtag_rhs(rax, 0);
-  __ movq(scratch, qtag_lhs);
-  __ cmpb(scratch, qtag_rhs);
-  __ jmp(kEq, &done);
-
-  // If left is number
-  __ cmpb(qtag_lhs, Immediate(Heap::kTagNumber));
-  __ jmp(kNe, &not_number);
-
-  {
-    // TODO: Coerce right to number
-    __ emitb(0xcc);
-  }
-
-  __ jmp(&done);
-
-  __ bind(&not_number);
-
-  {
-    // TODO: Coerce right to string
-    __ emitb(0xcc);
-  }
-
-  __ bind(&done);
-
-  // Rax will hold resulting pointer
-
   __ pop(rbx);
   GenerateEpilogue(2);
 }
@@ -240,7 +191,7 @@ void LookupPropertyStub::Generate() {
 
 void CoerceToBooleanStub::Generate() {
   GeneratePrologue();
-  RuntimeToBooleanCallback to_boolean = &RuntimeToBoolean;
+  RuntimeCoerceCallback to_boolean = &RuntimeToBoolean;
 
   // Arguments
   Operand object(rbp, 16);
@@ -287,10 +238,11 @@ void BinaryOpStub::Generate() {
   Operand lhs(rbp, 24);
   Operand rhs(rbp, 16);
 
-  Label call_runtime(masm()), done(masm());
+  Label call_runtime(masm()), nil_result(masm()), done(masm());
 
   __ movq(rax, lhs);
   __ movq(rbx, rhs);
+
   __ IsHeapObject(Heap::kTagNumber, rax, &call_runtime, NULL);
   __ IsHeapObject(Heap::kTagNumber, rbx, &call_runtime, NULL);
 
@@ -315,8 +267,32 @@ void BinaryOpStub::Generate() {
   __ jmp(&done);
   __ bind(&call_runtime);
 
-  // TODO: Implement me
-  __ emitb(0xcc);
+  RuntimeBinOpCallback cb;
+
+  switch (type()) {
+   case BinOp::kAdd: cb = &RuntimeBinOpAdd; break;
+   default: __ emitb(0xcc); break;
+  }
+
+  {
+    Label call(masm());
+
+    Masm::Align a(masm());
+    __ Pushad();
+
+    Immediate heapref(reinterpret_cast<uint64_t>(masm()->heap()));
+
+    // binop(heap, top_stack, lhs, rhs)
+    __ movq(rdi, heapref);
+    __ movq(rsi, rsp);
+    __ movq(rdx, rax);
+    __ movq(rcx, rbx);
+
+    __ movq(scratch, Immediate(*reinterpret_cast<uint64_t*>(&cb)));
+    __ callq(scratch);
+
+    __ Popad(rax);
+  }
 
   __ bind(&done);
 

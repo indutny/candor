@@ -224,4 +224,46 @@ size_t RuntimeCompare(char* lhs, char* rhs) {
          strncmp(lhs + 24, rhs + 24, lhs_length);
 }
 
+
+char* RuntimeCoerceType(Heap* heap,
+                        char* stack_top,
+                        char* required,
+                        char* expr) {
+  // TODO: Coerce expr to `tag` type
+  return expr;
+}
+
+
+char* RuntimeBinOpAdd(Heap* heap, char* stack_top, char* lhs, char* rhs) {
+  // nil + nil = 0
+  if (lhs == NULL && rhs == NULL) {
+    return HNumber::New(heap, stack_top, static_cast<uint64_t>(0));
+  }
+
+  // nil + any = any, any + nil = any
+  if (lhs == NULL) return rhs;
+  if (rhs == NULL) return lhs;
+
+  // So we surely now that both lhs and rhs are not nils here
+  Heap::HeapTag lhs_tag = HValue::GetTag(lhs);
+  char* coerced_rhs = RuntimeCoerceType(heap, stack_top, lhs, rhs);
+
+  // Just to shut up compiler
+  coerced_rhs = coerced_rhs;
+
+  switch (lhs_tag) {
+    case Heap::kTagString:
+     // TODO: Concatenate strings
+    case Heap::kTagNumber:
+     // TODO: Unbox and add
+     return NULL;
+    case Heap::kTagObject:
+     // object + object = nil
+     return NULL;
+    default:
+     assert(0 && "Unexpected");
+     return NULL;
+  }
+}
+
 } // namespace dotlang
