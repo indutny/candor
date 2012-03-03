@@ -5,6 +5,8 @@ Experimental implementation of DOT language VM.
 **Danger! This whole project is not stable at all, many things are broken and
 may/will change in future**
 
+Note: only x64 is supported now.
+
 ## Language basics
 
 Dot is essentially inspired by the [ECMA-script](http://www.ecmascript.org/),
