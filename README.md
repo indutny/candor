@@ -1,5 +1,19 @@
 # Dot lang
 
+Experimental implementation of DOT language VM.
+
+** Danger! This whole project is not stable at all, many things are broken and
+may/will change in future **
+
+## Language basics
+
+Dot is essentially inspired by the [ECMA-script](http://www.ecmascript.org/),
+but has much less features and complexity (for compiler).
+
+Functions are declared in [dart](http://www.dartlang.org/)-like style, variables
+are block scoped by default (use `scope` keyword for accessing outer-scope
+variables).
+
 ```dot
 // Keywords: nil, return, scope, new, if, else, while, break
 
@@ -38,7 +52,28 @@ a()
 x.a = 1
 ```
 
-## Grammar
+## Status of project
+
+Things that are implemented currently:
+
+* Language lexer and parser
+* Assigning on-stack and context variables
+* Some binary operations and unary `++` and `--` (both prefix and postfix)
+  (No boolean operations so far)
+* Unboxing of heap numbers (partially)
+* Floating point operations (no conversion to small integers for `%` and `&|^`)
+* Function calls, passing arguments and using returned value
+* Stop-the-world copying garbage collector
+* Hash-maps (objects), numeric and string keys
+
+Things to come:
+
+* Finishing binary and unary operations
+* String concatenation
+* See [TODO](https://github.com/indutny/dotlang/blob/master/TODO) for more
+  up-to-date tasks
+
+## Grammar (basics)
 
 ```
 code := statement*
