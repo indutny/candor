@@ -34,6 +34,7 @@ false
 a = 1
 a.b = "abc"
 a.b.c = a
+a[b()][c] = x
 
 // Functions
 a() {
