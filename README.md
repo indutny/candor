@@ -98,6 +98,12 @@ Things to come:
 * See [TODO](https://github.com/indutny/dotlang/blob/master/TODO) for more
   up-to-date tasks
 
+## Contributing
+
+Any bug-fixes or feature implementations are always welcome! Only one
+restriction is applied to the code - it should follow
+[Google C++ Style Guide](http://google-styleguide.googlecode.com/svn/trunk/cppguide.xml).
+
 ## Grammar (basics)
 
 ```
