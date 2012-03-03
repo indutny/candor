@@ -286,6 +286,7 @@ class UnOp : public AstNode {
      default:
       assert(0 && "Unexpected");
     }
+    return kNone;
   }
 
   bool Print(PrintBuffer* p) {

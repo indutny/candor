@@ -283,14 +283,16 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
       RuntimeCollectGarbageCallback gc = &RuntimeCollectGarbage;
       Pushad();
 
-      Align a(this);
+      {
+        Align a(this);
 
-      // RuntimeCollectGarbage(heap, stack_top)
-      movq(rsi, rsp);
-      movq(rdi, Immediate(reinterpret_cast<uint64_t>(heap())));
+        // RuntimeCollectGarbage(heap, stack_top)
+        movq(rsi, rsp);
+        movq(rdi, Immediate(reinterpret_cast<uint64_t>(heap())));
 
-      movq(rax, Immediate(*reinterpret_cast<uint64_t*>(&gc)));
-      Call(rax);
+        movq(rax, Immediate(*reinterpret_cast<uint64_t*>(&gc)));
+        Call(rax);
+      }
 
       Popad(reg_nil);
       movq(result(), Immediate(0));
@@ -872,6 +874,10 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
     return node;
   }
 
+  // lhs and rhs values will be pushed later
+  ChangeAlign(2);
+  Align a(this);
+
   Save(rax);
   Save(rbx);
 
@@ -881,7 +887,6 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
   VisitForValue(op->lhs(), rax);
   VisitForValue(op->rhs(), rbx);
 
-  // Push values to do runtime call later
   push(rax);
   push(rbx);
 
@@ -916,17 +921,13 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
 
     movq(result(), rax);
 
-    // Unwind stored rax and rbx
-    addq(rsp, 16);
-    ChangeAlign(-2);
-
     jmp(&done);
   }
 
   bind(&lhs_to_heap);
 
-  pop(rbx);
-  pop(rax);
+  Pop(rbx);
+  Pop(rax);
 
   Untag(rax);
 
@@ -936,8 +937,8 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
   AllocateNumber(xmm1, rax);
 
   // Replace on-stack value of rax
-  push(rax);
-  push(rbx);
+  Push(rax);
+  Push(rbx);
 
   bind(&rhs_to_heap);
 
@@ -945,7 +946,8 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
   // i.e. we may came from this case: 1 + 3.5
   IsUnboxed(rbx, &not_unboxed, NULL);
 
-  pop(rbx);
+  Pop(rbx);
+
   Untag(rbx);
 
   // Translate rhs to heap number
@@ -955,7 +957,7 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
   AllocateNumber(xmm1, rbx);
 
   // Replace on-stack value of rbx
-  push(rbx);
+  Push(rbx);
 
   bind(&not_unboxed);
 
@@ -968,20 +970,17 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
    default: emitb(0xcc); break;
   }
 
-  // We already have rax and rbx on-stack
-  ChangeAlign(2);
-
   // rax and rbx are already on stack
   // so just call stub
   if (stub != NULL) Call(stub);
-  Result(rax);
+
+  bind(&done);
 
   // Unwind stored rax and rbx
   addq(rsp, 16);
   ChangeAlign(-2);
 
-  bind(&done);
-
+  Result(rax);
   Restore(rbx);
   Restore(rax);
 

@@ -53,15 +53,17 @@ void Masm::AlignCode() {
 }
 
 
-Masm::Align::Align(Masm* masm) : masm_(masm), align_(masm->align_){
+Masm::Align::Align(Masm* masm) : masm_(masm), align_(masm->align_) {
   if (align_ % 2 == 0) return;
   masm_->subq(rsp, (align_ % 2) * 8);
+  masm->align_ += 1;
 }
 
 
 Masm::Align::~Align() {
   if (align_ % 2 == 0) return;
   masm_->addq(rsp, (align_ % 2) * 8);
+  masm_->align_ -= 1;
 }
 
 
@@ -73,6 +75,7 @@ void Masm::Allocate(Heap::HeapTag tag,
     Push(rax);
   }
 
+  // Two arguments
   ChangeAlign(2);
   {
     Align a(this);
@@ -333,7 +336,7 @@ void Masm::Throw(Heap::Error error) {
 
 
 void Masm::Call(Register addr) {
-  while ((offset() & 0xf) != 0xd) {
+  while ((offset() & 0x1) != 0x1) {
     nop();
   }
   callq(addr);
@@ -342,7 +345,7 @@ void Masm::Call(Register addr) {
 
 
 void Masm::Call(Operand& addr) {
-  while ((offset() & 0xf) != 0x9) {
+  while ((offset() & 0x1) != 0x1) {
     nop();
   }
   callq(addr);
