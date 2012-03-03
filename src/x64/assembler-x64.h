@@ -14,15 +14,15 @@ namespace dotlang {
 class Assembler;
 
 struct Register {
-  const int high() {
+  int high() {
     return (code_ >> 3) & 1;
   };
 
-  const int low() {
+  int low() {
     return code_ & 7;
   };
 
-  const int code() {
+  int code() {
     return code_;
   }
 
@@ -57,15 +57,15 @@ const Register scratch = r11;
 const Register root_reg = r10;
 
 struct DoubleRegister {
-  const int high() {
+  int high() {
     return (code_ >> 3) & 1;
   };
 
-  const int low() {
+  int low() {
     return code_ & 7;
   };
 
-  const int code() {
+  int code() {
     return code_;
   }
 
@@ -182,7 +182,7 @@ class RelocationInfo : public ZoneObject {
 
 class Label {
  public:
-  Label(Assembler* a) : pos_(NULL), asm_(a) {
+  Label(Assembler* a) : pos_(0), asm_(a) {
   }
 
  private:

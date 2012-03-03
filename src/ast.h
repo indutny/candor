@@ -146,8 +146,8 @@ class AstNode : public ZoneObject {
            ) &&
 
            (length_ == 0 ||
-           p->PrintValue(value(), length()) &&
-           (children()->length() == 0 || p->Print(" "))) &&
+           (p->PrintValue(value(), length()) &&
+           (children()->length() == 0 || p->Print(" ")))) &&
 
            PrintChildren(p, children()) &&
            p->Print("]");

@@ -203,10 +203,10 @@ Lexer::Token* Lexer::Consume() {
   {
     uint32_t start = offset_;
     while (has(1) &&
-           (get(0) >= 'a' && get(0) <= 'z' ||
-           get(0) >= 'A' && get(0) <= 'Z' ||
-           get(0) >= '0' && get(0) <= '9' ||
-           get(0) == '_' || get(0) == '$')) {
+           ((get(0) >= 'a' && get(0) <= 'z') ||
+           (get(0) >= 'A' && get(0) <= 'Z') ||
+           (get(0) >= '0' && get(0) <= '9') ||
+           (get(0) == '_' || get(0) == '$'))) {
       offset_++;
     }
 

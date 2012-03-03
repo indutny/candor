@@ -726,7 +726,7 @@ AstNode* Fullgen::VisitArrayLiteral(AstNode* node) {
     char keystr[32];
     AstNode* key = new AstNode(AstNode::kProperty);
     key->value(keystr);
-    key->length(snprintf(keystr, sizeof(keystr), "%lld", index));
+    key->length(snprintf(keystr, sizeof(keystr), "%llu", index));
 
     AstNode* member = new AstNode(AstNode::kMember);
     member->children()->Push(new FAstRegister(rax));
@@ -751,7 +751,7 @@ AstNode* Fullgen::VisitArrayLiteral(AstNode* node) {
     char lenstr[32];
     AstNode* value = new AstNode(AstNode::kNumber);
     value->value(lenstr);
-    value->length(snprintf(lenstr, sizeof(lenstr), "%lld", index));
+    value->length(snprintf(lenstr, sizeof(lenstr), "%llu", index));
 
     // arr.length = num
     AstNode* member = new AstNode(AstNode::kMember);
