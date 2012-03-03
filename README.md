@@ -65,6 +65,14 @@ factorial(x) {
 factorial(10)
 ```
 
+## Building
+
+```bash
+git clone git://github.com/indunty/dotlang.git
+cd dotlang
+make ARCH=x64 test
+```
+
 ## Status of project
 
 Things that are implemented currently:
