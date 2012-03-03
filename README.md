@@ -88,7 +88,8 @@ Things that are implemented currently:
 * Some binary operations and unary `++` and `--` (both prefix and postfix)
   (No boolean operations so far)
 * Unboxing of heap numbers (partially)
-* Floating point operations (no conversion to small integers for `%` and `&|^`)
+* Floating point operations (no conversion to small integers for `%` and `&|^`
+  so far)
 * Function calls, passing arguments and using returned value
 * Stop-the-world copying garbage collector
 * Hash-maps (objects), numeric and string keys
