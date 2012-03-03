@@ -104,6 +104,7 @@ Things to come:
 * Incremental GC
 * Usage in multiple-threads (aka isolates)
 * Calling C++/C functions from dotlang
+* Inline caching
 * See [TODO](https://github.com/indutny/dotlang/blob/master/TODO) for more
   up-to-date tasks
 
