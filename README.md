@@ -1,6 +1,7 @@
 # DOT
 
-Experimental implementation of DOT language VM.
+Experimental implementation of DOT language VM. Join #dotlang channel on
+irc.freenode.net to discuss language features.
 
 **Danger! This whole project is not stable at all, many things are broken and
 may/will change in future**
