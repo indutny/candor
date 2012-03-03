@@ -21,6 +21,8 @@ variables).
 
 // Primitives
 nil
+true
+false
 1
 'abc'
 "abc"
