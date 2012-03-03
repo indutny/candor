@@ -141,11 +141,11 @@ void Masm::AllocateFunction(Register addr, Register result) {
 }
 
 
-void Masm::AllocateNumber(Register value, Register result) {
+void Masm::AllocateNumber(DoubleRegister value, Register result) {
   Allocate(Heap::kTagNumber, reg_nil, 8, result);
 
   Operand qvalue(result, 8);
-  movq(qvalue, value);
+  movqd(qvalue, value);
 }
 
 
@@ -285,10 +285,10 @@ void Masm::IsNil(Register reference, Label* not_nil, Label* is_nil) {
 }
 
 
-void Masm::IsUnboxed(Register reference, Label* not_unboxed, Label* boxed) {
+void Masm::IsUnboxed(Register reference, Label* not_unboxed, Label* unboxed) {
   testb(reference, Immediate(0x01));
   if (not_unboxed != NULL) jmp(kEq, not_unboxed);
-  if (boxed != NULL) jmp(kNe, boxed);
+  if (unboxed != NULL) jmp(kNe, unboxed);
 }
 
 

@@ -28,9 +28,16 @@ TEST_START("numbers test")
   })
 
   // Conversion to heap
-  /*
   FUN_TEST("return 5 + 0.5", {
     assert(HValue::As<HNumber>(result)->value() == 5.5);
   })
-  */
+
+  FUN_TEST("return 0.5 + 5", {
+    assert(HValue::As<HNumber>(result)->value() == 5.5);
+  })
+
+  // Conversion on overflow
+  FUN_TEST("return 4611686018427387904 * 1000000", {
+    assert(HValue::As<HNumber>(result)->value() == 4611686018427387904000000.0);
+  })
 TEST_END("numbers test")

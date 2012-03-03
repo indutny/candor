@@ -75,6 +75,11 @@ inline void Assembler::emit_rexw(Register dst, DoubleRegister src) {
 }
 
 
+inline void Assembler::emit_rexw(DoubleRegister dst, Operand& src) {
+  emitb(0x48 | dst.high() << 2 | src.base().high());
+}
+
+
 inline void Assembler::emit_modrm(Register dst) {
   emitb(0xC0 | dst.low() << 3);
 }
@@ -127,6 +132,12 @@ inline void Assembler::emit_modrm(Register dst, DoubleRegister src) {
 
 inline void Assembler::emit_modrm(DoubleRegister dst, DoubleRegister src) {
   emitb(0xC0 | dst.low() << 3 | src.low());
+}
+
+
+inline void Assembler::emit_modrm(DoubleRegister dst, Operand& src) {
+  emitb(0x80 | dst.low() << 3 | src.base().low());
+  emitl(src.disp());
 }
 
 

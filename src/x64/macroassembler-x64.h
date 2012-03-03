@@ -47,7 +47,7 @@ class Masm : public Assembler {
   void AllocateFunction(Register addr, Register result);
 
   // Allocate heap numbers
-  void AllocateNumber(Register value, Register result);
+  void AllocateNumber(DoubleRegister value, Register result);
 
   // Allocate boolean value, `value` should be either 0 or 1
   void AllocateBoolean(Register value, Register result);
@@ -65,7 +65,7 @@ class Masm : public Assembler {
   void FillStackSlots(uint32_t slots);
 
   void IsNil(Register reference, Label* not_nil, Label* is_nil);
-  void IsUnboxed(Register reference, Label* not_unboxed, Label* boxed);
+  void IsUnboxed(Register reference, Label* not_unboxed, Label* unboxed);
 
   // Checks if object has specific type
   void IsHeapObject(Heap::HeapTag tag,

@@ -276,10 +276,13 @@ class Assembler {
   // Floating point instructions
   void movqd(DoubleRegister dst, Register src);
   void movqd(Register dst, DoubleRegister src);
+  void movqd(Operand& dst, DoubleRegister src);
   void addqd(DoubleRegister dst, DoubleRegister src);
   void subqd(DoubleRegister dst, DoubleRegister src);
   void mulqd(DoubleRegister dst, DoubleRegister src);
   void divqd(DoubleRegister dst, DoubleRegister src);
+  void xorqd(DoubleRegister dst, DoubleRegister src);
+  void cvtsi2sd(DoubleRegister dst, Register src);
 
   // Routines
   inline void emit_rex_if_high(Register src);
@@ -290,6 +293,7 @@ class Assembler {
   inline void emit_rexw(Operand& dst, Register src);
   inline void emit_rexw(DoubleRegister dst, Register src);
   inline void emit_rexw(Register dst, DoubleRegister src);
+  inline void emit_rexw(DoubleRegister dst, Operand& src);
 
   inline void emit_modrm(Register dst);
   inline void emit_modrm(Operand &dst);
@@ -300,6 +304,7 @@ class Assembler {
   inline void emit_modrm(DoubleRegister dst, Register src);
   inline void emit_modrm(Register dst, DoubleRegister src);
   inline void emit_modrm(DoubleRegister dst, DoubleRegister src);
+  inline void emit_modrm(DoubleRegister dst, Operand& src);
 
   inline void emitb(uint8_t v);
   inline void emitw(uint16_t v);

@@ -875,7 +875,8 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
   Save(rax);
   Save(rbx);
 
-  Label not_unboxed(this), done(this);
+  Label not_unboxed(this);
+  Label lhs_to_heap(this), rhs_to_heap(this), done(this);
 
   VisitForValue(op->lhs(), rax);
   VisitForValue(op->rhs(), rbx);
@@ -886,8 +887,8 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
   IsNil(rax, NULL, &not_unboxed);
   IsNil(rbx, NULL, &not_unboxed);
 
-  IsUnboxed(rax, &not_unboxed, NULL);
-  IsUnboxed(rbx, &not_unboxed, NULL);
+  IsUnboxed(rax, &rhs_to_heap, NULL);
+  IsUnboxed(rbx, &lhs_to_heap, NULL);
 
   {
     // Number (+) Number
@@ -908,7 +909,7 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
 
     // Call stub on overflow
     // TODO: Translate to heap numbers first
-    jmp(kOverflow, &not_unboxed);
+    jmp(kOverflow, &lhs_to_heap);
 
     TagNumber(rax);
     movq(result(), rax);
@@ -919,6 +920,38 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
 
     jmp(&done);
   }
+
+  bind(&lhs_to_heap);
+
+  Pop(rbx);
+  Pop(rax);
+
+  Untag(rax);
+
+  // Translate lhs to heap number
+  xorqd(xmm1, xmm1);
+  cvtsi2sd(xmm1, rax);
+  AllocateNumber(xmm1, rax);
+
+  Push(rax);
+  Push(rbx);
+
+  bind(&rhs_to_heap);
+
+  // Check if rhs was unboxed after all
+  // i.e. we may came from this case: 1 + 3.5
+  IsUnboxed(rbx, &not_unboxed, NULL);
+
+  Pop(rbx);
+  Untag(rbx);
+
+  // Translate rhs to heap number
+  xorqd(xmm1, xmm1);
+  cvtsi2sd(xmm1, rbx);
+
+  AllocateNumber(xmm1, rbx);
+
+  Push(rbx);
 
   bind(&not_unboxed);
 

@@ -310,8 +310,7 @@ void BinaryOpStub::Generate() {
    default: __ emitb(0xcc); break;
   }
 
-  __ movqd(rbx, xmm1);
-  __ AllocateNumber(rbx, rax);
+  __ AllocateNumber(xmm1, rax);
 
   __ jmp(&done);
   __ bind(&call_runtime);

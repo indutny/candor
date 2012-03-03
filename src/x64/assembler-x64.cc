@@ -398,6 +398,15 @@ void Assembler::movqd(Register dst, DoubleRegister src) {
 }
 
 
+void Assembler::movqd(Operand& dst, DoubleRegister src) {
+  emitb(0x66);
+  emit_rexw(src, dst);
+  emitb(0x0F);
+  emitb(0x7E);
+  emit_modrm(src, dst);
+}
+
+
 void Assembler::addqd(DoubleRegister dst, DoubleRegister src) {
   emitb(0xF2);
   emitb(0x0F);
@@ -426,6 +435,23 @@ void Assembler::divqd(DoubleRegister dst, DoubleRegister src) {
   emitb(0xF2);
   emitb(0x0F);
   emitb(0x5E);
+  emit_modrm(dst, src);
+}
+
+
+void Assembler::xorqd(DoubleRegister dst, DoubleRegister src) {
+  emitb(0x66);
+  emitb(0x0F);
+  emitb(0x57);
+  emit_modrm(dst, src);
+}
+
+
+void Assembler::cvtsi2sd(DoubleRegister dst, Register src) {
+  emitb(0xF2);
+  emit_rexw(dst, src);
+  emitb(0x0F);
+  emitb(0x2A);
   emit_modrm(dst, src);
 }
 
