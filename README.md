@@ -65,6 +65,10 @@ factorial(x) {
 factorial(10)
 ```
 
+As you can see DOT's syntax is very close to the ecmascript's one. But there're
+no semicolons, statements are separated by newline symbols (whitespace is
+ignored).
+
 ## Building
 
 ```bash
