@@ -54,6 +54,17 @@ a()
 x.a = 1
 ```
 
+## Example
+
+```dot
+factorial(x) {
+  if (x == 1) return 1
+  return x * factorial(x - 1)
+}
+
+factorial(10)
+```
+
 ## Status of project
 
 Things that are implemented currently:
