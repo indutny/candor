@@ -3,6 +3,8 @@
 * String concatenation
 * Functions as objects
 * Calling C++/C functions from dotlang
+* Break statement
+* Better parser/lexer errors
 * On-stack replacement and profile-based optimizations
 * Incremental GC
 * Usage in multiple-threads (aka isolates)

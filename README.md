@@ -105,6 +105,8 @@ Things to come:
 * Usage in multiple-threads (aka isolates)
 * Calling C++/C functions from dotlang
 * Inline caching
+* Break statement
+* Better parser/lexer errors
 * See [TODO](https://github.com/indutny/dotlang/blob/master/TODO) for more
   up-to-date tasks
 
