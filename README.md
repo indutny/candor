@@ -1,4 +1,4 @@
-# Dot lang
+# DOT
 
 Experimental implementation of DOT language VM.
 
