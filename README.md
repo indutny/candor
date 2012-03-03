@@ -1,9 +1,10 @@
 # Dot lang
 
 ```dot
-// Keywords: return, scope, new, if, else, while, break
+// Keywords: nil, return, scope, new, if, else, while, break
 
 // Primitives
+nil
 1
 'abc'
 "abc"
@@ -26,6 +27,8 @@ a()
   scope a // use this to interact with variables from outer blocks
           // NOTE: the closest one will be choosed
 }
+
+// Not implemented yet
 
 // Expr blocks
 ({
