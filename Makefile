@@ -26,6 +26,7 @@ OBJS += src/lexer.o
 OBJS += src/visitor.o
 OBJS += src/parser.o
 OBJS += src/scope.o
+OBJS += src/cpu.o
 OBJS += src/compiler.o
 OBJS += src/gc.o
 OBJS += src/heap.o

@@ -58,6 +58,12 @@ void Assembler::nop() {
 }
 
 
+void Assembler::cpuid() {
+  emitb(0x0F);
+  emitb(0xA2);
+}
+
+
 void Assembler::push(Register src) {
   emit_rex_if_high(src);
   emitb(0x50 | src.low());
@@ -142,6 +148,14 @@ void Assembler::testb(Register dst, Immediate src) {
   emitb(0xF6);
   emit_modrm(dst, 0);
   emitb(src.value());
+}
+
+
+void Assembler::testl(Register dst, Immediate src) {
+  emit_rexw(dst);
+  emitb(0xF7);
+  emit_modrm(dst, 0);
+  emitl(src.value());
 }
 
 

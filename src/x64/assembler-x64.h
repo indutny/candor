@@ -231,6 +231,7 @@ class Assembler {
 
   // Instructions
   void nop();
+  void cpuid();
 
   void push(Register src);
   void push(Immediate imm);
@@ -249,6 +250,7 @@ class Assembler {
   void cmpb(Operand& dst, Immediate src);
 
   void testb(Register dst, Immediate src);
+  void testl(Register dst, Immediate src);
 
   void movq(Register dst, Register src);
   void movq(Register dst, Operand& src);

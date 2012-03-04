@@ -1,4 +1,5 @@
 #include "stubs.h"
+#include "cpu.h" // CPU
 #include "ast.h" // BinOp
 #include "macroassembler-x64.h" // Masm
 #include "runtime.h"
@@ -282,10 +283,14 @@ void BinaryOpStub::Generate() {
 
     __ AllocateNumber(xmm1, rax);
   } else if (BinOp::is_binary(type())) {
-    __ roundsd(fscratch, xmm1, kCeil);
-    __ cvtsd2si(rax, fscratch);
-    __ roundsd(fscratch, xmm2, kCeil);
-    __ cvtsd2si(rbx, fscratch);
+    if (CPU::HasSSE4_1()) {
+      __ roundsd(fscratch, xmm1, kCeil);
+      __ cvtsd2si(rax, fscratch);
+      __ roundsd(fscratch, xmm2, kCeil);
+      __ cvtsd2si(rbx, fscratch);
+    } else {
+      abort();
+    }
 
     switch (type()) {
      case BinOp::kBAnd: __ andq(rax, rbx); break;
