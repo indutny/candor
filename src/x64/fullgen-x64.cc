@@ -831,9 +831,10 @@ AstNode* Fullgen::VisitUnOp(AstNode* node) {
     Operand result_slot(result(), 0);
     VisitForSlot(op->lhs(), &result_slot, result());
 
-    movq(scratch, result_slot);
+    // Get value
+    movq(result(), result_slot);
 
-    Push(scratch);
+    Push(result());
     Save(rax);
     Save(rbx);
 
