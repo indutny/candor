@@ -161,7 +161,8 @@ expr := binop | prefix | postfix |
 
 ## Credits
 
-Special thanks to @creationix for suggesting the name of this project!
+Special thanks to [creationix](https://github.com/creationix) for suggesting the
+name of this project!
 
 #### LICENSE
 
