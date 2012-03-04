@@ -88,19 +88,16 @@ Things that are implemented currently:
 
 * Language lexer and parser
 * Assigning on-stack and context variables
-* Some binary operations and unary `++` and `--` (both prefix and postfix)
-  (No boolean operations so far)
-* Unboxing of heap numbers (partially)
-* Floating point operations (no conversion to small integers for `%` and `&|^`
-  so far)
+* Binary and unary operations
+* Unboxing of heap numbers
+* Floating point operations
 * Function calls, passing arguments and using returned value
 * Stop-the-world copying garbage collector
 * Hash-maps (objects), numeric and string keys
+* String concatenation
 
 Things to come:
 
-* Finishing binary and unary operations
-* String concatenation
 * Functions as objects
 * On-stack replacement and profile-based optimizations
 * Incremental GC
