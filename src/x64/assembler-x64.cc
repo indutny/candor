@@ -458,11 +458,11 @@ void Assembler::cvtsi2sd(DoubleRegister dst, Register src) {
 }
 
 
-void Assembler::cvtsd2si(Register dst, DoubleRegister src) {
+void Assembler::cvttsd2si(Register dst, DoubleRegister src) {
   emitb(0xF2);
   emit_rexw(dst, src);
   emitb(0x0F);
-  emitb(0x2D);
+  emitb(0x2C);
   emit_modrm(dst, src);
 }
 

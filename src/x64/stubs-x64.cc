@@ -283,14 +283,9 @@ void BinaryOpStub::Generate() {
 
     __ AllocateNumber(xmm1, rax);
   } else if (BinOp::is_binary(type())) {
-    if (CPU::HasSSE4_1()) {
-      __ roundsd(fscratch, xmm1, kCeil);
-      __ cvtsd2si(rax, fscratch);
-      __ roundsd(fscratch, xmm2, kCeil);
-      __ cvtsd2si(rbx, fscratch);
-    } else {
-      abort();
-    }
+    // Truncate lhs and rhs first
+    __ cvttsd2si(rax, xmm1);
+    __ cvttsd2si(rbx, xmm2);
 
     switch (type()) {
      case BinOp::kBAnd: __ andq(rax, rbx); break;

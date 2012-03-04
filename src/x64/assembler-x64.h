@@ -212,7 +212,10 @@ enum Condition {
 };
 
 enum RoundMode {
-  kCeil = 0x01
+  kRoundNearest = 0x00,
+  kRoundDown    = 0x01,
+  kRoundUp      = 0x02,
+  kRoundToward  = 0x03
 };
 
 class Assembler {
@@ -294,6 +297,7 @@ class Assembler {
   void xorqd(DoubleRegister dst, DoubleRegister src);
   void cvtsi2sd(DoubleRegister dst, Register src);
   void cvtsd2si(Register dst, DoubleRegister src);
+  void cvttsd2si(Register dst, DoubleRegister src);
   void roundsd(DoubleRegister dst, DoubleRegister src, RoundMode mode);
   void ucomisd(DoubleRegister dst, DoubleRegister src);
 
