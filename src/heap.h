@@ -209,8 +209,8 @@ class HNumber : public HValue {
   static char* New(Heap* heap, char* stack_top, uint64_t value);
   static char* New(Heap* heap, char* stack_top, double value);
 
-  static uint64_t Untag(uint64_t value);
-  static uint64_t Tag(uint64_t value);
+  static int64_t Untag(int64_t value);
+  static int64_t Tag(int64_t value);
 
   inline double value() { return value_; }
 
@@ -261,6 +261,8 @@ class HString : public HValue {
   inline static uint32_t Hash(char* addr) {
     return *reinterpret_cast<uint32_t*>(addr + 8);
   }
+
+  inline static char* Value(char* addr) { return addr + 24; }
 
   inline static uint32_t Length(char* addr) {
     return *reinterpret_cast<uint32_t*>(addr + 16);

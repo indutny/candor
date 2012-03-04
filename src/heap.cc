@@ -271,12 +271,12 @@ char* HNumber::New(Heap* heap, char* stack_top, double value) {
 }
 
 
-uint64_t HNumber::Untag(uint64_t value) {
+int64_t HNumber::Untag(int64_t value) {
   return value >> 1;
 }
 
 
-uint64_t HNumber::Tag(uint64_t value) {
+int64_t HNumber::Tag(int64_t value) {
   return (value << 1) | 1;
 }
 

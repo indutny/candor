@@ -1,15 +1,13 @@
 #ifndef _SRC_RUNTIME_H_
 #define _SRC_RUNTIME_H_
 
+#include "heap.h" // Heap, Heap::HeapTag
 #include "ast.h" // BinOp
 
 #include <stdint.h> // uint32_t
 #include <sys/types.h> // size_t
 
 namespace candor {
-
-// Forward declarations
-class Heap;
 
 // Wrapper for heap()->new_space()->Allocate()
 typedef char* (*RuntimeAllocateCallback)(Heap* heap,
@@ -51,11 +49,11 @@ char* RuntimeToBoolean(Heap* heap, char* stack_top, char* value);
 typedef size_t (*RuntimeCompareCallback)(char* lhs, char* rhs);
 size_t RuntimeCompare(char* lhs, char* rhs);
 
-void RuntimeCoerceType(Heap* heap,
-                       char* stack_top,
-                       BinOp::BinOpType type,
-                       char* &lhs,
-                       char* &rhs);
+Heap::HeapTag RuntimeCoerceType(Heap* heap,
+                                char* stack_top,
+                                BinOp::BinOpType type,
+                                char* lhs,
+                                char* &rhs);
 
 typedef char* (*RuntimeBinOpCallback)(Heap* heap,
                                       char* stack_top,

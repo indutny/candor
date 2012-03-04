@@ -254,15 +254,45 @@ size_t RuntimeCompare(char* lhs, char* rhs) {
 
   return lhs_length < rhs_length ? -1 :
          lhs_length > rhs_length ? 1 :
-         strncmp(lhs + 24, rhs + 24, lhs_length);
+         strncmp(HString::Value(lhs), HString::Value(rhs), lhs_length);
 }
 
 
-void RuntimeCoerceType(Heap* heap,
-                        char* stack_top,
-                        BinOp::BinOpType type,
-                        char* &lhs,
-                        char* &rhs) {
+Heap::HeapTag RuntimeCoerceType(Heap* heap,
+                                char* stack_top,
+                                BinOp::BinOpType type,
+                                char* lhs,
+                                char* &rhs) {
+  Heap::HeapTag lhs_tag = HValue::GetTag(lhs);
+  Heap::HeapTag rhs_tag = HValue::GetTag(rhs);
+
+  // Fast case, values have same type
+  if (lhs_tag == rhs_tag) return lhs_tag;
+
+  switch (lhs_tag) {
+   case Heap::kTagString:
+    rhs = RuntimeToString(heap, stack_top, rhs);
+    break;
+   case Heap::kTagBoolean:
+    rhs = RuntimeToBoolean(heap, stack_top, rhs);
+    break;
+   case Heap::kTagNil:
+    rhs = NULL;
+    break;
+   case Heap::kTagFunction:
+   case Heap::kTagObject:
+    if (!BinOp::is_math(type) && !BinOp::is_binary(type)) {
+      rhs = RuntimeToString(heap, stack_top, rhs);
+      break;
+    }
+   case Heap::kTagNumber:
+    rhs = RuntimeToNumber(heap, stack_top, rhs);
+    break;
+   default:
+    assert(0 && "Unexpected");
+  }
+
+  return lhs_tag;
 }
 
 
@@ -285,13 +315,11 @@ char* RuntimeBinOp(Heap* heap, char* stack_top, char* lhs, char* rhs) {
 
   // Equality operations
   if (BinOp::is_equality(type)) {
-    // nil == expr, expr == nil
-    if (lhs == NULL || rhs == NULL) {
-      return HBoolean::New(heap, stack_top, false);
-    }
+    Heap::HeapTag lhs_tag;
 
-    Heap::HeapTag lhs_tag = HValue::GetTag(lhs);
+    // nil == expr, expr == nil
     if (BinOp::is_strict_eq(type)) {
+      lhs_tag = HValue::GetTag(lhs);
       Heap::HeapTag rhs_tag = HValue::GetTag(rhs);
 
       // When strictly comparing - tags should be equal
@@ -299,18 +327,50 @@ char* RuntimeBinOp(Heap* heap, char* stack_top, char* lhs, char* rhs) {
         return HBoolean::New(heap, stack_top, BinOp::is_negative_eq(type));
       }
     } else {
-      RuntimeCoerceType(heap, stack_top, type, lhs, rhs);
+      lhs_tag = RuntimeCoerceType(heap, stack_top, type, lhs, rhs);
     }
 
+    bool result = false;
     switch (lhs_tag) {
      case Heap::kTagString:
       // Compare strings
-      abort();
+      result = RuntimeCompare(lhs, rhs) == 0;
       break;
      case Heap::kTagObject:
       // object != object
-      return HBoolean::New(heap, stack_top, false);
+      result = false;
+      break;
+     case Heap::kTagFunction:
+      result = lhs == rhs;
+      break;
+     case Heap::kTagNumber:
+      if (HValue::IsUnboxed(lhs)) {
+        int64_t lnum = HNumber::Untag(reinterpret_cast<int64_t>(lhs));
+        if (HValue::IsUnboxed(rhs)) {
+          result = lnum == HNumber::Untag(reinterpret_cast<int64_t>(rhs));
+        } else {
+          result = lnum == HNumber::DoubleValue(rhs);
+        }
+      } else {
+        double lnum = HNumber::DoubleValue(lhs);
+        if (HValue::IsUnboxed(rhs)) {
+          result = lnum == HNumber::Untag(reinterpret_cast<int64_t>(rhs));
+        } else {
+          result = lnum == HNumber::DoubleValue(rhs);
+        }
+      }
+      break;
+     case Heap::kTagBoolean:
+      result = HBoolean::Value(lhs) == HBoolean::Value(rhs);
+      break;
+     default:
+      assert(0 && "Unexpected");
+      break;
     }
+
+    if (BinOp::is_negative_eq(type)) result = !result;
+
+    return HBoolean::New(heap, stack_top, result);
   }
 
   return NULL;
