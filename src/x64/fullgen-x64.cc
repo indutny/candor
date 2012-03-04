@@ -790,7 +790,6 @@ AstNode* Fullgen::VisitReturn(AstNode* node) {
 
 AstNode* Fullgen::VisitUnOp(AstNode* node) {
   UnOp* op = UnOp::Cast(node);
-  Label done(this);
 
   if (visiting_for_slot()) {
     Throw(Heap::kErrorIncorrectLhs);
@@ -853,17 +852,28 @@ AstNode* Fullgen::VisitUnOp(AstNode* node) {
     Restore(rax);
     Pop(result());
 
-    return node;
+  } else if (op->subtype() == UnOp::kPlus || op->subtype() == UnOp::kMinus) {
+    // +a = 0 + a
+    // -a = 0 - a
+
+    AstNode* zero = new AstNode(AstNode::kNumber);
+    zero->value("0");
+    zero->length(1);
+
+    AstNode* wrap = new BinOp(
+        op->subtype() == UnOp::kPlus ? BinOp::kAdd : BinOp::kSub,
+        zero,
+        op->lhs());
+
+    VisitForValue(wrap, result());
+
+  } else if (op->subtype() == UnOp::kNot) {
+    // TODO: Implement me
+    emitb(0xcc);
+  } else {
+    assert(0 && "Unexpected");
   }
 
-  // For `nil` any unop will return `nil`
-  VisitForValue(op->lhs(), result());
-  IsNil(result(), NULL, &done);
-
-  // TODO: Coerce to expected type and perform operation
-  emitb(0xcc);
-
-  bind(&done);
   return node;
 }
 

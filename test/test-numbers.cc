@@ -6,6 +6,14 @@ TEST_START("numbers test")
     assert(HValue::As<HNumber>(result)->value() == 1.2345678);
   })
 
+  FUN_TEST("return +1.2345678", {
+    assert(HValue::As<HNumber>(result)->value() == 1.2345678);
+  })
+
+  FUN_TEST("return -1.2345678", {
+    assert(HValue::As<HNumber>(result)->value() == -1.2345678);
+  })
+
   FUN_TEST("return 1.5 + 1.5", {
     assert(HValue::As<HNumber>(result)->value() == 3);
   })
