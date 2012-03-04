@@ -2,6 +2,7 @@
 #define _SRC_RUNTIME_H_
 
 #include "heap.h" // Heap, Heap::HeapTag
+#include "heap-inl.h"
 #include "ast.h" // BinOp
 
 #include <stdint.h> // uint32_t

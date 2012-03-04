@@ -3,6 +3,7 @@
 
 #include <candor.h>
 #include <heap.h>
+#include <heap-inl.h>
 #include <zone.h>
 
 #include <stdio.h>

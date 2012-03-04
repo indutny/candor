@@ -1,4 +1,5 @@
 #include "heap.h"
+#include "heap-inl.h"
 
 #include <stdint.h> // uint32_t
 #include <sys/types.h> // off_t
@@ -88,21 +89,6 @@ char* Heap::AllocateTagged(HeapTag tag, uint32_t bytes, char* stack_top) {
 }
 
 
-Heap::HeapTag HValue::GetTag(char* addr) {
-  if (addr == NULL) return Heap::kTagNil;
-
-  if (IsUnboxed(addr)) {
-    return Heap::kTagNumber;
-  }
-  return static_cast<Heap::HeapTag>(*reinterpret_cast<uint8_t*>(addr));
-}
-
-
-bool HValue::IsUnboxed(char* addr) {
-  return (reinterpret_cast<off_t>(addr) & 0x01) == 0x01;
-}
-
-
 HValue* HValue::CopyTo(Space* space) {
   uint32_t size = 8;
   switch (tag()) {
@@ -138,31 +124,6 @@ HValue* HValue::CopyTo(Space* space) {
   memcpy(result, addr(), size);
 
   return HValue::Cast(result);
-}
-
-
-bool HValue::IsGCMarked() {
-  if (IsUnboxed(addr())) return false;
-  return (*reinterpret_cast<uint64_t*>(addr()) & 0x80000000) == 0x80000000;
-}
-
-
-char* HValue::GetGCMark() {
-  assert(IsGCMarked());
-  return *reinterpret_cast<char**>(addr() + 8);
-}
-
-
-void HValue::SetGCMark(char* new_addr) {
-  *reinterpret_cast<uint64_t*>(addr()) |= 0x80000000;
-  *reinterpret_cast<char**>(addr() + 8) = new_addr;
-}
-
-
-void HValue::ResetGCMark() {
-  if (IsGCMarked()) {
-    *reinterpret_cast<uint64_t*>(addr()) ^= 0x80000000;
-  }
 }
 
 
@@ -214,16 +175,6 @@ char* HNumber::New(Heap* heap, char* stack_top, double value) {
   char* result = heap->AllocateTagged(Heap::kTagNumber, 8, stack_top);
   *reinterpret_cast<double*>(result + 8) = value;
   return result;
-}
-
-
-int64_t HNumber::Untag(int64_t value) {
-  return value >> 1;
-}
-
-
-int64_t HNumber::Tag(int64_t value) {
-  return (value << 1) | 1;
 }
 
 

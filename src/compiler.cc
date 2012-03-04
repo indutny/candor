@@ -1,6 +1,7 @@
 #include "compiler.h"
 #include "parser.h"
 #include "heap.h"
+#include "heap-inl.h"
 #include "fullgen.h"
 #include "utils.h" // GetPageSize
 

@@ -1,5 +1,6 @@
 #include "runtime.h"
 #include "heap.h" // Heap
+#include "heap-inl.h"
 #include "utils.h" // ComputeHash, etc
 
 #include <stdint.h> // uint32_t

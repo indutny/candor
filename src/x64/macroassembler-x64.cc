@@ -1,5 +1,9 @@
 #include "macroassembler-x64.h"
 #include "macroassembler-x64-inl.h"
+
+#include "heap.h" // HeapValue
+#include "heap-inl.h"
+
 #include "stubs.h"
 #include "utils.h" // ComputeHash
 

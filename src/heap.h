@@ -150,14 +150,13 @@ class HValue {
 
   HValue* CopyTo(Space* space);
 
-  bool IsGCMarked();
-  char* GetGCMark();
+  inline bool IsGCMarked();
+  inline char* GetGCMark();
+  inline void SetGCMark(char* new_addr);
+  inline void ResetGCMark();
 
-  void SetGCMark(char* new_addr);
-  void ResetGCMark();
-
-  static Heap::HeapTag GetTag(char* addr);
-  static bool IsUnboxed(char* addr);
+  static inline Heap::HeapTag GetTag(char* addr);
+  static inline bool IsUnboxed(char* addr);
 
   inline Heap::HeapTag tag() { return GetTag(addr()); }
   inline char* addr() { return reinterpret_cast<char*>(this); }
@@ -189,26 +188,12 @@ class HNumber : public HValue {
   static char* New(Heap* heap, char* stack_top, int64_t value);
   static char* New(Heap* heap, char* stack_top, double value);
 
-  static int64_t Untag(int64_t value);
-  static int64_t Tag(int64_t value);
+  static inline int64_t Untag(int64_t value);
+  static inline int64_t Tag(int64_t value);
 
   inline double value() { return DoubleValue(addr()); }
-
-  static inline int64_t IntegralValue(char* addr) {
-    if (IsUnboxed(addr)) {
-      return Untag(reinterpret_cast<int64_t>(addr));
-    } else {
-      return *reinterpret_cast<double*>(addr + 8);
-    }
-  }
-
-  static inline double DoubleValue(char* addr) {
-    if (IsUnboxed(addr)) {
-      return Untag(reinterpret_cast<int64_t>(addr));
-    } else {
-      return *reinterpret_cast<double*>(addr + 8);
-    }
-  }
+  static inline int64_t IntegralValue(char* addr);
+  static inline double DoubleValue(char* addr);
 
   static const Heap::HeapTag class_tag = Heap::kTagNumber;
 };

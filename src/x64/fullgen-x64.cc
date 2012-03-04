@@ -1,6 +1,7 @@
 #include "macroassembler-x64.h"
 #include "fullgen.h"
 #include "heap.h" // Heap
+#include "heap-inl.h"
 #include "ast.h" // AstNode
 #include "zone.h" // ZoneObject
 #include "stubs.h" // Stubs

@@ -5,6 +5,7 @@
 #include "assembler-x64-inl.h"
 #include "ast.h" // AstNode
 #include "heap.h" // HeapValue
+#include "heap-inl.h"
 
 namespace candor {
 

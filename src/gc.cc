@@ -1,5 +1,6 @@
 #include "gc.h"
 #include "heap.h"
+#include "heap-inl.h"
 
 #include <sys/types.h> // off_t
 #include <assert.h> // assert
