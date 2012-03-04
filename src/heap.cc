@@ -2,6 +2,7 @@
 #include "runtime.h" // RuntimeCompare
 
 #include <stdint.h> // uint32_t
+#include <sys/types.h> // off_t
 #include <stdlib.h> // NULL
 #include <string.h> // memcpy
 #include <zone.h> // Zone::Allocate
@@ -99,7 +100,7 @@ Heap::HeapTag HValue::GetTag(char* addr) {
 
 
 bool HValue::IsUnboxed(char* addr) {
-  return (reinterpret_cast<uint64_t>(addr) & 0x01) == 0x01;
+  return (reinterpret_cast<off_t>(addr) & 0x01) == 0x01;
 }
 
 
