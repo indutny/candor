@@ -1,6 +1,8 @@
 #ifndef _SRC_RUNTIME_H_
 #define _SRC_RUNTIME_H_
 
+#include "ast.h" // BinOp
+
 #include <stdint.h> // uint32_t
 #include <sys/types.h> // size_t
 
@@ -58,7 +60,8 @@ typedef char* (*RuntimeBinOpCallback)(Heap* heap,
                                       char* stack_top,
                                       char* lhs,
                                       char* rhs);
-char* RuntimeBinOpAdd(Heap* heap, char* stack_top, char* lhs, char* rhs);
+template <BinOp::BinOpType type>
+char* RuntimeBinOp(Heap* heap, char* stack_top, char* lhs, char* rhs);
 
 } // namespace candor
 

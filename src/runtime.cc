@@ -10,6 +10,37 @@
 
 namespace candor {
 
+// Declare all template function variants
+#define BINARY_SUB_TYPES(V)\
+    V(Add)\
+    V(Sub)\
+    V(Mul)\
+    V(Div)\
+    V(BAnd)\
+    V(BOr)\
+    V(BXor)\
+    V(Eq)\
+    V(StrictEq)\
+    V(Ne)\
+    V(StrictNe)\
+    V(Lt)\
+    V(Gt)\
+    V(Le)\
+    V(Ge)\
+    V(LOr)\
+    V(LAnd)
+
+#define BINARY_OP_TEMPLATE(V)\
+    template char* RuntimeBinOp<BinOp::k##V>(Heap* heap,\
+                                             char* stack_top,\
+                                             char* lhs,\
+                                             char* rhs);
+
+BINARY_SUB_TYPES(BINARY_OP_TEMPLATE)
+
+#undef BINARY_OP_TEMPLATE
+#undef BINARY_SUB_TYPES
+
 char* RuntimeAllocate(Heap* heap,
                       uint32_t bytes,
                       char* stack_top) {
@@ -241,7 +272,8 @@ char* RuntimeCoerceType(Heap* heap,
 }
 
 
-char* RuntimeBinOpAdd(Heap* heap, char* stack_top, char* lhs, char* rhs) {
+template <BinOp::BinOpType type>
+char* RuntimeBinOp(Heap* heap, char* stack_top, char* lhs, char* rhs) {
   // nil + nil = 0
   if (lhs == NULL && rhs == NULL) {
     return HNumber::New(heap, stack_top, static_cast<uint64_t>(0));

@@ -236,8 +236,6 @@ void CoerceToBooleanStub::Generate() {
 BINARY_SUB_TYPES(BINARY_STUB_GENERATE)
 #undef BINARY_STUB_GENERATE
 
-#undef BINARY_SUB_TYPES
-
 
 void BinaryOpStub::Generate() {
   GeneratePrologue();
@@ -320,10 +318,14 @@ void BinaryOpStub::Generate() {
 
   RuntimeBinOpCallback cb;
 
+#define BINARY_ENUM_CASES(V)\
+    case BinOp::k##V: cb = &RuntimeBinOp<BinOp::k##V>; break;
+
   switch (type()) {
-   case BinOp::kAdd: cb = &RuntimeBinOpAdd; break;
-   default: __ emitb(0xcc); break;
+   BINARY_SUB_TYPES(BINARY_ENUM_CASES)
+   default: assert(0 && "Unexpected"); break;
   }
+#undef BINARY_ENUM_CASES
 
   {
     Label call(masm());
@@ -352,5 +354,7 @@ void BinaryOpStub::Generate() {
   // Caller should unwind stack
   GenerateEpilogue(0);
 }
+
+#undef BINARY_SUB_TYPES
 
 } // namespace candor
