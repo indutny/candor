@@ -128,7 +128,7 @@ char* RuntimeGrowObject(Heap* heap, char* stack_top, char* obj) {
 
   // And rehash properties to new map
   for (uint32_t index = 0; index < size << 3; index += 8) {
-    char* key= *reinterpret_cast<char**>(space + index);
+    char* key = *reinterpret_cast<char**>(space + index);
     if (key== NULL) continue;
 
     char* value = *reinterpret_cast<char**>(space + index + (size << 3));
@@ -153,13 +153,10 @@ char* RuntimeToString(Heap* heap, char* stack_top, char* value) {
    case Heap::kTagNil:
     return HString::New(heap, stack_top, "", 0);
    case Heap::kTagBoolean:
-    {
-      uint8_t is_true = *reinterpret_cast<uint8_t*>(value + 8);
-      if (is_true) {
-        return HString::New(heap, stack_top, "true", 4);
-      } else {
-        return HString::New(heap, stack_top, "false", 5);
-      }
+    if (HBoolean::Value(value)) {
+      return HString::New(heap, stack_top, "true", 4);
+    } else {
+      return HString::New(heap, stack_top, "false", 5);
     }
    case Heap::kTagNumber:
     {
@@ -171,7 +168,7 @@ char* RuntimeToString(Heap* heap, char* stack_top, char* value) {
         // Maximum int64 value may contain only 20 chars, last one for '\0'
         len = snprintf(str, sizeof(str), "%lld", num);
       } else {
-        double num = *reinterpret_cast<double*>(value + 8);
+        double num = HNumber::DoubleValue(value);
         len = snprintf(str, sizeof(str), "%g", num);
       }
 
@@ -193,13 +190,13 @@ char* RuntimeToNumber(Heap* heap, char* stack_top, char* value) {
    case Heap::kTagString:
     {
       char* str = value + 24;
-      uint32_t length = *reinterpret_cast<uint32_t*>(value + 16);
+      uint32_t length = HString::Length(value);
 
       return HNumber::New(heap, stack_top, StringToInt(str, length));
     }
    case Heap::kTagBoolean:
     {
-      uint64_t val = *reinterpret_cast<uint8_t*>(value + 8);
+      uint64_t val = HBoolean::Value(value) ? 1 : 0;
       return HNumber::New(heap, stack_top, val);
     }
    case Heap::kTagFunction:
@@ -221,11 +218,7 @@ char* RuntimeToBoolean(Heap* heap, char* stack_top, char* value) {
 
   switch (tag) {
    case Heap::kTagString:
-    {
-      uint32_t length = *reinterpret_cast<uint32_t*>(value + 16);
-
-      return HBoolean::New(heap, stack_top, length > 0);
-    }
+    return HBoolean::New(heap, stack_top, HString::Length(value) > 0);
    case Heap::kTagBoolean:
     return value;
    case Heap::kTagFunction:
@@ -234,9 +227,11 @@ char* RuntimeToBoolean(Heap* heap, char* stack_top, char* value) {
    case Heap::kTagNil:
     return HBoolean::New(heap, stack_top, false);
    case Heap::kTagNumber:
-    {
-      // TODO: Handle boxed numbers here too
+    if (HValue::IsUnboxed(value)) {
       int64_t num = HNumber::Untag(reinterpret_cast<int64_t>(value));
+      return HBoolean::New(heap, stack_top, num != 0);
+    } else {
+      double num = HNumber::DoubleValue(value);
       return HBoolean::New(heap, stack_top, num != 0);
     }
    default:
@@ -254,8 +249,8 @@ size_t RuntimeCompare(char* lhs, char* rhs) {
   if (lhs_tag != Heap::kTagString) assert(0 && "Not implemented yet");
   if (rhs_tag != Heap::kTagString) assert(0 && "Not implemented yet");
 
-  off_t lhs_length = *reinterpret_cast<off_t*>(lhs + 16);
-  off_t rhs_length = *reinterpret_cast<off_t*>(rhs + 16);
+  off_t lhs_length = HString::Length(lhs);
+  off_t rhs_length = HString::Length(rhs);
 
   return lhs_length < rhs_length ? -1 :
          lhs_length > rhs_length ? 1 :
@@ -263,46 +258,62 @@ size_t RuntimeCompare(char* lhs, char* rhs) {
 }
 
 
-char* RuntimeCoerceType(Heap* heap,
+void RuntimeCoerceType(Heap* heap,
                         char* stack_top,
-                        char* required,
-                        char* expr) {
-  // TODO: Coerce expr to `tag` type
-  return expr;
+                        BinOp::BinOpType type,
+                        char* &lhs,
+                        char* &rhs) {
 }
 
 
 template <BinOp::BinOpType type>
 char* RuntimeBinOp(Heap* heap, char* stack_top, char* lhs, char* rhs) {
-  // nil + nil = 0
+  // Fast case: both sides are nil
   if (lhs == NULL && rhs == NULL) {
-    return HNumber::New(heap, stack_top, static_cast<uint64_t>(0));
+    if (BinOp::is_math(type) || BinOp::is_binary(type)) {
+      // nil (+) nil = 0
+      return HNumber::New(heap, stack_top, static_cast<uint64_t>(0));
+    } else if (BinOp::is_logic(type) || BinOp::is_bool_logic(type)) {
+      // nil == nil = true
+      // nil === nil = true
+      // nil (+) nil = false
+      return HBoolean::New(heap,
+                           stack_top,
+                           !BinOp::is_negative_eq(type));
+    }
   }
 
-  // nil + any = any, any + nil = any
-  if (lhs == NULL) return rhs;
-  if (rhs == NULL) return lhs;
+  // Equality operations
+  if (BinOp::is_equality(type)) {
+    // nil == expr, expr == nil
+    if (lhs == NULL || rhs == NULL) {
+      return HBoolean::New(heap, stack_top, false);
+    }
 
-  // So we surely now that both lhs and rhs are not nils here
-  Heap::HeapTag lhs_tag = HValue::GetTag(lhs);
-  char* coerced_rhs = RuntimeCoerceType(heap, stack_top, lhs, rhs);
+    Heap::HeapTag lhs_tag = HValue::GetTag(lhs);
+    if (BinOp::is_strict_eq(type)) {
+      Heap::HeapTag rhs_tag = HValue::GetTag(rhs);
 
-  // Just to shut up compiler
-  coerced_rhs = coerced_rhs;
+      // When strictly comparing - tags should be equal
+      if (lhs_tag != rhs_tag) {
+        return HBoolean::New(heap, stack_top, BinOp::is_negative_eq(type));
+      }
+    } else {
+      RuntimeCoerceType(heap, stack_top, type, lhs, rhs);
+    }
 
-  switch (lhs_tag) {
-    case Heap::kTagString:
-     // TODO: Concatenate strings
-    case Heap::kTagNumber:
-     // TODO: Unbox and add
-     return NULL;
-    case Heap::kTagObject:
-     // object + object = nil
-     return NULL;
-    default:
-     assert(0 && "Unexpected");
-     return NULL;
+    switch (lhs_tag) {
+     case Heap::kTagString:
+      // Compare strings
+      abort();
+      break;
+     case Heap::kTagObject:
+      // object != object
+      return HBoolean::New(heap, stack_top, false);
+    }
   }
+
+  return NULL;
 }
 
 } // namespace candor

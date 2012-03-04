@@ -249,6 +249,19 @@ class BinOp : public AstNode {
            type == kGe;
   }
 
+  static inline bool is_equality(BinOpType type) {
+    return type == kEq || type == kStrictEq ||
+           type == kNe || type == kStrictNe;
+  }
+
+  static inline bool is_strict_eq(BinOpType type) {
+    return type == kStrictEq || type == kStrictNe;
+  }
+
+  static inline bool is_negative_eq(BinOpType type) {
+    return type == kNe || type == kStrictNe;
+  }
+
   static inline bool is_bool_logic(BinOpType type) {
     return type == kLOr || type == kLAnd;
   }

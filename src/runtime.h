@@ -51,10 +51,11 @@ char* RuntimeToBoolean(Heap* heap, char* stack_top, char* value);
 typedef size_t (*RuntimeCompareCallback)(char* lhs, char* rhs);
 size_t RuntimeCompare(char* lhs, char* rhs);
 
-char* RuntimeCoerceType(Heap* heap,
-                        char* stack_top,
-                        char* required,
-                        char* expr);
+void RuntimeCoerceType(Heap* heap,
+                       char* stack_top,
+                       BinOp::BinOpType type,
+                       char* &lhs,
+                       char* &rhs);
 
 typedef char* (*RuntimeBinOpCallback)(Heap* heap,
                                       char* stack_top,

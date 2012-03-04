@@ -90,8 +90,16 @@ TEST_START("functional test")
     assert(HValue::As<HNumber>(result)->value() == 9);
   });
 
-  FUN_TEST("return ({}) + ({})", {
-    assert(result == NULL);
+  FUN_TEST("return nil + nil", {
+    assert(HValue::As<HNumber>(result)->value() == 0);
+  })
+
+  FUN_TEST("return nil == nil", {
+    assert(HValue::As<HBoolean>(result)->is_true());
+  })
+
+  FUN_TEST("return nil != nil", {
+    assert(HValue::As<HBoolean>(result)->is_false());
   })
 
   // Unary ops

@@ -214,6 +214,10 @@ class HNumber : public HValue {
 
   inline double value() { return value_; }
 
+  static inline double DoubleValue(char* addr) {
+    return *reinterpret_cast<double*>(addr + 8);
+  }
+
   static const Heap::HeapTag class_tag = Heap::kTagNumber;
 
  protected:
@@ -229,6 +233,10 @@ class HBoolean : public HValue {
 
   inline bool is_true() { return value_; }
   inline bool is_false() { return !value_; }
+
+  static inline bool Value(char* addr) {
+    return *reinterpret_cast<uint8_t*>(addr + 8) != 0;
+  }
 
   static const Heap::HeapTag class_tag = Heap::kTagBoolean;
 
@@ -249,6 +257,14 @@ class HString : public HValue {
   inline char* value() { return value_; }
   inline uint32_t length() { return length_; }
   inline uint32_t hash() { return hash_; }
+
+  inline static uint32_t Hash(char* addr) {
+    return *reinterpret_cast<uint32_t*>(addr + 8);
+  }
+
+  inline static uint32_t Length(char* addr) {
+    return *reinterpret_cast<uint32_t*>(addr + 16);
+  }
 
   static const Heap::HeapTag class_tag = Heap::kTagString;
 
