@@ -1,4 +1,4 @@
-* Calling C++/C functions from candor
+* C++/C bindings support for candor
 * Functions as objects
 * Consider adding NaN
 * % - mod operation

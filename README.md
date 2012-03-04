@@ -105,7 +105,7 @@ Things to come:
 * On-stack replacement and profile-based optimizations
 * Incremental GC
 * Usage in multiple-threads (aka isolates)
-* Calling C++/C functions from candor
+* C++/C bindings support for candor
 * Inline caching
 * Break statement
 * Better parser/lexer errors
