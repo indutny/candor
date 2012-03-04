@@ -214,8 +214,20 @@ class HNumber : public HValue {
 
   inline double value() { return value_; }
 
+  static inline int64_t IntegralValue(char* addr) {
+    if (IsUnboxed(addr)) {
+      return Untag(reinterpret_cast<int64_t>(addr));
+    } else {
+      return *reinterpret_cast<double*>(addr + 8);
+    }
+  }
+
   static inline double DoubleValue(char* addr) {
-    return *reinterpret_cast<double*>(addr + 8);
+    if (IsUnboxed(addr)) {
+      return Untag(reinterpret_cast<int64_t>(addr));
+    } else {
+      return *reinterpret_cast<double*>(addr + 8);
+    }
   }
 
   static const Heap::HeapTag class_tag = Heap::kTagNumber;

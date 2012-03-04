@@ -164,7 +164,7 @@ char* RuntimeToString(Heap* heap, char* stack_top, char* value) {
       uint32_t len;
 
       if (HValue::IsUnboxed(value)) {
-        int64_t num = HNumber::Untag(reinterpret_cast<int64_t>(value));
+        int64_t num = HNumber::IntegralValue(value);
         // Maximum int64 value may contain only 20 chars, last one for '\0'
         len = snprintf(str, sizeof(str), "%lld", num);
       } else {
@@ -228,7 +228,7 @@ char* RuntimeToBoolean(Heap* heap, char* stack_top, char* value) {
     return HBoolean::New(heap, stack_top, false);
    case Heap::kTagNumber:
     if (HValue::IsUnboxed(value)) {
-      int64_t num = HNumber::Untag(reinterpret_cast<int64_t>(value));
+      int64_t num = HNumber::IntegralValue(value);
       return HBoolean::New(heap, stack_top, num != 0);
     } else {
       double num = HNumber::DoubleValue(value);
@@ -350,38 +350,22 @@ char* RuntimeBinOp(Heap* heap, char* stack_top, char* lhs, char* rhs) {
       break;
      case Heap::kTagNumber:
       if (HValue::IsUnboxed(lhs)) {
-        int64_t lnum = HNumber::Untag(reinterpret_cast<int64_t>(lhs));
-        if (HValue::IsUnboxed(rhs)) {
-          int64_t rnum = HNumber::Untag(reinterpret_cast<int64_t>(rhs));
-          if (BinOp::is_equality(type)) {
-            result = lnum == rnum;
-          } else {
-            result = BinOp::NumToCompare(type, lnum - rnum);
-          }
+        int64_t lnum = HNumber::IntegralValue(lhs);
+        int64_t rnum = HNumber::IntegralValue(rhs);
+
+        if (BinOp::is_equality(type)) {
+          result = lnum == rnum;
         } else {
-          double rnum = HNumber::DoubleValue(rhs);
-          if (BinOp::is_equality(type)) {
-            result = lnum == rnum;
-          } else {
-            result = BinOp::NumToCompare(type, lnum - rnum);
-          }
+          result = BinOp::NumToCompare(type, lnum - rnum);
         }
       } else {
         double lnum = HNumber::DoubleValue(lhs);
-        if (HValue::IsUnboxed(rhs)) {
-          int64_t rnum = HNumber::Untag(reinterpret_cast<int64_t>(rhs));
-          if (BinOp::is_equality(type)) {
-            result = lnum == rnum;
-          } else {
-            result = BinOp::NumToCompare(type, lnum - rnum);
-          }
+        double rnum = HNumber::DoubleValue(rhs);
+
+        if (BinOp::is_equality(type)) {
+          result = lnum == rnum;
         } else {
-          double rnum = HNumber::DoubleValue(rhs);
-          if (BinOp::is_equality(type)) {
-            result = lnum == rnum;
-          } else {
-            result = BinOp::NumToCompare(type, lnum - rnum);
-          }
+          result = BinOp::NumToCompare(type, lnum - rnum);
         }
       }
       break;
@@ -419,11 +403,33 @@ char* RuntimeBinOp(Heap* heap, char* stack_top, char* lhs, char* rhs) {
     lhs = RuntimeToNumber(heap, stack_top, lhs);
     rhs = RuntimeToNumber(heap, stack_top, rhs);
 
-    // TODO: Implement me
-
     if (BinOp::is_math(type)) {
+      double result = 0;
+
+      double lval = HNumber::DoubleValue(lhs);
+      double rval = HNumber::DoubleValue(rhs);
+
+      switch (type) {
+       case BinOp::kAdd: result = lval + rval; break;
+       case BinOp::kSub: result = lval - rval; break;
+       case BinOp::kMul: result = lval * rval; break;
+       case BinOp::kDiv: result = lval / rval; break;
+       default: UNEXPECTED
+      }
+
+      return HNumber::New(heap, stack_top, result);
     } else if (BinOp::is_binary(type)) {
       int64_t result = 0;
+
+      int64_t lval = HNumber::IntegralValue(lhs);
+      int64_t rval = HNumber::IntegralValue(rhs);
+
+      switch (type) {
+       case BinOp::kBAnd: result = lval & rval; break;
+       case BinOp::kBOr: result = lval | rval; break;
+       case BinOp::kBXor: result = lval ^ rval; break;
+       default: UNEXPECTED
+      }
 
       return HNumber::New(heap, stack_top, result);
     } else {

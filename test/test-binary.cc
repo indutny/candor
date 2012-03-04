@@ -99,4 +99,22 @@ TEST_START("binary operations test")
   FUN_TEST("if (1 && 'xyz') { return true }", {
     assert(HValue::As<HBoolean>(result)->is_true());
   })
+
+  // Math
+
+  FUN_TEST("return 1 + '1'", {
+    assert(HValue::As<HNumber>(result)->value() == 2);
+  })
+
+  FUN_TEST("return '1' + 1", {
+    assert(HValue::As<HNumber>(result)->value() == 2);
+  })
+
+  FUN_TEST("return '1' + {}", {
+    assert(HValue::As<HNumber>(result)->value() == 1);
+  })
+
+  FUN_TEST("return '5' & 3", {
+    assert(HValue::As<HNumber>(result)->value() == 1);
+  })
 TEST_END("binary operations test")

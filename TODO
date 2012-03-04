@@ -1,8 +1,8 @@
-* Logical operations for non-numbers ( >, <, ==, ===)
-* Binary operations for non-numbers
+* Do not create HValue instances in GC (probably remove Zone too)
 * Functions as objects
 * NaN
 * Calling C++/C functions from candor
+* % - mod operation
 * Break statement
 * Better parser/lexer errors
 * On-stack replacement and profile-based optimizations

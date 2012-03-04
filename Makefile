@@ -11,7 +11,7 @@ endif
 
 ifeq ($(MODE),release)
 	CPPFLAGS += -O3
-	CPPFLAGS += -DNDEBUG
+	LIBCPPFLAGS += -DNDEBUG
 endif
 
 ifeq ($(ARCH),)
@@ -65,7 +65,7 @@ candor.a: $(OBJS)
 	$(AR) rcs candor.a $(OBJS)
 
 src/%.o: src/%.cc
-	$(CXX) $(CPPFLAGS) -Isrc -c $< -o $@
+	$(CXX) $(LIBCPPFLAGS) $(CPPFLAGS) -Isrc -c $< -o $@
 
 TESTS += test/test-parser
 TESTS += test/test-scope
