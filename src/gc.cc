@@ -81,7 +81,7 @@ void GC::VisitValue(HValue* value) {
    case Heap::kTagBoolean:
     return;
    default:
-    assert(0 && "Unexpected");
+    UNEXPECTED
   }
 }
 

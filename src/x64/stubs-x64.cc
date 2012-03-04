@@ -323,7 +323,9 @@ void BinaryOpStub::Generate() {
 
   switch (type()) {
    BINARY_SUB_TYPES(BINARY_ENUM_CASES)
-   default: assert(0 && "Unexpected"); break;
+   default:
+    UNEXPECTED
+    break;
   }
 #undef BINARY_ENUM_CASES
 

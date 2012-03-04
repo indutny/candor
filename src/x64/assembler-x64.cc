@@ -182,7 +182,7 @@ void Assembler::jmp(Condition cond, Label* label) {
    case kCarry: emitb(0x82); break;
    case kOverflow: emitb(0x80); break;
    default:
-    assert(0 && "unexpected");
+    UNEXPECTED
   }
   emitl(0x12345678);
   label->use(offset() - 4);

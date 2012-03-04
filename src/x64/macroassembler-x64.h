@@ -74,9 +74,6 @@ class Masm : public Assembler {
                     Label* match);
   void IsTrue(Register reference, Label* is_false, Label* is_true);
 
-  // Unboxing routines
-  void UnboxNumber(Register number);
-
   // Store stack pointer into heap
   void StoreRootStack();
 

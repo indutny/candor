@@ -83,7 +83,7 @@ inline Condition Masm::BinOpToCondition(BinOp::BinOpType type,
      case BinOp::kGt: return kGt;
      case BinOp::kLe: return kLe;
      case BinOp::kGe: return kGe;
-     default: assert(0 && "Not condition op");
+     default: UNEXPECTED
     }
   } else if (usage == kDouble) {
     switch (type) {
@@ -95,7 +95,7 @@ inline Condition Masm::BinOpToCondition(BinOp::BinOpType type,
      case BinOp::kGt: return kAbove;
      case BinOp::kLe: return kBe;
      case BinOp::kGe: return kAe;
-     default: assert(0 && "Not condition op");
+     default: UNEXPECTED
     }
   }
 

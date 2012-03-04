@@ -206,7 +206,7 @@ class HNumber : public HValue {
  public:
   HNumber(char* addr);
 
-  static char* New(Heap* heap, char* stack_top, uint64_t value);
+  static char* New(Heap* heap, char* stack_top, int64_t value);
   static char* New(Heap* heap, char* stack_top, double value);
 
   static int64_t Untag(int64_t value);

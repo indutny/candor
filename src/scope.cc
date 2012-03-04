@@ -149,7 +149,7 @@ void ScopeSlot::Enumerate(void* scope, ScopeSlot* slot) {
       }
     }
   } else {
-    assert(0 && "Unreachable");
+    UNEXPECTED
   }
 }
 

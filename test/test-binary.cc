@@ -46,11 +46,19 @@ TEST_START("binary operations test")
   })
 
   FUN_TEST("return 'abc' == 'abc'", {
-      assert(HValue::As<HBoolean>(result)->is_true());
+    assert(HValue::As<HBoolean>(result)->is_true());
   })
 
   FUN_TEST("return 'abc' == 'abd'", {
-      assert(HValue::As<HBoolean>(result)->is_false());
+    assert(HValue::As<HBoolean>(result)->is_false());
+  })
+
+  FUN_TEST("a() {}\nreturn a == a", {
+    assert(HValue::As<HBoolean>(result)->is_true());
+  })
+
+  FUN_TEST("a() {}\nreturn a == 1", {
+    assert(HValue::As<HBoolean>(result)->is_false());
   })
 
   // Not-strict (with coercing) equality
@@ -63,6 +71,32 @@ TEST_START("binary operations test")
   })
 
   FUN_TEST("return '123' == 123", {
+    assert(HValue::As<HBoolean>(result)->is_true());
+  })
+
+  // Comparison
+  FUN_TEST("return '123' >= 100", {
+    assert(HValue::As<HBoolean>(result)->is_true());
+  })
+
+  FUN_TEST("return 123 <= '100'", {
+    assert(HValue::As<HBoolean>(result)->is_false());
+  })
+
+  FUN_TEST("return true > false'", {
+    assert(HValue::As<HBoolean>(result)->is_true());
+  })
+
+  // Binary logic
+  FUN_TEST("if (true || false) { return true }", {
+    assert(HValue::As<HBoolean>(result)->is_true());
+  })
+
+  FUN_TEST("if (1 || false) { return true }", {
+    assert(HValue::As<HBoolean>(result)->is_true());
+  })
+
+  FUN_TEST("if (1 && 'xyz') { return true }", {
     assert(HValue::As<HBoolean>(result)->is_true());
   })
 TEST_END("binary operations test")

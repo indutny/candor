@@ -10,6 +10,8 @@
 
 namespace candor {
 
+#define UNEXPECTED assert(0 && "Unexpected");
+
 inline uint32_t ComputeHash(const char* key, uint32_t length) {
   uint32_t hash = 0;
   for (uint32_t i = 0; i < length; i++) {
@@ -281,8 +283,8 @@ inline bool StringIsDouble(const char* value, uint32_t length) {
 }
 
 
-inline uint64_t StringToInt(const char* value, uint32_t length) {
-  uint64_t result = 0;
+inline int64_t StringToInt(const char* value, uint32_t length) {
+  int64_t result = 0;
   for (uint32_t index = 0; index < length; index++) {
     result *= 10;
     result += value[index] - '0';

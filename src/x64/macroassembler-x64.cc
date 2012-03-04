@@ -321,11 +321,6 @@ void Masm::IsTrue(Register reference, Label* is_false, Label* is_true) {
 }
 
 
-void Masm::UnboxNumber(Register number) {
-  assert(0 && "Not implemented");
-}
-
-
 void Masm::StoreRootStack() {
   Immediate root_stack(reinterpret_cast<uint64_t>(heap()->root_stack()));
   Operand scratch_op(scratch, 0);

@@ -889,7 +889,7 @@ AstNode* Fullgen::VisitUnOp(AstNode* node) {
     xorq(scratch, scratch);
 
   } else {
-    assert(0 && "Unexpected");
+    UNEXPECTED
   }
 
   return node;

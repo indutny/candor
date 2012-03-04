@@ -266,6 +266,22 @@ class BinOp : public AstNode {
     return type == kLOr || type == kLAnd;
   }
 
+  static inline bool NumToCompare(BinOpType type, int num) {
+    assert(is_logic(type));
+    switch (type) {
+     case kLt: return num == -1;
+     case kGt: return num == 1;
+     case kLe: return num <= 0;
+     case kGe: return num >= 0;
+     case kStrictEq: case kEq: return num == 0;
+     case kStrictNe: case kNe: return num != 0;
+     default:
+      UNEXPECTED
+    }
+
+    return false;
+  }
+
   inline BinOpType subtype() { return subtype_; }
 
  protected:
@@ -315,7 +331,7 @@ class UnOp : public AstNode {
      case Lexer::kDec:
       return kPreDec;
      default:
-      assert(0 && "Unexpected");
+      UNEXPECTED
     }
     return kNone;
   }

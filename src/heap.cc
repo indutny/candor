@@ -1,5 +1,4 @@
 #include "heap.h"
-#include "runtime.h" // RuntimeCompare
 
 #include <stdint.h> // uint32_t
 #include <sys/types.h> // off_t
@@ -130,7 +129,7 @@ HValue* HValue::New(char* addr) {
    case Heap::kTagCode:
     return NULL;
    default:
-    assert(0 && "Not implemented");
+    UNEXPECTED
   }
   return NULL;
 }
@@ -164,7 +163,7 @@ HValue* HValue::CopyTo(Space* space) {
     size += 8 + (As<HMap>()->size() << 4);
     break;
    default:
-    assert(0 && "Unexpected");
+    UNEXPECTED
   }
 
   char* result = space->Allocate(size, NULL);
@@ -259,7 +258,7 @@ HNumber::HNumber(char* addr) : HValue(addr) {
 }
 
 
-char* HNumber::New(Heap* heap, char* stack_top, uint64_t value) {
+char* HNumber::New(Heap* heap, char* stack_top, int64_t value) {
   return reinterpret_cast<char*>(Tag(value));
 }
 
