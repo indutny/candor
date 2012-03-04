@@ -244,12 +244,27 @@ char* RuntimeToBoolean(Heap* heap, char* stack_top, char* value) {
 
 
 size_t RuntimeStringCompare(char* lhs, char* rhs) {
-  off_t lhs_length = HString::Length(lhs);
-  off_t rhs_length = HString::Length(rhs);
+  uint32_t lhs_length = HString::Length(lhs);
+  uint32_t rhs_length = HString::Length(rhs);
 
   return lhs_length < rhs_length ? -1 :
          lhs_length > rhs_length ? 1 :
          strncmp(HString::Value(lhs), HString::Value(rhs), lhs_length);
+}
+
+
+char* RuntimeConcatenateStrings(Heap* heap,
+                                char* stack_top,
+                                char* lhs,
+                                char* rhs) {
+  uint32_t lhs_length = HString::Length(lhs);
+  uint32_t rhs_length = HString::Length(rhs);
+  char* result = HString::New(heap, stack_top, lhs_length + rhs_length);
+
+  memcpy(HString::Value(result), HString::Value(lhs), lhs_length);
+  memcpy(HString::Value(result) + lhs_length, HString::Value(rhs), rhs_length);
+
+  return result;
 }
 
 
@@ -400,6 +415,14 @@ char* RuntimeBinOp(Heap* heap, char* stack_top, char* lhs, char* rhs) {
     }
 
     return HBoolean::New(heap, stack_top, result);
+  } else if (type == BinOp::kAdd &&
+             HValue::GetTag(lhs) != Heap::kTagNumber &&
+             HValue::GetTag(lhs) != Heap::kTagNil) {
+    // String concatenation
+    lhs = RuntimeToString(heap, stack_top, lhs);
+    rhs = RuntimeToString(heap, stack_top, rhs);
+
+    return RuntimeConcatenateStrings(heap, stack_top, lhs, rhs);
   } else {
     lhs = RuntimeToNumber(heap, stack_top, lhs);
     rhs = RuntimeToNumber(heap, stack_top, rhs);

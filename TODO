@@ -1,4 +1,3 @@
-* String concatenation
 * Calling C++/C functions from candor
 * Functions as objects
 * Consider adding NaN

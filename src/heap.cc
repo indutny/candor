@@ -188,7 +188,6 @@ char* HBoolean::New(Heap* heap, char* stack_top, bool value) {
 
 char* HString::New(Heap* heap,
                    char* stack_top,
-                   const char* value,
                    uint32_t length) {
   char* result = heap->AllocateTagged(Heap::kTagString, length + 24, stack_top);
 
@@ -196,6 +195,17 @@ char* HString::New(Heap* heap,
   *reinterpret_cast<uint64_t*>(result + 8) = 0;
   // Set length
   *reinterpret_cast<uint64_t*>(result + 16) = length;
+
+  return result;
+}
+
+
+char* HString::New(Heap* heap,
+                   char* stack_top,
+                   const char* value,
+                   uint32_t length) {
+  char* result = New(heap, stack_top, length);
+
   // Copy value
   memcpy(result + 24, value, length);
 

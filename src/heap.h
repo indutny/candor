@@ -218,6 +218,9 @@ class HString : public HValue {
  public:
   static char* New(Heap* heap,
                    char* stack_top,
+                   uint32_t length);
+  static char* New(Heap* heap,
+                   char* stack_top,
                    const char* value,
                    uint32_t length);
 

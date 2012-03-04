@@ -106,11 +106,19 @@ TEST_START("binary operations test")
     assert(HValue::As<HNumber>(result)->value() == 2);
   })
 
-  FUN_TEST("return '1' + 1", {
-    assert(HValue::As<HNumber>(result)->value() == 2);
+  FUN_TEST("return 'hello ' + 'world'", {
+    HString* str = HValue::As<HString>(result);
+    assert(str->length() == 11);
+    assert(strncmp(str->value(), "hello world", str->length()) == 0);
   })
 
-  FUN_TEST("return '1' + {}", {
+  FUN_TEST("return '1' + 1", {
+    HString* str = HValue::As<HString>(result);
+    assert(str->length() == 2);
+    assert(strncmp(str->value(), "11", str->length()) == 0);
+  })
+
+  FUN_TEST("return '1' - {}", {
     assert(HValue::As<HNumber>(result)->value() == 1);
   })
 

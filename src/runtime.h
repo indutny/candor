@@ -49,6 +49,11 @@ char* RuntimeToBoolean(Heap* heap, char* stack_top, char* value);
 typedef size_t (*RuntimeStringCompareCallback)(char* lhs, char* rhs);
 size_t RuntimeStringCompare(char* lhs, char* rhs);
 
+char* RuntimeConcatenateStrings(Heap* heap,
+                                char* stack_top,
+                                char* lhs,
+                                char* rhs);
+
 Heap::HeapTag RuntimeCoerceType(Heap* heap,
                                 char* stack_top,
                                 BinOp::BinOpType type,
