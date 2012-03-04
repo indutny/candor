@@ -47,7 +47,20 @@ void Lexer::Skip() {
 }
 
 
+bool Lexer::SkipWhitespace() {
+  bool cr = false;
+  while (has(1) && (get(0) == ' ' || get(0) == '\r' || get(0) == '\n')) {
+    if (get(0) == '\r' || get(0) == '\n') cr = true;
+    offset_++;
+  }
+
+  return cr;
+}
+
+
 Lexer::Token* Lexer::Consume() {
+  bool cr = SkipWhitespace();
+
   // One-line comment
   if (has(2) && get(0) == '/' && get(1) == '/') {
     offset_ += 2;
@@ -69,14 +82,8 @@ Lexer::Token* Lexer::Consume() {
     offset_ += 2;
   }
 
-  LENGTH_CHECK
-
   // Skip spaces and detect CR
-  bool cr = false;
-  while (has(1) && (get(0) == ' ' || get(0) == '\r' || get(0) == '\n')) {
-    if (get(0) == '\r' || get(0) == '\n') cr = true;
-    offset_++;
-  }
+  cr = cr || SkipWhitespace();
 
   if (cr) return new Token(kCr, offset_ - 1);
 

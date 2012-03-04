@@ -12,6 +12,7 @@ TEST_START("parser test")
 
   // Comments
   PARSER_TEST("1// comment", "[1]")
+  PARSER_TEST("1 // comment", "[1]")
   PARSER_TEST("1// comment\nreturn 1", "[1] [kReturn [1]]")
   PARSER_TEST("1/* comment */ + 1", "[kAdd [1] [1]]")
 
