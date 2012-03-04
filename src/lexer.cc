@@ -203,6 +203,7 @@ Lexer::Token* Lexer::Consume() {
     MATH_ONE('&', kBAnd)
     MATH_ONE('|', kBOr)
     MATH_ONE('^', kBXor)
+    MATH_ONE('%', kMod)
     MATH_ONE('=', kAssign)
   }
 

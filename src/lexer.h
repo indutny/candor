@@ -40,6 +40,7 @@ class Lexer {
     kBAnd,
     kBOr,
     kBXor,
+    kMod,
 
     // Logic
     kEq,
