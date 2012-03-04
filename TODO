@@ -1,7 +1,7 @@
-* Do not create HValue instances in GC (probably remove Zone too)
+* String concatenation
+* Calling C++/C functions from candor
 * Functions as objects
 * Consider adding NaN
-* Calling C++/C functions from candor
 * % - mod operation
 * Break statement
 * Better parser/lexer errors
