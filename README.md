@@ -1,6 +1,6 @@
-# DOT
+# Candor
 
-Experimental implementation of DOT language VM. Join #dotlang channel on
+Experimental implementation of Candor language VM. Join #candor channel on
 irc.freenode.net to discuss language features.
 
 **Danger! This whole project is not stable at all, many things are broken and
@@ -10,14 +10,14 @@ Note: only x64 is supported now.
 
 ## Language basics
 
-Dot is essentially inspired by the [ECMA-script](http://www.ecmascript.org/),
+Candor is essentially inspired by the [ECMA-script](http://www.ecmascript.org/),
 but has much less features and complexity (for compiler).
 
 Functions are declared in [dart](http://www.dartlang.org/)-like style, variables
 are block scoped by default (use `scope` keyword for accessing outer-scope
 variables).
 
-```dot
+```candor
 // Keywords: nil, return, scope, new, if, else, while, break
 
 // Primitives
@@ -60,7 +60,7 @@ x.a = 1
 
 ## Example
 
-```dot
+```candor
 factorial(x) {
   if (x == 1) return 1
   return x * factorial(x - 1)
@@ -69,15 +69,15 @@ factorial(x) {
 factorial(10)
 ```
 
-As you can see DOT's syntax is very close to the ecmascript's one. But there're
-no semicolons, statements are separated by newline symbols (whitespace is
-ignored).
+As you can see Candor's syntax is very close to the ecmascript's one. But
+there're no semicolons, statements are separated by newline symbols (whitespace
+is ignored).
 
 ## Building
 
 ```bash
-git clone git://github.com/indutny/dotlang.git
-cd dotlang
+git clone git://github.com/indutny/candor.git
+cd candor
 make ARCH=x64 test
 ```
 
@@ -104,11 +104,11 @@ Things to come:
 * On-stack replacement and profile-based optimizations
 * Incremental GC
 * Usage in multiple-threads (aka isolates)
-* Calling C++/C functions from dotlang
+* Calling C++/C functions from candor
 * Inline caching
 * Break statement
 * Better parser/lexer errors
-* See [TODO](https://github.com/indutny/dotlang/blob/master/TODO) for more
+* See [TODO](https://github.com/indutny/candor/blob/master/TODO) for more
   up-to-date tasks
 
 ## Contributing

@@ -1,7 +1,7 @@
 #include "assembler-x64.h"
 #include "assembler-x64-inl.h"
 
-namespace dotlang {
+namespace candor {
 
 void RelocationInfo::Relocate(char* buffer) {
   uint64_t addr = 0;
@@ -455,4 +455,4 @@ void Assembler::cvtsi2sd(DoubleRegister dst, Register src) {
   emit_modrm(dst, src);
 }
 
-} // namespace dotlang
+} // namespace candor

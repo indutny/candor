@@ -8,7 +8,7 @@
 #include <string.h> // strncmp, memset
 #include <unistd.h> // sysconf or getpagesize
 
-namespace dotlang {
+namespace candor {
 
 inline uint32_t ComputeHash(const char* key, uint32_t length) {
   uint32_t hash = 0;
@@ -321,6 +321,6 @@ inline uint32_t GetPageSize() {
 #endif
 }
 
-} // namespace dotlang
+} // namespace candor
 
 #endif // _SRC_UTILS_H_

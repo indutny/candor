@@ -29,7 +29,7 @@
       return new Token(type, offset_ - 3);\
     }
 
-namespace dotlang {
+namespace candor {
 
 Lexer::Token* Lexer::Peek() {
   List<Token*, ZoneObject>::Item* head = queue()->head();
@@ -230,4 +230,4 @@ Lexer::Token* Lexer::Consume() {
   }
 }
 
-} // namespace dotlang
+} // namespace candor

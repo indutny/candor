@@ -4,7 +4,7 @@
 #include "zone.h" // ZoneObject
 #include "utils.h" // List
 
-namespace dotlang {
+namespace candor {
 
 // Forward declarations
 class Heap;
@@ -53,6 +53,6 @@ class GC {
   Heap* heap_;
 };
 
-} // namespace dotlang
+} // namespace candor
 
 #endif // _SRC_GC_H_

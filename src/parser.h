@@ -7,7 +7,7 @@
 #include <assert.h> // assert
 #include <stdlib.h> // NULL
 
-namespace dotlang {
+namespace candor {
 
 // Creates AST tree from plain source code
 class Parser : public Lexer {
@@ -117,6 +117,6 @@ class Parser : public Lexer {
   AstNode* ast_;
 };
 
-} // namespace dotlang
+} // namespace candor
 
 #endif // _SRC_PARSER_H_

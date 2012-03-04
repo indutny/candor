@@ -3,7 +3,7 @@
 
 #include "macroassembler-x64.h"
 
-namespace dotlang {
+namespace candor {
 
 inline void Masm::Push(Register src) {
   ChangeAlign(1);
@@ -70,6 +70,6 @@ inline void Masm::Untag(Register src) {
   shr(src, Immediate(1));
 }
 
-} // namespace dotlang
+} // namespace candor
 
 #endif // _SRC_X64_MARCOASSEMBLER_INL_H_

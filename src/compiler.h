@@ -6,7 +6,7 @@
 #include <stdint.h> // uint32_t
 #include <string.h> // memcpy
 
-namespace dotlang {
+namespace candor {
 
 // Forward declaration
 class Heap;
@@ -56,6 +56,6 @@ class CompiledScript {
   char* root_context_;
 };
 
-} // namespace dotlang
+} // namespace candor
 
 #endif // _SRC_COMPILER_H_

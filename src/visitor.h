@@ -1,7 +1,7 @@
 #ifndef _SRC_VISITOR_H_
 #define _SRC_VISITOR_H_
 
-namespace dotlang {
+namespace candor {
 
 // Forward declaration
 class AstNode;
@@ -47,6 +47,6 @@ class Visitor {
   Type type_;
 };
 
-} // namespace dotlang
+} // namespace candor
 
 #endif // _SRC_VISITOR_H_

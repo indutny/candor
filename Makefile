@@ -18,9 +18,9 @@ ifeq ($(ARCH),)
 	ARCH = $(shell sh -c 'uname -m | sed -e "s/i.86/i386/;s/x86_64/x64/;s/amd64/x64/"')
 endif
 
-all: dotlang.a
+all: candor.a
 
-OBJS += src/dotlang.o
+OBJS += src/candor.o
 OBJS += src/zone.o
 OBJS += src/lexer.o
 OBJS += src/visitor.o
@@ -60,8 +60,8 @@ else
 	CPPFLAGS += -D__ARCH=x64
 endif
 
-dotlang.a: $(OBJS)
-	$(AR) rcs dotlang.a $(OBJS)
+candor.a: $(OBJS)
+	$(AR) rcs candor.a $(OBJS)
 
 src/%.o: src/%.cc
 	$(CXX) $(CPPFLAGS) -Isrc -c $< -o $@
@@ -79,10 +79,10 @@ test: $(TESTS)
 	@test/test-numbers
 	@test/test-gc
 
-test/%: test/%.cc dotlang.a
-	$(CXX) $(CPPFLAGS) -Isrc $< -o $@ dotlang.a
+test/%: test/%.cc candor.a
+	$(CXX) $(CPPFLAGS) -Isrc $< -o $@ candor.a
 
 clean:
-	rm -f $(OBJS) dotlang.a
+	rm -f $(OBJS) candor.a
 
 .PHONY: all test

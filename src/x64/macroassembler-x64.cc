@@ -5,7 +5,7 @@
 
 #include <stdlib.h> // NULL
 
-namespace dotlang {
+namespace candor {
 
 Masm::Masm(Heap* heap) : result_(rax),
                          slot_(new Operand(rax, 0)),
@@ -370,4 +370,4 @@ void Masm::Call(BaseStub* stub) {
   Call(scratch);
 }
 
-} // namespace dotlang
+} // namespace candor

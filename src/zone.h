@@ -6,7 +6,7 @@
 #include <sys/types.h> // size_t
 #include <assert.h> // assert
 
-namespace dotlang {
+namespace candor {
 
 // Chunk of memory that will hold some of allocated data in Zone
 class ZoneBlock {
@@ -85,6 +85,6 @@ class ZoneObject {
   }
 };
 
-} // namespace dotlang
+} // namespace candor
 
 #endif // _SRC_ZONE_H_

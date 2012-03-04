@@ -16,7 +16,7 @@
 
 #include <stdint.h> // uint32_t
 
-namespace dotlang {
+namespace candor {
 
 // Forward declarations
 class Heap;
@@ -307,6 +307,6 @@ class HFunction : public HValue {
 };
 
 
-} // namespace dotlang
+} // namespace candor
 
 #endif // _SRC_HEAP_H_

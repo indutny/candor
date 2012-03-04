@@ -7,7 +7,7 @@
 #include <string.h> // memcpy, memset
 #include <sys/mman.h> // mmap
 
-namespace dotlang {
+namespace candor {
 
 CompiledScript::CompiledScript(const char* source, uint32_t length) {
   // Copy source
@@ -96,4 +96,4 @@ Guard::~Guard() {
   munmap(guard_, page_size_);
 }
 
-} // namespace dotlang
+} // namespace candor

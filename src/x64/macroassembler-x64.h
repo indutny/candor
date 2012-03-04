@@ -6,7 +6,7 @@
 #include "ast.h" // AstNode
 #include "heap.h" // HeapValue
 
-namespace dotlang {
+namespace candor {
 
 // Forward declaration
 class BaseStub;
@@ -119,6 +119,6 @@ class Masm : public Assembler {
   friend class Align;
 };
 
-} // namespace dotlang
+} // namespace candor
 
 #endif // _SRC_X64_MARCOASSEMBLER_H_

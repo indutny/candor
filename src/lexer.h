@@ -5,7 +5,7 @@
 #include "zone.h" // ZoneObject
 #include <stdint.h>
 
-namespace dotlang {
+namespace candor {
 
 // Splits source code into lexems and emits them
 class Lexer {
@@ -133,6 +133,6 @@ class Lexer {
   List<Token*, ZoneObject> queue_;
 };
 
-} // namespace dotlang
+} // namespace candor
 
 #endif // _SRC_LEXER_H_

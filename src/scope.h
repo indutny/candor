@@ -7,7 +7,7 @@
 
 #include <assert.h> // assert
 
-namespace dotlang {
+namespace candor {
 
 // Forward declarations
 class AstNode;
@@ -111,6 +111,6 @@ class ScopeAnalyze : public Visitor {
   friend class Scope;
 };
 
-} // namespace dotlang
+} // namespace candor
 
 #endif // _SRC_SCOPE_H_

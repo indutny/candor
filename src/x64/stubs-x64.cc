@@ -3,7 +3,7 @@
 #include "macroassembler-x64.h" // Masm
 #include "runtime.h"
 
-namespace dotlang {
+namespace candor {
 
 #define __ masm()->
 
@@ -305,4 +305,4 @@ void BinaryOpStub::Generate() {
   GenerateEpilogue(0);
 }
 
-} // namespace dotlang
+} // namespace candor

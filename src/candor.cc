@@ -1,10 +1,10 @@
-#include "dotlang.h"
+#include "candor.h"
 #include "compiler.h"
 
 #include <stdint.h> // uint32_t
 #include <stdlib.h> // NULL
 
-namespace dotlang {
+namespace candor {
 
 Script::Script() {
   script = NULL;
@@ -30,4 +30,4 @@ bool Script::CaughtException() {
   return script->CaughtException();
 }
 
-} // namespace dotlang
+} // namespace candor

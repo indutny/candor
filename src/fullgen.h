@@ -15,7 +15,7 @@
 
 #include <assert.h> // assert
 
-namespace dotlang {
+namespace candor {
 
 // Forward declaration
 class Heap;
@@ -73,18 +73,18 @@ class FAstOperand : public AstValue {
 // Generates non-optimized code by visiting each node in AST tree in-order
 class Fullgen : public Masm, public Visitor {
  public:
-  class DotFunction : public FFunction {
+  class CandorFunction : public FFunction {
    public:
-    DotFunction(Fullgen* fullgen, FunctionLiteral* fn) : FFunction(fullgen),
-                                                         fullgen_(fullgen),
-                                                         fn_(fn) {
+    CandorFunction(Fullgen* fullgen, FunctionLiteral* fn) : FFunction(fullgen),
+                                                            fullgen_(fullgen),
+                                                            fn_(fn) {
     }
 
     inline Fullgen* fullgen() { return fullgen_; }
     inline FunctionLiteral* fn() { return fn_; }
 
-    static inline DotFunction* Cast(void* value) {
-      return reinterpret_cast<DotFunction*>(value);
+    static inline CandorFunction* Cast(void* value) {
+      return reinterpret_cast<CandorFunction*>(value);
     }
 
     void Generate();
@@ -146,18 +146,18 @@ class Fullgen : public Masm, public Visitor {
   inline bool visiting_for_value() { return visitor_type_ == kValue; }
   inline bool visiting_for_slot() { return visitor_type_ == kSlot; }
   inline List<FFunction*, ZoneObject>* fns() { return &fns_; }
-  inline void current_function(DotFunction* fn) { current_function_ = fn; }
-  inline DotFunction* current_function() { return current_function_; }
+  inline void current_function(CandorFunction* fn) { current_function_ = fn; }
+  inline CandorFunction* current_function() { return current_function_; }
   inline List<char*, ZoneObject>* root_context() { return &root_context_; }
 
  private:
   Heap* heap_;
   VisitorType visitor_type_;
   List<FFunction*, ZoneObject> fns_;
-  DotFunction* current_function_;
+  CandorFunction* current_function_;
   List<char*, ZoneObject> root_context_;
 };
 
-} // namespace dotlang
+} // namespace candor
 
 #endif // _SRC_FULLGEN_H_

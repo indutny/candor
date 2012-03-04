@@ -7,7 +7,7 @@
 #include <string.h> // memcpy, memset
 #include <stdlib.h> // NULL
 
-namespace dotlang {
+namespace candor {
 
 inline void Label::relocate(uint32_t offset) {
   // Label should be relocated only once
@@ -168,6 +168,6 @@ inline void Assembler::emitq(uint64_t v) {
   Grow();
 }
 
-} // namespace dotlang
+} // namespace candor
 
 #endif // _SRC_X64_ASSEMBLER_INL_H_

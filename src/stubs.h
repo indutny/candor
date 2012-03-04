@@ -8,7 +8,7 @@
 #include <stdlib.h> // NULL
 #include <stdint.h> // uint32_t
 
-namespace dotlang {
+namespace candor {
 
 // Forward declarations
 class Masm;
@@ -106,6 +106,6 @@ class Stubs : public ZoneObject {
 
 #undef STUBS_LIST
 
-} // namespace dotlang
+} // namespace candor
 
 #endif // _SRC_STUBS_H_

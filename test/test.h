@@ -1,7 +1,7 @@
 #ifndef _TEST_TEST_H_
 #define _TEST_TEST_H_
 
-#include <dotlang.h>
+#include <candor.h>
 #include <heap.h>
 #include <zone.h>
 
@@ -17,7 +17,7 @@
 #include <assert.h>
 
 #define TEST_START(name)\
-    using namespace dotlang;\
+    using namespace candor;\
     int main(void) {\
       fprintf(stdout, "-- %s --\n", name);
 

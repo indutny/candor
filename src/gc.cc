@@ -4,7 +4,7 @@
 #include <sys/types.h> // off_t
 #include <assert.h> // assert
 
-namespace dotlang {
+namespace candor {
 
 void GC::GCValue::Relocate(char* address) {
   if (slot_ != NULL) {
@@ -120,4 +120,4 @@ void GC::VisitMap(HMap* map) {
   }
 }
 
-} // namespace dotlang
+} // namespace candor

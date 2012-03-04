@@ -3,7 +3,7 @@
 
 #include <sys/types.h> // size_t
 
-namespace dotlang {
+namespace candor {
 
 Zone* Zone::current_ = NULL;
 
@@ -19,4 +19,4 @@ void* Zone::Allocate(size_t size) {
   }
 }
 
-} // namespace dotlang
+} // namespace candor

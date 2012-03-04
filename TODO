@@ -2,7 +2,7 @@
 * Binary operations, Unary operations
 * String concatenation
 * Functions as objects
-* Calling C++/C functions from dotlang
+* Calling C++/C functions from candor
 * Break statement
 * Better parser/lexer errors
 * On-stack replacement and profile-based optimizations

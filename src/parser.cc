@@ -3,7 +3,7 @@
 #include <assert.h> // assert
 #include <stdlib.h> // NULL
 
-namespace dotlang {
+namespace candor {
 
 AstNode* Parser::Execute() {
   AstNode* stmt;
@@ -529,4 +529,4 @@ void Parser::Print(char* buffer, uint32_t size) {
   p.Finalize();
 }
 
-} // namespace dotlang
+} // namespace candor

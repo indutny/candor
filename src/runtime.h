@@ -4,7 +4,7 @@
 #include <stdint.h> // uint32_t
 #include <sys/types.h> // size_t
 
-namespace dotlang {
+namespace candor {
 
 // Forward declarations
 class Heap;
@@ -60,6 +60,6 @@ typedef char* (*RuntimeBinOpCallback)(Heap* heap,
                                       char* rhs);
 char* RuntimeBinOpAdd(Heap* heap, char* stack_top, char* lhs, char* rhs);
 
-} // namespace dotlang
+} // namespace candor
 
 #endif // _SRC_RUNTIME_H_

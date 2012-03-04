@@ -3,7 +3,7 @@
 
 #include <stdint.h> // uint32_t
 
-namespace dotlang {
+namespace candor {
 
 class CompiledScript;
 
@@ -21,6 +21,6 @@ class Script {
   CompiledScript* script;
 };
 
-} // namespace dotlang
+} // namespace candor
 
 #endif // _INCLUDE_DOTLANG_H_

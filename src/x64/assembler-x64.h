@@ -8,7 +8,7 @@
 #include "zone.h" // ZoneObject
 #include "utils.h" // List
 
-namespace dotlang {
+namespace candor {
 
 // Forward declaration
 class Assembler;
@@ -326,6 +326,6 @@ class Assembler {
   List<RelocationInfo*, ZoneObject> relocation_info_;
 };
 
-} // namespace dotlang
+} // namespace candor
 
 #endif // _SRC_X64_ASSEMBLER_H_

@@ -8,7 +8,7 @@
 #include <stdio.h> // snprintf
 #include <sys/types.h> // size_t
 
-namespace dotlang {
+namespace candor {
 
 char* RuntimeAllocate(Heap* heap,
                       uint32_t bytes,
@@ -273,4 +273,4 @@ char* RuntimeBinOpAdd(Heap* heap, char* stack_top, char* lhs, char* rhs) {
   }
 }
 
-} // namespace dotlang
+} // namespace candor

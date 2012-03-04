@@ -12,7 +12,7 @@
 #include <stdlib.h> // NULL
 #include <stdio.h> // snprintf
 
-namespace dotlang {
+namespace candor {
 
 
 void FFunction::Use(uint32_t offset) {
@@ -49,7 +49,7 @@ Fullgen::Fullgen(Heap* heap) : Masm(heap),
 }
 
 
-void Fullgen::DotFunction::Generate() {
+void Fullgen::CandorFunction::Generate() {
   // Generate function's body
   fullgen()->GeneratePrologue(fn());
   fullgen()->VisitChildren(fn());
@@ -63,11 +63,11 @@ void Fullgen::DotFunction::Generate() {
 
 
 void Fullgen::Generate(AstNode* ast) {
-  fns_.Push(new DotFunction(this, FunctionLiteral::Cast(ast)));
+  fns_.Push(new CandorFunction(this, FunctionLiteral::Cast(ast)));
 
   FFunction* fn;
   while ((fn = fns_.Shift()) != NULL) {
-    current_function(DotFunction::Cast(fn));
+    current_function(CandorFunction::Cast(fn));
 
     // Align function if needed
     AlignCode();
@@ -88,7 +88,7 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
   push(rbp);
   push(rbx);
 
-  // Store callee-save registers only on C++ - Dotlang boundary
+  // Store callee-save registers only on C++ - Candor boundary
   if (stmt->is_root()) {
     push(r12);
     push(r13);
@@ -231,7 +231,7 @@ AstNode* Fullgen::VisitForSlot(AstNode* node, Operand* op, Register base) {
 
 AstNode* Fullgen::VisitFunction(AstNode* stmt) {
   FunctionLiteral* fn = FunctionLiteral::Cast(stmt);
-  FFunction* ffn = new DotFunction(this, fn);
+  FFunction* ffn = new CandorFunction(this, fn);
   fns_.Push(ffn);
 
   Save(rax);
@@ -992,4 +992,4 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
 }
 
 
-} // namespace dotlang
+} // namespace candor

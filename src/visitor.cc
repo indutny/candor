@@ -3,7 +3,7 @@
 #include "utils.h" // List
 #include "zone.h" // ZoneObject
 
-namespace dotlang {
+namespace candor {
 
 #define VISITOR_MAPPING_BLOCK(V)\
     V(Function)\
@@ -81,4 +81,4 @@ void Visitor::VisitChildren(AstNode* node) {
 VISITOR_MAPPING_BLOCK(VISITOR_BLOCK_STUB)
 VISITOR_MAPPING_REGULAR(VISITOR_REGULAR_STUB)
 
-} // namescape dotlang
+} // namescape candor

@@ -7,7 +7,7 @@
 #include <zone.h> // Zone::Allocate
 #include <assert.h> // assert
 
-namespace dotlang {
+namespace candor {
 
 Heap* Heap::current_ = NULL;
 
@@ -379,4 +379,4 @@ HFunction::HFunction(char* addr) : HValue(addr) {
 }
 
 
-} // namespace dotlang
+} // namespace candor
