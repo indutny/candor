@@ -455,4 +455,28 @@ void Assembler::cvtsi2sd(DoubleRegister dst, Register src) {
   emit_modrm(dst, src);
 }
 
+
+void Assembler::cvtsd2si(Register dst, DoubleRegister src) {
+  emitb(0xF2);
+  emit_rexw(dst, src);
+  emitb(0x0F);
+  emitb(0x2D);
+  emit_modrm(dst, src);
+}
+
+
+void Assembler::roundsd(DoubleRegister dst,
+                        DoubleRegister src,
+                        RoundMode mode) {
+  emitb(0x66);
+  emit_rexw(dst, src);
+  emitb(0x0F);
+  emitb(0x3A);
+  emitb(0x0B);
+  emit_modrm(dst, src);
+
+  // Exception handling mask
+  emitb(static_cast<uint8_t>(mode) | 0x08);
+}
+
 } // namespace candor

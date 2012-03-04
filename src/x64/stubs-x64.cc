@@ -209,24 +209,23 @@ void CoerceToBooleanStub::Generate() {
 }
 
 
-void BinaryAddStub::Generate() {
-  (new BinaryOpStub(masm(), BinOp::kAdd))->Generate();
-}
+#define BINARY_SUB_TYPES(V)\
+    V(Add)\
+    V(Sub)\
+    V(Mul)\
+    V(Div)\
+    V(BAnd)\
+    V(BOr)\
+    V(BXor)
 
+#define BINARY_STUB_GENERATE(V)\
+    void Binary##V##Stub::Generate() {\
+      (new BinaryOpStub(masm(), BinOp::k##V))->Generate();\
+    }
+BINARY_SUB_TYPES(BINARY_STUB_GENERATE)
+#undef BINARY_STUB_GENERATE
 
-void BinarySubStub::Generate() {
-  (new BinaryOpStub(masm(), BinOp::kSub))->Generate();
-}
-
-
-void BinaryMulStub::Generate() {
-  (new BinaryOpStub(masm(), BinOp::kMul))->Generate();
-}
-
-
-void BinaryDivStub::Generate() {
-  (new BinaryOpStub(masm(), BinOp::kDiv))->Generate();
-}
+#undef BINARY_SUB_TYPES
 
 
 void BinaryOpStub::Generate() {
@@ -257,15 +256,36 @@ void BinaryOpStub::Generate() {
   __ movqd(xmm1, rax);
   __ movqd(xmm2, rbx);
 
-  switch (type()) {
-   case BinOp::kAdd: __ addqd(xmm1, xmm2); break;
-   case BinOp::kSub: __ subqd(xmm1, xmm2); break;
-   case BinOp::kMul: __ mulqd(xmm1, xmm2); break;
-   case BinOp::kDiv: __ divqd(xmm1, xmm2); break;
-   default: __ emitb(0xcc); break;
-  }
+  if (BinOp::is_math(type())) {
+    switch (type()) {
+     case BinOp::kAdd: __ addqd(xmm1, xmm2); break;
+     case BinOp::kSub: __ subqd(xmm1, xmm2); break;
+     case BinOp::kMul: __ mulqd(xmm1, xmm2); break;
+     case BinOp::kDiv: __ divqd(xmm1, xmm2); break;
+     default: __ emitb(0xcc); break;
+    }
 
-  __ AllocateNumber(xmm1, rax);
+    __ AllocateNumber(xmm1, rax);
+  } else if (BinOp::is_binary(type())) {
+    __ roundsd(fscratch, xmm1, kCeil);
+    __ cvtsd2si(rax, fscratch);
+    __ roundsd(fscratch, xmm2, kCeil);
+    __ cvtsd2si(rbx, fscratch);
+
+    switch (type()) {
+     case BinOp::kBAnd: __ andq(rax, rbx); break;
+     case BinOp::kBOr: __ orq(rax, rbx); break;
+     case BinOp::kBXor: __ xorq(rax, rbx); break;
+     default: __ emitb(0xcc); break;
+    }
+
+    __ TagNumber(rax);
+  } else if (BinOp::is_logic(type())) {
+    // TODO: Implement me
+    switch (type()) {
+      default: __ emitb(0xcc); break;
+    }
+  }
 
   __ jmp(&done);
   __ bind(&call_runtime);

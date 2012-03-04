@@ -207,6 +207,10 @@ enum Condition {
   kOverflow
 };
 
+enum RoundMode {
+  kCeil = 0x01
+};
+
 class Assembler {
  public:
   Assembler() : offset_(0), length_(256) {
@@ -283,6 +287,8 @@ class Assembler {
   void divqd(DoubleRegister dst, DoubleRegister src);
   void xorqd(DoubleRegister dst, DoubleRegister src);
   void cvtsi2sd(DoubleRegister dst, Register src);
+  void cvtsd2si(Register dst, DoubleRegister src);
+  void roundsd(DoubleRegister dst, DoubleRegister src, RoundMode mode);
 
   // Routines
   inline void emit_rex_if_high(Register src);
@@ -292,6 +298,7 @@ class Assembler {
   inline void emit_rexw(Register dst, Operand& src);
   inline void emit_rexw(Operand& dst, Register src);
   inline void emit_rexw(DoubleRegister dst, Register src);
+  inline void emit_rexw(DoubleRegister dst, DoubleRegister src);
   inline void emit_rexw(Register dst, DoubleRegister src);
   inline void emit_rexw(DoubleRegister dst, Operand& src);
 

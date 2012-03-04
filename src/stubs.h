@@ -22,7 +22,10 @@ class RelocationInfo;
     V(BinaryAdd)\
     V(BinarySub)\
     V(BinaryMul)\
-    V(BinaryDiv)
+    V(BinaryDiv)\
+    V(BinaryBAnd)\
+    V(BinaryBOr)\
+    V(BinaryBXor)
 
 class BaseStub : public FFunction {
  public:

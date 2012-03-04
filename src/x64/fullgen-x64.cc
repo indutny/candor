@@ -965,13 +965,26 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
     bind(&not_unboxed);
 
     BaseStub* stub = NULL;
+
+#define BINARY_SUB_TYPES(V)\
+    V(Add)\
+    V(Sub)\
+    V(Mul)\
+    V(Div)\
+    V(BAnd)\
+    V(BOr)\
+    V(BXor)
+
+#define BINARY_SUB_ENUM(V)\
+    case BinOp::k##V: stub = stubs()->GetBinary##V##Stub(); break;
+
+
     switch (op->subtype()) {
-     case BinOp::kAdd: stub = stubs()->GetBinaryAddStub(); break;
-     case BinOp::kSub: stub = stubs()->GetBinarySubStub(); break;
-     case BinOp::kMul: stub = stubs()->GetBinaryMulStub(); break;
-     case BinOp::kDiv: stub = stubs()->GetBinaryDivStub(); break;
+     BINARY_SUB_TYPES(BINARY_SUB_ENUM)
      default: emitb(0xcc); break;
     }
+#undef BINARY_SUB_ENUM
+#undef BINARY_SUB_TYPES
 
     // rax and rbx are already on stack
     // so just call stub

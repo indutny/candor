@@ -22,6 +22,19 @@ TEST_START("numbers test")
     assert(HValue::As<HNumber>(result)->value() == 3.5);
   })
 
+  // Conversion to unboxed
+  FUN_TEST("return 1.5 | 3.5", {
+    assert(HValue::As<HNumber>(result)->value() == 3);
+  })
+
+  FUN_TEST("return 2.5 & 3.5", {
+    assert(HValue::As<HNumber>(result)->value() == 2);
+  })
+
+  FUN_TEST("return 1.5 ^ 3.5", {
+    assert(HValue::As<HNumber>(result)->value() == 2);
+  })
+
   // Negative (unboxed)
   FUN_TEST("return 0 - 1", {
     assert(HValue::As<HNumber>(result)->value() == -1);

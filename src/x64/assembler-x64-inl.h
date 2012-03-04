@@ -70,6 +70,11 @@ inline void Assembler::emit_rexw(DoubleRegister dst, Register src) {
 }
 
 
+inline void Assembler::emit_rexw(DoubleRegister dst, DoubleRegister src) {
+  emitb(0x48 | dst.high() << 2 | src.high());
+}
+
+
 inline void Assembler::emit_rexw(Register dst, DoubleRegister src) {
   emitb(0x48 | dst.high() << 2 | src.high());
 }

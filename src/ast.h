@@ -235,6 +235,20 @@ class BinOp : public AstNode {
            p->Print("]");
   }
 
+  static inline bool is_math(BinOpType type) {
+    return type == kAdd || type == kSub || type == kDiv || type == kMul;
+  }
+
+  static inline bool is_binary(BinOpType type) {
+    return type == kBAnd || type == kBOr || type == kBXor;
+  }
+
+  static inline bool is_logic(BinOpType type) {
+    return type == kEq || type == kStrictEq || type == kNe ||
+           type == kStrictNe || type == kLt || type == kGt || type == kLe ||
+           type == kGe || type == kLOr || type == kLAnd;
+  }
+
   inline BinOpType subtype() { return subtype_; }
 
  protected:
