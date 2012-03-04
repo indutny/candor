@@ -1,5 +1,7 @@
+* Ensure that GC won't be called between two allocations in runtime.cc
 * C++/C bindings support for candor
 * Functions as objects
+* UTF8
 * Consider adding NaN
 * % - mod operation
 * Break statement
