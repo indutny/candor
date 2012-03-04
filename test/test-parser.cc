@@ -72,6 +72,8 @@ TEST_START("parser test")
   PARSER_TEST("while(y * y & z) { x = x + 1 }",
               "[kWhile [kBAnd [kMul [y] [y]] [z]] "
               "[kBlock [kAssign [x] [kAdd [x] [1]]]]]")
+  PARSER_TEST("while (i >= 0) { x++ }",
+              "[kWhile [kGe [i] [0]] [kBlock [kPostInc [x]]]]")
 
   // If
   PARSER_TEST("if(true) {}", "[kIf [true] [kBlock [kNop ]]]")

@@ -64,6 +64,10 @@ TEST_START("numbers test")
     assert(HValue::As<HBoolean>(result)->is_true());
   })
 
+  FUN_TEST("return 1 < (0 - 2)", {
+    assert(HValue::As<HBoolean>(result)->is_false());
+  })
+
   // Negative (unboxed)
   FUN_TEST("return 0 - 1", {
     assert(HValue::As<HNumber>(result)->value() == -1);

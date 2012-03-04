@@ -899,66 +899,65 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
     IsUnboxed(rax, &rhs_to_heap, NULL);
     IsUnboxed(rbx, &lhs_to_heap, NULL);
 
-    {
-      // Number (+) Number
+    // Number (+) Number
+    if (BinOp::is_math(op->subtype())) {
       Untag(rax);
       Untag(rbx);
 
-      if (BinOp::is_math(op->subtype())) {
-        switch (op->subtype()) {
-         case BinOp::kAdd: addq(rax, rbx); break;
-         case BinOp::kSub: subq(rax, rbx); break;
-         case BinOp::kMul: push(rdx); imulq(rbx); pop(rdx); break;
-         case BinOp::kDiv: push(rdx); idivq(rbx); pop(rdx); break;
+      switch (op->subtype()) {
+       case BinOp::kAdd: addq(rax, rbx); break;
+       case BinOp::kSub: subq(rax, rbx); break;
+       case BinOp::kMul: push(rdx); imulq(rbx); pop(rdx); break;
+       case BinOp::kDiv: push(rdx); idivq(rbx); pop(rdx); break;
 
-         default: emitb(0xcc); break;
-        }
-
-        // Call stub on overflow
-        jmp(kOverflow, &lhs_to_heap);
-
-        TagNumber(rax);
-        jmp(kCarry, &lhs_to_heap);
-
-        movq(result(), rax);
-      } else if (BinOp::is_binary(op->subtype())) {
-        switch (op->subtype()) {
-         case BinOp::kBAnd: andq(rax, rbx); break;
-         case BinOp::kBOr: orq(rax, rbx); break;
-         case BinOp::kBXor: xorq(rax, rbx); break;
-
-         default: emitb(0xcc); break;
-        }
-
-        TagNumber(rax);
-        movq(result(), rax);
-      } else if (BinOp::is_logic(op->subtype())) {
-        Condition cond = BinOpToCondition(op->subtype(), kIntegral);
-        cmpq(rax, rbx);
-
-        Label true_(this), cond_end(this);
-
-        jmp(cond, &true_);
-
-        movq(scratch, Immediate(0));
-        jmp(&cond_end);
-
-        bind(&true_);
-        movq(scratch, Immediate(1));
-        bind(&cond_end);
-
-        // Cleanup junk
-        xorq(rax, rax);
-        xorq(rbx, rbx);
-
-        AllocateBoolean(scratch, result());
-      } else {
-        // Call runtime for all other binary ops (boolean logic)
-        jmp(&not_unboxed);
+       default: emitb(0xcc); break;
       }
 
-      jmp(&done);
+      // Call stub on overflow
+      jmp(kOverflow, &lhs_to_heap);
+
+      TagNumber(rax);
+      jmp(kCarry, &lhs_to_heap);
+
+      movq(result(), rax);
+    } else if (BinOp::is_binary(op->subtype())) {
+      Untag(rax);
+      Untag(rbx);
+
+      switch (op->subtype()) {
+       case BinOp::kBAnd: andq(rax, rbx); break;
+       case BinOp::kBOr: orq(rax, rbx); break;
+       case BinOp::kBXor: xorq(rax, rbx); break;
+
+       default: emitb(0xcc); break;
+      }
+
+      TagNumber(rax);
+      movq(result(), rax);
+    } else if (BinOp::is_logic(op->subtype())) {
+      Condition cond = BinOpToCondition(op->subtype(), kIntegral);
+      // Note: rax and rbx are boxed here
+      // Otherwise cmp won't work for negative numbers
+      cmpq(rax, rbx);
+
+      Label true_(this), cond_end(this);
+
+      jmp(cond, &true_);
+
+      movq(scratch, Immediate(0));
+      jmp(&cond_end);
+
+      bind(&true_);
+      movq(scratch, Immediate(1));
+      bind(&cond_end);
+
+      AllocateBoolean(scratch, result());
+    } else {
+      // Call runtime for all other binary ops (boolean logic)
+      jmp(&not_unboxed);
     }
+
+    jmp(&done);
 
     bind(&lhs_to_heap);
 
