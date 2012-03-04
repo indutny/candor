@@ -103,38 +103,6 @@ bool HValue::IsUnboxed(char* addr) {
 }
 
 
-HValue::HValue(char* addr) : addr_(addr) {
-  tag_ = HValue::GetTag(addr);
-}
-
-
-HValue* HValue::New(char* addr) {
-  switch (HValue::GetTag(addr)) {
-   case Heap::kTagContext:
-    return HValue::As<HContext>(addr);
-   case Heap::kTagFunction:
-    return HValue::As<HFunction>(addr);
-   case Heap::kTagNumber:
-    return HValue::As<HNumber>(addr);
-   case Heap::kTagBoolean:
-    return HValue::As<HBoolean>(addr);
-   case Heap::kTagString:
-    return HValue::As<HString>(addr);
-   case Heap::kTagObject:
-    return HValue::As<HObject>(addr);
-   case Heap::kTagMap:
-    return HValue::As<HMap>(addr);
-   case Heap::kTagNil:
-    // Nil has a NULL address
-   case Heap::kTagCode:
-    return NULL;
-   default:
-    UNEXPECTED
-  }
-  return NULL;
-}
-
-
 HValue* HValue::CopyTo(Space* space) {
   uint32_t size = 8;
   switch (tag()) {
@@ -169,7 +137,7 @@ HValue* HValue::CopyTo(Space* space) {
   char* result = space->Allocate(size, NULL);
   memcpy(result, addr(), size);
 
-  return HValue::New(result);
+  return HValue::Cast(result);
 }
 
 
@@ -198,12 +166,6 @@ void HValue::ResetGCMark() {
 }
 
 
-HContext::HContext(char* addr) : HValue(addr) {
-  parent_slot_ = reinterpret_cast<char**>(addr + 8);
-  slots_ = *reinterpret_cast<uint64_t*>(addr + 16);
-}
-
-
 char* HContext::New(Heap* heap,
                     char* stack_top,
                     List<char*, ZoneObject>* values) {
@@ -228,33 +190,18 @@ char* HContext::New(Heap* heap,
 }
 
 
-bool HContext::HasParent() {
-  return *parent_slot_ != NULL;
-}
-
-
 bool HContext::HasSlot(uint32_t index) {
   return *GetSlotAddress(index) != NULL;
 }
 
 
 HValue* HContext::GetSlot(uint32_t index) {
-  return HValue::New(*GetSlotAddress(index));
+  return HValue::Cast(*GetSlotAddress(index));
 }
 
 
 char** HContext::GetSlotAddress(uint32_t index) {
   return reinterpret_cast<char**>(addr() + 24 + index * 8);
-}
-
-
-HNumber::HNumber(char* addr) : HValue(addr) {
-  if ((reinterpret_cast<uint64_t>(addr) & 0x01) == 0x01) {
-    // Unboxed value
-    value_ = reinterpret_cast<int64_t>(addr) >> 1;
-  } else {
-    value_ = *reinterpret_cast<double*>(addr + 8);
-  }
 }
 
 
@@ -280,30 +227,11 @@ int64_t HNumber::Tag(int64_t value) {
 }
 
 
-HBoolean::HBoolean(char* addr) : HValue(addr) {
-  value_ = *reinterpret_cast<int8_t*>(addr + 8) == 1;
-}
-
-
 char* HBoolean::New(Heap* heap, char* stack_top, bool value) {
   char* result = heap->AllocateTagged(Heap::kTagBoolean, 8, stack_top);
   *reinterpret_cast<int8_t*>(result + 8) = value ? 1 : 0;
 
   return result;
-}
-
-
-HString::HString(char* addr) : HValue(addr) {
-  length_ = *reinterpret_cast<uint32_t*>(addr + 16);
-  value_ = addr + 24;
-
-  // Compute hash lazily
-  uint32_t* hash_addr = reinterpret_cast<uint32_t*>(addr + 8);
-  hash_ = *hash_addr;
-  if (hash_ == 0) {
-    hash_ = ComputeHash(value_, length_);
-    *hash_addr = hash_;
-  }
 }
 
 
@@ -324,8 +252,14 @@ char* HString::New(Heap* heap,
 }
 
 
-HObject::HObject(char* addr) : HValue(addr) {
-  map_slot_ = reinterpret_cast<char**>(addr + 16);
+uint32_t HString::Hash(char* addr) {
+  uint32_t* hash_addr = reinterpret_cast<uint32_t*>(addr + 8);
+  uint32_t hash = *hash_addr;
+  if (hash == 0) {
+    hash = ComputeHash(Value(addr), Length(addr));
+    *hash_addr = hash;
+  }
+  return hash;
 }
 
 
@@ -352,29 +286,18 @@ char* HObject::NewEmpty(Heap* heap, char* stack_top) {
 }
 
 
-HMap::HMap(char* addr) : HValue(addr) {
-  size_ = *reinterpret_cast<uint64_t*>(addr + 8);
-  space_ = addr + 16;
-}
-
-
 bool HMap::IsEmptySlot(uint32_t index) {
   return *GetSlotAddress(index) == NULL;
 }
 
 
 HValue* HMap::GetSlot(uint32_t index) {
-  return HValue::New(*GetSlotAddress(index));
+  return HValue::Cast(*GetSlotAddress(index));
 }
 
 
 char** HMap::GetSlotAddress(uint32_t index) {
-  return reinterpret_cast<char**>(space_ + index * 8);
-}
-
-
-HFunction::HFunction(char* addr) : HValue(addr) {
-  parent_slot_ = reinterpret_cast<char**>(addr + 8);
+  return reinterpret_cast<char**>(space() + index * 8);
 }
 
 

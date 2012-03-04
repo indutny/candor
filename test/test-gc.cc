@@ -1,37 +1,6 @@
 #include "test.h"
 
 TEST_START("GC test")
-  // Only roots
-  FUN_TEST("return __$gc()", {
-    assert(result == NULL);
-  })
-
-  // Heap number
-  FUN_TEST("x = 1\nreturn __$gc()", {
-    assert(result == NULL);
-  })
-
-  // Basic test with a context variable
-  FUN_TEST("y() {scope x}\nx = 1\nx = 2\n__$gc()\nreturn x", {
-    assert(HValue::As<HNumber>(result)->value() == 2);
-  })
-
-  // Objects
-  FUN_TEST("x = { y : 1 }\nx.y = 2\n__$gc()\nreturn x.y", {
-    assert(HValue::As<HNumber>(result)->value() == 2);
-  })
-
-  FUN_TEST("x = { y : { z : 1 }}\nx.y = { z : 2 }\n__$gc()\nreturn x.y.z", {
-    assert(HValue::As<HNumber>(result)->value() == 2);
-  })
-
-  // Inside function
-  FUN_TEST("x = { y : 1 }\n"
-           "a() {\nscope x\nx.y = 2\n__$gc()\nreturn x.y\n}\n"
-           "return a()", {
-    assert(HValue::As<HNumber>(result)->value() == 2);
-  })
-
   FUN_TEST("x = { y : { z : 3 } }\n"
            "a() {\n"
            "return (() {\nscope x\nx.y = 2\n__$gc()\nreturn x.y\n})()\n"

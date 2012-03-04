@@ -129,28 +129,23 @@ class Heap {
 };
 
 
-class HValue : public ZoneObject {
+class HValue {
  public:
-  HValue(char* addr);
+  HValue() { UNEXPECTED }
 
-  static HValue* New(char* addr);
-
-  template <class T>
-  static inline T* As(char* addr) {
-    // Handle unboxed values
-    if (IsUnboxed(addr)) {
-      return new T(addr);
-    }
-
-    assert(addr != NULL);
-    assert(*reinterpret_cast<uint8_t*>(addr) == T::class_tag);
-    return new T(addr);
+  static inline HValue* Cast(char* addr) {
+    return reinterpret_cast<HValue*>(addr);
   }
 
   template <class T>
   inline T* As() {
     assert(tag() == T::class_tag);
     return reinterpret_cast<T*>(this);
+  }
+
+  template <class T>
+  static inline T* As(char* addr) {
+    return Cast(addr)->As<T>();
   }
 
   HValue* CopyTo(Space* space);
@@ -164,22 +159,13 @@ class HValue : public ZoneObject {
   static Heap::HeapTag GetTag(char* addr);
   static bool IsUnboxed(char* addr);
 
-  inline Heap::HeapTag tag() { return tag_; }
-  inline void tag(Heap::HeapTag tag) { tag_ = tag; }
-
-  inline char* addr() { return addr_; }
-  inline void addr(char* addr) { addr_ = addr; }
-
- protected:
-  Heap::HeapTag tag_;
-  char* addr_;
+  inline Heap::HeapTag tag() { return GetTag(addr()); }
+  inline char* addr() { return reinterpret_cast<char*>(this); }
 };
 
 
 class HContext : public HValue {
  public:
-  HContext(char* addr);
-
   static char* New(Heap* heap,
                    char* stack_top,
                    List<char*, ZoneObject>* values);
@@ -188,31 +174,25 @@ class HContext : public HValue {
   HValue* GetSlot(uint32_t index);
   char** GetSlotAddress(uint32_t index);
 
-  bool HasParent();
+  inline char* parent() { return *parent_slot(); }
+  inline bool has_parent() { return parent() != NULL; }
 
-  inline char* parent() { return *parent_slot_; }
-  inline char** parent_slot() { return parent_slot_; }
-  inline uint32_t slots() { return slots_; }
+  inline char** parent_slot() { return reinterpret_cast<char**>(addr() + 8); }
+  inline uint32_t slots() { return *reinterpret_cast<uint64_t*>(addr() + 16); }
 
   static const Heap::HeapTag class_tag = Heap::kTagContext;
-
- protected:
-  char** parent_slot_;
-  uint32_t slots_;
 };
 
 
 class HNumber : public HValue {
  public:
-  HNumber(char* addr);
-
   static char* New(Heap* heap, char* stack_top, int64_t value);
   static char* New(Heap* heap, char* stack_top, double value);
 
   static int64_t Untag(int64_t value);
   static int64_t Tag(int64_t value);
 
-  inline double value() { return value_; }
+  inline double value() { return DoubleValue(addr()); }
 
   static inline int64_t IntegralValue(char* addr) {
     if (IsUnboxed(addr)) {
@@ -231,49 +211,36 @@ class HNumber : public HValue {
   }
 
   static const Heap::HeapTag class_tag = Heap::kTagNumber;
-
- protected:
-  double value_;
 };
 
 
 class HBoolean : public HValue {
  public:
-  HBoolean(char* addr);
-
   static char* New(Heap* heap, char* stack_top, bool value);
 
-  inline bool is_true() { return value_; }
-  inline bool is_false() { return !value_; }
+  inline bool is_true() { return Value(addr()); }
+  inline bool is_false() { return !is_true(); }
 
   static inline bool Value(char* addr) {
     return *reinterpret_cast<uint8_t*>(addr + 8) != 0;
   }
 
   static const Heap::HeapTag class_tag = Heap::kTagBoolean;
-
- protected:
-  bool value_;
 };
 
 
 class HString : public HValue {
  public:
-  HString(char* addr);
-
   static char* New(Heap* heap,
                    char* stack_top,
                    const char* value,
                    uint32_t length);
 
-  inline char* value() { return value_; }
-  inline uint32_t length() { return length_; }
-  inline uint32_t hash() { return hash_; }
+  inline char* value() { return Value(addr()); }
+  inline uint32_t length() { return Length(addr()); }
+  inline uint32_t hash() { return Hash(addr()); }
 
-  inline static uint32_t Hash(char* addr) {
-    return *reinterpret_cast<uint32_t*>(addr + 8);
-  }
-
+  static uint32_t Hash(char* addr);
   inline static char* Value(char* addr) { return addr + 24; }
 
   inline static uint32_t Length(char* addr) {
@@ -281,27 +248,17 @@ class HString : public HValue {
   }
 
   static const Heap::HeapTag class_tag = Heap::kTagString;
-
- protected:
-  char* value_;
-  uint32_t length_;
-  uint32_t hash_;
 };
 
 
 class HObject : public HValue {
  public:
-  HObject(char* addr);
-
   static char* NewEmpty(Heap* heap, char* stack_top);
 
-  inline char* map() { return *map_slot_; }
-  inline char** map_slot() { return map_slot_; }
+  inline char* map() { return *map_slot(); }
+  inline char** map_slot() { return reinterpret_cast<char**>(addr() + 16); }
 
   static const Heap::HeapTag class_tag = Heap::kTagObject;
-
- protected:
-  char** map_slot_;
 };
 
 
@@ -313,13 +270,10 @@ class HMap : public HValue {
   HValue* GetSlot(uint32_t index);
   char** GetSlotAddress(uint32_t index);
 
-  inline uint32_t size() { return size_; }
+  inline uint32_t size() { return *reinterpret_cast<uint64_t*>(addr() + 8); }
+  inline char* space() { return addr() + 16; }
 
   static const Heap::HeapTag class_tag = Heap::kTagMap;
-
- protected:
-  uint32_t size_;
-  char* space_;
 };
 
 
@@ -327,13 +281,10 @@ class HFunction : public HValue {
  public:
   HFunction(char* addr);
 
-  inline char* parent() { return *parent_slot_; }
-  inline char** parent_slot() { return parent_slot_; }
+  inline char* parent() { return *parent_slot(); }
+  inline char** parent_slot() { return reinterpret_cast<char**>(addr() + 8); }
 
   static const Heap::HeapTag class_tag = Heap::kTagFunction;
-
- protected:
-  char** parent_slot_;
 };
 
 

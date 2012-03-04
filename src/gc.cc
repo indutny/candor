@@ -33,8 +33,8 @@ void GC::CollectGarbage(char* stack_top) {
     }
 
     // Ignore return addresses
-    HValue* hvalue = HValue::New(value);
-    if (hvalue == NULL) continue;
+    HValue* hvalue = HValue::Cast(value);
+    if (hvalue == NULL || hvalue->tag() == Heap::kTagCode) continue;
 
     grey_items()->Push(new GCValue(hvalue, slot));
   }
@@ -87,9 +87,9 @@ void GC::VisitValue(HValue* value) {
 
 
 void GC::VisitContext(HContext* context) {
-  if (context->HasParent()) {
+  if (context->has_parent()) {
     grey_items()->Push(
-        new GCValue(HValue::New(context->parent()), context->parent_slot()));
+        new GCValue(HValue::Cast(context->parent()), context->parent_slot()));
   }
 
   for (uint32_t i = 0; i < context->slots(); i++) {
@@ -102,12 +102,12 @@ void GC::VisitContext(HContext* context) {
 
 
 void GC::VisitFunction(HFunction* fn) {
-  grey_items()->Push(new GCValue(HValue::New(fn->parent()), fn->parent_slot()));
+  grey_items()->Push(new GCValue(HValue::Cast(fn->parent()), fn->parent_slot()));
 }
 
 
 void GC::VisitObject(HObject* obj) {
-  grey_items()->Push(new GCValue(HValue::New(obj->map()), obj->map_slot()));
+  grey_items()->Push(new GCValue(HValue::Cast(obj->map()), obj->map_slot()));
 }
 
 
