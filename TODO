@@ -1,5 +1,3 @@
-* Unary operations for numbers (kPlus, kMinus, kNot)
-* Unary operations for others
 * Logical operations for non-numbers ( >, <, ==, ===)
 * Binary operations for non-numbers
 * Functions as objects
