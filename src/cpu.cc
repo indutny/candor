@@ -9,6 +9,9 @@
 #include "ia32/assembler-ia32.h"
 #endif
 
+#include <stdint.h> // uint32_t
+#include <sys/types.h> // off_t
+
 namespace candor {
 
 CPU::CPUFeatures CPU::cpu_features_;
@@ -42,7 +45,7 @@ void CPU::Probe() {
   Guard g(a.buffer(), a.length());
   a.Relocate(g.buffer());
 
-  int32_t features = reinterpret_cast<uint64_t>(g.AsFunction()(
+  int32_t features = reinterpret_cast<off_t>(g.AsFunction()(
         NULL, NULL, NULL));
 
   cpu_features_.SSE4_1 = (features & (1 << 19)) != 0;
