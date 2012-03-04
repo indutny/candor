@@ -159,6 +159,10 @@ expr := binop | prefix | postfix |
         blockExpr | assign | callOrFun | member
 ```
 
+## Credits
+
+Special thanks to @creationix for suggesting the name of this project!
+
 #### LICENSE
 
 Copyright (c) 2012, Fedor Indutny.
