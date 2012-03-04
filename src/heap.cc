@@ -126,7 +126,6 @@ HValue* HValue::New(char* addr) {
     return HValue::As<HMap>(addr);
    case Heap::kTagNil:
     // Nil has a NULL address
-    assert(0 && "Unexpected");
    case Heap::kTagCode:
     return NULL;
    default:

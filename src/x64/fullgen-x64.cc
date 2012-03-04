@@ -83,7 +83,7 @@ void Fullgen::Generate(AstNode* ast) {
 
 void Fullgen::GeneratePrologue(AstNode* stmt) {
   // rdi <- reference to parent context (zero for root)
-  // rsi <- arguments count
+  // rsi <- unboxed arguments count (tagged)
   // rdx <- (root only) address of root context
   push(rbp);
   push(rbx);
@@ -137,7 +137,7 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
     Operand lhs(rax, 0);
     Operand rhs(rbp, 24 + 8 * i++);
 
-    cmpq(rsi, Immediate(i));
+    cmpq(rsi, Immediate(TagNumber(i)));
     jmp(kLt, &body);
 
     VisitForSlot(item->value(), &lhs, scratch);
@@ -947,6 +947,10 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
         movq(scratch, Immediate(1));
         bind(&cond_end);
 
+        // Cleanup junk
+        xorq(rax, rax);
+        xorq(rbx, rbx);
+
         AllocateBoolean(scratch, result());
       } else {
         // Call runtime for all other binary ops (boolean logic)
@@ -966,6 +970,7 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
     // Translate lhs to heap number
     xorqd(xmm1, xmm1);
     cvtsi2sd(xmm1, rax);
+    xorq(rax, rax);
     AllocateNumber(xmm1, rax);
 
     // Replace on-stack value of rax
@@ -985,6 +990,7 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
     // Translate rhs to heap number
     xorqd(xmm1, xmm1);
     cvtsi2sd(xmm1, rbx);
+    xorq(rbx, rbx);
 
     AllocateNumber(xmm1, rbx);
 
