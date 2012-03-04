@@ -303,11 +303,11 @@ void BinaryOpStub::Generate() {
 
     __ jmp(cond, &true_);
 
-    __ movq(scratch, Immediate(0));
+    __ movq(scratch, Immediate(masm()->TagNumber(0)));
     __ jmp(&comp_end);
 
     __ bind(&true_);
-    __ movq(scratch, Immediate(1));
+    __ movq(scratch, Immediate(masm()->TagNumber(1)));
     __ bind(&comp_end);
 
     __ AllocateBoolean(scratch, rax);

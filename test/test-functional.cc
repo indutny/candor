@@ -103,6 +103,22 @@ TEST_START("functional test")
     assert(HValue::As<HNumber>(result)->value() == 3);
   })
 
+  FUN_TEST("return !true", {
+    assert(HValue::As<HBoolean>(result)->is_false());
+  })
+
+  FUN_TEST("return !false", {
+    assert(HValue::As<HBoolean>(result)->is_true());
+  })
+
+  FUN_TEST("return !0", {
+    assert(HValue::As<HBoolean>(result)->is_true());
+  })
+
+  FUN_TEST("return !nil", {
+    assert(HValue::As<HBoolean>(result)->is_true());
+  })
+
   // Objects
   FUN_TEST("return {}", {
     assert(result != NULL);

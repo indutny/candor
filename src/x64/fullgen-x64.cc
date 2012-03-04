@@ -855,6 +855,7 @@ AstNode* Fullgen::VisitUnOp(AstNode* node) {
   } else if (op->subtype() == UnOp::kPlus || op->subtype() == UnOp::kMinus) {
     // +a = 0 + a
     // -a = 0 - a
+    // TODO: Parser should genereate negative numbers where possible
 
     AstNode* zero = new AstNode(AstNode::kNumber);
     zero->value("0");
@@ -868,8 +869,25 @@ AstNode* Fullgen::VisitUnOp(AstNode* node) {
     VisitForValue(wrap, result());
 
   } else if (op->subtype() == UnOp::kNot) {
-    // TODO: Implement me
-    emitb(0xcc);
+    // Get value and convert it to boolean
+    VisitForValue(op->lhs(), result());
+    ConvertToBoolean();
+
+    Label done(this), ret_false(this);
+
+    // Negate it
+    IsTrue(result(), NULL, &ret_false);
+
+    movq(scratch, Immediate(TagNumber(1)));
+
+    jmp(&done);
+    bind(&ret_false);
+    movq(scratch, Immediate(TagNumber(0)));
+
+    bind(&done);
+    AllocateBoolean(scratch, result());
+    xorq(scratch, scratch);
+
   } else {
     assert(0 && "Unexpected");
   }
@@ -955,11 +973,11 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
 
       jmp(cond, &true_);
 
-      movq(scratch, Immediate(0));
+      movq(scratch, Immediate(TagNumber(0)));
       jmp(&cond_end);
 
       bind(&true_);
-      movq(scratch, Immediate(1));
+      movq(scratch, Immediate(TagNumber(1)));
       bind(&cond_end);
 
       AllocateBoolean(scratch, result());

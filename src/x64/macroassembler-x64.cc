@@ -154,14 +154,18 @@ void Masm::AllocateNumber(DoubleRegister value, Register result) {
 
 void Masm::AllocateBoolean(Register value, Register result) {
   // Value is often a scratch register, so store it before doing a stub call
-  PushTagged(value);
+  Push(value);
 
   Allocate(Heap::kTagBoolean, reg_nil, 8, result);
 
-  PopTagged(value);
+  Pop(value);
+  Push(value);
 
   Operand qvalue(result, 8);
+  Untag(value);
   movb(qvalue, value);
+
+  Pop(value);
 }
 
 
@@ -267,6 +271,7 @@ void Masm::Fill(Register start, Register end, Immediate value) {
   jmp(kLt, &loop);
 
   Pop(start);
+  xorq(scratch, scratch);
 }
 
 
