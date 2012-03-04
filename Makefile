@@ -70,6 +70,7 @@ src/%.o: src/%.cc
 TESTS += test/test-parser
 TESTS += test/test-scope
 TESTS += test/test-functional
+TESTS += test/test-binary
 TESTS += test/test-numbers
 TESTS += test/test-gc
 
@@ -77,6 +78,7 @@ test: $(TESTS)
 	@test/test-parser
 	@test/test-scope
 	@test/test-functional
+	@test/test-binary
 	@test/test-numbers
 	@test/test-gc
 
