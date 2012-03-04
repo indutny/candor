@@ -216,6 +216,7 @@ Lexer::Token* Lexer::Consume() {
     CHECK_KEYWORD(value, len, 2, "if", kIf)
     CHECK_KEYWORD(value, len, 3, "new", kNew)
     CHECK_KEYWORD(value, len, 3, "nil", kNil)
+    CHECK_KEYWORD(value, len, 3, "NaN", kNan)
     CHECK_KEYWORD(value, len, 4, "else", kElse)
     CHECK_KEYWORD(value, len, 4, "true", kTrue)
     CHECK_KEYWORD(value, len, 5, "scope", kScope)

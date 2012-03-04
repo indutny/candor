@@ -59,6 +59,7 @@ class Lexer {
     kString,
     kFalse,
     kTrue,
+    kNan,
     kNil,
 
     // Various

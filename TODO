@@ -1,6 +1,7 @@
 * Logical operations for non-numbers ( >, <, ==, ===)
 * Binary operations for non-numbers
 * Functions as objects
+* NaN
 * Calling C++/C functions from candor
 * Break statement
 * Better parser/lexer errors

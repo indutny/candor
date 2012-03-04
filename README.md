@@ -24,6 +24,7 @@ variables).
 nil
 true
 false
+NaN
 1
 'abc'
 "abc"
