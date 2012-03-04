@@ -1,5 +1,5 @@
-* Heap numbers
-* Binary operations, Unary operations
+* Unbox heap numbers ( for %&|^ binary operations )
+* Logical operations ( >, <, ==, ===)
 * String concatenation
 * Functions as objects
 * Calling C++/C functions from candor
