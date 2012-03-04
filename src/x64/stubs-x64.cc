@@ -216,7 +216,17 @@ void CoerceToBooleanStub::Generate() {
     V(Div)\
     V(BAnd)\
     V(BOr)\
-    V(BXor)
+    V(BXor)\
+    V(Eq)\
+    V(StrictEq)\
+    V(Ne)\
+    V(StrictNe)\
+    V(Lt)\
+    V(Gt)\
+    V(Le)\
+    V(Ge)\
+    V(LOr)\
+    V(LAnd)
 
 #define BINARY_STUB_GENERATE(V)\
     void Binary##V##Stub::Generate() {\
@@ -241,6 +251,11 @@ void BinaryOpStub::Generate() {
 
   __ movq(rax, lhs);
   __ movq(rbx, rhs);
+
+  if (BinOp::is_bool_logic(type())) {
+    // Call runtime w/o any checks
+    __ jmp(&call_runtime);
+  }
 
   __ IsNil(rax, NULL, &call_runtime);
   __ IsNil(rbx, NULL, &call_runtime);
@@ -281,10 +296,23 @@ void BinaryOpStub::Generate() {
 
     __ TagNumber(rax);
   } else if (BinOp::is_logic(type())) {
-    // TODO: Implement me
-    switch (type()) {
-      default: __ emitb(0xcc); break;
-    }
+    Condition cond = masm()->BinOpToCondition(type(), Masm::kDouble);
+    __ ucomisd(xmm1, xmm2);
+
+    Label true_(masm()), comp_end(masm());
+
+    __ jmp(cond, &true_);
+
+    __ movq(scratch, Immediate(0));
+    __ jmp(&comp_end);
+
+    __ bind(&true_);
+    __ movq(scratch, Immediate(1));
+    __ bind(&comp_end);
+
+    __ AllocateBoolean(scratch, rax);
+  } else if (BinOp::is_bool_logic(type())) {
+    // Just call the runtime (see code above)
   }
 
   __ jmp(&done);

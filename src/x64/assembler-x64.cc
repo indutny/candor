@@ -155,30 +155,18 @@ void Assembler::jmp(Label* label) {
 void Assembler::jmp(Condition cond, Label* label) {
   emitb(0x0F);
   switch (cond) {
-   case kEq:
-    emitb(0x84);
-    break;
-   case kNe:
-    emitb(0x85);
-    break;
-   case kLt:
-    emitb(0x8C);
-    break;
-   case kLe:
-    emitb(0x8E);
-    break;
-   case kGt:
-    emitb(0x8F);
-    break;
-   case kGe:
-    emitb(0x8D);
-    break;
-   case kCarry:
-    emitb(0x82);
-    break;
-   case kOverflow:
-    emitb(0x80);
-    break;
+   case kEq: emitb(0x84); break;
+   case kNe: emitb(0x85); break;
+   case kLt: emitb(0x8C); break;
+   case kLe: emitb(0x8E); break;
+   case kGt: emitb(0x8F); break;
+   case kGe: emitb(0x8D); break;
+   case kBelow: emitb(0x82); break;
+   case kBe: emitb(0x86); break;
+   case kAbove: emitb(0x87); break;
+   case kAe: emitb(0x83); break;
+   case kCarry: emitb(0x82); break;
+   case kOverflow: emitb(0x80); break;
    default:
     assert(0 && "unexpected");
   }
@@ -247,7 +235,7 @@ void Assembler::movb(Operand& dst, Immediate src) {
 
 
 void Assembler::movb(Operand& dst, Register src) {
-  emit_rexw(dst);
+  emit_rexw(src, dst);
   emitb(0x88);
   emit_modrm(src, dst);
 }
@@ -477,6 +465,14 @@ void Assembler::roundsd(DoubleRegister dst,
 
   // Exception handling mask
   emitb(static_cast<uint8_t>(mode) | 0x08);
+}
+
+
+void Assembler::ucomisd(DoubleRegister dst, DoubleRegister src) {
+  emitb(0x66);
+  emitb(0x0F);
+  emitb(0x2E);
+  emit_modrm(dst, src);
 }
 
 } // namespace candor

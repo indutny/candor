@@ -1,6 +1,5 @@
-* Unbox heap numbers ( for %&|^ binary operations )
-* Logical operations ( >, <, ==, ===)
-* String concatenation
+* Logical operations for non-numbers ( >, <, ==, ===)
+* Binary operations for non-numbers
 * Functions as objects
 * Calling C++/C functions from candor
 * Break statement

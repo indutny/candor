@@ -89,6 +89,11 @@ class Masm : public Assembler {
   void Call(Register fn, uint32_t args);
   void Call(BaseStub* stub);
 
+  enum BinOpUsage {
+    kIntegral,
+    kDouble
+  };
+
   inline void Push(Register src);
   inline void Pop(Register src);
   inline void PushTagged(Register src);
@@ -100,6 +105,7 @@ class Masm : public Assembler {
   inline uint64_t TagNumber(uint64_t number);
   inline void TagNumber(Register src);
   inline void Untag(Register src);
+  inline Condition BinOpToCondition(BinOp::BinOpType type, BinOpUsage usage);
 
   // See VisitForSlot and VisitForValue in fullgen for disambiguation
   inline Register result() { return result_; }

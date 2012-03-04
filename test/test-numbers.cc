@@ -35,6 +35,35 @@ TEST_START("numbers test")
     assert(HValue::As<HNumber>(result)->value() == 2);
   })
 
+  // Logic
+  FUN_TEST("return 1 < 2", {
+    assert(HValue::As<HBoolean>(result)->is_true());
+  })
+
+  FUN_TEST("return 1 == 1", {
+    assert(HValue::As<HBoolean>(result)->is_true());
+  })
+
+  FUN_TEST("return 1.0 < 2.5", {
+    assert(HValue::As<HBoolean>(result)->is_true());
+  })
+
+  FUN_TEST("return 1.0 > 2.5", {
+    assert(HValue::As<HBoolean>(result)->is_false());
+  })
+
+  FUN_TEST("return 1.0 >= 1.0", {
+    assert(HValue::As<HBoolean>(result)->is_true());
+  })
+
+  FUN_TEST("return 1.0 == 1.0", {
+    assert(HValue::As<HBoolean>(result)->is_true());
+  })
+
+  FUN_TEST("return 1.0 === 1.0", {
+    assert(HValue::As<HBoolean>(result)->is_true());
+  })
+
   // Negative (unboxed)
   FUN_TEST("return 0 - 1", {
     assert(HValue::As<HNumber>(result)->value() == -1);

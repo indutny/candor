@@ -246,7 +246,11 @@ class BinOp : public AstNode {
   static inline bool is_logic(BinOpType type) {
     return type == kEq || type == kStrictEq || type == kNe ||
            type == kStrictNe || type == kLt || type == kGt || type == kLe ||
-           type == kGe || type == kLOr || type == kLAnd;
+           type == kGe;
+  }
+
+  static inline bool is_bool_logic(BinOpType type) {
+    return type == kLOr || type == kLAnd;
   }
 
   inline BinOpType subtype() { return subtype_; }

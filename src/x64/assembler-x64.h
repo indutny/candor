@@ -203,6 +203,10 @@ enum Condition {
   kLe,
   kGt,
   kGe,
+  kAbove,
+  kBelow,
+  kAe,
+  kBe,
   kCarry,
   kOverflow
 };
@@ -289,6 +293,7 @@ class Assembler {
   void cvtsi2sd(DoubleRegister dst, Register src);
   void cvtsd2si(Register dst, DoubleRegister src);
   void roundsd(DoubleRegister dst, DoubleRegister src, RoundMode mode);
+  void ucomisd(DoubleRegister dst, DoubleRegister src);
 
   // Routines
   inline void emit_rex_if_high(Register src);

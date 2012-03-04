@@ -80,7 +80,7 @@ void GC::VisitValue(HValue* value) {
    case Heap::kTagBoolean:
     return;
    default:
-    assert(0 && "Not implemented yet");
+    assert(0 && "Unexpected");
   }
 }
 
