@@ -41,12 +41,11 @@ a[b()][c] = x
 // While object literals are restricted to declaring strings as keys, any value
 // can be used as a key. This allows for all kinds of interesting data
 // structures like efficient sets and unique unguessable keys.
-b = { hello: "World", "Content-Length": 42 }
 a = { "5": "five" }
 a[5] = 5
-a[b] = "key is object, value is string!"
-a["5"]    // -> "five"
-a[5]      // -> 5
+a["5"]         // -> "five"
+a[5]           // -> 5
+a[{ hello: "World" }] = "key is object, value is string!"
 
 // Functions
 a() {
@@ -60,8 +59,8 @@ a.b = "foo"
 // integer index so that sizeof works with them.
 a = [1,2,3]
 a.foo = true
-sizeof a // -> 3
-a.foo    // -> true
+sizeof a       // -> 3
+a.foo          // -> true
 
 // typeof.  Sometimes it's useful to know what type a variable is
 
@@ -106,7 +105,7 @@ person = { age: 29, name: "Tim" }
 // With block
 if (person.age > 18) {
   scope person
-  person.name   // -> "Tim"
+  person.name  // -> "Tim"
 }
 
 // Without block
@@ -183,7 +182,6 @@ handlers = {
 handler = handlers[typeof value]
 if (handler) handler(value)
 else handleObject(value)
-
 
 ```
 
