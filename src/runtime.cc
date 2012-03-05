@@ -57,19 +57,14 @@ char* RuntimeLookupProperty(Heap* heap,
                             char* obj,
                             char* key,
                             off_t insert) {
-  char* map = *reinterpret_cast<char**>(obj + 16);
-  char* space = map + 16;
-  uint32_t mask = *reinterpret_cast<uint64_t*>(obj + 8);
+  char* map = HValue::As<HObject>(obj)->map();
+  char* space = HValue::As<HMap>(map)->space();
+  uint32_t mask = HValue::As<HObject>(obj)->mask();
 
   char* strkey = RuntimeToString(heap, key);
 
   // Compute hash lazily
-  uint32_t* hash_addr = reinterpret_cast<uint32_t*>(strkey + 8);
-  uint32_t hash = *hash_addr;
-  if (hash == 0) {
-    hash = ComputeHash(strkey + 24, *reinterpret_cast<uint32_t*>(strkey + 16));
-    *hash_addr = hash;
-  }
+  uint32_t hash = HString::Hash(strkey);
 
   // Dive into space and walk it in circular manner
   uint32_t start = hash & mask;
@@ -102,9 +97,9 @@ char* RuntimeLookupProperty(Heap* heap,
 
 
 char* RuntimeGrowObject(Heap* heap, char* obj) {
-  char** map_addr = reinterpret_cast<char**>(obj + 16);
-  char* map = *map_addr;
-  uint32_t size = *reinterpret_cast<uint32_t*>(map + 8);
+  char** map_addr = HValue::As<HObject>(obj)->map_slot();
+  char* map = HValue::As<HObject>(obj)->map();
+  uint32_t size = HValue::As<HMap>(map)->size();
 
   char* new_map = heap->AllocateTagged(Heap::kTagMap,
                                        8 + (size << 5));
@@ -119,9 +114,9 @@ char* RuntimeGrowObject(Heap* heap, char* obj) {
 
   // Change mask
   uint32_t mask = (size << 4) - 8;
-  *reinterpret_cast<uint32_t*>(obj + 8) = mask;
+  *HValue::As<HObject>(obj)->mask_slot() = mask;
 
-  char* space = map + 16;
+  char* space = HValue::As<HMap>(map)->space();
 
   // And rehash properties to new map
   for (uint32_t index = 0; index < size << 3; index += 8) {

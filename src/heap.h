@@ -255,6 +255,10 @@ class HObject : public HValue {
 
   inline char* map() { return *map_slot(); }
   inline char** map_slot() { return reinterpret_cast<char**>(addr() + 16); }
+  inline uint32_t mask() { return *mask_slot(); }
+  inline uint32_t* mask_slot() {
+    return reinterpret_cast<uint32_t*>(addr() + 8);
+  }
 
   static const Heap::HeapTag class_tag = Heap::kTagObject;
 };
