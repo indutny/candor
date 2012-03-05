@@ -5,7 +5,6 @@
 #include "ast.h" // AstNode
 #include "zone.h" // ZoneObject
 #include "stubs.h" // Stubs
-#include "runtime.h" // Runtime functions
 #include "utils.h" // List
 
 #include <assert.h>
@@ -46,7 +45,7 @@ Fullgen::Fullgen(Heap* heap) : Masm(heap),
   stubs()->fullgen(this);
 
   // Create a `global` object
-  root_context()->Push(HObject::NewEmpty(heap, NULL));
+  root_context()->Push(HObject::NewEmpty(heap));
 }
 
 
@@ -183,7 +182,7 @@ void Fullgen::PlaceInRoot(char* addr) {
 
 
 char* Fullgen::AllocateRoot() {
-  return HContext::New(heap(), NULL, root_context());
+  return HContext::New(heap(), root_context());
 }
 
 
@@ -282,21 +281,7 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
     // handle __$gc() call
     if (fn->variable()->is(AstNode::kValue) &&
         name->length() == 5 && strncmp(name->value(), "__$gc", 5) == 0) {
-      RuntimeCollectGarbageCallback gc = &RuntimeCollectGarbage;
-      Pushad();
-
-      {
-        Align a(this);
-
-        // RuntimeCollectGarbage(heap, stack_top)
-        movq(rsi, rsp);
-        movq(rdi, Immediate(reinterpret_cast<uint64_t>(heap())));
-
-        movq(rax, Immediate(*reinterpret_cast<uint64_t*>(&gc)));
-        Call(rax);
-      }
-
-      Popad(reg_nil);
+      Call(stubs()->GetCollectGarbageStub());
       movq(result(), Immediate(0));
 
       return stmt;
@@ -517,7 +502,7 @@ AstNode* Fullgen::VisitNumber(AstNode* node) {
     // Allocate boxed heap number
     double value = StringToDouble(node->value(), node->length());
 
-    PlaceInRoot(HNumber::New(heap(), NULL, value));
+    PlaceInRoot(HNumber::New(heap(), value));
   } else {
     // Allocate unboxed number
     int64_t value = StringToInt(node->value(), node->length());
@@ -534,7 +519,7 @@ AstNode* Fullgen::VisitString(AstNode* node) {
     return node;
   }
 
-  PlaceInRoot(HString::New(heap(), NULL, node->value(), node->length()));
+  PlaceInRoot(HString::New(heap(), node->value(), node->length()));
 
   return node;
 }
@@ -646,7 +631,7 @@ AstNode* Fullgen::VisitTrue(AstNode* node) {
     return node;
   }
 
-  PlaceInRoot(HBoolean::New(heap(), NULL, true));
+  PlaceInRoot(HBoolean::New(heap(), true));
 
   return node;
 }
@@ -658,7 +643,7 @@ AstNode* Fullgen::VisitFalse(AstNode* node) {
     return node;
   }
 
-  PlaceInRoot(HBoolean::New(heap(), NULL, false));
+  PlaceInRoot(HBoolean::New(heap(), false));
 
   return node;
 }

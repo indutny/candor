@@ -65,6 +65,9 @@ class Masm : public Assembler {
   // Fill stack slots with nil
   void FillStackSlots(uint32_t slots);
 
+  // Perform garbage collection if needed (heap flag is set)
+  void CheckGC();
+
   void IsNil(Register reference, Label* not_nil, Label* is_nil);
   void IsUnboxed(Register reference, Label* not_unboxed, Label* unboxed);
 

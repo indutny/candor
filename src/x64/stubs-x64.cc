@@ -85,7 +85,7 @@ void AllocateStub::Generate() {
 
   __ jmp(&done);
 
-  // Invoke runtime allocation stub (and probably GC)
+  // Invoke runtime allocation stub
   __ bind(&runtime_allocate);
 
   // Remove junk from registers
@@ -95,23 +95,13 @@ void AllocateStub::Generate() {
   RuntimeAllocateCallback allocate = &RuntimeAllocate;
 
   {
-    Label call(masm());
-
     Masm::Align a(masm());
     __ Pushad();
 
-    // Three arguments: heap, size, top_stack
+    // Three arguments: heap, size
     __ movq(rdi, heapref);
     __ movq(rsi, size);
-    __ movq(rdx, rsp);
 
-    // Objects are allocated in pairs with maps
-    // do not let GC run in the middle of the process
-    __ cmpb(tag, Immediate(masm()->TagNumber(Heap::kTagMap)));
-    __ jmp(kNe, &call);
-    __ xorq(rdx, rdx);
-
-    __ bind(&call);
     __ movq(scratch, Immediate(*reinterpret_cast<uint64_t*>(&allocate)));
 
     __ callq(scratch);
@@ -130,6 +120,28 @@ void AllocateStub::Generate() {
   // Rax will hold resulting pointer
   __ pop(rbx);
   GenerateEpilogue(2);
+}
+
+
+void CollectGarbageStub::Generate() {
+  GeneratePrologue();
+
+  RuntimeCollectGarbageCallback gc = &RuntimeCollectGarbage;
+  __ Pushad();
+
+  {
+    Masm::Align a(masm());
+
+    // RuntimeCollectGarbage(heap, stack_top)
+    __ movq(rdi, Immediate(reinterpret_cast<uint64_t>(masm()->heap())));
+    __ movq(rsi, rsp);
+    __ movq(rax, Immediate(*reinterpret_cast<uint64_t*>(&gc)));
+    __ Call(rax);
+  }
+
+  __ Popad(reg_nil);
+
+  GenerateEpilogue(0);
 }
 
 
@@ -175,13 +187,12 @@ void LookupPropertyStub::Generate() {
 
   __ Pushad();
 
-  // RuntimeLookupProperty(heap, stack_top, obj, key, change)
+  // RuntimeLookupProperty(heap, obj, key, change)
   // (returns addr of slot)
   __ movq(rdi, Immediate(reinterpret_cast<uint64_t>(masm()->heap())));
-  __ movq(rsi, rsp);
-  __ movq(rdx, object);
-  __ movq(rcx, property);
-  __ movq(r8, change);
+  __ movq(rsi, object);
+  __ movq(rdx, property);
+  __ movq(rcx, change);
   __ movq(rax, Immediate(*reinterpret_cast<uint64_t*>(&lookup)));
   __ callq(rax);
 
@@ -200,12 +211,14 @@ void CoerceToBooleanStub::Generate() {
   __ Pushad();
 
   __ movq(rdi, Immediate(reinterpret_cast<uint64_t>(masm()->heap())));
-  __ movq(rsi, rsp);
-  __ movq(rdx, object);
+  __ movq(rsi, object);
   __ movq(rax, Immediate(*reinterpret_cast<uint64_t*>(&to_boolean)));
   __ callq(rax);
 
   __ Popad(rax);
+
+  __ CheckGC();
+
   GenerateEpilogue(1);
 }
 
@@ -337,11 +350,10 @@ void BinaryOpStub::Generate() {
 
     Immediate heapref(reinterpret_cast<uint64_t>(masm()->heap()));
 
-    // binop(heap, top_stack, lhs, rhs)
+    // binop(heap, lhs, rhs)
     __ movq(rdi, heapref);
-    __ movq(rsi, rsp);
-    __ movq(rdx, rax);
-    __ movq(rcx, rbx);
+    __ movq(rsi, rax);
+    __ movq(rdx, rbx);
 
     __ movq(scratch, Immediate(*reinterpret_cast<uint64_t*>(&cb)));
     __ callq(scratch);
@@ -352,6 +364,8 @@ void BinaryOpStub::Generate() {
   __ bind(&done);
 
   __ pop(rbx);
+
+  __ CheckGC();
 
   // Caller should unwind stack
   GenerateEpilogue(0);

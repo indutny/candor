@@ -31,7 +31,6 @@ class GC {
   };
 
   typedef List<GCValue*, ZoneObject> GCList;
-  typedef List<HValue*, ZoneObject> GCRawList;
 
   GC(Heap* heap) : heap_(heap) {
   }
@@ -44,12 +43,10 @@ class GC {
   void VisitMap(HMap* map);
 
   inline GCList* grey_items() { return &grey_items_; }
-  inline GCRawList* black_items() { return &black_items_; }
   inline Heap* heap() { return heap_; }
 
  protected:
   GCList grey_items_;
-  GCRawList black_items_;
   Heap* heap_;
 };
 

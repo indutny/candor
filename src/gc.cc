@@ -16,10 +16,12 @@ void GC::GCValue::Relocate(char* address) {
 
 void GC::CollectGarbage(char* stack_top) {
   assert(grey_items()->length() == 0);
-  assert(black_items()->length() == 0);
 
   // Temporary space which will contain copies of all visited objects
   Space space(heap(), heap()->new_space()->page_size());
+
+  // Reset GC flag
+  heap()->needs_gc(0);
 
   // Go through the stack, down to the root_stack() address
   char* top = stack_top;
@@ -50,15 +52,9 @@ void GC::CollectGarbage(char* stack_top) {
       HValue* hvalue = value->value()->CopyTo(&space);
       value->Relocate(hvalue->addr());
       GC::VisitValue(hvalue);
-      black_items()->Push(hvalue);
     } else {
       value->Relocate(value->value()->GetGCMark());
     }
-  }
-
-  // Remove marks on finish
-  while (black_items()->length() != 0) {
-    black_items()->Shift()->ResetGCMark();
   }
 
   heap()->new_space()->Swap(&space);

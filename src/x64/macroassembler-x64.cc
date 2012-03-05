@@ -133,6 +133,8 @@ void Masm::AllocateContext(uint32_t slots) {
   // (It'll be restored by caller)
   movq(rdi, rax);
   Pop(rax);
+
+  CheckGC();
 }
 
 
@@ -145,6 +147,8 @@ void Masm::AllocateFunction(Register addr, Register result) {
   Operand qaddr(result, 16);
   movq(qparent, rdi);
   movq(qaddr, addr);
+
+  CheckGC();
 }
 
 
@@ -153,6 +157,8 @@ void Masm::AllocateNumber(DoubleRegister value, Register result) {
 
   Operand qvalue(result, 8);
   movqd(qvalue, value);
+
+  CheckGC();
 }
 
 
@@ -170,6 +176,8 @@ void Masm::AllocateBoolean(Register value, Register result) {
   movb(qvalue, value);
 
   Pop(value);
+
+  CheckGC();
 }
 
 
@@ -199,6 +207,8 @@ void Masm::AllocateString(const char* value,
     Operand bpos(result, 24 + i);
     movb(bpos, Immediate(value[i]));
   }
+
+  CheckGC();
 }
 
 
@@ -250,6 +260,8 @@ void Masm::AllocateObjectLiteral(Register size, Register result) {
   Fill(result, size, Immediate(Heap::kTagNil));
   Pop(result);
   Pop(size);
+
+  CheckGC();
 }
 
 
@@ -287,6 +299,23 @@ void Masm::FillStackSlots(uint32_t slots) {
     Operand slot(rbp, -8 * (i + 1));
     movq(slot, scratch);
   }
+}
+
+
+void Masm::CheckGC() {
+  Immediate gc_flag(reinterpret_cast<uint64_t>(heap()->needs_gc_addr()));
+  Operand scratch_op(scratch, 0);
+
+  Label done(this);
+
+  // Check needs_gc flag
+  movq(scratch, gc_flag);
+  cmpb(scratch_op, Immediate(1));
+  jmp(kNe, &done);
+
+  Call(stubs()->GetCollectGarbageStub());
+
+  bind(&done);
 }
 
 

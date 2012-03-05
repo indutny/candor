@@ -28,18 +28,14 @@ void Space::select(Page* page) {
 }
 
 
-char* Space::Allocate(uint32_t bytes, char* stack_top) {
+char* Space::Allocate(uint32_t bytes) {
   // If current page was exhausted - run GC
   uint32_t even_bytes = bytes + (bytes & 0x01);
   bool place_in_current = *top_ + even_bytes <= *limit_;
-  bool need_gc = stack_top != NULL && !place_in_current;
-
-  if (need_gc) {
-    Zone gc_zone;
-    heap()->gc()->CollectGarbage(stack_top);
-  }
 
   if (!place_in_current) {
+    heap()->needs_gc(1);
+
     // Go through all pages to find gap
     List<Page*, EmptyClass>::Item* item = pages_.head();
     while (*top_ + even_bytes > *limit_ && item->next() != NULL) {
@@ -81,8 +77,8 @@ void Space::Clear() {
 }
 
 
-char* Heap::AllocateTagged(HeapTag tag, uint32_t bytes, char* stack_top) {
-  char* result = new_space()->Allocate(bytes + 8, stack_top);
+char* Heap::AllocateTagged(HeapTag tag, uint32_t bytes) {
+  char* result = new_space()->Allocate(bytes + 8);
   *reinterpret_cast<uint64_t*>(result) = tag;
 
   return result;
@@ -120,7 +116,7 @@ HValue* HValue::CopyTo(Space* space) {
     UNEXPECTED
   }
 
-  char* result = space->Allocate(size, NULL);
+  char* result = space->Allocate(size);
   memcpy(result, addr(), size);
 
   return HValue::Cast(result);
@@ -128,11 +124,9 @@ HValue* HValue::CopyTo(Space* space) {
 
 
 char* HContext::New(Heap* heap,
-                    char* stack_top,
                     List<char*, ZoneObject>* values) {
   char* result = heap->AllocateTagged(Heap::kTagContext,
-                                      16 + values->length() * 8,
-                                      stack_top);
+                                      16 + values->length() * 8);
 
   // Zero parent
   *reinterpret_cast<char**>(result + 8) = NULL;
@@ -166,20 +160,20 @@ char** HContext::GetSlotAddress(uint32_t index) {
 }
 
 
-char* HNumber::New(Heap* heap, char* stack_top, int64_t value) {
+char* HNumber::New(Heap* heap, int64_t value) {
   return reinterpret_cast<char*>(Tag(value));
 }
 
 
-char* HNumber::New(Heap* heap, char* stack_top, double value) {
-  char* result = heap->AllocateTagged(Heap::kTagNumber, 8, stack_top);
+char* HNumber::New(Heap* heap, double value) {
+  char* result = heap->AllocateTagged(Heap::kTagNumber, 8);
   *reinterpret_cast<double*>(result + 8) = value;
   return result;
 }
 
 
-char* HBoolean::New(Heap* heap, char* stack_top, bool value) {
-  char* result = heap->AllocateTagged(Heap::kTagBoolean, 8, stack_top);
+char* HBoolean::New(Heap* heap, bool value) {
+  char* result = heap->AllocateTagged(Heap::kTagBoolean, 8);
   *reinterpret_cast<int8_t*>(result + 8) = value ? 1 : 0;
 
   return result;
@@ -187,9 +181,8 @@ char* HBoolean::New(Heap* heap, char* stack_top, bool value) {
 
 
 char* HString::New(Heap* heap,
-                   char* stack_top,
                    uint32_t length) {
-  char* result = heap->AllocateTagged(Heap::kTagString, length + 24, stack_top);
+  char* result = heap->AllocateTagged(Heap::kTagString, length + 24);
 
   // Zero hash
   *reinterpret_cast<uint64_t*>(result + 8) = 0;
@@ -201,10 +194,9 @@ char* HString::New(Heap* heap,
 
 
 char* HString::New(Heap* heap,
-                   char* stack_top,
                    const char* value,
                    uint32_t length) {
-  char* result = New(heap, stack_top, length);
+  char* result = New(heap, length);
 
   // Copy value
   memcpy(result + 24, value, length);
@@ -224,13 +216,11 @@ uint32_t HString::Hash(char* addr) {
 }
 
 
-char* HObject::NewEmpty(Heap* heap, char* stack_top) {
+char* HObject::NewEmpty(Heap* heap) {
   uint32_t size = 16;
 
-  char* obj = heap->AllocateTagged(Heap::kTagObject, 16, stack_top);
-  // NOTE: We're not passing stack_top here, because we don't want
-  // GC to run until all object's fields will be filled
-  char* map = heap->AllocateTagged(Heap::kTagMap, (size << 4) + 8, NULL);
+  char* obj = heap->AllocateTagged(Heap::kTagObject, 16);
+  char* map = heap->AllocateTagged(Heap::kTagMap, (size << 4) + 8);
 
   // Set mask
   *reinterpret_cast<uint64_t*>(obj + 8) = (size - 1) << 3;

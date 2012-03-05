@@ -43,7 +43,7 @@ class Space {
 
   // Move to next page where are at least `bytes` free
   // Otherwise allocate new page
-  char* Allocate(uint32_t bytes, char* stack_top);
+  char* Allocate(uint32_t bytes);
 
   // Deallocate all pages and take all from the `space`
   void Swap(Space* space);
@@ -98,6 +98,7 @@ class Heap {
                              old_space_(this, page_size),
                              root_stack_(NULL),
                              pending_exception_(NULL),
+                             needs_gc_(0),
                              gc_(this) {
     current_ = this;
   }
@@ -105,12 +106,16 @@ class Heap {
   // TODO: Use thread id
   static inline Heap* Current() { return current_; }
 
-  char* AllocateTagged(HeapTag tag, uint32_t bytes, char* stack_top);
+  char* AllocateTagged(HeapTag tag, uint32_t bytes);
 
   inline Space* new_space() { return &new_space_; }
   inline Space* old_space() { return &old_space_; }
   inline char** root_stack() { return &root_stack_; }
   inline char** pending_exception() { return &pending_exception_; }
+
+  inline uint64_t needs_gc() { return needs_gc_; }
+  inline uint64_t* needs_gc_addr() { return &needs_gc_; }
+  inline void needs_gc(uint64_t value) { needs_gc_ = value; }
 
   inline GC* gc() { return &gc_; }
 
@@ -122,6 +127,8 @@ class Heap {
   // root stack address is needed to unwind stack up to root function's entry
   char* root_stack_;
   char* pending_exception_;
+
+  uint64_t needs_gc_;
 
   GC gc_;
 
@@ -166,7 +173,6 @@ class HValue {
 class HContext : public HValue {
  public:
   static char* New(Heap* heap,
-                   char* stack_top,
                    List<char*, ZoneObject>* values);
 
   bool HasSlot(uint32_t index);
@@ -185,8 +191,8 @@ class HContext : public HValue {
 
 class HNumber : public HValue {
  public:
-  static char* New(Heap* heap, char* stack_top, int64_t value);
-  static char* New(Heap* heap, char* stack_top, double value);
+  static char* New(Heap* heap, int64_t value);
+  static char* New(Heap* heap, double value);
 
   static inline int64_t Untag(int64_t value);
   static inline int64_t Tag(int64_t value);
@@ -201,7 +207,7 @@ class HNumber : public HValue {
 
 class HBoolean : public HValue {
  public:
-  static char* New(Heap* heap, char* stack_top, bool value);
+  static char* New(Heap* heap, bool value);
 
   inline bool is_true() { return Value(addr()); }
   inline bool is_false() { return !is_true(); }
@@ -217,10 +223,8 @@ class HBoolean : public HValue {
 class HString : public HValue {
  public:
   static char* New(Heap* heap,
-                   char* stack_top,
                    uint32_t length);
   static char* New(Heap* heap,
-                   char* stack_top,
                    const char* value,
                    uint32_t length);
 
@@ -241,7 +245,7 @@ class HString : public HValue {
 
 class HObject : public HValue {
  public:
-  static char* NewEmpty(Heap* heap, char* stack_top);
+  static char* NewEmpty(Heap* heap);
 
   inline char* map() { return *map_slot(); }
   inline char** map_slot() { return reinterpret_cast<char**>(addr() + 16); }
