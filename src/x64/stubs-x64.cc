@@ -31,7 +31,7 @@ void BaseStub::GenerateEpilogue(int args) {
 void AllocateStub::Generate() {
   GeneratePrologue();
   // Align stack
-  __ subq(rsp, Immediate(8));
+  __ push(Immediate(0));
   __ push(rbx);
 
   // Arguments
@@ -252,7 +252,7 @@ BINARY_SUB_TYPES(BINARY_STUB_GENERATE)
 
 void BinaryOpStub::Generate() {
   GeneratePrologue();
-  __ subq(rsp, Immediate(8));
+  __ push(Immediate(0));
   __ push(rbx);
 
   // Arguments

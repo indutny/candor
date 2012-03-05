@@ -59,7 +59,8 @@ void Masm::AlignCode() {
 
 Masm::Align::Align(Masm* masm) : masm_(masm), align_(masm->align_) {
   if (align_ % 2 == 0) return;
-  masm_->subq(rsp, (align_ % 2) * 8);
+
+  masm->push(Immediate(0));
   masm->align_ += 1;
 }
 
