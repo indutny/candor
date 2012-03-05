@@ -110,12 +110,6 @@ TEST_START("parser test")
   PARSER_TEST("a = [ 1, 2, 3, 4]",
               "[kAssign [a] [kArrayLiteral [1] [2] [3] [4]]]")
 
-  // Block expression
-  PARSER_TEST("a({ x + 1 })", "[kCall [a] @[[kBlockExpr [kAdd [x] [1]]]] ]")
-  PARSER_TEST("a({\n scope x\n x + 1 })",
-              "[kCall [a] @[[kBlockExpr [kScopeDecl [x]] "
-              "[kAdd [x] [1]]]] ]")
-
   // Nested scopes
   PARSER_TEST("{{{{}}}}", "[kBlock [kBlock [kBlock [kBlock [kNop ]]]]]")
 

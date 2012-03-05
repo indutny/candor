@@ -20,7 +20,6 @@ typedef List<AstNode*, ZoneObject> AstList;
 
 #define TYPE_MAPPING_NORMAL(V)\
     V(kBlock)\
-    V(kBlockExpr)\
     V(kScopeDecl)\
     V(kObjectLiteral)\
     V(kArrayLiteral)\

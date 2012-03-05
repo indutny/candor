@@ -164,13 +164,7 @@ AstNode* Parser::ParseExpression(int priority) {
    case kSub:
     return ParsePrefixUnOp(Peek()->type());
    case kBraceOpen:
-    result = ParseObjectLiteral();
-    if (result != NULL) return result;
-
-    result = ParseBlock(NULL);
-    if (result == NULL) return NULL;
-    result->type(AstNode::kBlockExpr);
-    return result;
+    return ParseObjectLiteral();
    case kArrayOpen:
     return ParseArrayLiteral();
    default:

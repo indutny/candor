@@ -49,14 +49,6 @@ a()
           // NOTE: the closest one will be choosed
 }
 
-// Not implemented yet
-
-// Expr blocks
-({
-  a = 1
-})(x)
-// is equivalent to
-x.a = 1
 ```
 
 ## Example
@@ -145,8 +137,6 @@ binop4 := binop3 (("&&" | "||") binop3)*
 binop5 := binop4 ((">" | "<" | "<=" | ">=") binop4)*
 binop := binop5 (("==" | "===" | "!=" | "!==") binop5)*
 
-blockExpr := block
-
 return := "return" expr?
 break := "break"
 if := "if" "(" expr ")" block ("else" block)? |
@@ -156,7 +146,7 @@ while := "while" "(" expr ")" block
 statement := (return | break | if | while | block | expr) CR
 
 expr := binop | prefix | postfix |
-        blockExpr | assign | callOrFun | member
+        assign | callOrFun | member
 ```
 
 ## Credits
