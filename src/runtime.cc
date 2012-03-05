@@ -193,7 +193,7 @@ char* RuntimeToNumber(Heap* heap, char* stack_top, char* value) {
       char* str = value + 24;
       uint32_t length = HString::Length(value);
 
-      return HNumber::New(heap, stack_top, StringToInt(str, length));
+      return HNumber::New(heap, stack_top, StringToDouble(str, length));
     }
    case Heap::kTagBoolean:
     {
