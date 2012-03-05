@@ -1,6 +1,9 @@
 #include "test.h"
 
 TEST_START("GC test")
+  FUN_TEST("__$gc()\nreturn 1", {
+    assert(HValue::As<HNumber>(result)->value() == 1);
+  })
   FUN_TEST("x = { y : { z : 3 } }\n"
            "a() {\n"
            "return (() {\nscope x\nx.y = 2\n__$gc()\nreturn x.y\n})()\n"

@@ -28,6 +28,65 @@ void BaseStub::GenerateEpilogue(int args) {
 }
 
 
+void EntryStub::Generate() {
+  // rdi <- parent context (zero for root)
+  // rsi <- unboxed arguments count (tagged)
+  // rdx <- address of root context
+  // rcx <- address of code chunk to call
+
+  // Store address of root context
+  __ movq(root_reg, rdx);
+
+  // Store callee-save registers
+  __ push(rbp);
+  __ push(rbx);
+  __ push(r12);
+  __ push(r13);
+  __ push(r14);
+  __ push(r15);
+
+  __ EnterFrame();
+
+  __ StoreRootStack();
+
+  // Save code address
+  __ movq(scratch, rcx);
+
+  // Nullify all registers to help GC distinguish on-stack values
+  __ xorq(rax, rax);
+  __ xorq(rbx, rbx);
+  __ xorq(rcx, rcx);
+  __ xorq(rdx, rdx);
+  __ xorq(r8, r8);
+  __ xorq(r9, r9);
+  // r10 is a root register
+  __ xorq(r12, r12);
+  // r11 is a scratch register
+  __ xorq(r13, r13);
+  __ xorq(r14, r14);
+  __ xorq(r15, r15);
+
+  // Call code
+  __ Call(scratch);
+
+  __ RestoreRootStack();
+
+  // Leave frame
+  // TODO: add separate function
+  __ addq(rsp, 16);
+
+  // Restore registers
+  __ pop(r15);
+  __ pop(r14);
+  __ pop(r13);
+  __ pop(r12);
+  __ pop(rbx);
+  __ pop(rbp);
+
+  __ ret(0);
+}
+
+
 void AllocateStub::Generate() {
   GeneratePrologue();
   // Align stack
@@ -161,17 +220,12 @@ void ThrowStub::Generate() {
   // Unwind stack to the top handler
   __ movq(scratch, root_stack);
   __ movq(rsp, scratch_op);
+  __ subq(rsp, Immediate(8));
 
   // Return NULL
   __ movq(rax, 0);
 
-  // Leave to C++ land
-  __ pop(r15);
-  __ pop(r14);
-  __ pop(r13);
-  __ pop(r12);
-  __ pop(rbx);
-  __ pop(rbp);
+  // Leave to Entry Stub
   __ ret(0);
 }
 

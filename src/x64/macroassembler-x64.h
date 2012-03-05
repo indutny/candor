@@ -65,6 +65,14 @@ class Masm : public Assembler {
   // Fill stack slots with nil
   void FillStackSlots(uint32_t slots);
 
+  // Generate enter/exit frame sequences
+  void EnterFrame();
+  void ExitFrame();
+
+  // Root stack for unwinding (throw)
+  void StoreRootStack();
+  void RestoreRootStack();
+
   // Perform garbage collection if needed (heap flag is set)
   void CheckGC();
 
@@ -77,9 +85,6 @@ class Masm : public Assembler {
                     Label* mismatch,
                     Label* match);
   void IsTrue(Register reference, Label* is_false, Label* is_true);
-
-  // Store stack pointer into heap
-  void StoreRootStack();
 
   // Runtime errors
   void Throw(Heap::Error error);

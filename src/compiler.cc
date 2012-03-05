@@ -43,21 +43,22 @@ void CompiledScript::Compile() {
     Scope::Analyze(ast);
 
     // Generate machine code
-    f.Generate(ast);
+    uint32_t main_offset = f.Generate(ast);
 
     // Allocate root context
     root_context_ = f.AllocateRoot();
 
     guard_ = new Guard(f.buffer(), f.length());
     f.Relocate(guard_->buffer());
+
+    // Save address of main function
+    main_ = guard_->buffer() + main_offset;
   }
 }
 
 
 char* CompiledScript::Run() {
-  // Context is undefined for main function
-  // (It'll allocate new for itself)
-  return guard_->AsFunction()(NULL, 0, root_context_);
+  return guard_->AsFunction()(NULL, 0, root_context_, main_);
 }
 
 

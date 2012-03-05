@@ -18,7 +18,10 @@ class Guard {
   Guard(char* buffer, uint32_t length);
   ~Guard();
 
-  typedef char* (*CompiledFunction)(void* context, uint32_t args, char* root);
+  typedef char* (*CompiledFunction)(void* context,
+                                    uint32_t args,
+                                    char* root,
+                                    char* code);
 
   inline CompiledFunction AsFunction() {
     return reinterpret_cast<CompiledFunction>(buffer_);
@@ -54,6 +57,7 @@ class CompiledScript {
   uint32_t length_;
 
   char* root_context_;
+  char* main_;
 };
 
 } // namespace candor

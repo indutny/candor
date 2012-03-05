@@ -62,7 +62,12 @@ void Fullgen::CandorFunction::Generate() {
 }
 
 
-void Fullgen::Generate(AstNode* ast) {
+uint32_t Fullgen::Generate(AstNode* ast) {
+  uint32_t result = 0;
+
+  stubs()->GetEntryStub()->Generate();
+  fns_.Shift();
+
   fns_.Push(new CandorFunction(this, FunctionLiteral::Cast(ast)));
 
   FFunction* fn;
@@ -72,12 +77,17 @@ void Fullgen::Generate(AstNode* ast) {
     // Align function if needed
     AlignCode();
 
+    // Save offset of main function's code
+    if (result == 0) result = offset();
+
     // Replace all function's uses by generated address
     fn->Allocate(offset());
 
     // Generate functions' body
     fn->Generate();
   }
+
+  return result;
 }
 
 
@@ -86,46 +96,16 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
   // rsi <- unboxed arguments count (tagged)
   // rdx <- (root only) address of root context
   push(rbp);
-  push(rbx);
-
-  // Store callee-save registers only on C++ - Candor boundary
-  if (stmt->is_root()) {
-    push(r12);
-    push(r13);
-    push(r14);
-    push(r15);
-
-    // Store address of root context
-    movq(root_reg, rdx);
-
-    // Nullify all registers to help GC distinguish on-stack values
-    xorq(rax, rax);
-    xorq(rbx, rbx);
-    xorq(rcx, rcx);
-    xorq(rdx, rdx);
-    xorq(r8, r8);
-    xorq(r9, r9);
-    // r10 is a root register
-    xorq(r11, r11);
-    xorq(r12, r12);
-    xorq(r13, r13);
-    xorq(r14, r14);
-    xorq(r15, r15);
-  }
   movq(rbp, rsp);
 
   // Allocate space for on stack variables
   // and align stack
-  uint32_t on_stack_size = 8 + RoundUp((stmt->stack_slots() + 1) * 8, 16);
+  uint32_t on_stack_size = RoundUp(8 + (stmt->stack_slots() + 1) * 8, 16);
   subq(rsp, Immediate(on_stack_size));
 
   // Allocate context and clear stack slots
   AllocateContext(stmt->context_slots());
   FillStackSlots(on_stack_size >> 3);
-
-  // Store root stack address(rbp) to heap
-  // It's needed to unwind stack on exceptions
-  if (stmt->is_root()) StoreRootStack();
 
   // Place all arguments into their slots
   Label body(this);
@@ -135,7 +115,7 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
   uint32_t i = 0;
   while (item != NULL) {
     Operand lhs(rax, 0);
-    Operand rhs(rbp, 24 + 8 * i++);
+    Operand rhs(rbp, 8 * (2 + i++));
 
     cmpq(rsi, Immediate(TagNumber(i)));
     jmp(kLt, &body);
@@ -158,15 +138,6 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
 void Fullgen::GenerateEpilogue(AstNode* stmt) {
   // rax will hold result of function
   movq(rsp, rbp);
-
-  // Restore callee save registers
-  if (stmt->is_root()) {
-    pop(r15);
-    pop(r14);
-    pop(r13);
-    pop(r12);
-  }
-  pop(rbx);
   pop(rbp);
 
   ret(0);
@@ -313,6 +284,8 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
       }
       // Restore alignment
       ChangeAlign(-fn->args()->length());
+
+      ExitFrame();
 
       // Generate calling code
       Call(rax, fn->args()->length());

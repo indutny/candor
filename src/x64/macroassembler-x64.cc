@@ -303,6 +303,53 @@ void Masm::FillStackSlots(uint32_t slots) {
 }
 
 
+void Masm::EnterFrame() {
+  Immediate last_stack(reinterpret_cast<uint64_t>(heap()->last_stack()));
+  Operand scratch_op(scratch, 0);
+
+  movq(scratch, last_stack);
+  movq(scratch, scratch_op);
+  push(scratch);
+  push(Immediate(0xFEEEDBEE));
+}
+
+
+void Masm::ExitFrame() {
+  Immediate last_stack(reinterpret_cast<uint64_t>(heap()->last_stack()));
+  Operand scratch_op(scratch, 0);
+
+  movq(scratch, last_stack);
+  movq(scratch_op, rsp);
+  xorq(scratch, scratch);
+}
+
+
+void Masm::StoreRootStack() {
+  Immediate root_stack(reinterpret_cast<uint64_t>(heap()->root_stack()));
+  Operand scratch_op(scratch, 0);
+
+  // Save
+  movq(scratch, root_stack);
+  movq(scratch, scratch_op);
+  Push(scratch);
+
+  // Change
+  movq(scratch, root_stack);
+  movq(scratch_op, rsp);
+}
+
+
+void Masm::RestoreRootStack() {
+  Immediate root_stack(reinterpret_cast<uint64_t>(heap()->root_stack()));
+  Operand scratch_op(scratch, 0);
+
+  // Restore (rsi shouldn't be used here)
+  Pop(rsi);
+  movq(scratch, root_stack);
+  movq(scratch_op, rsi);
+}
+
+
 void Masm::CheckGC() {
   Immediate gc_flag(reinterpret_cast<uint64_t>(heap()->needs_gc_addr()));
   Operand scratch_op(scratch, 0);
@@ -352,14 +399,6 @@ void Masm::IsTrue(Register reference, Label* is_false, Label* is_true) {
   cmpb(bvalue, Immediate(0));
   if (is_false != NULL) jmp(kEq, is_false);
   if (is_true != NULL) jmp(kNe, is_true);
-}
-
-
-void Masm::StoreRootStack() {
-  Immediate root_stack(reinterpret_cast<uint64_t>(heap()->root_stack()));
-  Operand scratch_op(scratch, 0);
-  movq(scratch, root_stack);
-  movq(scratch_op, rbp);
 }
 
 

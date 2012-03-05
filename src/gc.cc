@@ -3,6 +3,7 @@
 #include "heap-inl.h"
 
 #include <sys/types.h> // off_t
+#include <stdlib.h> // NULL
 #include <assert.h> // assert
 
 namespace candor {
@@ -23,17 +24,30 @@ void GC::CollectGarbage(char* stack_top) {
   // Reset GC flag
   heap()->needs_gc(0);
 
-  // Go through the stack, down to the root_stack() address
+  // Go through the stack
   char* top = stack_top;
-  for (; top < *heap()->root_stack(); top += sizeof(void*)) {
+  for (; top != NULL; top += sizeof(void*)) {
     char** slot = reinterpret_cast<char**>(top);
+
+    // Once found enter frame signature
+    // skip stack entities until last exit frame position (or NULL)
+    while (top != NULL && *reinterpret_cast<uint32_t*>(slot) == 0xFEEEDBEE) {
+      top = *reinterpret_cast<char**>(top + sizeof(void*));
+      slot = reinterpret_cast<char**>(top);
+    }
+    if (top == NULL) break;
+
+    // Skip rbp as well
+    if ((*reinterpret_cast<uint32_t*>(slot + 1) & 0x8000000) == 0 &&
+        HValue::Cast(*(slot + 1))->tag() == Heap::kTagCode) {
+      top += sizeof(void*);
+      continue;
+    }
+
     char* value = *slot;
 
     // Skip NULL pointers, non-pointer values and rbp pushes
-    if (value == NULL || HValue::IsUnboxed(value) ||
-        (value > top && value <= *heap()->root_stack())) {
-      continue;
-    }
+    if (value == NULL || HValue::IsUnboxed(value)) continue;
 
     // Ignore return addresses
     HValue* hvalue = HValue::Cast(value);

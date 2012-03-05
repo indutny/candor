@@ -15,6 +15,7 @@ class Masm;
 class RelocationInfo;
 
 #define STUBS_LIST(V)\
+    V(Entry)\
     V(Allocate)\
     V(CollectGarbage)\
     V(Throw)\

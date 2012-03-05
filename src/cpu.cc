@@ -46,7 +46,7 @@ void CPU::Probe() {
   a.Relocate(g.buffer());
 
   int32_t features = reinterpret_cast<off_t>(g.AsFunction()(
-        NULL, NULL, NULL));
+        NULL, NULL, NULL, NULL));
 
   cpu_features_.SSE4_1 = (features & (1 << 19)) != 0;
   probed_ = true;

@@ -14,6 +14,7 @@
 #endif
 
 #include <assert.h> // assert
+#include <stdint.h> // uint32_t
 
 namespace candor {
 
@@ -101,7 +102,7 @@ class Fullgen : public Masm, public Visitor {
 
   Fullgen(Heap* heap);
 
-  void Generate(AstNode* ast);
+  uint32_t Generate(AstNode* ast);
 
   void GeneratePrologue(AstNode* stmt);
   void GenerateEpilogue(AstNode* stmt);
