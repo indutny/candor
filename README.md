@@ -18,7 +18,8 @@ are block scoped by default (use `scope` keyword for accessing outer-scope
 variables).
 
 ```candor
-// Keywords: nil, return, scope, new, if, else, while, break
+// Keywords: nil, true, false, typeof, sizeof, keysof, scope, if, else, while,
+// for, break, continue, return, new
 
 // Primitives
 nil
@@ -37,29 +38,153 @@ a.b = "abc"
 a.b.c = a
 a[b()][c] = x
 
+// While object literals are restricted to declaring strings as keys, any value
+// can be used as a key. This allows for all kinds of interesting data
+// structures like efficient sets and unique unguessable keys.
+b = { hello: "World", "Content-Length": 42 }
+a = { "5": "five" }
+a[5] = 5
+a[b] = "key is object, value is string!"
+a["5"]    // -> "five"
+a[5]      // -> 5
+
 // Functions
 a() {
   return 1
 }
 a()
+// Functions are also objects and can have properties
+a.b = "foo"
+
+// Arrays are also objects, except they internally keep track of the largest
+// integer index so that sizeof works with them.
+a = [1,2,3]
+a.foo = true
+sizeof a // -> 3
+a.foo    // -> true
+
+// typeof.  Sometimes it's useful to know what type a variable is
+
+typeof nil     // -> "nil"
+typeof true    // -> "boolean"
+typeof false   // -> "boolean"
+typeof 42      // -> "number"
+typeof "Hello" // -> "string"
+typeof [1,2,3] // -> "array"
+typeof {a: 5}  // -> "object"
+typeof (){}    // -> "function"
+
+// sizeof gives the size of an array (max integer key + 1) or string (number of bytes)
+// gives nil for other types
+
+sizeof "Hello" // -> 5
+sizeof [1,2,3] // -> 3
+sizeof {}      // -> nil
+
+// keysof returns an array of all the keys in an object
+keys = keysof { name: "Tim", age: 29 }
+keys           // -> ["name", "age"]
 
 // Blocks
 {
+  // Blocks allow you to combine multiple statements into a single
+  // statement.  For example, the body of an `if or `while` loop. Blocks also
+  // create a new local variable scope.
+
   scope a // use this to interact with variables from outer blocks
-          // NOTE: the closest one will be choosed
+          // NOTE: the closest one will be chosen
 }
+
+// Control flow
+
+// The variables in the condition head are scoped with the condition, not the
+// optional body block.
+
+// Conditionals
+person = { age: 29, name: "Tim" }
+
+// With block
+if (person.age > 18) {
+  scope person
+  person.name   // -> "Tim"
+}
+
+// Without block
+if (person.age > 18) person.name
+
+// using else
+if (person.age > 18) {
+  scope person
+  // do something with `person`
+} else {
+  // do something else
+}
+
+if (person.age > 18) action(person)
+else otherAction()
+
+// While loops
+i = 0
+sum = 0
+while (i < 10) {
+  scope i, sum
+  sum = sum + i
+  i++
+}
+
+// for(;;) loops
+// With block
+for (i = 0, sum = 0; i < 10; i++) {
+  scope i, sum
+  sum = sum + i
+}
+
+// without block
+for (i = 0, sum = 0; i < 10; i++) sum = sum + i
+
+// break and continue.  Both `while` and `for` can have `break` and `continue`
+// break exits a loop immediately, continue, skips to the next iteration
 
 ```
 
 ## Example
 
 ```candor
+// Defining a recursive function
 factorial(x) {
   if (x == 1) return 1
   return x * factorial(x - 1)
 }
 
 factorial(10)
+
+// Implementing a forEach function
+forEach(array, callback) {
+  if (typeof array != "array") return
+  length = sizeof array
+  for (i = 0; i < length; i++) callback(i, array[i])
+}
+
+// Implementing switch with chained if..else
+type = typeof value
+if      (type == "nil")     handleNil(value)
+else if (type == "boolean") handleBoolean(value)
+else if (type == "number")  handleNumber(value)
+else if (type == "string")  handleString(value)
+else handleObject(value)
+
+// Implementing switch using objects
+handlers = {
+  "nil":     handleNil,
+  "boolean": handleBoolean,
+  "number":  handleNumber,
+  "string":  handleString
+}
+handler = handlers[typeof value]
+if (handler) handler(value)
+else handleObject(value)
+
+
 ```
 
 As you can see Candor's syntax is very close to the ecmascript's one. But
