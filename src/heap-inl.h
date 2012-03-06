@@ -71,6 +71,11 @@ inline double HNumber::DoubleValue(char* addr) {
   }
 }
 
+
+inline bool HNumber::IsIntegral(char* addr) {
+  return IsUnboxed(addr);
+}
+
 } // namespace internal
 } // namespace candor
 

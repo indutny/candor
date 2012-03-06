@@ -208,6 +208,8 @@ class HNumber : public HValue {
   static inline int64_t IntegralValue(char* addr);
   static inline double DoubleValue(char* addr);
 
+  static inline bool IsIntegral(char* addr);
+
   static const Heap::HeapTag class_tag = Heap::kTagNumber;
 };
 
@@ -235,7 +237,7 @@ class HString : public HValue {
                    const char* value,
                    uint32_t length);
 
-  inline char* value() { return Value(addr()); }
+  inline const char* value() { return Value(addr()); }
   inline uint32_t length() { return Length(addr()); }
   inline uint32_t hash() { return Hash(addr()); }
 

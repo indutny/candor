@@ -94,7 +94,6 @@ uint32_t Fullgen::Generate(AstNode* ast) {
 void Fullgen::GeneratePrologue(AstNode* stmt) {
   // rdi <- reference to parent context (zero for root)
   // rsi <- unboxed arguments count (tagged)
-  // rdx <- (root only) address of root context
   push(rbp);
   movq(rbp, rsp);
 
@@ -113,11 +112,12 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
   FunctionLiteral* fn = FunctionLiteral::Cast(stmt);
   AstList::Item* item = fn->args()->head();
   uint32_t i = 0;
+  movq(rdx, rsi);
   while (item != NULL) {
     Operand lhs(rax, 0);
     Operand rhs(rbp, 8 * (2 + i++));
 
-    cmpq(rsi, Immediate(TagNumber(i)));
+    cmpq(rdx, Immediate(TagNumber(i)));
     jmp(kLt, &body);
 
     VisitForSlot(item->value(), &lhs, scratch);
@@ -130,7 +130,7 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
   bind(&body);
 
   // Cleanup junk
-  xorq(rsi, rsi);
+  xorq(rdx, rdx);
   xorq(scratch, scratch);
 }
 
@@ -261,15 +261,14 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
     // Save rax if we're not going to overwrite it
     Save(rax);
 
-    // Save old context
-    Save(rdi);
-
     VisitForValue(fn->variable(), rax);
     IsNil(rax, NULL, &not_function);
     IsHeapObject(Heap::kTagFunction, rax, &not_function, NULL);
 
     ChangeAlign(fn->args()->length());
 
+    Push(rsi);
+    Push(rdi);
     {
       Align a(this);
 
@@ -293,10 +292,11 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
         addq(rsp, Immediate(fn->args()->length() * 8));
       }
     }
+    Pop(rdi);
+    Pop(rsi);
 
     // Finally restore everything
     ChangeAlign(-fn->args()->length());
-    Restore(rdi);
 
     // Restore rax and set result if needed
     Result(rax);

@@ -2,127 +2,127 @@
 
 TEST_START("binary operations test")
   FUN_TEST("return 1 + 2 * 3 + 4 / 2 + (3 | 2) + (5 & 3) + (3 ^ 2)", {
-    assert(HValue::As<HNumber>(result)->value() == 14);
+    assert(result->As<Number>()->Value() == 14);
   })
 
   FUN_TEST("return 1.0 + 2.0 * 3.0 + 4.0 / 2.0 + (3.0 | 2.0) + "
            "(5.0 & 3.0) + (3.0 ^ 2.0)", {
-    assert(HValue::As<HNumber>(result)->value() == 14);
+    assert(result->As<Number>()->Value() == 14);
   })
 
   FUN_TEST("a = 1\na = 1 - 1\nreturn a", {
-    assert(HValue::As<HNumber>(result)->value() == 0);
+    assert(result->As<Number>()->Value() == 0);
   })
 
   FUN_TEST("a() { a = 1\nreturn b() { scope a\na = a + 1\nreturn a} }\n"
            "c = a()\nreturn c() + c() + c()", {
-    assert(HValue::As<HNumber>(result)->value() == 9);
+    assert(result->As<Number>()->Value() == 9);
   });
 
   FUN_TEST("return nil + nil", {
-    assert(HValue::As<HNumber>(result)->value() == 0);
+    assert(result->As<Number>()->Value() == 0);
   })
 
   FUN_TEST("return nil == nil", {
-    assert(HValue::As<HBoolean>(result)->is_true());
+    assert(result->As<Boolean>()->IsTrue());
   })
 
   FUN_TEST("return nil != nil", {
-    assert(HValue::As<HBoolean>(result)->is_false());
+    assert(result->As<Boolean>()->IsFalse());
   })
 
   // Equality
 
   FUN_TEST("return nil === {}", {
-    assert(HValue::As<HBoolean>(result)->is_false());
+    assert(result->As<Boolean>()->IsFalse());
   })
 
   FUN_TEST("return nil !== {}", {
-    assert(HValue::As<HBoolean>(result)->is_true());
+    assert(result->As<Boolean>()->IsTrue());
   })
 
   FUN_TEST("return 0 !== {}", {
-    assert(HValue::As<HBoolean>(result)->is_true());
+    assert(result->As<Boolean>()->IsTrue());
   })
 
   FUN_TEST("return 'abc' == 'abc'", {
-    assert(HValue::As<HBoolean>(result)->is_true());
+    assert(result->As<Boolean>()->IsTrue());
   })
 
   FUN_TEST("return 'abc' == 'abd'", {
-    assert(HValue::As<HBoolean>(result)->is_false());
+    assert(result->As<Boolean>()->IsFalse());
   })
 
   FUN_TEST("a() {}\nreturn a == a", {
-    assert(HValue::As<HBoolean>(result)->is_true());
+    assert(result->As<Boolean>()->IsTrue());
   })
 
   FUN_TEST("a() {}\nreturn a == 1", {
-    assert(HValue::As<HBoolean>(result)->is_false());
+    assert(result->As<Boolean>()->IsFalse());
   })
 
   // Not-strict (with coercing) equality
   FUN_TEST("return 0 == []", {
-    assert(HValue::As<HBoolean>(result)->is_true());
+    assert(result->As<Boolean>()->IsTrue());
   })
 
   FUN_TEST("return 0 != []", {
-    assert(HValue::As<HBoolean>(result)->is_false());
+    assert(result->As<Boolean>()->IsFalse());
   })
 
   FUN_TEST("return '123' == 123", {
-    assert(HValue::As<HBoolean>(result)->is_true());
+    assert(result->As<Boolean>()->IsTrue());
   })
 
   // Comparison
   FUN_TEST("return '123' >= 100", {
-    assert(HValue::As<HBoolean>(result)->is_true());
+    assert(result->As<Boolean>()->IsTrue());
   })
 
   FUN_TEST("return 123 <= '100'", {
-    assert(HValue::As<HBoolean>(result)->is_false());
+    assert(result->As<Boolean>()->IsFalse());
   })
 
   FUN_TEST("return true > false'", {
-    assert(HValue::As<HBoolean>(result)->is_true());
+    assert(result->As<Boolean>()->IsTrue());
   })
 
   // Binary logic
   FUN_TEST("if (true || false) { return true }", {
-    assert(HValue::As<HBoolean>(result)->is_true());
+    assert(result->As<Boolean>()->IsTrue());
   })
 
   FUN_TEST("if (1 || false) { return true }", {
-    assert(HValue::As<HBoolean>(result)->is_true());
+    assert(result->As<Boolean>()->IsTrue());
   })
 
   FUN_TEST("if (1 && 'xyz') { return true }", {
-    assert(HValue::As<HBoolean>(result)->is_true());
+    assert(result->As<Boolean>()->IsTrue());
   })
 
   // Math
 
   FUN_TEST("return 1 + '1'", {
-    assert(HValue::As<HNumber>(result)->value() == 2);
+    assert(result->As<Number>()->Value() == 2);
   })
 
   FUN_TEST("return 'hello ' + 'world'", {
-    HString* str = HValue::As<HString>(result);
-    assert(str->length() == 11);
-    assert(strncmp(str->value(), "hello world", str->length()) == 0);
+    String* str = result->As<String>();
+    assert(str->Length() == 11);
+    assert(strncmp(str->Value(), "hello world", str->Length()) == 0);
   })
 
   FUN_TEST("return '1' + 1", {
-    HString* str = HValue::As<HString>(result);
-    assert(str->length() == 2);
-    assert(strncmp(str->value(), "11", str->length()) == 0);
+    String* str = result->As<String>();
+    assert(str->Length() == 2);
+    assert(strncmp(str->Value(), "11", str->Length()) == 0);
   })
 
   FUN_TEST("return '1' - {}", {
-    assert(HValue::As<HNumber>(result)->value() == 1);
+    assert(result->As<Number>()->Value() == 1);
   })
 
   FUN_TEST("return '5' & 3", {
-    assert(HValue::As<HNumber>(result)->value() == 1);
+    assert(result->As<Number>()->Value() == 1);
   })
 TEST_END("binary operations test")

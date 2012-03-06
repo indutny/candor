@@ -30,15 +30,15 @@ void BaseStub::GenerateEpilogue(int args) {
 
 
 void EntryStub::Generate() {
-  // rdi <- parent context (zero for root)
+  // rdi <- root context
   // rsi <- unboxed arguments count (tagged)
-  // rdx <- address of root context
+  // rdx <- pointer to arguments array
   // rcx <- address of code chunk to call
 
   // Store address of root context
-  __ movq(root_reg, rdx);
+  __ movq(root_reg, rdi);
 
-  // Store callee-save registers
+  // Store registers
   __ push(rbp);
   __ push(rbx);
   __ push(r12);
@@ -50,6 +50,30 @@ void EntryStub::Generate() {
 
   __ StoreRootStack();
 
+  // Push all arguments to stack
+  Label args(masm()), args_loop(masm());
+  __ movq(scratch, rsi);
+  __ Untag(scratch);
+  __ movq(rbx, rdx);
+
+  __ jmp(&args_loop);
+
+  __ bind(&args);
+
+  // Get argument from list
+  Operand arg(rbx, 0);
+  __ movq(rax, arg);
+  __ push(rax);
+
+  // Decrement count and move "finger"
+  __ dec(scratch);
+  __ addq(rdx, Immediate(8));
+
+  // Loop if needed
+  __ bind(&args_loop);
+  __ cmpq(scratch, Immediate(0));
+  __ jmp(kNe, &args);
+
   // Save code address
   __ movq(scratch, rcx);
 
@@ -59,6 +83,7 @@ void EntryStub::Generate() {
   __ xorq(rbx, rbx);
   __ xorq(rcx, rcx);
   __ xorq(rdx, rdx);
+  __ xorq(rdi, rdi);
   __ xorq(r8, r8);
   __ xorq(r9, r9);
   // r10 is a root register
@@ -70,6 +95,11 @@ void EntryStub::Generate() {
 
   // Call code
   __ Call(scratch);
+
+  // Unwind arguments
+  __ Untag(rsi);
+  __ shl(rsi, Immediate(3));
+  __ addq(rsp, rsi);
 
   __ RestoreRootStack();
 

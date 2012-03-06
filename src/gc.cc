@@ -36,8 +36,7 @@ void GC::CollectGarbage(char* stack_top) {
     if (top == NULL) break;
 
     // Skip rbp as well
-    if ((*reinterpret_cast<uint8_t*>(top + 1) & 0x80) == 0 &&
-        HValue::Cast(*(top + 1))->tag() == Heap::kTagCode) {
+    if (HValue::GetTag(*(top + 1)) == Heap::kTagCode) {
       top++;
       continue;
     }

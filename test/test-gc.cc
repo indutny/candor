@@ -2,14 +2,14 @@
 
 TEST_START("GC test")
   FUN_TEST("__$gc()\nreturn 1", {
-    assert(HValue::As<HNumber>(result)->value() == 1);
+    assert(result->As<Number>()->Value() == 1);
   })
   FUN_TEST("x = { y : { z : 3 } }\n"
            "a() {\n"
            "return (() {\nscope x\nx.y = 2\n__$gc()\nreturn x.y\n})()\n"
            "}\n"
            "return a()", {
-    assert(HValue::As<HNumber>(result)->value() == 2);
+    assert(result->As<Number>()->Value() == 2);
   })
 
   FUN_TEST("a = { a : { b : 1 } }\n"
@@ -17,7 +17,7 @@ TEST_START("GC test")
            "a = { u: { v: a } }\n"
            "__$gc()\n"
            "return a.u.v.x.y.a.b", {
-    assert(HValue::As<HNumber>(result)->value() == 1);
+    assert(result->As<Number>()->Value() == 1);
   })
 
   // Stress test
@@ -33,6 +33,6 @@ TEST_START("GC test")
            "__$gc()\n"
            "}\n"
            "return a.x.y", {
-    assert(HValue::As<HObject>(result) != NULL);
+    assert(result->Is<Object>());
   })
 TEST_END("GC test")

@@ -55,10 +55,10 @@
 
 #define FUN_TEST(code, block)\
     {\
-      Script s;\
-      s.Compile(code, strlen(code));\
-      char* result = s.Run();\
-      result = result;\
+      Isolate i;\
+      Function* f = Function::New(&i, code, strlen(code));\
+      Value* argv[0];\
+      Value* result = f->Call(&i, NULL, 0, argv);\
       block\
     }
 
