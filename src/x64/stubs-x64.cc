@@ -53,6 +53,7 @@ void EntryStub::Generate() {
   __ movq(scratch, rcx);
 
   // Nullify all registers to help GC distinguish on-stack values
+  __ xorq(rbp, rbp);
   __ xorq(rax, rax);
   __ xorq(rbx, rbx);
   __ xorq(rcx, rcx);
