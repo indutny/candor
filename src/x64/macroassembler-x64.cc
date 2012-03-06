@@ -303,14 +303,19 @@ void Masm::FillStackSlots(uint32_t slots) {
 }
 
 
-void Masm::EnterFrame() {
+void Masm::EnterFramePrologue() {
   Immediate last_stack(reinterpret_cast<uint64_t>(heap()->last_stack()));
   Operand scratch_op(scratch, 0);
 
   movq(scratch, last_stack);
   movq(scratch, scratch_op);
   push(scratch);
-  push(Immediate(0xFEEEDBEE));
+  push(Immediate(0xFEEDBEEF));
+}
+
+
+void Masm::EnterFrameEpilogue() {
+  addq(rsp, Immediate(16));
 }
 
 

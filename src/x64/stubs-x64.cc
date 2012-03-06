@@ -45,7 +45,7 @@ void EntryStub::Generate() {
   __ push(r14);
   __ push(r15);
 
-  __ EnterFrame();
+  __ EnterFramePrologue();
 
   __ StoreRootStack();
 
@@ -72,9 +72,7 @@ void EntryStub::Generate() {
 
   __ RestoreRootStack();
 
-  // Leave frame
-  // TODO: add separate function
-  __ addq(rsp, 16);
+  __ EnterFrameEpilogue();
 
   // Restore registers
   __ pop(r15);

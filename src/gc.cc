@@ -25,26 +25,23 @@ void GC::CollectGarbage(char* stack_top) {
   heap()->needs_gc(0);
 
   // Go through the stack
-  char* top = stack_top;
-  for (; top != NULL; top += sizeof(void*)) {
-    char** slot = reinterpret_cast<char**>(top);
-
+  char** top = reinterpret_cast<char**>(stack_top);
+  for (; top != NULL; top++) {
     // Once found enter frame signature
     // skip stack entities until last exit frame position (or NULL)
-    while (top != NULL && *reinterpret_cast<uint32_t*>(slot) == 0xFEEEDBEE) {
-      top = *reinterpret_cast<char**>(top + sizeof(void*));
-      slot = reinterpret_cast<char**>(top);
+    while (top != NULL && *reinterpret_cast<uint32_t*>(top) == 0xFEEDBEEF) {
+      top = *reinterpret_cast<char***>(top + 1);
     }
     if (top == NULL) break;
 
     // Skip rbp as well
-    if ((*reinterpret_cast<uint32_t*>(slot + 1) & 0x8000000) == 0 &&
-        HValue::Cast(*(slot + 1))->tag() == Heap::kTagCode) {
-      top += sizeof(void*);
+    if ((*reinterpret_cast<uint8_t*>(top + 1) & 0x80) == 0 &&
+        HValue::Cast(*(top + 1))->tag() == Heap::kTagCode) {
+      top++;
       continue;
     }
 
-    char* value = *slot;
+    char* value = *top;
 
     // Skip NULL pointers, non-pointer values and rbp pushes
     if (value == NULL || HValue::IsUnboxed(value)) continue;
@@ -53,7 +50,7 @@ void GC::CollectGarbage(char* stack_top) {
     HValue* hvalue = HValue::Cast(value);
     if (hvalue == NULL || hvalue->tag() == Heap::kTagCode) continue;
 
-    grey_items()->Push(new GCValue(hvalue, slot));
+    grey_items()->Push(new GCValue(hvalue, top));
   }
 
   while (grey_items()->length() != 0) {

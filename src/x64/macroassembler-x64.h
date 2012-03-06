@@ -66,7 +66,8 @@ class Masm : public Assembler {
   void FillStackSlots(uint32_t slots);
 
   // Generate enter/exit frame sequences
-  void EnterFrame();
+  void EnterFramePrologue();
+  void EnterFrameEpilogue();
   void ExitFrame();
 
   // Root stack for unwinding (throw)

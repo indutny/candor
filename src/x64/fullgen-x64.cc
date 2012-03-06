@@ -285,8 +285,6 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
       // Restore alignment
       ChangeAlign(-fn->args()->length());
 
-      ExitFrame();
-
       // Generate calling code
       Call(rax, fn->args()->length());
 
