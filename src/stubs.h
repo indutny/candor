@@ -9,6 +9,7 @@
 #include <stdint.h> // uint32_t
 
 namespace candor {
+namespace internal {
 
 // Forward declarations
 class Masm;
@@ -121,6 +122,7 @@ class Stubs : public ZoneObject {
 
 #undef STUBS_LIST
 
+} // namespace internal
 } // namespace candor
 
 #endif // _SRC_STUBS_H_

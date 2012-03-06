@@ -9,6 +9,7 @@
 #include "utils.h" // List
 
 namespace candor {
+namespace internal {
 
 // Forward declaration
 class Assembler;
@@ -344,6 +345,7 @@ class Assembler {
   List<RelocationInfo*, ZoneObject> relocation_info_;
 };
 
+} // namespace internal
 } // namespace candor
 
 #endif // _SRC_X64_ASSEMBLER_H_

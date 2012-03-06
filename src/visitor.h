@@ -2,6 +2,7 @@
 #define _SRC_VISITOR_H_
 
 namespace candor {
+namespace internal {
 
 // Forward declaration
 class AstNode;
@@ -47,6 +48,7 @@ class Visitor {
   Type type_;
 };
 
+} // namespace internal
 } // namespace candor
 
 #endif // _SRC_VISITOR_H_

@@ -17,6 +17,7 @@
 #include <stdint.h> // uint32_t
 
 namespace candor {
+namespace internal {
 
 // Forward declarations
 class Heap;
@@ -289,7 +290,7 @@ class HFunction : public HValue {
   static const Heap::HeapTag class_tag = Heap::kTagFunction;
 };
 
-
+} // namespace internal
 } // namespace candor
 
 #endif // _SRC_HEAP_H_

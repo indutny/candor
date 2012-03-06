@@ -20,7 +20,7 @@ endif
 
 all: candor.a
 
-OBJS += src/candor.o
+OBJS += src/api.o
 OBJS += src/zone.o
 OBJS += src/lexer.o
 OBJS += src/visitor.o

@@ -8,6 +8,7 @@
 #include <stdlib.h> // NULL
 
 namespace candor {
+namespace internal {
 
 inline void Label::relocate(uint32_t offset) {
   // Label should be relocated only once
@@ -173,6 +174,7 @@ inline void Assembler::emitq(uint64_t v) {
   Grow();
 }
 
+} // namespace internal
 } // namespace candor
 
 #endif // _SRC_X64_ASSEMBLER_INL_H_

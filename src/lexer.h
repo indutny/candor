@@ -6,6 +6,7 @@
 #include <stdint.h>
 
 namespace candor {
+namespace internal {
 
 // Splits source code into lexems and emits them
 class Lexer {
@@ -136,6 +137,7 @@ class Lexer {
   List<Token*, ZoneObject> queue_;
 };
 
+} // namespace internal
 } // namespace candor
 
 #endif // _SRC_LEXER_H_

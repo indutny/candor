@@ -8,6 +8,7 @@
 #include "heap-inl.h"
 
 namespace candor {
+namespace internal {
 
 // Forward declaration
 class BaseStub;
@@ -132,6 +133,7 @@ class Masm : public Assembler {
   friend class Align;
 };
 
+} // namespace internal
 } // namespace candor
 
 #endif // _SRC_X64_MARCOASSEMBLER_H_

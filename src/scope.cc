@@ -4,6 +4,7 @@
 #include <assert.h>
 
 namespace candor {
+namespace internal {
 
 Scope::Scope(ScopeAnalyze* a, Type type) : a_(a), type_(type) {
   parent_ = a_->scope_;
@@ -228,4 +229,5 @@ AstNode* ScopeAnalyze::VisitName(AstNode* node) {
   return new AstValue(scope(), node);
 }
 
+} // namespace internal
 } // namespace candor

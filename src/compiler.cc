@@ -10,6 +10,8 @@
 
 namespace candor {
 
+using namespace internal;
+
 CompiledScript::CompiledScript(const char* source, uint32_t length) {
   // Copy source
   source_ = new char[length];

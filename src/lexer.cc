@@ -30,6 +30,7 @@
     }
 
 namespace candor {
+namespace internal {
 
 Lexer::Token* Lexer::Peek() {
   List<Token*, ZoneObject>::Item* head = queue()->head();
@@ -239,4 +240,5 @@ Lexer::Token* Lexer::Consume() {
   }
 }
 
+} // namespace internal
 } // namespace candor

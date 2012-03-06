@@ -9,6 +9,7 @@
 #include <assert.h> // assert
 
 namespace candor {
+namespace internal {
 
 Heap* Heap::current_ = NULL;
 
@@ -251,5 +252,5 @@ char** HMap::GetSlotAddress(uint32_t index) {
   return reinterpret_cast<char**>(space() + index * 8);
 }
 
-
+} // namespace internal
 } // namespace candor

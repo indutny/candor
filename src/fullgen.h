@@ -17,6 +17,7 @@
 #include <stdint.h> // uint32_t
 
 namespace candor {
+namespace internal {
 
 // Forward declaration
 class Heap;
@@ -159,6 +160,7 @@ class Fullgen : public Masm, public Visitor {
   List<char*, ZoneObject> root_context_;
 };
 
+} // namespace internal
 } // namespace candor
 
 #endif // _SRC_FULLGEN_H_

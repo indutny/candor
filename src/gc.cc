@@ -7,6 +7,7 @@
 #include <assert.h> // assert
 
 namespace candor {
+namespace internal {
 
 void GC::GCValue::Relocate(char* address) {
   if (slot_ != NULL) {
@@ -129,4 +130,5 @@ void GC::VisitMap(HMap* map) {
   }
 }
 
+} // namespace internal
 } // namespace candor

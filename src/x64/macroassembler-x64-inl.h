@@ -4,6 +4,7 @@
 #include "macroassembler-x64.h"
 
 namespace candor {
+namespace internal {
 
 inline void Masm::Push(Register src) {
   ChangeAlign(1);
@@ -103,6 +104,7 @@ inline Condition Masm::BinOpToCondition(BinOp::BinOpType type,
   return kEq;
 }
 
+} // namespace internal
 } // namespace candor
 
 #endif // _SRC_X64_MARCOASSEMBLER_INL_H_

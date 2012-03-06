@@ -13,6 +13,7 @@
 #include <sys/types.h> // off_t
 
 namespace candor {
+namespace internal {
 
 CPU::CPUFeatures CPU::cpu_features_;
 bool CPU::probed_ = false;
@@ -52,4 +53,5 @@ void CPU::Probe() {
   probed_ = true;
 }
 
+} // internal
 } // candor

@@ -13,7 +13,7 @@
 #include <stdio.h> // snprintf
 
 namespace candor {
-
+namespace internal {
 
 void FFunction::Use(uint32_t offset) {
   RelocationInfo* info = new RelocationInfo(
@@ -1034,5 +1034,5 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
   return node;
 }
 
-
+} // namespace internal
 } // namespace candor

@@ -5,6 +5,7 @@
 #include "utils.h" // List
 
 namespace candor {
+namespace internal {
 
 // Forward declarations
 class Heap;
@@ -50,6 +51,7 @@ class GC {
   Heap* heap_;
 };
 
+} // namespace internal
 } // namespace candor
 
 #endif // _SRC_GC_H_

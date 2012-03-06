@@ -9,6 +9,7 @@
 #include <unistd.h> // sysconf or getpagesize
 
 namespace candor {
+namespace internal {
 
 #define UNEXPECTED assert(0 && "Unexpected");
 
@@ -323,6 +324,7 @@ inline uint32_t GetPageSize() {
 #endif
 }
 
+} // namespace internal
 } // namespace candor
 
 #endif // _SRC_UTILS_H_

@@ -10,6 +10,7 @@
 #include <sys/types.h> // size_t
 
 namespace candor {
+namespace internal {
 
 // Declare all template function variants
 #define BINARY_SUB_TYPES(V)\
@@ -452,4 +453,5 @@ char* RuntimeBinOp(Heap* heap, char* lhs, char* rhs) {
   return NULL;
 }
 
+} // namespace internal
 } // namespace candor

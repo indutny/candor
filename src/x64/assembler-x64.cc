@@ -2,6 +2,7 @@
 #include "assembler-x64-inl.h"
 
 namespace candor {
+namespace internal {
 
 void RelocationInfo::Relocate(char* buffer) {
   uint64_t addr = 0;
@@ -489,4 +490,5 @@ void Assembler::ucomisd(DoubleRegister dst, DoubleRegister src) {
   emit_modrm(dst, src);
 }
 
+} // namespace internal
 } // namespace candor

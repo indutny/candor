@@ -4,6 +4,7 @@
 #include <stdlib.h> // NULL
 
 namespace candor {
+namespace internal {
 
 AstNode* Parser::Execute() {
   AstNode* stmt;
@@ -523,4 +524,5 @@ void Parser::Print(char* buffer, uint32_t size) {
   p.Finalize();
 }
 
+} // namespace internal
 } // namespace candor

@@ -8,6 +8,7 @@
 #include <assert.h> // assert
 
 namespace candor {
+namespace internal {
 
 // Forward declarations
 class AstNode;
@@ -111,6 +112,7 @@ class ScopeAnalyze : public Visitor {
   friend class Scope;
 };
 
+} // namespace internal
 } // namespace candor
 
 #endif // _SRC_SCOPE_H_

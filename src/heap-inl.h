@@ -2,7 +2,7 @@
 #define _SRC_HEAP_INL_H_
 
 namespace candor {
-
+namespace internal {
 
 inline Heap::HeapTag HValue::GetTag(char* addr) {
   if (addr == NULL) return Heap::kTagNil;
@@ -71,6 +71,7 @@ inline double HNumber::DoubleValue(char* addr) {
   }
 }
 
+} // namespace internal
 } // namespace candor
 
 #endif // _SRC_HEAP_INL_H_

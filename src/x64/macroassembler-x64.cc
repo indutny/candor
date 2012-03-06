@@ -10,6 +10,7 @@
 #include <stdlib.h> // NULL
 
 namespace candor {
+namespace internal {
 
 Masm::Masm(Heap* heap) : result_(rax),
                          slot_(new Operand(rax, 0)),
@@ -448,4 +449,5 @@ void Masm::Call(BaseStub* stub) {
   Call(scratch);
 }
 
+} // namespace internal
 } // namespace candor

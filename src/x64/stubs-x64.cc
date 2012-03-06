@@ -5,6 +5,7 @@
 #include "runtime.h"
 
 namespace candor {
+namespace internal {
 
 #define __ masm()->
 
@@ -426,4 +427,5 @@ void BinaryOpStub::Generate() {
 
 #undef BINARY_SUB_TYPES
 
+} // namespace internal
 } // namespace candor

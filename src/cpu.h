@@ -2,6 +2,7 @@
 #define _SRC_CPU_H_
 
 namespace candor {
+namespace internal {
 
 class CPU {
  public:
@@ -19,6 +20,7 @@ class CPU {
   }
 };
 
+} // namespace internal
 } // namespace candor
 
 #endif // _SRC_CPU_H_

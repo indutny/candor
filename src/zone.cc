@@ -4,6 +4,7 @@
 #include <sys/types.h> // size_t
 
 namespace candor {
+namespace internal {
 
 Zone* Zone::current_ = NULL;
 
@@ -19,4 +20,5 @@ void* Zone::Allocate(size_t size) {
   }
 }
 
+} // namespace internal
 } // namespace candor

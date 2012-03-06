@@ -8,6 +8,7 @@
 #include <stdlib.h> // NULL
 
 namespace candor {
+namespace internal {
 
 // Creates AST tree from plain source code
 class Parser : public Lexer {
@@ -117,6 +118,7 @@ class Parser : public Lexer {
   AstNode* ast_;
 };
 
+} // namespace internal
 } // namespace candor
 
 #endif // _SRC_PARSER_H_

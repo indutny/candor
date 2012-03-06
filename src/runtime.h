@@ -9,6 +9,7 @@
 #include <sys/types.h> // size_t
 
 namespace candor {
+namespace internal {
 
 // Wrapper for heap()->new_space()->Allocate()
 typedef char* (*RuntimeAllocateCallback)(Heap* heap,
@@ -58,6 +59,7 @@ typedef char* (*RuntimeBinOpCallback)(Heap* heap,
 template <BinOp::BinOpType type>
 char* RuntimeBinOp(Heap* heap, char* lhs, char* rhs);
 
+} // namespace internal
 } // namespace candor
 
 #endif // _SRC_RUNTIME_H_

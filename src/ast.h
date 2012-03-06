@@ -9,6 +9,7 @@
 #include <assert.h> // assert
 
 namespace candor {
+namespace internal {
 
 // Forward declaration
 struct ScopeSlot;
@@ -521,6 +522,7 @@ class AstValue : public AstNode {
   AstNode* name_;
 };
 
+} // namespace internal
 } // namespace candor
 
 #endif // _SRC_AST_H_

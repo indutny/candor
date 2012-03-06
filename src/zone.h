@@ -7,6 +7,7 @@
 #include <assert.h> // assert
 
 namespace candor {
+namespace internal {
 
 // Chunk of memory that will hold some of allocated data in Zone
 class ZoneBlock {
@@ -85,6 +86,7 @@ class ZoneObject {
   }
 };
 
+} // namespace internal
 } // namespace candor
 
 #endif // _SRC_ZONE_H_

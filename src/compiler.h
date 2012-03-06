@@ -2,15 +2,15 @@
 #define _SRC_COMPILER_H_
 
 #include "zone.h" // Zone
+#include "heap.h" // Heap
+#include "heap-inl.h"
 
 #include <stdint.h> // uint32_t
 #include <string.h> // memcpy
 
 namespace candor {
 
-// Forward declaration
-class Heap;
-
+using namespace internal;
 
 // Guards executable page with non-readable&non-executable page
 class Guard {
