@@ -26,7 +26,7 @@ class CodeSpace {
   char* Compile(const char* source, uint32_t length);
   char* Insert(char* root, off_t offset, char* code, uint32_t length);
 
-  Value* Run(char* fn, Object* context, uint32_t argc, Value* argv[]);
+  static Value* Run(char* fn, Object* context, uint32_t argc, Value* argv[]);
 
   inline Heap* heap() { return heap_; }
 

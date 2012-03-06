@@ -64,7 +64,7 @@ class Function : public Value {
  public:
   static Function* New(Isolate* isolate, const char* source, uint32_t length);
 
-  Value* Call(Isolate* isolate, Object* context, uint32_t argc, Value* argv[]);
+  Value* Call(Object* context, uint32_t argc, Value* argv[]);
 
   static const ValueType tag = kFunction;
 };

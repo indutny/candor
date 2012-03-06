@@ -1,6 +1,6 @@
 #include "cpu.h"
 #include "zone.h" // Zone
-#include "compiler.h" // Guard
+#include "code-space.h" // CodeSpace
 
 #if __ARCH == x64
 #include "x64/assembler-x64.h"
@@ -10,6 +10,7 @@
 #endif
 
 #include <stdint.h> // uint32_t
+#include <string.h> // memcpy
 #include <sys/types.h> // off_t
 
 namespace candor {
@@ -17,6 +18,9 @@ namespace internal {
 
 CPU::CPUFeatures CPU::cpu_features_;
 bool CPU::probed_ = false;
+
+
+typedef char* (*CPUProbeCallback)();
 
 void CPU::Probe() {
   Zone z;
@@ -43,11 +47,13 @@ void CPU::Probe() {
   __ ret(0);
 #undef __
 
-  Guard g(a.buffer(), a.length());
-  a.Relocate(g.buffer());
+  CodePage page(a.length());
+  char* code = page.Allocate(a.length());
+  memcpy(code, a.buffer(), a.length());
+  a.Relocate(code);
 
-  int32_t features = reinterpret_cast<off_t>(g.AsFunction()(
-        NULL, NULL, NULL, NULL));
+  int32_t features = reinterpret_cast<off_t>(
+      reinterpret_cast<CPUProbeCallback>(code)());
 
   cpu_features_.SSE4_1 = (features & (1 << 19)) != 0;
   probed_ = true;

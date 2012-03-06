@@ -1,5 +1,4 @@
 #include "candor.h"
-#include "compiler.h"
 #include "heap.h"
 #include "heap-inl.h"
 #include "code-space.h"
@@ -86,11 +85,10 @@ Function* Function::New(Isolate* isolate, const char* source, uint32_t length) {
 }
 
 
-Value* Function::Call(Isolate* isolate,
-                      Object* context,
+Value* Function::Call(Object* context,
                       uint32_t argc,
                       Value* argv[]) {
-  return isolate->space->Run(addr(), context, argc, argv);
+  return CodeSpace::Run(addr(), context, argc, argv);
 }
 
 

@@ -58,7 +58,7 @@
       Isolate i;\
       Function* f = Function::New(&i, code, strlen(code));\
       Value* argv[0];\
-      Value* result = f->Call(&i, NULL, 0, argv);\
+      Value* result = f->Call(NULL, 0, argv);\
       block\
     }
 
