@@ -56,7 +56,7 @@
 #define FUN_TEST(code, block)\
     {\
       Isolate i;\
-      Function* f = Function::New(&i, code, strlen(code));\
+      Function* f = Function::New(code, strlen(code));\
       Value* argv[0];\
       Value* result = f->Call(NULL, 0, argv);\
       block\

@@ -25,6 +25,18 @@ void GC::CollectGarbage(char* stack_top) {
   // Reset GC flag
   heap()->needs_gc(0);
 
+  // Add referenced in C++ land values to the grey list
+  HValueRefList::Item* item = heap()->references()->head();
+  while (item != NULL) {
+    HValueReference* ref = item->value();
+    grey_items()->Push(
+        new GCValue(ref->value(), reinterpret_cast<char**>(ref->reference())));
+    grey_items()->Push(
+        new GCValue(ref->value(), reinterpret_cast<char**>(ref->valueptr())));
+
+    item = item->next();
+  }
+
   // Go through the stack
   char** top = reinterpret_cast<char**>(stack_top);
   for (; top != NULL; top++) {
@@ -57,7 +69,9 @@ void GC::CollectGarbage(char* stack_top) {
     GCValue* value = grey_items()->Shift();
 
     // Skip unboxed address
-    if (HValue::IsUnboxed(value->value()->addr())) continue;
+    if (value->value() == NULL || HValue::IsUnboxed(value->value()->addr())) {
+      continue;
+    }
 
     if (!value->value()->IsGCMarked()) {
       HValue* hvalue = value->value()->CopyTo(&space);
@@ -110,6 +124,7 @@ void GC::VisitContext(HContext* context) {
 
 
 void GC::VisitFunction(HFunction* fn) {
+  if (fn->parent_slot() == NULL || fn->parent() == NULL) return;
   grey_items()->Push(new GCValue(HValue::Cast(fn->parent()), fn->parent_slot()));
 }
 

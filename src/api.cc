@@ -2,6 +2,7 @@
 #include "heap.h"
 #include "heap-inl.h"
 #include "code-space.h"
+#include "utils.h"
 
 #include <stdint.h> // uint32_t
 #include <stdlib.h> // NULL
@@ -11,36 +12,90 @@ namespace candor {
 using namespace internal;
 
 // Declarations
-template Nil* Value::As<Nil>();
-template Number* Value::As<Number>();
-template Boolean* Value::As<Boolean>();
-template String* Value::As<String>();
-template Function* Value::As<Function>();
-template Object* Value::As<Object>();
+#define TYPES_LIST(V)\
+    V(Value)\
+    V(Nil)\
+    V(Number)\
+    V(Boolean)\
+    V(String)\
+    V(Function)\
+    V(Object)
 
-template Nil* Value::Cast<Nil>(char* addr);
-template Number* Value::Cast<Number>(char* addr);
-template Boolean* Value::Cast<Boolean>(char* addr);
-template String* Value::Cast<String>(char* addr);
-template Function* Value::Cast<Function>(char* addr);
-template Object* Value::Cast<Object>(char* addr);
+#define METHODS_ENUM(V)\
+    template V* Value::As<V>();\
+    template V* Value::Cast<V>(char* addr);\
+    template V* Value::Cast<V>(Value* value);\
+    template bool Value::Is<V>();\
+    template Handle<V>::Handle(V* v);
+TYPES_LIST(METHODS_ENUM)
+#undef METHODS_ENUM
 
-template bool Value::Is<Nil>();
-template bool Value::Is<Number>();
-template bool Value::Is<Boolean>();
-template bool Value::Is<String>();
-template bool Value::Is<Function>();
-template bool Value::Is<Object>();
+#undef TYPES_LIST
+
+static Isolate* current_isolate = NULL;
 
 Isolate::Isolate() {
   heap = new Heap(2 * 1024 * 1024);
   space = new CodeSpace(heap);
+  current_isolate = this;
+  scope = NULL;
 }
 
 
 Isolate::~Isolate() {
   delete heap;
   delete space;
+}
+
+
+Isolate* Isolate::GetCurrent() {
+  // TODO: Support multiple isolates
+  return current_isolate;
+}
+
+
+HandleScope::HandleScope() : isolate(Isolate::GetCurrent()) {
+  parent = isolate->scope;
+  isolate->scope = this;
+}
+
+
+HandleScope::~HandleScope() {
+  ValueList::Item* item = references.tail();
+  while (item != NULL) {
+    isolate->heap->Dereference(
+        NULL, reinterpret_cast<HValue*>(item->value()));
+    item = item->prev();
+  }
+
+  isolate->scope = parent;
+}
+
+
+void HandleScope::Put(Handle<Value> handle) {
+  references.Push(*handle);
+  isolate->heap->Reference(NULL, reinterpret_cast<HValue*>(*handle));
+}
+
+
+template <class T>
+Handle<T>::Handle(T* v) : isolate(Isolate::GetCurrent()), value(v) {
+  if (isolate->scope != NULL) {
+    isolate->scope->Put(*reinterpret_cast<Handle<Value>*>(this));
+  }
+}
+
+
+template <class T>
+void Handle<T>::Persist() {
+  isolate->heap->Reference(reinterpret_cast<HValue**>(addr()),
+                           reinterpret_cast<HValue*>(value));
+}
+
+
+template <class T>
+void Handle<T>::Weaken() {
+  isolate->heap->Dereference(reinterpret_cast<HValue**>(addr()), NULL);
 }
 
 
@@ -62,6 +117,12 @@ T* Value::Cast(char* addr) {
 
 
 template <class T>
+T* Value::Cast(Value* value) {
+  return reinterpret_cast<T*>(value);
+}
+
+
+template <class T>
 bool Value::Is() {
   Heap::HeapTag tag = Heap::kTagNil;
 
@@ -79,9 +140,27 @@ bool Value::Is() {
 }
 
 
-Function* Function::New(Isolate* isolate, const char* source, uint32_t length) {
-  char* code = isolate->space->Compile(source, length);
-  return Cast<Function>(code);
+Function* Function::New(const char* source, uint32_t length) {
+  char* code = Isolate::GetCurrent()->space->Compile(source, length);
+  char* obj = HFunction::New(Isolate::GetCurrent()->heap, NULL, code);
+
+  Function* fn = Cast<Function>(obj);
+  Isolate::GetCurrent()->heap->Reference(NULL,
+                                         reinterpret_cast<HValue*>(fn));
+
+  return fn;
+}
+
+
+Function* Function::New(BindingCallback callback) {
+  char* obj = HFunction::NewBinding(Isolate::GetCurrent()->heap,
+                                    *reinterpret_cast<char**>(&callback));
+
+  Function* fn = Cast<Function>(obj);
+  Isolate::GetCurrent()->heap->Reference(NULL,
+                                         reinterpret_cast<HValue*>(fn));
+
+  return fn;
 }
 
 
@@ -97,13 +176,13 @@ Nil* Nil::New() {
 }
 
 
-Boolean* Boolean::True(Isolate* isolate) {
-  return Cast<Boolean>(HBoolean::New(isolate->heap, true));
+Boolean* Boolean::True() {
+  return Cast<Boolean>(HBoolean::New(Isolate::GetCurrent()->heap, true));
 }
 
 
-Boolean* Boolean::False(Isolate* isolate) {
-  return Cast<Boolean>(HBoolean::New(isolate->heap, false));
+Boolean* Boolean::False() {
+  return Cast<Boolean>(HBoolean::New(Isolate::GetCurrent()->heap, false));
 }
 
 
@@ -117,13 +196,13 @@ bool Boolean::IsFalse() {
 }
 
 
-Number* Number::New(Isolate* isolate, double value) {
-  return Cast<Number>(HNumber::New(isolate->heap, value));
+Number* Number::New(double value) {
+  return Cast<Number>(HNumber::New(Isolate::GetCurrent()->heap, value));
 }
 
 
-Number* Number::New(Isolate* isolate, int64_t value) {
-  return Cast<Number>(HNumber::New(isolate->heap, value));
+Number* Number::New(int64_t value) {
+  return Cast<Number>(HNumber::New(Isolate::GetCurrent()->heap, value));
 }
 
 
@@ -142,8 +221,8 @@ bool Number::IsIntegral() {
 }
 
 
-String* String::New(Isolate* isolate, const char* value, uint32_t len) {
-  return Cast<String>(HString::New(isolate->heap, value, len));
+String* String::New(const char* value, uint32_t len) {
+  return Cast<String>(HString::New(Isolate::GetCurrent()->heap, value, len));
 }
 
 

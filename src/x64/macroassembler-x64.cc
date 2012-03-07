@@ -436,10 +436,31 @@ void Masm::Call(Register fn, uint32_t args) {
   Operand context_slot(fn, 8);
   Operand code_slot(fn, 16);
 
+  Label binding(this), done(this);
+
   movq(rdi, context_slot);
   movq(rsi, Immediate(TagNumber(args)));
 
+  cmpq(rdi, Immediate(0x0DEF0DEF));
+  jmp(kEq, &binding);
+
   Call(code_slot);
+
+  jmp(&done);
+  bind(&binding);
+
+  // binding(argc, argv)
+  movq(rdi, rsi);
+  movq(rsi, rsp);
+
+  Pushad();
+  ExitFrame();
+
+  Call(code_slot);
+
+  Popad(rax);
+
+  bind(&done);
 }
 
 

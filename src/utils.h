@@ -42,6 +42,10 @@ class List {
     inline void value(T value) { value_ = value; }
     inline Item* next() { return next_; }
     inline Item* prev() { return prev_; }
+    inline void remove() {
+      if (prev_ != NULL) prev_->next_ = next_;
+      if (next_ != NULL) next_->prev_ = prev_;
+    }
 
    protected:
     T value_;
@@ -79,6 +83,15 @@ class List {
   }
 
 
+  void Remove(Item* item) {
+    if (current_ == item) current_ = item->prev_;
+    item->remove();
+    delete item;
+
+    length_--;
+  }
+
+
   void Unshift(T item) {
     Item* next = new Item(item);
     next->prev_ = NULL;
@@ -106,6 +119,7 @@ class List {
 
 
   inline Item* head() { return head_; }
+  inline Item* tail() { return current_; }
   inline uint32_t length() { return length_; }
 
   bool allocated;

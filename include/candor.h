@@ -1,6 +1,7 @@
 #ifndef _INCLUDE_CANDOR_H_
 #define _INCLUDE_CANDOR_H_
 
+#include "utils.h" // List
 #include <stdint.h> // uint32_t
 
 namespace candor {
@@ -17,15 +18,20 @@ class Number;
 class Boolean;
 class String;
 class Object;
+class HandleScope;
 
 class Isolate {
  public:
   Isolate();
   ~Isolate();
 
+  static Isolate* GetCurrent();
+
  protected:
   internal::Heap* heap;
   internal::CodeSpace* space;
+
+  HandleScope* scope;
 
   friend class Value;
   friend class Function;
@@ -33,11 +39,16 @@ class Isolate {
   friend class Boolean;
   friend class String;
   friend class Object;
+
+  friend class HandleScope;
+  template <class T>
+  friend class Handle;
 };
 
 class Value {
  public:
   enum ValueType {
+    kNone,
     kNil,
     kNumber,
     kBoolean,
@@ -55,14 +66,21 @@ class Value {
   static T* Cast(char* addr);
 
   template <class T>
+  static T* Cast(Value* value);
+
+  template <class T>
   bool Is();
 
   inline char* addr() { return reinterpret_cast<char*>(this); }
+
+  static const ValueType tag = kNone;
 };
 
 class Function : public Value {
  public:
-  static Function* New(Isolate* isolate, const char* source, uint32_t length);
+  typedef Value* (*BindingCallback)(uint32_t argc, Value* argv[]);
+  static Function* New(const char* source, uint32_t length);
+  static Function* New(BindingCallback callback);
 
   Value* Call(Object* context, uint32_t argc, Value* argv[]);
 
@@ -78,8 +96,8 @@ class Nil : public Value {
 
 class Boolean : public Value {
  public:
-  static Boolean* True(Isolate* isolate);
-  static Boolean* False(Isolate* isolate);
+  static Boolean* True();
+  static Boolean* False();
 
   bool IsTrue();
   bool IsFalse();
@@ -89,8 +107,8 @@ class Boolean : public Value {
 
 class Number : public Value {
  public:
-  static Number* New(Isolate* isolate, double value);
-  static Number* New(Isolate* isolate, int64_t value);
+  static Number* New(double value);
+  static Number* New(int64_t value);
 
   double Value();
   int64_t IntegralValue();
@@ -102,7 +120,7 @@ class Number : public Value {
 
 class String : public Value {
  public:
-  static String* New(Isolate* isolate, const char* value, uint32_t len);
+  static String* New(const char* value, uint32_t len);
 
   const char* Value();
   uint32_t Length();
@@ -112,12 +130,51 @@ class String : public Value {
 
 class Object : public Value {
  public:
-  static Object* New(Isolate* isolate);
+  static Object* New();
 
   void Set(const char* key, uint32_t len, Value* value);
   Value* Get(const char* key, uint32_t len);
 
   static const ValueType tag = kObject;
+};
+
+template <class T>
+class Handle {
+ public:
+  Handle(T* v);
+
+  void Persist();
+  void Weaken();
+
+  inline T* operator*() { return value; }
+  inline T* operator->() { return value; }
+
+  inline T** addr() { return &value; }
+
+  template <class S>
+  inline static Handle<T> Cast(Handle<S> handle) {
+    return Handle<T>(Value::Cast<T>(*handle));
+  }
+
+ protected:
+  Isolate* isolate;
+  T* value;
+};
+
+class HandleScope {
+ public:
+  HandleScope();
+  ~HandleScope();
+
+  typedef internal::List<Value*, internal::EmptyClass> ValueList;
+
+  void Put(Handle<Value> handle);
+
+ private:
+  Isolate* isolate;
+  HandleScope* parent;
+
+  ValueList references;
 };
 
 } // namespace candor

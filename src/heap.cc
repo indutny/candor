@@ -86,6 +86,26 @@ char* Heap::AllocateTagged(HeapTag tag, uint32_t bytes) {
 }
 
 
+void Heap::Reference(HValue** reference, HValue* value) {
+  references()->Push(new HValueReference(reference, value));
+}
+
+
+void Heap::Dereference(HValue** reference, HValue* value) {
+  HValueRefList::Item* tail = references()->tail();
+  while (tail != NULL) {
+    if (reference == NULL ?
+            tail->value()->value() == value
+            :
+            tail->value()->reference() == reference) {
+      references()->Remove(tail);
+      break;
+    }
+    tail = tail->prev();
+  }
+}
+
+
 HValue* HValue::CopyTo(Space* space) {
   uint32_t size = 8;
   switch (tag()) {
@@ -250,6 +270,24 @@ HValue* HMap::GetSlot(uint32_t index) {
 
 char** HMap::GetSlotAddress(uint32_t index) {
   return reinterpret_cast<char**>(space() + index * 8);
+}
+
+
+char* HFunction::New(Heap* heap, char* parent, char* addr) {
+  char* fn = heap->AllocateTagged(Heap::kTagFunction, 16);
+
+  // Set parent context
+  *reinterpret_cast<char**>(fn + 8) = parent;
+
+  // Set pointer to code
+  *reinterpret_cast<char**>(fn + 16) = addr;
+
+  return fn;
+}
+
+
+char* HFunction::NewBinding(Heap* heap, char* addr) {
+  return New(heap, reinterpret_cast<char*>(0x0DEF0DEF), addr);
 }
 
 } // namespace internal

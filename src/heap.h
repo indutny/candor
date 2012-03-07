@@ -21,6 +21,7 @@ namespace internal {
 
 // Forward declarations
 class Heap;
+class HValueReference;
 
 class Space {
  public:
@@ -73,6 +74,8 @@ class Space {
   uint32_t page_size_;
 };
 
+typedef List<HValueReference*, EmptyClass> HValueRefList;
+
 class Heap {
  public:
   enum HeapTag {
@@ -103,12 +106,15 @@ class Heap {
                              needs_gc_(0),
                              gc_(this) {
     current_ = this;
+    references_.allocated = true;
   }
 
   // TODO: Use thread id
   static inline Heap* Current() { return current_; }
 
   char* AllocateTagged(HeapTag tag, uint32_t bytes);
+  void Reference(HValue** reference, HValue* value);
+  void Dereference(HValue** reference, HValue* value);
 
   inline Space* new_space() { return &new_space_; }
   inline Space* old_space() { return &old_space_; }
@@ -119,6 +125,7 @@ class Heap {
   inline uint64_t needs_gc() { return needs_gc_; }
   inline uint64_t* needs_gc_addr() { return &needs_gc_; }
   inline void needs_gc(uint64_t value) { needs_gc_ = value; }
+  inline HValueRefList* references() { return &references_; }
 
   inline GC* gc() { return &gc_; }
 
@@ -136,6 +143,8 @@ class Heap {
   char* pending_exception_;
 
   uint64_t needs_gc_;
+
+  HValueRefList references_;
 
   GC gc_;
 
@@ -174,6 +183,22 @@ class HValue {
 
   inline Heap::HeapTag tag() { return GetTag(addr()); }
   inline char* addr() { return reinterpret_cast<char*>(this); }
+};
+
+
+class HValueReference {
+ public:
+  HValueReference(HValue** reference, HValue* value) : reference_(reference),
+                                                       value_(value) {
+  }
+
+  inline HValue** reference() { return reference_; }
+  inline HValue* value() { return value_; }
+  inline HValue** valueptr() { return &value_; }
+
+ private:
+  HValue** reference_;
+  HValue* value_;
 };
 
 
@@ -285,6 +310,15 @@ class HMap : public HValue {
 class HFunction : public HValue {
  public:
   HFunction(char* addr);
+  static char* New(Heap* heap, char* parent, char* addr);
+  static char* NewBinding(Heap* heap, char* addr);
+
+  inline static char* Code(char* addr) {
+    return *reinterpret_cast<char**>(addr + 16);
+  }
+  inline static char* Parent(char* addr) {
+    return *reinterpret_cast<char**>(addr + 8);
+  }
 
   inline char* parent() { return *parent_slot(); }
   inline char** parent_slot() { return reinterpret_cast<char**>(addr() + 8); }

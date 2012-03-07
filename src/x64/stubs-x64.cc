@@ -34,6 +34,7 @@ void EntryStub::Generate() {
   // rsi <- unboxed arguments count (tagged)
   // rdx <- pointer to arguments array
   // rcx <- address of code chunk to call
+  // r8 <- parent context
 
   // Store address of root context
   __ movq(root_reg, rdi);
@@ -77,13 +78,15 @@ void EntryStub::Generate() {
   // Save code address
   __ movq(scratch, rcx);
 
+  // Set context
+  __ movq(rdi, r8);
+
   // Nullify all registers to help GC distinguish on-stack values
   __ xorq(rbp, rbp);
   __ xorq(rax, rax);
   __ xorq(rbx, rbx);
   __ xorq(rcx, rcx);
   __ xorq(rdx, rdx);
-  __ xorq(rdi, rdi);
   __ xorq(r8, r8);
   __ xorq(r9, r9);
   // r10 is a root register

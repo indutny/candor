@@ -78,8 +78,11 @@ Value* CodeSpace::Run(char* fn,
                       Object* context,
                       uint32_t argc,
                       Value* argv[]) {
-  char* root = *(reinterpret_cast<char**>(fn) - 1);
-  off_t offset = *(reinterpret_cast<off_t*>(fn) - 2);
+  char* code = HFunction::Code(fn);
+  char* parent = HFunction::Parent(fn);
+
+  char* root = *(reinterpret_cast<char**>(code) - 1);
+  off_t offset = *(reinterpret_cast<off_t*>(code) - 2);
 
   // Set new context
   if (context != NULL) {
@@ -89,10 +92,11 @@ Value* CodeSpace::Run(char* fn,
     *reinterpret_cast<Object**>(hroot->GetSlotAddress(0)) = context;
   }
 
-  return reinterpret_cast<Code>(fn)(root,
-                                    HNumber::Tag(argc),
-                                    argv,
-                                    fn + offset);
+  return reinterpret_cast<Code>(code)(root,
+                                      HNumber::Tag(argc),
+                                      argv,
+                                      code + offset,
+                                      parent);
 }
 
 
