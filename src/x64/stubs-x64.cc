@@ -68,7 +68,7 @@ void EntryStub::Generate() {
   __ bind(&args);
 
   // Get argument from list
-  Operand arg(rbx, 0);
+  Operand arg(rdx, 0);
   __ movq(rax, arg);
   __ push(rax);
 
