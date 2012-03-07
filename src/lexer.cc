@@ -86,7 +86,7 @@ Lexer::Token* Lexer::Consume() {
   // Skip spaces and detect CR
   cr = cr || SkipWhitespace();
 
-  if (cr) return new Token(kCr, offset_ - 1);
+  if (cr) return new Token(kCr, offset_);
 
   LENGTH_CHECK
 
