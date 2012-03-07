@@ -1,19 +1,11 @@
 #include "test.h"
 
 TEST_START("API test")
-  Isolate i;
+  FUN_TEST("return (a) {\nreturn a + 2\n}", {
+    assert(result->Is<Function>());
 
-  {
-    HandleScope scope;
-
-    Handle<String> str(String::New("str", 3));
-    {
-      HandleScope scope;
-      Handle<Number> num(Number::New(static_cast<double>(1)));
-
-      double x = num->Value();
-    }
-
-    uint32_t len = str->Length();
-  }
+    Value* argv[1] = { Number::NewIntegral(1) };
+    Value* num = result->As<Function>()->Call(NULL, 1, argv);
+    assert(num->As<Number>()->Value() == 3);
+  })
 TEST_END("API test")

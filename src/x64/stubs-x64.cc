@@ -52,10 +52,16 @@ void EntryStub::Generate() {
   __ StoreRootStack();
 
   // Push all arguments to stack
-  Label args(masm()), args_loop(masm());
+  Label even(masm()), args(masm()), args_loop(masm()), unwind_even(masm());
   __ movq(scratch, rsi);
   __ Untag(scratch);
   __ movq(rbx, rdx);
+
+  // Odd arguments count check
+  __ testb(scratch, Immediate(1));
+  __ jmp(kEq, &even);
+  __ push(Immediate(0));
+  __ bind(&even);
 
   __ jmp(&args_loop);
 
@@ -101,8 +107,15 @@ void EntryStub::Generate() {
 
   // Unwind arguments
   __ Untag(rsi);
+
+  __ testb(rsi, Immediate(1));
+  __ jmp(kEq, &unwind_even);
+  __ inc(rsi);
+  __ bind(&unwind_even);
+
   __ shl(rsi, Immediate(3));
   __ addq(rsp, rsi);
+  __ xorq(rsi, rsi);
 
   __ RestoreRootStack();
 

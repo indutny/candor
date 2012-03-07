@@ -141,8 +141,9 @@ bool Value::Is() {
 
 
 Function* Function::New(const char* source, uint32_t length) {
-  char* code = Isolate::GetCurrent()->space->Compile(source, length);
-  char* obj = HFunction::New(Isolate::GetCurrent()->heap, NULL, code);
+  char* root;
+  char* code = Isolate::GetCurrent()->space->Compile(source, length, &root);
+  char* obj = HFunction::New(Isolate::GetCurrent()->heap, NULL, code, root);
 
   Function* fn = Cast<Function>(obj);
   Isolate::GetCurrent()->heap->Reference(NULL,
@@ -154,7 +155,8 @@ Function* Function::New(const char* source, uint32_t length) {
 
 Function* Function::New(BindingCallback callback) {
   char* obj = HFunction::NewBinding(Isolate::GetCurrent()->heap,
-                                    *reinterpret_cast<char**>(&callback));
+                                    *reinterpret_cast<char**>(&callback),
+                                    NULL);
 
   Function* fn = Cast<Function>(obj);
   Isolate::GetCurrent()->heap->Reference(NULL,
@@ -167,7 +169,7 @@ Function* Function::New(BindingCallback callback) {
 Value* Function::Call(Object* context,
                       uint32_t argc,
                       Value* argv[]) {
-  return CodeSpace::Run(addr(), context, argc, argv);
+  return Isolate::GetCurrent()->space->Run(addr(), context, argc, argv);
 }
 
 
@@ -196,12 +198,12 @@ bool Boolean::IsFalse() {
 }
 
 
-Number* Number::New(double value) {
+Number* Number::NewDouble(double value) {
   return Cast<Number>(HNumber::New(Isolate::GetCurrent()->heap, value));
 }
 
 
-Number* Number::New(int64_t value) {
+Number* Number::NewIntegral(int64_t value) {
   return Cast<Number>(HNumber::New(Isolate::GetCurrent()->heap, value));
 }
 

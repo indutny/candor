@@ -310,9 +310,12 @@ class HMap : public HValue {
 class HFunction : public HValue {
  public:
   HFunction(char* addr);
-  static char* New(Heap* heap, char* parent, char* addr);
-  static char* NewBinding(Heap* heap, char* addr);
+  static char* New(Heap* heap, char* parent, char* addr, char* root);
+  static char* NewBinding(Heap* heap, char* addr, char* root);
 
+  inline static char* Root(char* addr) {
+    return *reinterpret_cast<char**>(addr + 24);
+  }
   inline static char* Code(char* addr) {
     return *reinterpret_cast<char**>(addr + 16);
   }

@@ -56,6 +56,7 @@
 #define FUN_TEST(code, block)\
     {\
       Isolate i;\
+      HandleScope scope;\
       Function* f = Function::New(code, strlen(code));\
       Value* argv[0];\
       Value* result = f->Call(NULL, 0, argv);\

@@ -145,7 +145,7 @@ void Assembler::cmpb(Operand& dst, Immediate src) {
 
 
 void Assembler::testb(Register dst, Immediate src) {
-  emit_rexw(dst);
+  emit_rexw(rax, dst);
   emitb(0xF6);
   emit_modrm(dst, 0);
   emitb(src.value());
@@ -153,7 +153,7 @@ void Assembler::testb(Register dst, Immediate src) {
 
 
 void Assembler::testl(Register dst, Immediate src) {
-  emit_rexw(dst);
+  emit_rexw(rax, dst);
   emitb(0xF7);
   emit_modrm(dst, 0);
   emitl(src.value());

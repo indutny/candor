@@ -103,7 +103,7 @@ class Fullgen : public Masm, public Visitor {
 
   Fullgen(Heap* heap);
 
-  uint32_t Generate(AstNode* ast);
+  void Generate(AstNode* ast);
 
   void GeneratePrologue(AstNode* stmt);
   void GenerateEpilogue(AstNode* stmt);

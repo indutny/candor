@@ -142,13 +142,15 @@ void Masm::AllocateContext(uint32_t slots) {
 
 void Masm::AllocateFunction(Register addr, Register result) {
   // context + code
-  Allocate(Heap::kTagFunction, reg_nil, 8 * 2, result);
+  Allocate(Heap::kTagFunction, reg_nil, 8 * 3, result);
 
   // Move address of current context to first slot
   Operand qparent(result, 8);
   Operand qaddr(result, 16);
+  Operand qroot(result, 24);
   movq(qparent, rdi);
   movq(qaddr, addr);
+  movq(qroot, root_reg);
 
   CheckGC();
 }
@@ -435,11 +437,13 @@ void Masm::Call(Operand& addr) {
 void Masm::Call(Register fn, uint32_t args) {
   Operand context_slot(fn, 8);
   Operand code_slot(fn, 16);
+  Operand root_slot(fn, 24);
 
   Label binding(this), done(this);
 
   movq(rdi, context_slot);
   movq(rsi, Immediate(TagNumber(args)));
+  movq(root_reg, root_slot);
 
   cmpq(rdi, Immediate(0x0DEF0DEF));
   jmp(kEq, &binding);

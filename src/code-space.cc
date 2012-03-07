@@ -3,7 +3,8 @@
 #include "heap-inl.h" // Heap
 #include "parser.h" // Parser
 #include "scope.h" // Scope
-#include "fullgen.h" // Fullgen
+#include "fullgen.h" // Fullgen, Masm
+#include "stubs.h" // EntryStub
 #include "utils.h" // GetPageSize
 
 #include <sys/types.h> // off_t
@@ -16,10 +17,27 @@ namespace internal {
 
 CodeSpace::CodeSpace(Heap* heap) : heap_(heap) {
   pages_.allocated = true;
+  entry_ = GenerateEntry();
 }
 
 
-char* CodeSpace::Compile(const char* source, uint32_t length) {
+char* CodeSpace::GenerateEntry() {
+  Zone zone;
+  Masm masm(heap());
+
+  EntryStub e(&masm);
+
+  e.Generate();
+  masm.AlignCode();
+
+  char* code = Insert(masm.buffer(), masm.offset());
+  masm.Relocate(code);
+
+  return code;
+}
+
+
+char* CodeSpace::Compile(const char* source, uint32_t length, char** root) {
   Zone zone;
   Parser p(source, length);
   Fullgen f(heap());
@@ -30,47 +48,42 @@ char* CodeSpace::Compile(const char* source, uint32_t length) {
   Scope::Analyze(ast);
 
   // Generate machine code
-  uint32_t offset = f.Generate(ast);
+  f.Generate(ast);
+  f.AlignCode();
 
-  char* code = Insert(f.AllocateRoot(), offset, f.buffer(), f.length());
+  *root = f.AllocateRoot();
+
+  char* code = Insert(f.buffer(), f.offset());
   f.Relocate(code);
 
   return code;
 }
 
 
-char* CodeSpace::Insert(char* root,
-                        off_t offset,
-                        char* code,
-                        uint32_t length) {
-  char* offsetptr = reinterpret_cast<char*>(offset);
-  uint32_t total = length + sizeof(root) + sizeof(offsetptr);
-
+char* CodeSpace::Insert(char* code, uint32_t length) {
   CodePage* page = NULL;
 
   // Go through pages to find enough space
   List<CodePage*, EmptyClass>::Item* item = pages_.head();
   while (item != NULL) {
-    if (item->value()->Has(total)) {
+    if (item->value()->Has(length)) {
       page = item->value();
       break;
     }
+    item = item->next();
   }
 
   // If failed - allocate new page
   if (page == NULL) {
-    page = new CodePage(total);
+    page = new CodePage(length);
     pages_.Push(page);
   }
 
-  char* space = page->Allocate(total);
-  *reinterpret_cast<char**>(space) = offsetptr;
-  *(reinterpret_cast<char**>(space) + 1) = root;
+  char* space = page->Allocate(length);
 
-  char* cspace = space + 2 * sizeof(void*);
-  memcpy(cspace, code, length);
+  memcpy(space, code, length);
 
-  return cspace;
+  return space;
 }
 
 
@@ -80,9 +93,7 @@ Value* CodeSpace::Run(char* fn,
                       Value* argv[]) {
   char* code = HFunction::Code(fn);
   char* parent = HFunction::Parent(fn);
-
-  char* root = *(reinterpret_cast<char**>(code) - 1);
-  off_t offset = *(reinterpret_cast<off_t*>(code) - 2);
+  char* root = HFunction::Root(fn);
 
   // Set new context
   if (context != NULL) {
@@ -92,11 +103,11 @@ Value* CodeSpace::Run(char* fn,
     *reinterpret_cast<Object**>(hroot->GetSlotAddress(0)) = context;
   }
 
-  return reinterpret_cast<Code>(code)(root,
-                                      HNumber::Tag(argc),
-                                      argv,
-                                      code + offset,
-                                      parent);
+  return reinterpret_cast<Code>(entry_)(root,
+                                        HNumber::Tag(argc),
+                                        argv,
+                                        code,
+                                        parent);
 }
 
 

@@ -56,6 +56,9 @@ TEST_START("parser test")
               "[kFunction [a] @[[b] [c] [d]] [kReturn [b]]]")
   PARSER_TEST("(b, c, d) { return b }",
               "[kFunction (anonymous) @[[b] [c] [d]] [kReturn [b]]]")
+  PARSER_TEST("return (a) {\nreturn a + 2\n}",
+              "[kReturn [kFunction (anonymous) @[[a]] "
+              "[kReturn [kAdd [a] [2]]]]]")
   PARSER_TEST("return",
               "[kReturn [nil]]")
   PARSER_TEST("return nil",

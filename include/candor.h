@@ -107,8 +107,8 @@ class Boolean : public Value {
 
 class Number : public Value {
  public:
-  static Number* New(double value);
-  static Number* New(int64_t value);
+  static Number* NewDouble(double value);
+  static Number* NewIntegral(int64_t value);
 
   double Value();
   int64_t IntegralValue();

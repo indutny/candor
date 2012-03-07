@@ -23,15 +23,17 @@ class CodeSpace {
 
   CodeSpace(Heap* heap);
 
-  char* Compile(const char* source, uint32_t length);
-  char* Insert(char* root, off_t offset, char* code, uint32_t length);
+  char* GenerateEntry();
+  char* Compile(const char* source, uint32_t length, char** root);
+  char* Insert(char* code, uint32_t length);
 
-  static Value* Run(char* fn, Object* context, uint32_t argc, Value* argv[]);
+  Value* Run(char* fn, Object* context, uint32_t argc, Value* argv[]);
 
   inline Heap* heap() { return heap_; }
 
  private:
   Heap* heap_;
+  char* entry_;
   List<CodePage*, EmptyClass> pages_;
 };
 

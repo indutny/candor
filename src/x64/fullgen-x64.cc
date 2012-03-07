@@ -62,12 +62,7 @@ void Fullgen::CandorFunction::Generate() {
 }
 
 
-uint32_t Fullgen::Generate(AstNode* ast) {
-  uint32_t result = 0;
-
-  stubs()->GetEntryStub()->Generate();
-  fns_.Shift();
-
+void Fullgen::Generate(AstNode* ast) {
   fns_.Push(new CandorFunction(this, FunctionLiteral::Cast(ast)));
 
   FFunction* fn;
@@ -77,17 +72,12 @@ uint32_t Fullgen::Generate(AstNode* ast) {
     // Align function if needed
     AlignCode();
 
-    // Save offset of main function's code
-    if (result == 0) result = offset();
-
     // Replace all function's uses by generated address
     fn->Allocate(offset());
 
     // Generate functions' body
     fn->Generate();
   }
-
-  return result;
 }
 
 
@@ -269,6 +259,7 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
 
     Push(rsi);
     Push(rdi);
+    Push(root_reg);
     {
       Align a(this);
 
@@ -292,6 +283,7 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
         addq(rsp, Immediate(fn->args()->length() * 8));
       }
     }
+    Pop(root_reg);
     Pop(rdi);
     Pop(rsi);
 

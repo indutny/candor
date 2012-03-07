@@ -115,7 +115,7 @@ HValue* HValue::CopyTo(Space* space) {
     break;
    case Heap::kTagFunction:
     // parent + body
-    size += 16;
+    size += 24;
     break;
    case Heap::kTagNumber:
    case Heap::kTagBoolean:
@@ -273,8 +273,8 @@ char** HMap::GetSlotAddress(uint32_t index) {
 }
 
 
-char* HFunction::New(Heap* heap, char* parent, char* addr) {
-  char* fn = heap->AllocateTagged(Heap::kTagFunction, 16);
+char* HFunction::New(Heap* heap, char* parent, char* addr, char* root) {
+  char* fn = heap->AllocateTagged(Heap::kTagFunction, 24);
 
   // Set parent context
   *reinterpret_cast<char**>(fn + 8) = parent;
@@ -282,12 +282,15 @@ char* HFunction::New(Heap* heap, char* parent, char* addr) {
   // Set pointer to code
   *reinterpret_cast<char**>(fn + 16) = addr;
 
+  // Set root context
+  *reinterpret_cast<char**>(fn + 24) = root;
+
   return fn;
 }
 
 
-char* HFunction::NewBinding(Heap* heap, char* addr) {
-  return New(heap, reinterpret_cast<char*>(0x0DEF0DEF), addr);
+char* HFunction::NewBinding(Heap* heap, char* addr, char* root) {
+  return New(heap, reinterpret_cast<char*>(0x0DEF0DEF), addr, root);
 }
 
 } // namespace internal

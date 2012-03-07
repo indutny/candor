@@ -327,10 +327,13 @@ AstNode* Parser::ParsePrimary() {
     Skip();
     result = ParseExpression();
     if (!Peek()->is(kParenClose)) {
-      result = NULL;
+      return NULL;
     } else {
       Skip();
     }
+
+    // Check if we haven't parsed function's declaration by occasion
+    if (Peek()->is(kBraceOpen)) return NULL;
     break;
    // TODO: implement others
    default:
