@@ -6,6 +6,10 @@ TEST_START("functional test")
     assert(result->As<Number>()->Value() == 1);
   })
 
+  FUN_TEST("return", {
+    assert(result->Is<Nil>());
+  })
+
   FUN_TEST("a = 32\nreturn a", {
     assert(result->As<Number>()->Value() == 32);
   })

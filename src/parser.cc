@@ -33,12 +33,14 @@ AstNode* Parser::ParseStatement() {
    case kReturn:
     Skip();
     {
-      AstNode* retValue = NULL;
-      if (!Peek()->is(kEnd) && !Peek()->is(kCr)) {
-        retValue = ParseExpression();
-      }
       result = new AstNode(AstNode::kReturn);
-      if (retValue != NULL) result->children()->Push(retValue);
+      AstNode* value = ParseExpression();
+      if (value == NULL) {
+        value = new AstNode(AstNode::kNil);
+        value->value("nil");
+        value->length(3);
+      }
+      result->children()->Push(value);
     }
     break;
    case kBreak:

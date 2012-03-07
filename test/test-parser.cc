@@ -56,6 +56,10 @@ TEST_START("parser test")
               "[kFunction [a] @[[b] [c] [d]] [kReturn [b]]]")
   PARSER_TEST("(b, c, d) { return b }",
               "[kFunction (anonymous) @[[b] [c] [d]] [kReturn [b]]]")
+  PARSER_TEST("return",
+              "[kReturn [nil]]")
+  PARSER_TEST("return nil",
+              "[kReturn [nil]]")
 
   // Member
   PARSER_TEST("a.b.c.d.e",
