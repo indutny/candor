@@ -58,23 +58,26 @@ Isolate* Isolate::GetCurrent() {
 HandleScope::HandleScope() : isolate(Isolate::GetCurrent()) {
   parent = isolate->scope;
   isolate->scope = this;
+
+  references = new ValueList();
 }
 
 
 HandleScope::~HandleScope() {
-  ValueList::Item* item = references.tail();
+  ValueList::Item* item = references->tail();
   while (item != NULL) {
     isolate->heap->Dereference(
         NULL, reinterpret_cast<HValue*>(item->value()));
     item = item->prev();
   }
+  delete references;
 
   isolate->scope = parent;
 }
 
 
 void HandleScope::Put(Handle<Value> handle) {
-  references.Push(*handle);
+  references->Push(*handle);
   isolate->heap->Reference(NULL, reinterpret_cast<HValue*>(*handle));
 }
 

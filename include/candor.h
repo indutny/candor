@@ -1,7 +1,6 @@
 #ifndef _INCLUDE_CANDOR_H_
 #define _INCLUDE_CANDOR_H_
 
-#include "utils.h" // List
 #include <stdint.h> // uint32_t
 
 namespace candor {
@@ -10,6 +9,9 @@ namespace candor {
 namespace internal {
   class Heap;
   class CodeSpace;
+  template <class T, class ItemParent>
+  class List;
+  class EmptyClass;
 } // namespace internal
 
 class Value;
@@ -181,7 +183,7 @@ class HandleScope {
   Isolate* isolate;
   HandleScope* parent;
 
-  ValueList references;
+  ValueList* references;
 };
 
 } // namespace candor
