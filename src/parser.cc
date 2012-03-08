@@ -191,35 +191,6 @@ AstNode* Parser::ParseExpression(int priority) {
       result->children()->Push(value);
     }
     break;
-   case kParenOpen:
-    // member "(" ... args ... ")" block? |
-    // member? "(" ... args ... ")" block
-    {
-      while (Peek()->is(kParenOpen) && !Peek()->is(kEnd)) {
-        FunctionLiteral* fn = new FunctionLiteral(member, Peek()->offset());
-        Skip();
-        member = NULL;
-
-        while (!Peek()->is(kParenClose) && !Peek()->is(kEnd)) {
-          AstNode* expr = ParseExpression();
-          if (expr == NULL) break;
-          fn->args()->Push(expr);
-
-          // Skip commas
-          if (Peek()->is(kComma)) Skip();
-        }
-        if (!Peek()->is(kParenClose)) break;
-        Skip();
-
-        // Optional body (for function declaration)
-        ParseBlock(reinterpret_cast<AstNode*>(fn));
-        if (!fn->CheckDeclaration()) break;
-
-        member = fn->End(Peek()->offset());
-      }
-      result = member;
-    }
-    break;
    default:
     result = member;
     break;
@@ -348,31 +319,56 @@ AstNode* Parser::ParsePrimary() {
 AstNode* Parser::ParseMember() {
   Position pos(this);
   AstNode* result = ParsePrimary();
-  if (result == NULL) return NULL;
 
   while (!Peek()->is(kEnd) && !Peek()->is(kCr)) {
-    AstNode* next = NULL;
-    if (Peek()->is(kDot)) {
-      // a.b
+    if (Peek()->is(kParenOpen)) {
+      // Calls and function declarations
+      FunctionLiteral* fn = new FunctionLiteral(result, Peek()->offset());
+      result = NULL;
       Skip();
-      next = ParsePrimary();
-      if (next != NULL && next->is(AstNode::kName)) {
-        next->type(AstNode::kProperty);
-      }
-    } else if (Peek()->is(kArrayOpen)) {
-      // a["prop-expr"]
-      Skip();
-      next = ParseExpression();
-      if (Peek()->is(kArrayClose)) {
-        Skip();
-      } else {
-        next = NULL;
-      }
-    }
-    if (next == NULL) break;
 
-    result = Wrap(AstNode::kMember, result);
-    result->children()->Push(next);
+      while (!Peek()->is(kParenClose) && !Peek()->is(kEnd)) {
+        AstNode* expr = ParseExpression();
+        if (expr == NULL) break;
+        fn->args()->Push(expr);
+
+        // Skip commas
+        if (Peek()->is(kComma)) Skip();
+      }
+      if (!Peek()->is(kParenClose)) break;
+      Skip();
+
+      // Optional body (for function declaration)
+      ParseBlock(reinterpret_cast<AstNode*>(fn));
+      if (!fn->CheckDeclaration()) break;
+
+      result = fn->End(Peek()->offset());
+    } else {
+      if (result == NULL) break;
+
+      AstNode* next = NULL;
+      if (Peek()->is(kDot)) {
+        // a.b
+        Skip();
+        next = ParsePrimary();
+        if (next != NULL && next->is(AstNode::kName)) {
+          next->type(AstNode::kProperty);
+        }
+      } else if (Peek()->is(kArrayOpen)) {
+        // a["prop-expr"]
+        Skip();
+        next = ParseExpression();
+        if (Peek()->is(kArrayClose)) {
+          Skip();
+        } else {
+          next = NULL;
+        }
+      }
+      if (next == NULL) break;
+
+      result = Wrap(AstNode::kMember, result);
+      result->children()->Push(next);
+    }
   }
 
   return pos.Commit(result);

@@ -80,7 +80,7 @@ TEST_START("API test")
     assert(strncmp(str->Value(), "1", 1) == 0);
   })
 
-  FUN_TEST("return (x) { return (x()).y }", {
+  FUN_TEST("return (x) { return x().y }", {
     Value* argv[1] = { Function::New(ObjectCallback) };
     Value* ret = result->As<Function>()->Call(NULL, 1, argv);
     assert(ret->As<Number>()->Value() == 1234);

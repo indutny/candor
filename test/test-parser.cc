@@ -49,6 +49,7 @@ TEST_START("parser test")
 
   // Function delcaration and call
   PARSER_TEST("a()", "[kCall [a] @[] ]")
+  PARSER_TEST("a().x", "[kMember [kCall [a] @[] ] [kProperty x]]")
   PARSER_TEST("a()()()", "[kCall [kCall [kCall [a] @[] ] @[] ] @[] ]")
   PARSER_TEST("a(b,c,d)", "[kCall [a] @[[b] [c] [d]] ]")
   PARSER_TEST("a() {}", "[kFunction [a] @[] [kNop ]]")
