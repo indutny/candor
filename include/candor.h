@@ -19,6 +19,7 @@ class Boolean;
 class String;
 class Object;
 class HandleScope;
+class Arguments;
 
 class Isolate {
  public:
@@ -78,7 +79,8 @@ class Value {
 
 class Function : public Value {
  public:
-  typedef Value* (*BindingCallback)(uint32_t argc, Value* argv[]);
+  typedef Value* (*BindingCallback)(uint32_t argc, Arguments& argv);
+
   static Function* New(const char* source, uint32_t length);
   static Function* New(BindingCallback callback);
 
@@ -136,6 +138,11 @@ class Object : public Value {
   Value* Get(const char* key, uint32_t len);
 
   static const ValueType tag = kObject;
+};
+
+class Arguments {
+ public:
+  Value* operator[] (const int index);
 };
 
 template <class T>

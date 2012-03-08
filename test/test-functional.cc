@@ -58,6 +58,10 @@ TEST_START("functional test")
     assert(result->Is<Nil>());
   })
 
+  FUN_TEST("a(b, c) { return b + 2 * c }\nreturn a(1, 2)", {
+    assert(result->As<Number>()->Value() == 5);
+  })
+
   FUN_TEST("b() {\nreturn 1\n}\na(c) {\nreturn c()\n}\nreturn a(b)", {
     assert(result->As<Number>()->Value() == 1);
   })

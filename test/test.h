@@ -17,9 +17,10 @@
 
 #include <assert.h>
 
+using namespace candor;
+using namespace internal;
+
 #define TEST_START(name)\
-    using namespace candor;\
-    using namespace internal;\
     int main(void) {\
       fprintf(stdout, "-- %s --\n", name);
 

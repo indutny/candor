@@ -102,12 +102,11 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
   FunctionLiteral* fn = FunctionLiteral::Cast(stmt);
   AstList::Item* item = fn->args()->head();
   uint32_t i = 0;
-  movq(rdx, rsi);
   while (item != NULL) {
     Operand lhs(rax, 0);
-    Operand rhs(rbp, 8 * (2 + i++));
+    Operand rhs(rbp, 8 * (2 + fn->args()->length() - ++i));
 
-    cmpq(rdx, Immediate(TagNumber(i)));
+    cmpq(rsi, Immediate(TagNumber(i)));
     jmp(kLt, &body);
 
     VisitForSlot(item->value(), &lhs, scratch);
@@ -253,6 +252,7 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
 
     VisitForValue(fn->variable(), rax);
     IsNil(rax, NULL, &not_function);
+    IsUnboxed(result(), NULL, &not_function);
     IsHeapObject(Heap::kTagFunction, rax, &not_function, NULL);
 
     ChangeAlign(fn->args()->length());

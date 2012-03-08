@@ -68,13 +68,13 @@ void EntryStub::Generate() {
   __ bind(&args);
 
   // Get argument from list
-  Operand arg(rdx, 0);
+  Operand arg(rbx, 0);
   __ movq(rax, arg);
   __ push(rax);
 
   // Decrement count and move "finger"
   __ dec(scratch);
-  __ addq(rdx, Immediate(8));
+  __ addq(rbx, Immediate(8));
 
   // Loop if needed
   __ bind(&args_loop);

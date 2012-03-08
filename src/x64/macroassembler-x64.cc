@@ -453,11 +453,21 @@ void Masm::Call(Register fn, uint32_t args) {
   jmp(&done);
   bind(&binding);
 
+  Pushad();
+
   // binding(argc, argv)
   movq(rdi, rsi);
+  Untag(rdi);
   movq(rsi, rsp);
 
-  Pushad();
+  // Pushad has pushed 10 registers, unwind them in rsi
+  addq(rsi, Immediate(10 * 8));
+
+  // argv should point to the end of arguments array
+  movq(scratch, rdi);
+  shl(scratch, Immediate(3));
+  addq(rsi, scratch);
+
   ExitFrame();
 
   Call(code_slot);
