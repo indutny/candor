@@ -100,7 +100,6 @@ class Heap {
 
   Heap(uint32_t page_size) : new_space_(this, page_size),
                              old_space_(this, page_size),
-                             root_stack_(NULL),
                              last_stack_(NULL),
                              pending_exception_(NULL),
                              needs_gc_(0),
@@ -118,7 +117,6 @@ class Heap {
 
   inline Space* new_space() { return &new_space_; }
   inline Space* old_space() { return &old_space_; }
-  inline char** root_stack() { return &root_stack_; }
   inline char** last_stack() { return &last_stack_; }
   inline char** pending_exception() { return &pending_exception_; }
 
@@ -132,10 +130,6 @@ class Heap {
  private:
   Space new_space_;
   Space old_space_;
-
-  // Runtime exception support
-  // root stack address is needed to unwind stack up to root function's entry
-  char* root_stack_;
 
   // Support reentering candor after invoking C++ side
   char* last_stack_;

@@ -62,6 +62,11 @@ void Fullgen::CandorFunction::Generate() {
 }
 
 
+void Fullgen::Throw(Heap::Error err) {
+  // TODO: set error flag
+}
+
+
 void Fullgen::Generate(AstNode* ast) {
   fns_.Push(new CandorFunction(this, FunctionLiteral::Cast(ast)));
 

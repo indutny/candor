@@ -71,10 +71,6 @@ class Masm : public Assembler {
   void EnterFrameEpilogue();
   void ExitFrame();
 
-  // Root stack for unwinding (throw)
-  void StoreRootStack();
-  void RestoreRootStack();
-
   // Perform garbage collection if needed (heap flag is set)
   void CheckGC();
 
@@ -87,9 +83,6 @@ class Masm : public Assembler {
                     Label* mismatch,
                     Label* match);
   void IsTrue(Register reference, Label* is_false, Label* is_true);
-
-  // Runtime errors
-  void Throw(Heap::Error error);
 
   // Sets correct environment and calls function
   void Call(Register addr);

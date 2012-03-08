@@ -42,14 +42,13 @@ void EntryStub::Generate() {
   // Store registers
   __ push(rbp);
   __ push(rbx);
+  __ push(r11);
   __ push(r12);
   __ push(r13);
   __ push(r14);
   __ push(r15);
 
   __ EnterFramePrologue();
-
-  __ StoreRootStack();
 
   // Push all arguments to stack
   Label even(masm()), args(masm()), args_loop(masm()), unwind_even(masm());
@@ -117,8 +116,6 @@ void EntryStub::Generate() {
   __ addq(rsp, rsi);
   __ xorq(rsi, rsi);
 
-  __ RestoreRootStack();
-
   __ EnterFrameEpilogue();
 
   // Restore registers
@@ -126,6 +123,7 @@ void EntryStub::Generate() {
   __ pop(r14);
   __ pop(r13);
   __ pop(r12);
+  __ pop(r11);
   __ pop(rbx);
   __ pop(rbp);
 
@@ -209,7 +207,7 @@ void AllocateStub::Generate() {
 
     __ movq(scratch, Immediate(*reinterpret_cast<uint64_t*>(&allocate)));
 
-    __ callq(scratch);
+    __ Call(scratch);
     __ Popad(rax);
   }
 
@@ -247,32 +245,6 @@ void CollectGarbageStub::Generate() {
   __ Popad(reg_nil);
 
   GenerateEpilogue(0);
-}
-
-
-void ThrowStub::Generate() {
-  Immediate pending_exception(
-      reinterpret_cast<uint64_t>(masm()->heap()->pending_exception()));
-  Immediate root_stack(
-      reinterpret_cast<uint64_t>(masm()->heap()->root_stack()));
-
-  // Arguments: rax - exception num
-
-  // Set pending exception
-  Operand scratch_op(scratch, 0);
-  __ movq(scratch, pending_exception);
-  __ movq(scratch_op, rax);
-
-  // Unwind stack to the top handler
-  __ movq(scratch, root_stack);
-  __ movq(rsp, scratch_op);
-  __ subq(rsp, Immediate(8));
-
-  // Return NULL
-  __ movq(rax, 0);
-
-  // Leave to Entry Stub
-  __ ret(0);
 }
 
 

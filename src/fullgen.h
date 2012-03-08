@@ -103,6 +103,8 @@ class Fullgen : public Masm, public Visitor {
 
   Fullgen(Heap* heap);
 
+  void Throw(Heap::Error err);
+
   void Generate(AstNode* ast);
 
   void GeneratePrologue(AstNode* stmt);
