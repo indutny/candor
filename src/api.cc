@@ -146,6 +146,21 @@ bool Value::Is() {
 }
 
 
+Number* Value::ToNumber() {
+  return Cast<Number>(RuntimeToString(Isolate::GetCurrent()->heap, addr()));
+}
+
+
+Boolean* Value::ToBoolean() {
+  return Cast<Boolean>(RuntimeToString(Isolate::GetCurrent()->heap, addr()));
+}
+
+
+String* Value::ToString() {
+  return Cast<String>(RuntimeToString(Isolate::GetCurrent()->heap, addr()));
+}
+
+
 Function* Function::New(const char* source, uint32_t length) {
   char* root;
   char* code = Isolate::GetCurrent()->space->Compile(source, length, &root);

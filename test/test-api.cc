@@ -70,4 +70,11 @@ TEST_START("API test")
     Value* ret = result->As<Function>()->Call(*global, 0, argv);
     assert(ret->As<Number>()->Value() == 1234);
   })
+
+  FUN_TEST("return 1", {
+    String* str = result->ToString();
+
+    assert(str->Length() == 1);
+    assert(strncmp(str->Value(), "1", 1) == 0);
+  })
 TEST_END("API test")

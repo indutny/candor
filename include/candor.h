@@ -74,6 +74,10 @@ class Value {
   template <class T>
   bool Is();
 
+  Number* ToNumber();
+  Boolean* ToBoolean();
+  String* ToString();
+
   inline char* addr() { return reinterpret_cast<char*>(this); }
 
   static const ValueType tag = kNone;
