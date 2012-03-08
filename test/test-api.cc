@@ -59,4 +59,15 @@ TEST_START("API test")
     Value* result = callback->Call(NULL, 1, argv);
     assert(result->As<Number>()->Value() == 1234);
   })
+
+  FUN_TEST("return () { scope g\n return g }", {
+    assert(result->Is<Function>());
+    Value* argv[0];
+
+    Handle<Object> global(Object::New());
+    global->Set(String::New("g", 1), Number::NewIntegral(1234));
+
+    Value* ret = result->As<Function>()->Call(*global, 0, argv);
+    assert(ret->As<Number>()->Value() == 1234);
+  })
 TEST_END("API test")

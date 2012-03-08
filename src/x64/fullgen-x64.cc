@@ -376,7 +376,11 @@ AstNode* Fullgen::VisitValue(AstNode* node) {
 
       AstNode* member = new AstNode(AstNode::kMember);
       member->children()->Push(new FAstOperand(slot()));
-      member->children()->Push(value->name());
+      AstNode* property = new AstNode(AstNode::kString);
+      property->value(value->name()->value());
+      property->length(value->name()->length());
+
+      member->children()->Push(property);
       VisitForSlot(member, slot(), result());
     } else {
       // Context variables
