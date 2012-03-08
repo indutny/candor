@@ -59,6 +59,10 @@ TEST_START("functional test")
     assert(result->As<Number>()->Value() == 1);
   })
 
+  FUN_TEST("a() { return 1 }\nreturn a('' + 1, '' + 1, '' + 1, ''+ 1)", {
+    assert(result->As<Number>()->Value() == 1);
+  })
+
   FUN_TEST("a(b) { return b }\nreturn a(3) + a(4)", {
     assert(result->As<Number>()->Value() == 7);
   })
