@@ -18,12 +18,17 @@ static Value* Callback(uint32_t argc, Arguments& argv) {
   return Number::NewIntegral(lhs_value + 2 * rhs_value + 3 * fn_ret);
 }
 
+static Value* ObjectCallback(uint32_t argc, Arguments& argv) {
+  Object* obj = Object::New();
+  obj->Set(String::New("y", 1), Number::NewIntegral(1234));
+
+  return obj;
+}
+
 TEST_START("API test")
   FUN_TEST("return (a, b, c) {\n"
            "return a + b + c(1, 2, () { __$gc()\nreturn 3 }) + 2\n"
            "}", {
-    assert(result->Is<Function>());
-
     Value* argv[3];
     argv[0] = Number::NewIntegral(1);
     argv[1] = Number::NewIntegral(2);
@@ -34,8 +39,6 @@ TEST_START("API test")
   })
 
   FUN_TEST("return { a: 1, callback: function(obj) { return obj.a } }", {
-    assert(result->Is<Object>());
-
     Handle<Object> obj(result->As<Object>());
     Handle<String> key(String::New("a", 1));
 
@@ -61,7 +64,6 @@ TEST_START("API test")
   })
 
   FUN_TEST("return () { scope g\n return g }", {
-    assert(result->Is<Function>());
     Value* argv[0];
 
     Handle<Object> global(Object::New());
@@ -76,5 +78,11 @@ TEST_START("API test")
 
     assert(str->Length() == 1);
     assert(strncmp(str->Value(), "1", 1) == 0);
+  })
+
+  FUN_TEST("return (x) { return (x()).y }", {
+    Value* argv[1] = { Function::New(ObjectCallback) };
+    Value* ret = result->As<Function>()->Call(NULL, 1, argv);
+    assert(ret->As<Number>()->Value() == 1234);
   })
 TEST_END("API test")
