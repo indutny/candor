@@ -68,7 +68,7 @@ Masm::Align::Align(Masm* masm) : masm_(masm), align_(masm->align_) {
 
 Masm::Align::~Align() {
   if (align_ % 2 == 0) return;
-  masm_->addq(rsp, (align_ % 2) * 8);
+  masm_->addq(rsp, 8);
   masm_->align_ -= 1;
 }
 

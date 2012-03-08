@@ -260,17 +260,20 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
     IsUnboxed(result(), NULL, &not_function);
     IsHeapObject(Heap::kTagFunction, rax, &not_function, NULL);
 
-    ChangeAlign(fn->args()->length());
-
     Push(rsi);
     Push(rdi);
     Push(root_reg);
     {
+      ChangeAlign(fn->args()->length());
       Align a(this);
+      ChangeAlign(-fn->args()->length());
 
       AstList::Item* item = fn->args()->head();
       while (item != NULL) {
-        VisitForValue(item->value(), rsi);
+        {
+          Align a(this);
+          VisitForValue(item->value(), rsi);
+        }
 
         // Push argument and change alignment
         push(rsi);
@@ -291,9 +294,6 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
     Pop(root_reg);
     Pop(rdi);
     Pop(rsi);
-
-    // Finally restore everything
-    ChangeAlign(-fn->args()->length());
 
     // Restore rax and set result if needed
     Result(rax);
