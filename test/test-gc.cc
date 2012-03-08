@@ -30,7 +30,6 @@ TEST_START("GC test")
            "    scope a \n"
            "    a = { x: { y: a } }\n"
            "  }\n"
-           "__$gc()\n"
            "}\n"
            "return a.x.y", {
     assert(result->Is<Object>());

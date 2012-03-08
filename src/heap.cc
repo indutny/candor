@@ -15,7 +15,7 @@ Heap* Heap::current_ = NULL;
 
 Space::Space(Heap* heap, uint32_t page_size) : heap_(heap),
                                                page_size_(page_size),
-                                               allocations_(0) {
+                                               size_(0) {
   // Create the first page
   pages_.Push(new Page(page_size));
   pages_.allocated = true;
@@ -31,20 +31,12 @@ void Space::select(Page* page) {
 
 
 void Space::AddPage(uint32_t size) {
-  Page* page = new Page(RoundUp(size, page_size_));
+  uint32_t real_size = RoundUp(size, page_size_);
+  Page* page = new Page(real_size);
   pages_.Push(page);
+  size_ += real_size;
+
   select(page);
-}
-
-
-uint32_t Space::Size() {
-  List<Page*, EmptyClass>::Item* item = pages_.head();
-  uint32_t total = 0;
-  while (item != NULL) {
-    total += item->value()->size_;
-    item = item->next();
-  }
-  return total;
 }
 
 
@@ -62,7 +54,7 @@ char* Space::Allocate(uint32_t bytes) {
 
     // No gap was found - allocate new page
     if (item == NULL) {
-      if (++allocations_ > 7) {
+      if (size() > size_limit()) {
         heap()->needs_gc(1);
       }
 
@@ -83,14 +75,16 @@ void Space::Swap(Space* space) {
 
   while (space->pages_.length() != 0) {
     pages_.Push(space->pages_.Shift());
+    size_ += pages_.tail()->value()->size_;
   }
 
   select(pages_.head()->value());
+  compute_size_limit();
 }
 
 
 void Space::Clear() {
-  allocations_ = 0;
+  size_ = 0;
   while (pages_.length() != 0) {
     delete pages_.Shift();
   }

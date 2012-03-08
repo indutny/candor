@@ -44,9 +44,6 @@ class Space {
 
   Space(Heap* heap, uint32_t page_size);
 
-  // Returns total size of all pages
-  uint32_t Size();
-
   // Adds empty page of specific size
   void AddPage(uint32_t size);
 
@@ -69,6 +66,12 @@ class Space {
 
   inline uint32_t page_size() { return page_size_; }
 
+  inline uint32_t size() { return size_; }
+  inline uint32_t size_limit() { return size_limit_; }
+  inline void compute_size_limit() {
+    size_limit_ = (size_ * 3) >> 1;
+  }
+
  protected:
   Heap* heap_;
 
@@ -79,7 +82,9 @@ class Space {
 
   List<Page*, EmptyClass> pages_;
   uint32_t page_size_;
-  uint32_t allocations_;
+
+  uint32_t size_;
+  uint32_t size_limit_;
 };
 
 typedef List<HValueReference*, EmptyClass> HValueRefList;
