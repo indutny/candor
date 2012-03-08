@@ -27,7 +27,7 @@ class Space {
  public:
   class Page {
    public:
-    Page(uint32_t size) {
+    Page(uint32_t size) : size_(size) {
       data_ = new char[size];
       top_ = data_;
       limit_ = data_ + size;
@@ -39,9 +39,16 @@ class Space {
     char* data_;
     char* top_;
     char* limit_;
+    uint32_t size_;
   };
 
   Space(Heap* heap, uint32_t page_size);
+
+  // Returns total size of all pages
+  uint32_t Size();
+
+  // Adds empty page of specific size
+  void AddPage(uint32_t size);
 
   // Move to next page where are at least `bytes` free
   // Otherwise allocate new page
@@ -72,6 +79,7 @@ class Space {
 
   List<Page*, EmptyClass> pages_;
   uint32_t page_size_;
+  uint32_t allocations_;
 };
 
 typedef List<HValueReference*, EmptyClass> HValueRefList;

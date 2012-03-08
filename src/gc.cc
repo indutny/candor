@@ -22,9 +22,6 @@ void GC::CollectGarbage(char* stack_top) {
   // Temporary space which will contain copies of all visited objects
   Space space(heap(), heap()->new_space()->page_size());
 
-  // Reset GC flag
-  heap()->needs_gc(0);
-
   // Add referenced in C++ land values to the grey list
   HValueRefList::Item* item = heap()->references()->head();
   while (item != NULL) {
@@ -83,6 +80,9 @@ void GC::CollectGarbage(char* stack_top) {
   }
 
   heap()->new_space()->Swap(&space);
+
+  // Reset GC flag
+  heap()->needs_gc(0);
 }
 
 

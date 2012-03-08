@@ -14,7 +14,8 @@ namespace internal {
 Heap* Heap::current_ = NULL;
 
 Space::Space(Heap* heap, uint32_t page_size) : heap_(heap),
-                                               page_size_(page_size) {
+                                               page_size_(page_size),
+                                               allocations_(0) {
   // Create the first page
   pages_.Push(new Page(page_size));
   pages_.allocated = true;
@@ -29,26 +30,43 @@ void Space::select(Page* page) {
 }
 
 
+void Space::AddPage(uint32_t size) {
+  Page* page = new Page(RoundUp(size, page_size_));
+  pages_.Push(page);
+  select(page);
+}
+
+
+uint32_t Space::Size() {
+  List<Page*, EmptyClass>::Item* item = pages_.head();
+  uint32_t total = 0;
+  while (item != NULL) {
+    total += item->value()->size_;
+    item = item->next();
+  }
+  return total;
+}
+
+
 char* Space::Allocate(uint32_t bytes) {
   // If current page was exhausted - run GC
   uint32_t even_bytes = bytes + (bytes & 0x01);
   bool place_in_current = *top_ + even_bytes <= *limit_;
 
   if (!place_in_current) {
-    heap()->needs_gc(1);
-
     // Go through all pages to find gap
     List<Page*, EmptyClass>::Item* item = pages_.head();
-    while (*top_ + even_bytes > *limit_ && item->next() != NULL) {
-      item = item->next();
+    for (;*top_ + even_bytes > *limit_ && item != NULL; item = item->next()) {
       select(item->value());
     }
 
     // No gap was found - allocate new page
-    if (item->next() == NULL) {
-      Page* next = new Page(RoundUp(even_bytes, page_size_));
-      pages_.Push(next);
-      select(next);
+    if (item == NULL) {
+      if (++allocations_ > 7) {
+        heap()->needs_gc(1);
+      }
+
+      AddPage(even_bytes);
     }
   }
 
@@ -72,6 +90,7 @@ void Space::Swap(Space* space) {
 
 
 void Space::Clear() {
+  allocations_ = 0;
   while (pages_.length() != 0) {
     delete pages_.Shift();
   }
