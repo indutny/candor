@@ -110,6 +110,7 @@ Value* Value::New(char* addr) {
 
 template <class T>
 T* Value::As() {
+  assert(Is<T>());
   return reinterpret_cast<T*>(this);
 }
 
@@ -122,6 +123,7 @@ T* Value::Cast(char* addr) {
 
 template <class T>
 T* Value::Cast(Value* value) {
+  assert(value->Is<T>());
   return reinterpret_cast<T*>(value);
 }
 
