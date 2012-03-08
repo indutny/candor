@@ -147,12 +147,12 @@ bool Value::Is() {
 
 
 Number* Value::ToNumber() {
-  return Cast<Number>(RuntimeToString(Isolate::GetCurrent()->heap, addr()));
+  return Cast<Number>(RuntimeToNumber(Isolate::GetCurrent()->heap, addr()));
 }
 
 
 Boolean* Value::ToBoolean() {
-  return Cast<Boolean>(RuntimeToString(Isolate::GetCurrent()->heap, addr()));
+  return Cast<Boolean>(RuntimeToBoolean(Isolate::GetCurrent()->heap, addr()));
 }
 
 
