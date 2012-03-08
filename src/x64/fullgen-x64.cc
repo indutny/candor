@@ -656,8 +656,8 @@ AstNode* Fullgen::VisitObjectLiteral(AstNode* node) {
   }
 
   Result(rax);
-  Restore(rax);
   Restore(rbx);
+  Restore(rax);
 
   return node;
 }
