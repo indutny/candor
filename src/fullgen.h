@@ -2,16 +2,12 @@
 #define _SRC_FULLGEN_H_
 
 #include "visitor.h"
+#include "code-space.h"
 #include "ast.h" // AstNode, FunctionLiteral
 #include "zone.h" // ZoneObject
 #include "utils.h" // List
 
-#if __ARCH == x64
-#include "x64/macroassembler-x64.h"
-#include "x64/macroassembler-x64-inl.h"
-#else
-#include "ia32/macroassembler-ia32.h"
-#endif
+#include "macroassembler.h"
 
 #include <assert.h> // assert
 #include <stdint.h> // uint32_t
@@ -101,7 +97,7 @@ class Fullgen : public Masm, public Visitor {
     kSlot
   };
 
-  Fullgen(Heap* heap);
+  Fullgen(CodeSpace* space);
 
   void Throw(Heap::Error err);
 
@@ -146,7 +142,7 @@ class Fullgen : public Masm, public Visitor {
   AstNode* VisitForValue(AstNode* node, Register reg);
   AstNode* VisitForSlot(AstNode* node, Operand* op, Register base);
 
-  inline Heap* heap() { return heap_; }
+  inline Heap* heap() { return space_->heap(); }
   inline bool visiting_for_value() { return visitor_type_ == kValue; }
   inline bool visiting_for_slot() { return visitor_type_ == kSlot; }
   inline List<FFunction*, ZoneObject>* fns() { return &fns_; }
@@ -155,7 +151,7 @@ class Fullgen : public Masm, public Visitor {
   inline List<char*, ZoneObject>* root_context() { return &root_context_; }
 
  private:
-  Heap* heap_;
+  CodeSpace* space_;
   VisitorType visitor_type_;
   List<FFunction*, ZoneObject> fns_;
   CandorFunction* current_function_;

@@ -1,19 +1,16 @@
 #ifndef _SRC_STUBS_H_
 #define _SRC_STUBS_H_
 
-#include "fullgen.h" // FFunction
+#include "macroassembler.h" // Masm
+#include "code-space.h" // CodeSpace
+#include "zone.h" // Zone
 #include "ast.h" // BinOpType
-#include "zone.h" // ZoneObject
 
 #include <stdlib.h> // NULL
 #include <stdint.h> // uint32_t
 
 namespace candor {
 namespace internal {
-
-// Forward declarations
-class Masm;
-class RelocationInfo;
 
 #define STUBS_LIST(V)\
     V(Entry)\
@@ -22,51 +19,61 @@ class RelocationInfo;
     V(Throw)\
     V(LookupProperty)\
     V(CoerceToBoolean)\
-    V(BinaryAdd)\
-    V(BinarySub)\
-    V(BinaryMul)\
-    V(BinaryDiv)\
-    V(BinaryBAnd)\
-    V(BinaryBOr)\
-    V(BinaryBXor)\
-    V(BinaryEq)\
-    V(BinaryStrictEq)\
-    V(BinaryNe)\
-    V(BinaryStrictNe)\
-    V(BinaryLt)\
-    V(BinaryGt)\
-    V(BinaryLe)\
-    V(BinaryGe)\
-    V(BinaryLOr)\
-    V(BinaryLAnd)
 
-class BaseStub : public FFunction {
+#define BINARY_STUBS_LIST(V)\
+    V(Add)\
+    V(Sub)\
+    V(Mul)\
+    V(Div)\
+    V(BAnd)\
+    V(BOr)\
+    V(BXor)\
+    V(Eq)\
+    V(StrictEq)\
+    V(Ne)\
+    V(StrictNe)\
+    V(Lt)\
+    V(Gt)\
+    V(Le)\
+    V(Ge)\
+    V(LOr)\
+    V(LAnd)
+
+class BaseStub {
  public:
   enum StubType {
 #define STUB_ENUM(V) k##V,
     STUBS_LIST(STUB_ENUM)
 #undef STUB_ENUM
+#define BINARY_STUB_ENUM(V) kBinary##V,
+    BINARY_STUBS_LIST(BINARY_STUB_ENUM)
+#undef BINARY_STUB_ENUM
     kNone
   };
 
-  BaseStub(Masm* masm, StubType type);
+  BaseStub(CodeSpace* space, StubType type);
 
   void GeneratePrologue();
   void GenerateEpilogue(int args);
 
   virtual void Generate() = 0;
 
+  inline CodeSpace* space() { return space_; }
+  inline Masm* masm() { return &masm_; }
+
   inline StubType type() { return type_; }
   inline bool is(StubType type) { return type_ == type; }
 
  protected:
+  CodeSpace* space_;
+  Masm masm_;
   StubType type_;
 };
 
 #define STUB_CLASS_DECL(V)\
     class V##Stub : public BaseStub {\
      public:\
-      V##Stub(Masm* masm) : BaseStub(masm, k##V) {}\
+      V##Stub(CodeSpace* space) : BaseStub(space, k##V) {}\
       void Generate();\
     };
 STUBS_LIST(STUB_CLASS_DECL)
@@ -75,8 +82,8 @@ STUBS_LIST(STUB_CLASS_DECL)
 class BinaryOpStub : public BaseStub {
  public:
   // TODO: Use some type instead of kNone
-  BinaryOpStub(Masm* masm, BinOp::BinOpType type) : BaseStub(masm, kNone),
-                                                    type_(type) {
+  BinaryOpStub(CodeSpace* space, BinOp::BinOpType type) :
+      BaseStub(space, kNone), type_(type) {
   }
 
   BinOp::BinOpType type() { return type_; }
@@ -87,40 +94,60 @@ class BinaryOpStub : public BaseStub {
   BinOp::BinOpType type_;
 };
 
+#define BINARY_STUB_CLASS_DECL(V)\
+    class Binary##V##Stub : public BinaryOpStub {\
+     public:\
+      Binary##V##Stub(CodeSpace* space) : BinaryOpStub(space, BinOp::k##V) {}\
+    };
+BINARY_STUBS_LIST(BINARY_STUB_CLASS_DECL)
+#undef BINARY_STUB_CLASS_DECL
+
 #define STUB_LAZY_ALLOCATOR(V)\
-    V##Stub* Get##V##Stub() {\
+    char* Get##V##Stub() {\
       if (stub_##V##_ == NULL) {\
-        stub_##V##_ = new V##Stub(masm_);\
-        fullgen()->fns()->Push(stub_##V##_);\
+        Zone zone;\
+        V##Stub stub(space());\
+        stub.Generate();\
+        stub_##V##_ = space()->Put(stub.masm());\
       }\
       return stub_##V##_;\
     }
 
-#define STUB_PROPERTY(V) V##Stub* stub_##V##_;
-#define STUB_PROPERTY_INIT(V) stub_##V##_ = NULL;
+#define BINARY_STUB_LAZY_ALLOCATOR(V) STUB_LAZY_ALLOCATOR(Binary##V)
 
-class Stubs : public ZoneObject {
+#define STUB_PROPERTY(V) char* stub_##V##_;
+#define STUB_PROPERTY_INIT(V) stub_##V##_ = NULL;
+#define BINARY_STUB_PROPERTY(V) char* stub_Binary##V##_;
+#define BINARY_STUB_PROPERTY_INIT(V) stub_Binary##V##_ = NULL;
+
+class Stubs {
  public:
-  Stubs(Masm* masm) : masm_(masm) {
+  Stubs(CodeSpace* space) : space_(space) {
     STUBS_LIST(STUB_PROPERTY_INIT)
+    BINARY_STUBS_LIST(BINARY_STUB_PROPERTY_INIT)
   }
 
-  inline Fullgen* fullgen() { return fullgen_; }
-  inline void fullgen(Fullgen* fullgen) { fullgen_ = fullgen; }
+  inline CodeSpace* space() { return space_; }
 
   STUBS_LIST(STUB_LAZY_ALLOCATOR)
+  BINARY_STUBS_LIST(BINARY_STUB_LAZY_ALLOCATOR)
  protected:
-  Masm* masm_;
-  Fullgen* fullgen_;
+  CodeSpace* space_;
 
   STUBS_LIST(STUB_PROPERTY)
+  BINARY_STUBS_LIST(BINARY_STUB_PROPERTY)
 };
+
+#undef BINARY_STUB_LAZY_ALLOCATOR
 #undef STUB_LAZY_ALLOCATOR
-#undef SUTB_PROPERTY_INIT
+#undef BINARY_STUB_PROPERTY_INIT
+#undef BINARY_STUB_PROPERTY
+#undef STUB_PROPERTY_INIT
 #undef STUB_PROPERTY
 
 
 #undef STUBS_LIST
+#undef BINARY_STUBS_LIST
 
 } // namespace internal
 } // namespace candor

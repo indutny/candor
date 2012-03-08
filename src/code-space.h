@@ -15,6 +15,8 @@ namespace internal {
 
 // Forward declaration
 class Heap;
+class Masm;
+class Stubs;
 class CodePage;
 
 class CodeSpace {
@@ -22,17 +24,20 @@ class CodeSpace {
   typedef Value* (*Code)(char*, uint32_t, Value* [], char*, char*);
 
   CodeSpace(Heap* heap);
+  ~CodeSpace();
 
-  char* GenerateEntry();
+  char* Put(Masm* masm);
   char* Compile(const char* source, uint32_t length, char** root);
   char* Insert(char* code, uint32_t length);
 
   Value* Run(char* fn, Object* context, uint32_t argc, Value* argv[]);
 
   inline Heap* heap() { return heap_; }
+  inline Stubs* stubs() { return stubs_; }
 
  private:
   Heap* heap_;
+  Stubs* stubs_;
   char* entry_;
   List<CodePage*, EmptyClass> pages_;
 };

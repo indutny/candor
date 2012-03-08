@@ -1,5 +1,6 @@
-#include "macroassembler-x64.h"
 #include "fullgen.h"
+#include "macroassembler.h"
+#include "code-space.h" // CodeSpace
 #include "heap.h" // Heap
 #include "heap-inl.h"
 #include "ast.h" // AstNode
@@ -37,15 +38,13 @@ void FFunction::Allocate(uint32_t addr) {
 }
 
 
-Fullgen::Fullgen(Heap* heap) : Masm(heap),
-                               Visitor(kPreorder),
-                               heap_(heap),
-                               visitor_type_(kSlot),
-                               current_function_(NULL) {
-  stubs()->fullgen(this);
-
+Fullgen::Fullgen(CodeSpace* space) : Masm(space),
+                                     Visitor(kPreorder),
+                                     space_(space),
+                                     visitor_type_(kSlot),
+                                     current_function_(NULL) {
   // Create a `global` object
-  root_context()->Push(HObject::NewEmpty(heap));
+  root_context()->Push(HObject::NewEmpty(heap()));
 }
 
 
@@ -985,7 +984,7 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
 
     bind(&not_unboxed);
 
-    BaseStub* stub = NULL;
+    char* stub = NULL;
 
 #define BINARY_SUB_TYPES(V)\
     V(Add)\

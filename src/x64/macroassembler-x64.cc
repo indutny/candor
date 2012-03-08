@@ -1,6 +1,6 @@
-#include "macroassembler-x64.h"
-#include "macroassembler-x64-inl.h"
+#include "macroassembler.h"
 
+#include "code-space.h" // CodeSpace
 #include "heap.h" // HeapValue
 #include "heap-inl.h"
 
@@ -12,11 +12,10 @@
 namespace candor {
 namespace internal {
 
-Masm::Masm(Heap* heap) : result_(rax),
-                         slot_(new Operand(rax, 0)),
-                         heap_(heap),
-                         stubs_(new Stubs(this)),
-                         align_(0) {
+Masm::Masm(CodeSpace* space) : result_(rax),
+                               slot_(new Operand(rax, 0)),
+                               space_(space),
+                               align_(0) {
 }
 
 
@@ -446,9 +445,8 @@ void Masm::Call(Register fn, uint32_t args) {
 }
 
 
-void Masm::Call(BaseStub* stub) {
-  movq(scratch, Immediate(0));
-  stub->Use(offset());
+void Masm::Call(char* stub) {
+  movq(scratch, reinterpret_cast<uint64_t>(stub));
 
   Call(scratch);
 }

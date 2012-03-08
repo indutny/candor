@@ -4,19 +4,18 @@
 #include "assembler-x64.h"
 #include "assembler-x64-inl.h"
 #include "ast.h" // AstNode
-#include "heap.h" // HeapValue
-#include "heap-inl.h"
+#include "code-space.h" // CodeSpace
+#include "heap.h" // Heap::HeapTag and etc
 
 namespace candor {
 namespace internal {
 
 // Forward declaration
 class BaseStub;
-class Stubs;
 
 class Masm : public Assembler {
  public:
-  Masm(Heap* heap);
+  Masm(CodeSpace* space);
 
   // Save/restore all valuable register
   void Pushad();
@@ -88,7 +87,7 @@ class Masm : public Assembler {
   void Call(Register addr);
   void Call(Operand& addr);
   void Call(Register fn, uint32_t args);
-  void Call(BaseStub* stub);
+  void Call(char* stub);
 
   enum BinOpUsage {
     kIntegral,
@@ -111,15 +110,14 @@ class Masm : public Assembler {
   // See VisitForSlot and VisitForValue in fullgen for disambiguation
   inline Register result() { return result_; }
   inline Operand* slot() { return slot_; }
-  inline Heap* heap() { return heap_; }
-  inline Stubs* stubs() { return stubs_; }
+  inline Heap* heap() { return space_->heap(); }
+  inline Stubs* stubs() { return space_->stubs(); }
 
   Register result_;
   Operand* slot_;
 
  protected:
-  Heap* heap_;
-  Stubs* stubs_;
+  CodeSpace* space_;
 
   int32_t align_;
 

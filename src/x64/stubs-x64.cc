@@ -1,7 +1,8 @@
 #include "stubs.h"
+#include "code-space.h" // CodeSpace
 #include "cpu.h" // CPU
 #include "ast.h" // BinOp
-#include "macroassembler-x64.h" // Masm
+#include "macroassembler.h" // Masm
 #include "runtime.h"
 
 namespace candor {
@@ -9,8 +10,9 @@ namespace internal {
 
 #define __ masm()->
 
-BaseStub::BaseStub(Masm* masm, StubType type) : FFunction(masm),
-                                                type_(type) {
+BaseStub::BaseStub(CodeSpace* space, StubType type) : space_(space),
+                                                      masm_(space),
+                                                      type_(type) {
 }
 
 
@@ -313,14 +315,6 @@ void CoerceToBooleanStub::Generate() {
     V(Ge)\
     V(LOr)\
     V(LAnd)
-
-#define BINARY_STUB_GENERATE(V)\
-    void Binary##V##Stub::Generate() {\
-      (new BinaryOpStub(masm(), BinOp::k##V))->Generate();\
-    }
-BINARY_SUB_TYPES(BINARY_STUB_GENERATE)
-#undef BINARY_STUB_GENERATE
-
 
 void BinaryOpStub::Generate() {
   GeneratePrologue();

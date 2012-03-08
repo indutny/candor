@@ -17,21 +17,21 @@ namespace internal {
 
 CodeSpace::CodeSpace(Heap* heap) : heap_(heap) {
   pages_.allocated = true;
-  entry_ = GenerateEntry();
+  stubs_ = new Stubs(this);
+  entry_ = stubs()->GetEntryStub();
 }
 
 
-char* CodeSpace::GenerateEntry() {
-  Zone zone;
-  Masm masm(heap());
+CodeSpace::~CodeSpace() {
+  delete stubs_;
+}
 
-  EntryStub e(&masm);
 
-  e.Generate();
-  masm.AlignCode();
+char* CodeSpace::Put(Masm* masm) {
+  masm->AlignCode();
 
-  char* code = Insert(masm.buffer(), masm.offset());
-  masm.Relocate(code);
+  char* code = Insert(masm->buffer(), masm->offset());
+  masm->Relocate(code);
 
   return code;
 }
@@ -40,7 +40,7 @@ char* CodeSpace::GenerateEntry() {
 char* CodeSpace::Compile(const char* source, uint32_t length, char** root) {
   Zone zone;
   Parser p(source, length);
-  Fullgen f(heap());
+  Fullgen f(this);
 
   AstNode* ast = p.Execute();
 
@@ -49,14 +49,12 @@ char* CodeSpace::Compile(const char* source, uint32_t length, char** root) {
 
   // Generate machine code
   f.Generate(ast);
-  f.AlignCode();
 
+  // Store root
   *root = f.AllocateRoot();
 
-  char* code = Insert(f.buffer(), f.offset());
-  f.Relocate(code);
-
-  return code;
+  // Get address of code
+  return Put(&f);
 }
 
 
