@@ -44,6 +44,21 @@ inline void HValue::ResetGCMark() {
 }
 
 
+inline void HValue::IncrementGeneration() {
+  // tag, generation, reserved, GC mark
+  uint8_t* slot = reinterpret_cast<uint8_t*>(addr() + 1);
+
+  if (*slot < 255) {
+    *slot = *slot + 1;
+  }
+}
+
+
+inline uint8_t HValue::Generation() {
+  return *reinterpret_cast<uint8_t*>(addr() + 1);
+}
+
+
 inline int64_t HNumber::Untag(int64_t value) {
   return value >> 1;
 }

@@ -19,8 +19,19 @@ void GC::GCValue::Relocate(char* address) {
 void GC::CollectGarbage(char* stack_top) {
   assert(grey_items()->length() == 0);
 
+  // __$gc() isn't setting needs_gc() attribute
+  if (heap()->needs_gc() == Heap::kGCNone) {
+    heap()->needs_gc(Heap::kGCNewSpace);
+  }
+
+  // Select space to GC
+  Space* space = heap()->needs_gc() == Heap::kGCNewSpace ?
+      heap()->new_space()
+      :
+      heap()->old_space();
+
   // Temporary space which will contain copies of all visited objects
-  Space space(heap(), heap()->new_space()->page_size());
+  Space tmp_space(heap(), space->page_size());
 
   // Add referenced in C++ land values to the grey list
   HValueRefList::Item* item = heap()->references()->head();
@@ -70,8 +81,26 @@ void GC::CollectGarbage(char* stack_top) {
       continue;
     }
 
+    // Object is in old space, don't move it
+    if (heap()->needs_gc() == Heap::kGCOldSpace &&
+        value->value()->Generation() <= Heap::kMinOldSpaceGeneration ||
+        heap()->needs_gc() == Heap::kGCNewSpace &&
+        value->value()->Generation() > Heap::kMinOldSpaceGeneration) {
+      GC::VisitValue(value->value());
+      continue;
+    }
+
     if (!value->value()->IsGCMarked()) {
-      HValue* hvalue = value->value()->CopyTo(&space);
+      HValue* hvalue;
+
+      if (heap()->needs_gc() == Heap::kGCNewSpace) {
+        // New space GC
+        hvalue = value->value()->CopyTo(heap()->old_space(), &tmp_space);
+      } else {
+        // Old space GC
+        hvalue = value->value()->CopyTo(&tmp_space, &tmp_space);
+      }
+
       value->Relocate(hvalue->addr());
       GC::VisitValue(hvalue);
     } else {
@@ -79,10 +108,10 @@ void GC::CollectGarbage(char* stack_top) {
     }
   }
 
-  heap()->new_space()->Swap(&space);
+  space->Swap(&tmp_space);
 
   // Reset GC flag
-  heap()->needs_gc(0);
+  heap()->needs_gc(Heap::kGCNone);
 }
 
 

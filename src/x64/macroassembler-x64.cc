@@ -340,8 +340,8 @@ void Masm::CheckGC() {
 
   // Check needs_gc flag
   movq(scratch, gc_flag);
-  cmpb(scratch_op, Immediate(1));
-  jmp(kNe, &done);
+  cmpb(scratch_op, Immediate(0));
+  jmp(kEq, &done);
 
   Call(stubs()->GetCollectGarbageStub());
 

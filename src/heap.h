@@ -105,17 +105,25 @@ class Heap {
     kTagCode = 0x90
   };
 
+  enum GCType {
+    kGCNone = 0,
+    kGCNewSpace = 1,
+    kGCOldSpace = 2
+  };
+
   enum Error {
     kErrorNone,
     kErrorIncorrectLhs,
     kErrorCallWithoutVariable
   };
 
+  static const int8_t kMinOldSpaceGeneration = 5;
+
   Heap(uint32_t page_size) : new_space_(this, page_size),
                              old_space_(this, page_size),
                              last_stack_(NULL),
                              pending_exception_(NULL),
-                             needs_gc_(0),
+                             needs_gc_(kGCNone),
                              gc_(this) {
     current_ = this;
     references_.allocated = true;
@@ -133,9 +141,11 @@ class Heap {
   inline char** last_stack() { return &last_stack_; }
   inline char** pending_exception() { return &pending_exception_; }
 
-  inline uint64_t needs_gc() { return needs_gc_; }
-  inline uint64_t* needs_gc_addr() { return &needs_gc_; }
-  inline void needs_gc(uint64_t value) { needs_gc_ = value; }
+  inline GCType needs_gc() { return static_cast<GCType>(needs_gc_); }
+  inline GCType* needs_gc_addr() {
+    return reinterpret_cast<GCType*>(&needs_gc_);
+  }
+  inline void needs_gc(GCType value) { needs_gc_ = value; }
   inline HValueRefList* references() { return &references_; }
 
   inline GC* gc() { return &gc_; }
@@ -178,12 +188,14 @@ class HValue {
     return Cast(addr)->As<T>();
   }
 
-  HValue* CopyTo(Space* space);
+  HValue* CopyTo(Space* old_space, Space* new_space);
 
   inline bool IsGCMarked();
   inline char* GetGCMark();
   inline void SetGCMark(char* new_addr);
   inline void ResetGCMark();
+  inline void IncrementGeneration();
+  inline uint8_t Generation();
 
   static inline Heap::HeapTag GetTag(char* addr);
   static inline bool IsUnboxed(char* addr);

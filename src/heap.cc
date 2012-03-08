@@ -31,7 +31,7 @@ void Space::select(Page* page) {
 
 
 void Space::AddPage(uint32_t size) {
-  uint32_t real_size = RoundUp(size, page_size_);
+  uint32_t real_size = RoundUp(size, page_size());
   Page* page = new Page(real_size);
   pages_.Push(page);
   size_ += real_size;
@@ -55,7 +55,10 @@ char* Space::Allocate(uint32_t bytes) {
     // No gap was found - allocate new page
     if (item == NULL) {
       if (size() > size_limit()) {
-        heap()->needs_gc(1);
+        heap()->needs_gc(this == heap()->new_space() ?
+            Heap::kGCNewSpace
+            :
+            Heap::kGCOldSpace);
       }
 
       AddPage(even_bytes);
@@ -119,7 +122,7 @@ void Heap::Dereference(HValue** reference, HValue* value) {
 }
 
 
-HValue* HValue::CopyTo(Space* space) {
+HValue* HValue::CopyTo(Space* old_space, Space* new_space) {
   uint32_t size = 8;
   switch (tag()) {
    case Heap::kTagContext:
@@ -150,7 +153,14 @@ HValue* HValue::CopyTo(Space* space) {
     UNEXPECTED
   }
 
-  char* result = space->Allocate(size);
+  IncrementGeneration();
+  char* result;
+  if (Generation() > Heap::kMinOldSpaceGeneration) {
+    result = old_space->Allocate(size);
+  } else {
+    result = new_space->Allocate(size);
+  }
+
   memcpy(result, addr(), size);
 
   return HValue::Cast(result);
