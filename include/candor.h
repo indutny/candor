@@ -134,8 +134,8 @@ class Object : public Value {
  public:
   static Object* New();
 
-  void Set(const char* key, uint32_t len, Value* value);
-  Value* Get(const char* key, uint32_t len);
+  void Set(String* key, Value* value);
+  Value* Get(String* key);
 
   static const ValueType tag = kObject;
 };

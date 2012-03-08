@@ -2,6 +2,7 @@
 #include "heap.h"
 #include "heap-inl.h"
 #include "code-space.h"
+#include "runtime.h"
 #include "utils.h"
 
 #include <stdint.h> // uint32_t
@@ -235,6 +236,26 @@ const char* String::Value() {
 
 uint32_t String::Length() {
   return HString::Length(addr());
+}
+
+
+Object* Object::New() {
+  return Cast<Object>(HObject::NewEmpty(Isolate::GetCurrent()->heap));
+}
+
+
+void Object::Set(String* key, Value* value) {
+  char** slot = reinterpret_cast<char**>(RuntimeLookupProperty(
+        Isolate::GetCurrent()->heap, addr(), key->addr(), 1));
+  *slot = value->addr();
+}
+
+
+Value* Object::Get(String* key) {
+  char** slot = reinterpret_cast<char**>(RuntimeLookupProperty(
+        Isolate::GetCurrent()->heap, addr(), key->addr(), 0));
+
+  return Value::New(*slot);
 }
 
 
