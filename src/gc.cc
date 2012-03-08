@@ -12,8 +12,8 @@ namespace internal {
 void GC::GCValue::Relocate(char* address) {
   if (slot_ != NULL) {
     *slot_ = address;
-    value()->SetGCMark(address);
   }
+  if (!value()->IsGCMarked()) value()->SetGCMark(address);
 }
 
 void GC::CollectGarbage(char* stack_top) {
@@ -81,16 +81,16 @@ void GC::CollectGarbage(char* stack_top) {
       continue;
     }
 
-    // Object is in old space, don't move it
-    if (heap()->needs_gc() == Heap::kGCOldSpace &&
-        value->value()->Generation() <= Heap::kMinOldSpaceGeneration ||
-        heap()->needs_gc() == Heap::kGCNewSpace &&
-        value->value()->Generation() > Heap::kMinOldSpaceGeneration) {
-      GC::VisitValue(value->value());
-      continue;
-    }
-
     if (!value->value()->IsGCMarked()) {
+      // Object is in not in current space, don't move it
+      if ((heap()->needs_gc() == Heap::kGCOldSpace &&
+          value->value()->Generation() < Heap::kMinOldSpaceGeneration) ||
+          (heap()->needs_gc() == Heap::kGCNewSpace &&
+          value->value()->Generation() >= Heap::kMinOldSpaceGeneration)) {
+        GC::VisitValue(value->value());
+        continue;
+      }
+
       HValue* hvalue;
 
       if (heap()->needs_gc() == Heap::kGCNewSpace) {
@@ -98,7 +98,7 @@ void GC::CollectGarbage(char* stack_top) {
         hvalue = value->value()->CopyTo(heap()->old_space(), &tmp_space);
       } else {
         // Old space GC
-        hvalue = value->value()->CopyTo(&tmp_space, &tmp_space);
+        hvalue = value->value()->CopyTo(&tmp_space, heap()->new_space());
       }
 
       value->Relocate(hvalue->addr());

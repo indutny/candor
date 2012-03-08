@@ -1,7 +1,10 @@
 #include "test.h"
 
 TEST_START("GC test")
-  FUN_TEST("__$gc()\nreturn 1", {
+  FUN_TEST("x=1.0\n"
+           "__$gc()\n__$gc()\n__$gc()\n"
+           "__$gc()\n__$gc()\n__$gc()\n"
+           "return 1", {
     assert(result->As<Number>()->Value() == 1);
   })
   FUN_TEST("x = { y : { z : 3 } }\n"
@@ -21,7 +24,7 @@ TEST_START("GC test")
   })
 
   // Stress test
-  FUN_TEST("a = 0\ny = 100\n"
+  FUN_TEST("a = 0\ny = 100\nz=1.0\n"
            "while(--y) {\n"
            "  scope a\n"
            "  a = 0\n"

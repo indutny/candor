@@ -46,9 +46,8 @@ inline void HValue::ResetGCMark() {
 
 inline void HValue::IncrementGeneration() {
   // tag, generation, reserved, GC mark
-  uint8_t* slot = reinterpret_cast<uint8_t*>(addr() + 1);
-
-  if (*slot < 255) {
+  if (Generation() < Heap::kMinOldSpaceGeneration) {
+    uint8_t* slot = reinterpret_cast<uint8_t*>(addr() + 1);
     *slot = *slot + 1;
   }
 }

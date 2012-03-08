@@ -123,6 +123,8 @@ void Heap::Dereference(HValue** reference, HValue* value) {
 
 
 HValue* HValue::CopyTo(Space* old_space, Space* new_space) {
+  assert(!IsUnboxed(addr()));
+
   uint32_t size = 8;
   switch (tag()) {
    case Heap::kTagContext:
@@ -155,7 +157,7 @@ HValue* HValue::CopyTo(Space* old_space, Space* new_space) {
 
   IncrementGeneration();
   char* result;
-  if (Generation() > Heap::kMinOldSpaceGeneration) {
+  if (Generation() >= Heap::kMinOldSpaceGeneration) {
     result = old_space->Allocate(size);
   } else {
     result = new_space->Allocate(size);
