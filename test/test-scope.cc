@@ -73,4 +73,34 @@ TEST_START("scope test")
              "[kFunction (anonymous) @[[a @stack:0] [b @context[0]:0]] "
              "[kReturn [kFunction (anonymous) @[] "
              "[kScopeDecl [b]] [b @context[1]:0]]]]")
+
+  // Complex
+  SCOPE_TEST("((fn) {\n"
+             "  scope print\n"
+             "  print(\"fn\", fn)\n"
+             "  fn2 = fn\n"
+             "  return () {\n"
+             "    scope fn, fn2, print\n"
+             "    print(\"fn2\", fn2)\n"
+             "    fn2(42)\n"
+             "  }\n"
+             "})((num) {\n"
+             "  scope print\n"
+             "  print(\"num\", num)\n"
+             "})()",
+
+             "[kCall [kCall [kFunction (anonymous) "
+             "@[[fn @context[0]:0]] [kScopeDecl [print]] "
+             "[kCall [print @context[-1]:1] "
+             "@[[kString fn] [fn @context[0]:0]] ] "
+             "[kAssign [fn2 @context[0]:2] [fn @context[0]:0]] "
+             "[kReturn [kFunction (anonymous) @[] "
+             "[kScopeDecl [fn] [fn2] [print]] "
+             "[kCall [print @context[-1]:0] @[[kString fn2] "
+             "[fn2 @context[1]:2]] ] "
+             "[kCall [fn2 @context[1]:2] @[[42]] ]]]] "
+             "@[[kFunction (anonymous) @[[num @stack:0]] "
+             "[kScopeDecl [print]] "
+             "[kCall [print @context[-1]:0] "
+             "@[[kString num] [num @stack:0]] ]]] ] @[] ]")
 TEST_END("scope test")
