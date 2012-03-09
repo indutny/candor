@@ -103,6 +103,7 @@ char* RuntimeGrowObject(Heap* heap, char* obj) {
   uint32_t size = HValue::As<HMap>(map)->size();
 
   char* new_map = heap->AllocateTagged(Heap::kTagMap,
+                                       Heap::kTenureNew,
                                        8 + (size << 5));
   // Set map size
   *(uint32_t*)(new_map + 8) = size << 1;
@@ -143,13 +144,14 @@ char* RuntimeToString(Heap* heap, char* value) {
     return value;
    case Heap::kTagFunction:
    case Heap::kTagObject:
+   case Heap::kTagData:
    case Heap::kTagNil:
-    return HString::New(heap, "", 0);
+    return HString::New(heap, Heap::kTenureNew, "", 0);
    case Heap::kTagBoolean:
     if (HBoolean::Value(value)) {
-      return HString::New(heap, "true", 4);
+      return HString::New(heap, Heap::kTenureNew, "true", 4);
     } else {
-      return HString::New(heap, "false", 5);
+      return HString::New(heap, Heap::kTenureNew, "false", 5);
     }
    case Heap::kTagNumber:
     {
@@ -166,7 +168,7 @@ char* RuntimeToString(Heap* heap, char* value) {
       }
 
       // And create new string
-      return HString::New(heap, str, len);
+      return HString::New(heap, Heap::kTenureNew, str, len);
     }
    default:
     UNEXPECTED
@@ -185,17 +187,18 @@ char* RuntimeToNumber(Heap* heap, char* value) {
       char* str = value + 24;
       uint32_t length = HString::Length(value);
 
-      return HNumber::New(heap, StringToDouble(str, length));
+      return HNumber::New(heap, Heap::kTenureNew, StringToDouble(str, length));
     }
    case Heap::kTagBoolean:
     {
       int64_t val = HBoolean::Value(value) ? 1 : 0;
-      return HNumber::New(heap, val);
+      return HNumber::New(heap, Heap::kTenureNew, val);
     }
    case Heap::kTagFunction:
    case Heap::kTagObject:
+   case Heap::kTagData:
    case Heap::kTagNil:
-    return HNumber::New(heap, static_cast<int64_t>(0));
+    return HNumber::New(heap, Heap::kTenureNew, static_cast<int64_t>(0));
    case Heap::kTagNumber:
     return value;
    default:
@@ -211,21 +214,22 @@ char* RuntimeToBoolean(Heap* heap, char* value) {
 
   switch (tag) {
    case Heap::kTagString:
-    return HBoolean::New(heap, HString::Length(value) > 0);
+    return HBoolean::New(heap, Heap::kTenureNew, HString::Length(value) > 0);
    case Heap::kTagBoolean:
     return value;
    case Heap::kTagFunction:
    case Heap::kTagObject:
-    return HBoolean::New(heap, true);
+   case Heap::kTagData:
+    return HBoolean::New(heap, Heap::kTenureNew, true);
    case Heap::kTagNil:
-    return HBoolean::New(heap, false);
+    return HBoolean::New(heap, Heap::kTenureNew, false);
    case Heap::kTagNumber:
     if (HValue::IsUnboxed(value)) {
       int64_t num = HNumber::IntegralValue(value);
-      return HBoolean::New(heap, num != 0);
+      return HBoolean::New(heap, Heap::kTenureNew, num != 0);
     } else {
       double num = HNumber::DoubleValue(value);
-      return HBoolean::New(heap, num != 0);
+      return HBoolean::New(heap, Heap::kTenureNew, num != 0);
     }
    default:
     UNEXPECTED
@@ -250,7 +254,7 @@ char* RuntimeConcatenateStrings(Heap* heap,
                                 char* rhs) {
   uint32_t lhs_length = HString::Length(lhs);
   uint32_t rhs_length = HString::Length(rhs);
-  char* result = HString::New(heap, lhs_length + rhs_length);
+  char* result = HString::New(heap, Heap::kTenureNew, lhs_length + rhs_length);
 
   memcpy(HString::Value(result), HString::Value(lhs), lhs_length);
   memcpy(HString::Value(result) + lhs_length, HString::Value(rhs), rhs_length);
@@ -281,6 +285,7 @@ Heap::HeapTag RuntimeCoerceType(Heap* heap,
     break;
    case Heap::kTagFunction:
    case Heap::kTagObject:
+   case Heap::kTagData:
     if (!BinOp::is_math(type) && !BinOp::is_binary(type)) {
       lhs = RuntimeToString(heap, lhs);
       rhs = RuntimeToString(heap, rhs);
@@ -310,6 +315,7 @@ char* RuntimeBinOp(Heap* heap, char* lhs, char* rhs) {
       // nil === nil = true
       // nil (+) nil = false
       return HBoolean::New(heap,
+                           Heap::kTenureNew,
                            !BinOp::is_negative_eq(type));
     }
   }
@@ -325,7 +331,9 @@ char* RuntimeBinOp(Heap* heap, char* lhs, char* rhs) {
 
       // When strictly comparing - tags should be equal
       if (lhs_tag != rhs_tag) {
-        return HBoolean::New(heap, BinOp::is_negative_eq(type));
+        return HBoolean::New(heap,
+                             Heap::kTenureNew,
+                             BinOp::is_negative_eq(type));
       }
     } else {
       lhs_tag = RuntimeCoerceType(heap, type, lhs, rhs);
@@ -342,6 +350,7 @@ char* RuntimeBinOp(Heap* heap, char* lhs, char* rhs) {
       }
       break;
      case Heap::kTagObject:
+     case Heap::kTagData:
       // object (+) object = false
       result = false;
       break;
@@ -389,7 +398,7 @@ char* RuntimeBinOp(Heap* heap, char* lhs, char* rhs) {
 
     if (BinOp::is_negative_eq(type)) result = !result;
 
-    return HBoolean::New(heap, result);
+    return HBoolean::New(heap, Heap::kTenureOld, result);
   } else if (BinOp::is_bool_logic(type)) {
     lhs = RuntimeToBoolean(heap, lhs);
     rhs = RuntimeToBoolean(heap, rhs);
@@ -403,7 +412,7 @@ char* RuntimeBinOp(Heap* heap, char* lhs, char* rhs) {
       UNEXPECTED
     }
 
-    return HBoolean::New(heap, result);
+    return HBoolean::New(heap, Heap::kTenureNew, result);
   } else if (type == BinOp::kAdd &&
              HValue::GetTag(lhs) != Heap::kTagNumber &&
              HValue::GetTag(lhs) != Heap::kTagNil) {
@@ -430,7 +439,7 @@ char* RuntimeBinOp(Heap* heap, char* lhs, char* rhs) {
        default: UNEXPECTED
       }
 
-      return HNumber::New(heap, result);
+      return HNumber::New(heap, Heap::kTenureNew, result);
     } else if (BinOp::is_binary(type)) {
       int64_t result = 0;
 
@@ -444,7 +453,7 @@ char* RuntimeBinOp(Heap* heap, char* lhs, char* rhs) {
        default: UNEXPECTED
       }
 
-      return HNumber::New(heap, result);
+      return HNumber::New(heap, Heap::kTenureNew, result);
     } else {
       UNEXPECTED
     }

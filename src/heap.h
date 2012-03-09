@@ -15,6 +15,7 @@
 #include "utils.h"
 
 #include <stdint.h> // uint32_t
+#include <sys/types.h> // size_t
 
 namespace candor {
 namespace internal {
@@ -94,7 +95,7 @@ typedef List<HValueWeakRef*, EmptyClass> HValueWeakRefList;
 class Heap {
  public:
   enum HeapTag {
-    kTagNil,
+    kTagNil = 0,
     kTagFunction,
     kTagContext,
     kTagNumber,
@@ -102,9 +103,15 @@ class Heap {
     kTagBoolean,
     kTagObject,
     kTagMap,
+    kTagData,
 
     // For GC (return addresses on stack will point to the JIT code
     kTagCode = 0x90
+  };
+
+  enum TenureType {
+    kTenureNew = 0,
+    kTenureOld = 1
   };
 
   enum GCType {
@@ -144,7 +151,7 @@ class Heap {
   // TODO: Use thread id
   static inline Heap* Current() { return current_; }
 
-  char* AllocateTagged(HeapTag tag, uint32_t bytes);
+  char* AllocateTagged(HeapTag tag, TenureType type, uint32_t bytes);
 
   // Referencing C++ handles
   void Reference(HValue** reference, HValue* value);
@@ -158,6 +165,15 @@ class Heap {
 
   inline Space* new_space() { return &new_space_; }
   inline Space* old_space() { return &old_space_; }
+
+  inline Space* space(TenureType type) {
+    if (type == kTenureOld) {
+      return &old_space_;
+    } else {
+      return &new_space_;
+    }
+  }
+
   inline char** last_stack() { return &last_stack_; }
   inline char** pending_exception() { return &pending_exception_; }
 
@@ -215,7 +231,11 @@ class HValue {
   inline bool IsGCMarked();
   inline char* GetGCMark();
   inline void SetGCMark(char* new_addr);
-  inline void ResetGCMark();
+
+  inline bool IsSoftGCMarked();
+  inline void SetSoftGCMark();
+  inline void ResetSoftGCMark();
+
   inline void IncrementGeneration();
   inline uint8_t Generation();
 
@@ -290,7 +310,7 @@ class HContext : public HValue {
 class HNumber : public HValue {
  public:
   static char* New(Heap* heap, int64_t value);
-  static char* New(Heap* heap, double value);
+  static char* New(Heap* heap, Heap::TenureType tenure, double value);
 
   static inline int64_t Untag(int64_t value);
   static inline int64_t Tag(int64_t value);
@@ -307,7 +327,7 @@ class HNumber : public HValue {
 
 class HBoolean : public HValue {
  public:
-  static char* New(Heap* heap, bool value);
+  static char* New(Heap* heap, Heap::TenureType tenure, bool value);
 
   inline bool is_true() { return Value(addr()); }
   inline bool is_false() { return !is_true(); }
@@ -323,8 +343,10 @@ class HBoolean : public HValue {
 class HString : public HValue {
  public:
   static char* New(Heap* heap,
+                   Heap::TenureType tenure,
                    uint32_t length);
   static char* New(Heap* heap,
+                   Heap::TenureType tenure,
                    const char* value,
                    uint32_t length);
 
@@ -360,8 +382,6 @@ class HObject : public HValue {
 
 class HMap : public HValue {
  public:
-  HMap(char* addr);
-
   bool IsEmptySlot(uint32_t index);
   HValue* GetSlot(uint32_t index);
   char** GetSlotAddress(uint32_t index);
@@ -375,7 +395,6 @@ class HMap : public HValue {
 
 class HFunction : public HValue {
  public:
-  HFunction(char* addr);
   static char* New(Heap* heap, char* parent, char* addr, char* root);
   static char* NewBinding(Heap* heap, char* addr, char* root);
 
@@ -395,6 +414,25 @@ class HFunction : public HValue {
   inline char** parent_slot() { return reinterpret_cast<char**>(addr() + 8); }
 
   static const Heap::HeapTag class_tag = Heap::kTagFunction;
+};
+
+
+class HData : public HValue {
+ public:
+  static char* New(Heap* heap, size_t size);
+
+  inline static uint32_t Size(char* addr) {
+    return *reinterpret_cast<uint32_t*>(addr + 8);
+  }
+
+  inline static void* Data(char* addr) {
+    return *reinterpret_cast<void**>(addr + 16);
+  }
+
+  inline uint32_t size() { return Size(addr()); }
+  inline void* data() { return Data(addr()); }
+
+  static const Heap::HeapTag class_tag = Heap::kTagData;
 };
 
 } // namespace internal

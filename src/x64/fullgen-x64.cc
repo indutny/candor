@@ -48,8 +48,8 @@ Fullgen::Fullgen(CodeSpace* space) : Masm(space),
 
   // Place some root values
   root_context()->Push(HNil::New(heap()));
-  root_context()->Push(HBoolean::New(heap(), true));
-  root_context()->Push(HBoolean::New(heap(), false));
+  root_context()->Push(HBoolean::New(heap(), Heap::kTenureOld, true));
+  root_context()->Push(HBoolean::New(heap(), Heap::kTenureOld, false));
 }
 
 
@@ -488,7 +488,7 @@ AstNode* Fullgen::VisitNumber(AstNode* node) {
     // Allocate boxed heap number
     double value = StringToDouble(node->value(), node->length());
 
-    PlaceInRoot(HNumber::New(heap(), value));
+    PlaceInRoot(HNumber::New(heap(), Heap::kTenureOld, value));
   } else {
     // Allocate unboxed number
     int64_t value = StringToInt(node->value(), node->length());
@@ -505,7 +505,10 @@ AstNode* Fullgen::VisitString(AstNode* node) {
     return node;
   }
 
-  PlaceInRoot(HString::New(heap(), node->value(), node->length()));
+  PlaceInRoot(HString::New(heap(),
+                           Heap::kTenureOld,
+                           node->value(),
+                           node->length()));
 
   return node;
 }

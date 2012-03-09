@@ -2,6 +2,7 @@
 #define _INCLUDE_CANDOR_H_
 
 #include <stdint.h> // uint32_t
+#include <sys/types.h> // size_t
 
 namespace candor {
 
@@ -20,6 +21,7 @@ class Number;
 class Boolean;
 class String;
 class Object;
+class CData;
 class Arguments;
 
 class Isolate {
@@ -39,6 +41,7 @@ class Isolate {
   friend class Boolean;
   friend class String;
   friend class Object;
+  friend class CData;
 
   template <class T>
   friend class Handle;
@@ -53,7 +56,8 @@ class Value {
     kBoolean,
     kString,
     kFunction,
-    kObject
+    kObject,
+    kCData
   };
 
   static Value* New(char* addr);
@@ -140,6 +144,15 @@ class Object : public Value {
   Value* Get(String* key);
 
   static const ValueType tag = kObject;
+};
+
+class CData : public Value {
+ public:
+  static CData* New(size_t size);
+
+  void* GetContents();
+
+  static const ValueType tag = kCData;
 };
 
 class Arguments {

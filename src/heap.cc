@@ -94,9 +94,13 @@ void Space::Clear() {
 }
 
 
-char* Heap::AllocateTagged(HeapTag tag, uint32_t bytes) {
-  char* result = new_space()->Allocate(bytes + 8);
-  *reinterpret_cast<uint64_t*>(result) = tag;
+char* Heap::AllocateTagged(HeapTag tag, TenureType tenure, uint32_t bytes) {
+  char* result = space(tenure)->Allocate(bytes + 8);
+  uint64_t qtag = tag;
+  if (tenure == kTenureOld) {
+    qtag = qtag | (kMinOldSpaceGeneration << 8);
+  }
+  *reinterpret_cast<uint64_t*>(result) = qtag;
 
   return result;
 }
@@ -164,6 +168,10 @@ HValue* HValue::CopyTo(Space* old_space, Space* new_space) {
     // size + space ( keys + values )
     size += 8 + (As<HMap>()->size() << 4);
     break;
+   case Heap::kTagData:
+    // size + data
+    size += 8 + As<HData>()->size();
+    break;
    default:
     UNEXPECTED
   }
@@ -185,6 +193,7 @@ HValue* HValue::CopyTo(Space* old_space, Space* new_space) {
 char* HContext::New(Heap* heap,
                     List<char*, ZoneObject>* values) {
   char* result = heap->AllocateTagged(Heap::kTagContext,
+                                      Heap::kTenureOld,
                                       16 + values->length() * 8);
 
   // Zero parent
@@ -209,15 +218,15 @@ char* HNumber::New(Heap* heap, int64_t value) {
 }
 
 
-char* HNumber::New(Heap* heap, double value) {
-  char* result = heap->AllocateTagged(Heap::kTagNumber, 8);
+char* HNumber::New(Heap* heap, Heap::TenureType tenure, double value) {
+  char* result = heap->AllocateTagged(Heap::kTagNumber, tenure, 8);
   *reinterpret_cast<double*>(result + 8) = value;
   return result;
 }
 
 
-char* HBoolean::New(Heap* heap, bool value) {
-  char* result = heap->AllocateTagged(Heap::kTagBoolean, 8);
+char* HBoolean::New(Heap* heap, Heap::TenureType tenure, bool value) {
+  char* result = heap->AllocateTagged(Heap::kTagBoolean, tenure, 8);
   *reinterpret_cast<int8_t*>(result + 8) = value ? 1 : 0;
 
   return result;
@@ -225,8 +234,9 @@ char* HBoolean::New(Heap* heap, bool value) {
 
 
 char* HString::New(Heap* heap,
+                   Heap::TenureType tenure,
                    uint32_t length) {
-  char* result = heap->AllocateTagged(Heap::kTagString, length + 24);
+  char* result = heap->AllocateTagged(Heap::kTagString, tenure, length + 24);
 
   // Zero hash
   *reinterpret_cast<uint64_t*>(result + 8) = 0;
@@ -238,9 +248,10 @@ char* HString::New(Heap* heap,
 
 
 char* HString::New(Heap* heap,
+                   Heap::TenureType tenure,
                    const char* value,
                    uint32_t length) {
-  char* result = New(heap, length);
+  char* result = New(heap, tenure, length);
 
   // Copy value
   memcpy(result + 24, value, length);
@@ -263,8 +274,10 @@ uint32_t HString::Hash(char* addr) {
 char* HObject::NewEmpty(Heap* heap) {
   uint32_t size = 16;
 
-  char* obj = heap->AllocateTagged(Heap::kTagObject, 16);
-  char* map = heap->AllocateTagged(Heap::kTagMap, (size << 4) + 8);
+  char* obj = heap->AllocateTagged(Heap::kTagObject, Heap::kTenureNew, 16);
+  char* map = heap->AllocateTagged(Heap::kTagMap,
+                                   Heap::kTenureNew,
+                                   (size << 4) + 8);
 
   // Set mask
   *reinterpret_cast<uint64_t*>(obj + 8) = (size - 1) << 3;
@@ -297,7 +310,7 @@ char** HMap::GetSlotAddress(uint32_t index) {
 
 
 char* HFunction::New(Heap* heap, char* parent, char* addr, char* root) {
-  char* fn = heap->AllocateTagged(Heap::kTagFunction, 24);
+  char* fn = heap->AllocateTagged(Heap::kTagFunction, Heap::kTenureOld, 24);
 
   // Set parent context
   *reinterpret_cast<char**>(fn + 8) = parent;
@@ -315,6 +328,11 @@ char* HFunction::New(Heap* heap, char* parent, char* addr, char* root) {
 char* HFunction::NewBinding(Heap* heap, char* addr, char* root) {
   // TODO: Use const here
   return New(heap, reinterpret_cast<char*>(0x0DEF0DEF), addr, root);
+}
+
+
+char* HData::New(Heap* heap, size_t size) {
+  return heap->AllocateTagged(Heap::kTagData, Heap::kTenureNew, 8 + size);
 }
 
 } // namespace internal

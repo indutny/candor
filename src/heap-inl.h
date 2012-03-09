@@ -15,13 +15,13 @@ inline Heap::HeapTag HValue::GetTag(char* addr) {
 
 
 inline bool HValue::IsUnboxed(char* addr) {
-  return (reinterpret_cast<off_t>(addr) & 0x01) == 0x01;
+  return (reinterpret_cast<off_t>(addr) & 0x01) != 0;
 }
 
 
 inline bool HValue::IsGCMarked() {
   if (IsUnboxed(addr())) return false;
-  return (*reinterpret_cast<uint64_t*>(addr()) & 0x80000000) == 0x80000000;
+  return (*reinterpret_cast<uint64_t*>(addr()) & 0x80000000) != 0;
 }
 
 
@@ -37,9 +37,20 @@ inline void HValue::SetGCMark(char* new_addr) {
 }
 
 
-inline void HValue::ResetGCMark() {
-  if (IsGCMarked()) {
-    *reinterpret_cast<uint64_t*>(addr()) ^= 0x80000000;
+inline bool HValue::IsSoftGCMarked() {
+  if (IsUnboxed(addr())) return false;
+  return (*reinterpret_cast<uint64_t*>(addr()) & 0x40000000) != 0;
+}
+
+
+inline void HValue::SetSoftGCMark() {
+  *reinterpret_cast<uint64_t*>(addr()) |= 0x40000000;
+}
+
+
+inline void HValue::ResetSoftGCMark() {
+  if (IsSoftGCMarked()) {
+    *reinterpret_cast<uint64_t*>(addr()) ^= 0x40000000;
   }
 }
 

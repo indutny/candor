@@ -20,7 +20,8 @@ using namespace internal;
     V(Boolean)\
     V(String)\
     V(Function)\
-    V(Object)
+    V(Object)\
+    V(CData)
 
 #define METHODS_ENUM(V)\
     template V* Value::As<V>();\
@@ -121,6 +122,7 @@ bool Value::Is() {
    case kString: tag = Heap::kTagString; break;
    case kFunction: tag = Heap::kTagFunction; break;
    case kObject: tag = Heap::kTagObject; break;
+   case kCData: tag = Heap::kTagData; break;
    default: return false;
   }
 
@@ -182,12 +184,16 @@ Nil* Nil::New() {
 
 
 Boolean* Boolean::True() {
-  return Cast<Boolean>(HBoolean::New(Isolate::GetCurrent()->heap, true));
+  return Cast<Boolean>(HBoolean::New(Isolate::GetCurrent()->heap,
+                                     Heap::kTenureNew,
+                                     true));
 }
 
 
 Boolean* Boolean::False() {
-  return Cast<Boolean>(HBoolean::New(Isolate::GetCurrent()->heap, false));
+  return Cast<Boolean>(HBoolean::New(Isolate::GetCurrent()->heap,
+                                     Heap::kTenureNew,
+                                     false));
 }
 
 
@@ -202,7 +208,8 @@ bool Boolean::IsFalse() {
 
 
 Number* Number::NewDouble(double value) {
-  return Cast<Number>(HNumber::New(Isolate::GetCurrent()->heap, value));
+  return Cast<Number>(HNumber::New(
+        Isolate::GetCurrent()->heap, Heap::kTenureNew, value));
 }
 
 
@@ -227,7 +234,8 @@ bool Number::IsIntegral() {
 
 
 String* String::New(const char* value, uint32_t len) {
-  return Cast<String>(HString::New(Isolate::GetCurrent()->heap, value, len));
+  return Cast<String>(HString::New(
+        Isolate::GetCurrent()->heap, Heap::kTenureNew, value, len));
 }
 
 
@@ -258,6 +266,16 @@ Value* Object::Get(String* key) {
         Isolate::GetCurrent()->heap, addr(), key->addr(), 0));
 
   return Value::New(*slot);
+}
+
+
+CData* CData::New(size_t size) {
+  return Cast<CData>(HData::New(Isolate::GetCurrent()->heap, size));
+}
+
+
+void* CData::GetContents() {
+  return HData::Data(addr());
 }
 
 

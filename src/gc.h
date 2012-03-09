@@ -51,10 +51,12 @@ class GC {
   bool IsInCurrentSpace(HValue* value);
 
   inline GCList* grey_items() { return &grey_items_; }
+  inline GCList* black_items() { return &black_items_; }
   inline Heap* heap() { return heap_; }
 
  protected:
   GCList grey_items_;
+  GCList black_items_;
   Heap* heap_;
 };
 

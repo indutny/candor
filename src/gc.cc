@@ -19,6 +19,7 @@ void GC::GCValue::Relocate(char* address) {
 
 void GC::CollectGarbage(char* stack_top) {
   assert(grey_items()->length() == 0);
+  assert(black_items()->length() == 0);
 
   // __$gc() isn't setting needs_gc() attribute
   if (heap()->needs_gc() == Heap::kGCNone) {
@@ -51,7 +52,13 @@ void GC::CollectGarbage(char* stack_top) {
     if (!value->value()->IsGCMarked()) {
       // Object is in not in current space, don't move it
       if (!IsInCurrentSpace(value->value())) {
-        GC::VisitValue(value->value());
+        if (!value->value()->IsSoftGCMarked()) {
+          // Set soft mark and add item to black list to reset mark later
+          value->value()->SetSoftGCMark();
+          black_items()->Push(value);
+
+          GC::VisitValue(value->value());
+        }
         continue;
       }
 
@@ -70,6 +77,13 @@ void GC::CollectGarbage(char* stack_top) {
     } else {
       value->Relocate(value->value()->GetGCMark());
     }
+  }
+
+  // Reset marks for items from external space
+  while (black_items()->length() != 0) {
+    GCValue* value = black_items()->Shift();
+    assert(value->value()->IsSoftGCMarked());
+    value->value()->ResetSoftGCMark();
   }
 
   // Visit all weak references and call callbacks if some of them are dead
@@ -174,6 +188,7 @@ void GC::VisitValue(HValue* value) {
    case Heap::kTagString:
    case Heap::kTagNumber:
    case Heap::kTagBoolean:
+   case Heap::kTagData:
     return;
    default:
     UNEXPECTED
