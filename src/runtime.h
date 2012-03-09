@@ -55,6 +55,9 @@ char* RuntimeBinOp(Heap* heap, char* lhs, char* rhs);
 typedef char* (*RuntimeSizeofCallback)(Heap* heap, char* value);
 char* RuntimeSizeof(Heap* heap, char* value);
 
+typedef char* (*RuntimeKeysofCallback)(Heap* heap, char* value);
+char* RuntimeKeysof(Heap* heap, char* value);
+
 } // namespace internal
 } // namespace candor
 

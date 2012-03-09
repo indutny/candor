@@ -515,5 +515,34 @@ char* RuntimeSizeof(Heap* heap, char* value) {
   return HNumber::New(heap, size);
 }
 
+
+char* RuntimeKeysof(Heap* heap, char* value) {
+  Heap::HeapTag tag = HValue::GetTag(value);
+
+  char* result = HArray::NewEmpty(heap);
+
+  // Fast-case - return empty array
+  if (tag != Heap::kTagArray && tag != Heap::kTagObject) return result;
+
+  // Slow-case visit all map's slots and put them into array
+  HMap* map = HValue::As<HMap>(HObject::Map(value));
+
+  uint32_t size = map->size();
+  uint32_t index = 0;
+  for (uint32_t i = 0; i < size; i++) {
+    if (map->GetSlot(i) != NULL) {
+      char* indexptr = reinterpret_cast<char*>(HNumber::Tag(index));
+      char* slot = RuntimeLookupProperty(heap,
+                                         result,
+                                         indexptr,
+                                         1);
+      *reinterpret_cast<char**>(slot) = map->GetSlot(i)->addr();
+      index++;
+    }
+  }
+
+  return result;
+}
+
 } // namespace internal
 } // namespace candor

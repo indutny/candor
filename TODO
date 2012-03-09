@@ -1,8 +1,5 @@
-* Typeof, sizeof
 * Compile errors instead of runtime errors
 * Escape characters in strings
-* UTF8
-* Consider adding NaN
 * % - mod operation
 * Break statement
 * Better parser/lexer errors

@@ -20,6 +20,7 @@ namespace internal {
     V(Throw)\
     V(Typeof)\
     V(Sizeof)\
+    V(Keysof)\
     V(LookupProperty)\
     V(CoerceToBoolean)\
 

@@ -795,6 +795,21 @@ AstNode* Fullgen::VisitSizeof(AstNode* node) {
 
 
 AstNode* Fullgen::VisitKeysof(AstNode* node) {
+  if (visiting_for_slot()) {
+    Throw(Heap::kErrorIncorrectLhs);
+    return node;
+  }
+
+  Save(rax);
+  {
+    Align a(this);
+
+    VisitForValue(node->lhs(), rax);
+    Call(stubs()->GetKeysofStub());
+  }
+  Result(rax);
+  Restore(rax);
+
   return node;
 }
 

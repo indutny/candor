@@ -78,7 +78,7 @@ typeof (){}    // -> "function"
 
 sizeof "Hello" // -> 5
 sizeof [1,2,3] // -> 3
-sizeof {}      // -> nil
+sizeof {}      // -> 0
 
 // keysof returns an array of all the keys in an object
 keys = keysof { name: "Tim", age: 29 }

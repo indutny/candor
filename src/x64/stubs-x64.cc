@@ -331,10 +331,27 @@ void SizeofStub::Generate() {
   __ Pushad();
 
   // RuntimeSizeof(heap, obj)
-  // (returns addr of slot)
   __ movq(rdi, Immediate(reinterpret_cast<uint64_t>(masm()->heap())));
   __ movq(rsi, rax);
   __ movq(rax, Immediate(*reinterpret_cast<uint64_t*>(&sizeofc)));
+  __ callq(rax);
+
+  __ Popad(rax);
+
+  GenerateEpilogue(0);
+}
+
+
+void KeysofStub::Generate() {
+  GeneratePrologue();
+  RuntimeKeysofCallback keysofc = &RuntimeKeysof;
+
+  __ Pushad();
+
+  // RuntimeKeysof(heap, obj)
+  __ movq(rdi, Immediate(reinterpret_cast<uint64_t>(masm()->heap())));
+  __ movq(rsi, rax);
+  __ movq(rax, Immediate(*reinterpret_cast<uint64_t*>(&keysofc)));
   __ callq(rax);
 
   __ Popad(rax);

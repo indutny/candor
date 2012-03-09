@@ -55,6 +55,11 @@ TEST_START("functional test")
     assert(result->As<Number>()->Value() == 3);
   })
 
+  FUN_TEST("return keysof { a: 1, b: 2 }", {
+    assert(result->As<Array>()->Length() == 2);
+    assert(result->As<Array>()->Get(1)->Is<String>());
+  })
+
   // Boolean
   FUN_TEST("return true", {
     assert(result->As<Boolean>()->IsTrue());
