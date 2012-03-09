@@ -15,6 +15,7 @@ namespace internal {
 #define STUBS_LIST(V)\
     V(Entry)\
     V(Allocate)\
+    V(CallBinding)\
     V(CollectGarbage)\
     V(Throw)\
     V(LookupProperty)\

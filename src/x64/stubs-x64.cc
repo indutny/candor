@@ -228,6 +228,41 @@ void AllocateStub::Generate() {
 }
 
 
+void CallBindingStub::Generate() {
+  GeneratePrologue();
+
+  Operand argc(rbp, 24);
+  Operand fn(rbp, 16);
+
+  // Save all registers
+  __ Pushad();
+
+  // binding(argc, argv)
+  __ movq(rdi, argc);
+  __ Untag(rdi);
+  __ movq(rsi, rsp);
+
+  // Add 10 saved registers + return address + 2 arguments
+  __ addq(rsi, Immediate((10 + 2 + 2) * 8));
+
+  // argv should point to the end of arguments array
+  __ movq(scratch, rdi);
+  __ shl(scratch, Immediate(3));
+  __ addq(rsi, scratch);
+
+  __ ExitFrame();
+
+  Operand code(scratch, 16);
+
+  __ movq(scratch, fn);
+  __ Call(code);
+
+  // Restore all except rax
+  __ Popad(rax);
+  GenerateEpilogue(2);
+}
+
+
 void CollectGarbageStub::Generate() {
   GeneratePrologue();
 
