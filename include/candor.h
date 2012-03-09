@@ -150,7 +150,7 @@ class Arguments {
 template <class T>
 class Handle {
  public:
-  Handle(T* v);
+  Handle(Value* v);
   ~Handle();
 
   inline T* operator*() { return value; }

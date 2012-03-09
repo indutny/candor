@@ -27,7 +27,7 @@ using namespace internal;
     template V* Value::Cast<V>(char* addr);\
     template V* Value::Cast<V>(Value* value);\
     template bool Value::Is<V>();\
-    template Handle<V>::Handle(V* v);\
+    template Handle<V>::Handle(Value* v);\
     template Handle<V>::~Handle();
 TYPES_LIST(METHODS_ENUM)
 #undef METHODS_ENUM
@@ -56,7 +56,8 @@ Isolate* Isolate::GetCurrent() {
 
 
 template <class T>
-Handle<T>::Handle(T* v) : isolate(Isolate::GetCurrent()), value(v) {
+Handle<T>::Handle(Value* v) : isolate(Isolate::GetCurrent()) {
+  value = v->As<T>();
   isolate->heap->Reference(reinterpret_cast<HValue**>(&value),
                            reinterpret_cast<HValue*>(value));
 }
