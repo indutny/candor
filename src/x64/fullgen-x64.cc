@@ -115,8 +115,8 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
     jmp(kLt, &body);
 
     VisitForSlot(item->value(), &lhs, scratch);
-    movq(scratch, rhs);
-    movq(lhs, scratch);
+    movq(rdx, rhs);
+    movq(lhs, rdx);
 
     item = item->next();
   }

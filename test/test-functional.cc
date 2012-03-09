@@ -100,7 +100,7 @@ TEST_START("functional test")
     assert(result->As<Number>()->Value() == 1234);
   })
 
-  FUN_TEST("a() { a = 1\nreturn b() { scope a\nreturn a} }\nreturn a()()", {
+  FUN_TEST("a(x) { return b() { scope x\nreturn x} }\nreturn a(1)()", {
     assert(result->As<Number>()->Value() == 1);
   });
 
