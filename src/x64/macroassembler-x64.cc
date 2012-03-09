@@ -412,6 +412,7 @@ void Masm::Call(Register fn, uint32_t args) {
   movq(rsi, Immediate(TagNumber(args)));
   movq(root_reg, root_slot);
 
+  // TODO: Use const here
   cmpq(rdi, Immediate(0x0DEF0DEF));
   jmp(kEq, &binding);
 

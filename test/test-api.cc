@@ -37,9 +37,17 @@ static Value* FnTwoCallback(uint32_t argc, Arguments& argv) {
   return Nil::New();
 }
 
-static Value* PrintCallback(uint32_t argc, Arguments& argv) {
+static Value* FnCallback(uint32_t argc, Arguments& argv) {
   assert(argc == 1);
   assert(argv[0]->Is<Function>());
+
+  return Nil::New();
+}
+
+static Value* PrintCallback(uint32_t argc, Arguments& argv) {
+  assert(argc == 1);
+
+  fprintf(stdout, "%s\n", argv[0]->ToString()->Value());
 
   return Nil::New();
 }
@@ -129,10 +137,29 @@ TEST_START("API test")
     Function* f = Function::New(code, strlen(code));
 
     Object* global = Object::New();
-    global->Set(String::New("print", 5), Function::New(PrintCallback));
+    global->Set(String::New("print", 5), Function::New(FnCallback));
 
     Value* argv[0];
     Value* ret = f->Call(global, 0, argv);
     assert(ret->Is<Nil>());
+  }
+
+  {
+    Isolate i;
+    const char* code = "fn() {\n"
+                       "  scope print\n"
+                       "  return print\n"
+                       "}\n"
+                       "__$gc()\n"
+                       "return fn()";
+
+    Function* f = Function::New(code, strlen(code));
+
+    Object* global = Object::New();
+    global->Set(String::New("print", 5), Function::New(PrintCallback));
+
+    Value* argv[0];
+    Value* ret = f->Call(global, 0, argv);
+    assert(ret->Is<Function>());
   }
 TEST_END("API test")

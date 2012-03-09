@@ -335,7 +335,7 @@ class HMap : public HValue {
   HValue* GetSlot(uint32_t index);
   char** GetSlotAddress(uint32_t index);
 
-  inline uint32_t size() { return *reinterpret_cast<uint64_t*>(addr() + 8); }
+  inline uint32_t size() { return *reinterpret_cast<uint32_t*>(addr() + 8); }
   inline char* space() { return addr() + 16; }
 
   static const Heap::HeapTag class_tag = Heap::kTagMap;
@@ -358,6 +358,8 @@ class HFunction : public HValue {
     return *reinterpret_cast<char**>(addr + 8);
   }
 
+  inline char* root() { return *root_slot(); }
+  inline char** root_slot() { return reinterpret_cast<char**>(addr() + 24); }
   inline char* parent() { return *parent_slot(); }
   inline char** parent_slot() { return reinterpret_cast<char**>(addr() + 8); }
 

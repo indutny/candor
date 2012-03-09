@@ -154,8 +154,15 @@ void GC::VisitContext(HContext* context) {
 
 
 void GC::VisitFunction(HFunction* fn) {
-  if (fn->parent_slot() == NULL || fn->parent() == NULL) return;
-  grey_items()->Push(new GCValue(HValue::Cast(fn->parent()), fn->parent_slot()));
+  // TODO: Use const here
+  if (fn->parent_slot() != NULL &&
+      fn->parent() != reinterpret_cast<char*>(0x0DEF0DEF)) {
+    grey_items()->Push(new GCValue(
+          HValue::Cast(fn->parent()), fn->parent_slot()));
+  }
+  if (fn->root_slot() != NULL) {
+    grey_items()->Push(new GCValue(HValue::Cast(fn->root()), fn->root_slot()));
+  }
 }
 
 
