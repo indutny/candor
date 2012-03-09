@@ -23,6 +23,12 @@ TEST_START("GC test")
     assert(result->As<Number>()->Value() == 2);
   })
 
+  FUN_TEST("x = [ 1, 2, { y : 1 } ]\n"
+           "__$gc()\n"
+           "return x[2].y", {
+    assert(result->As<Number>()->Value() == 1);
+  })
+
   FUN_TEST("a = { a : { b : 1 } }\n"
            "a = { x: { y: a } }\n"
            "a = { u: { v: a } }\n"

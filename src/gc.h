@@ -13,6 +13,7 @@ class HValue;
 class HContext;
 class HFunction;
 class HObject;
+class HArray;
 class HMap;
 
 class GC {
@@ -46,6 +47,7 @@ class GC {
   void VisitContext(HContext* context);
   void VisitFunction(HFunction* fn);
   void VisitObject(HObject* obj);
+  void VisitArray(HArray* arr);
   void VisitMap(HMap* map);
 
   bool IsInCurrentSpace(HValue* value);
