@@ -18,6 +18,7 @@ namespace internal {
     V(CallBinding)\
     V(CollectGarbage)\
     V(Throw)\
+    V(Typeof)\
     V(LookupProperty)\
     V(CoerceToBoolean)\
 

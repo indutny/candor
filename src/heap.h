@@ -98,12 +98,13 @@ class Heap {
     kTagNil = 0,
     kTagFunction,
     kTagContext,
+    kTagBoolean,
     kTagNumber,
     kTagString,
-    kTagBoolean,
     kTagObject,
+    kTagCData,
+
     kTagMap,
-    kTagData,
 
     // For GC (return addresses on stack will point to the JIT code
     kTagCode = 0x90
@@ -127,11 +128,19 @@ class Heap {
   };
 
   // Positions in root register
+  // NOTE: order of type strings should be the same as in HeapTag enum
   enum RootPositions {
     kRootGlobalIndex = 0,
     kRootNilIndex = 1,
     kRootTrueIndex = 2,
-    kRootFalseIndex = 3
+    kRootFalseIndex = 3,
+    kRootNilTypeIndex = 4,
+    kRootBooleanTypeIndex = 5,
+    kRootNumberTypeIndex = 6,
+    kRootStringTypeIndex = 7,
+    kRootObjectTypeIndex = 8,
+    kRootFunctionTypeIndex = 9,
+    kRootCDataTypeIndex = 10
   };
 
   // Tenure configuration (GC)
@@ -417,7 +426,7 @@ class HFunction : public HValue {
 };
 
 
-class HData : public HValue {
+class HCData : public HValue {
  public:
   static char* New(Heap* heap, size_t size);
 
@@ -432,7 +441,7 @@ class HData : public HValue {
   inline uint32_t size() { return Size(addr()); }
   inline void* data() { return Data(addr()); }
 
-  static const Heap::HeapTag class_tag = Heap::kTagData;
+  static const Heap::HeapTag class_tag = Heap::kTagCData;
 };
 
 } // namespace internal

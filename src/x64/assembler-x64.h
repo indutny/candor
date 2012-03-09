@@ -266,6 +266,7 @@ class Assembler {
   void movb(Register dst, Immediate src);
   void movb(Operand& dst, Immediate src);
   void movb(Operand& dst, Register src);
+  void movzxb(Register dst, Operand& src);
 
   void addq(Register dst, Register src);
   void addq(Register dst, Operand& src);

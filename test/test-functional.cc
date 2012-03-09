@@ -32,6 +32,25 @@ TEST_START("functional test")
     assert(strncmp(str->Value(), "abcdef", str->Length()) == 0);
   })
 
+  // Prefix
+  FUN_TEST("return typeof nil", {
+    String* str = result->As<String>();
+    assert(str->Length() == 3);
+    assert(strncmp(str->Value(), "nil", str->Length()) == 0);
+  })
+
+  FUN_TEST("return typeof 1", {
+    String* str = result->As<String>();
+    assert(str->Length() == 6);
+    assert(strncmp(str->Value(), "number", str->Length()) == 0);
+  })
+
+  FUN_TEST("return typeof '123'", {
+    String* str = result->As<String>();
+    assert(str->Length() == 6);
+    assert(strncmp(str->Value(), "string", str->Length()) == 0);
+  })
+
   // Boolean
   FUN_TEST("return true", {
     assert(result->As<Boolean>()->IsTrue());

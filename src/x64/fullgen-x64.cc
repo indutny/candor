@@ -50,6 +50,15 @@ Fullgen::Fullgen(CodeSpace* space) : Masm(space),
   root_context()->Push(HNil::New(heap()));
   root_context()->Push(HBoolean::New(heap(), Heap::kTenureOld, true));
   root_context()->Push(HBoolean::New(heap(), Heap::kTenureOld, false));
+
+  // Place types
+  root_context()->Push(HString::New(heap(), Heap::kTenureOld, "nil", 3));
+  root_context()->Push(HString::New(heap(), Heap::kTenureOld, "boolean", 7));
+  root_context()->Push(HString::New(heap(), Heap::kTenureOld, "number", 6));
+  root_context()->Push(HString::New(heap(), Heap::kTenureOld, "string", 6));
+  root_context()->Push(HString::New(heap(), Heap::kTenureOld, "object", 6));
+  root_context()->Push(HString::New(heap(), Heap::kTenureOld, "function", 8));
+  root_context()->Push(HString::New(heap(), Heap::kTenureOld, "cdata", 5));
 }
 
 
@@ -761,6 +770,36 @@ AstNode* Fullgen::VisitReturn(AstNode* node) {
 
   GenerateEpilogue(current_function()->fn());
 
+  return node;
+}
+
+
+AstNode* Fullgen::VisitTypeof(AstNode* node) {
+  if (visiting_for_slot()) {
+    Throw(Heap::kErrorIncorrectLhs);
+    return node;
+  }
+
+  Save(rax);
+  {
+    Align a(this);
+
+    VisitForValue(node->lhs(), rax);
+    Call(stubs()->GetTypeofStub());
+  }
+  Result(rax);
+  Restore(rax);
+
+  return node;
+}
+
+
+AstNode* Fullgen::VisitSizeof(AstNode* node) {
+  return node;
+}
+
+
+AstNode* Fullgen::VisitKeysof(AstNode* node) {
   return node;
 }
 

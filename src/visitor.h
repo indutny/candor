@@ -41,6 +41,10 @@ class Visitor {
   virtual AstNode* VisitProperty(AstNode* node);
   virtual AstNode* VisitString(AstNode* node);
 
+  virtual AstNode* VisitTypeof(AstNode* node);
+  virtual AstNode* VisitSizeof(AstNode* node);
+  virtual AstNode* VisitKeysof(AstNode* node);
+
   virtual AstNode* VisitUnOp(AstNode* node);
   virtual AstNode* VisitBinOp(AstNode* node);
 

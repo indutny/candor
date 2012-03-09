@@ -168,9 +168,9 @@ HValue* HValue::CopyTo(Space* old_space, Space* new_space) {
     // size + space ( keys + values )
     size += 8 + (As<HMap>()->size() << 4);
     break;
-   case Heap::kTagData:
+   case Heap::kTagCData:
     // size + data
-    size += 8 + As<HData>()->size();
+    size += 8 + As<HCData>()->size();
     break;
    default:
     UNEXPECTED
@@ -331,8 +331,8 @@ char* HFunction::NewBinding(Heap* heap, char* addr, char* root) {
 }
 
 
-char* HData::New(Heap* heap, size_t size) {
-  return heap->AllocateTagged(Heap::kTagData, Heap::kTenureNew, 8 + size);
+char* HCData::New(Heap* heap, size_t size) {
+  return heap->AllocateTagged(Heap::kTagCData, Heap::kTenureNew, 8 + size);
 }
 
 } // namespace internal

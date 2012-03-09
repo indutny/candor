@@ -289,6 +289,41 @@ void CollectGarbageStub::Generate() {
 }
 
 
+void TypeofStub::Generate() {
+  GeneratePrologue();
+
+  Label not_nil(masm()), not_unboxed(masm()), done(masm());
+
+  Operand type(rax, 0);
+
+  __ IsNil(rax, &not_nil, NULL);
+
+  __ movq(rax, Immediate(HContext::GetIndexDisp(Heap::kRootNilTypeIndex)));
+  __ jmp(&done);
+  __ bind(&not_nil);
+
+  __ IsUnboxed(rax, &not_unboxed, NULL);
+  __ movq(rax, Immediate(HContext::GetIndexDisp(Heap::kRootNumberTypeIndex)));
+
+  __ jmp(&done);
+  __ bind(&not_unboxed);
+
+  Operand btag(rax, 0);
+  __ movzxb(rax, btag);
+  __ shl(rax, Immediate(3));
+  __ addq(rax, Immediate(HContext::GetIndexDisp(
+          Heap::kRootBooleanTypeIndex - Heap::kTagBoolean)));
+
+  __ bind(&done);
+
+  // rax contains offset in root_reg
+  __ addq(rax, root_reg);
+  __ movq(rax, type);
+
+  GenerateEpilogue(0);
+}
+
+
 void LookupPropertyStub::Generate() {
   GeneratePrologue();
   RuntimeLookupPropertyCallback lookup = &RuntimeLookupProperty;

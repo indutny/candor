@@ -144,7 +144,7 @@ char* RuntimeToString(Heap* heap, char* value) {
     return value;
    case Heap::kTagFunction:
    case Heap::kTagObject:
-   case Heap::kTagData:
+   case Heap::kTagCData:
    case Heap::kTagNil:
     return HString::New(heap, Heap::kTenureNew, "", 0);
    case Heap::kTagBoolean:
@@ -196,7 +196,7 @@ char* RuntimeToNumber(Heap* heap, char* value) {
     }
    case Heap::kTagFunction:
    case Heap::kTagObject:
-   case Heap::kTagData:
+   case Heap::kTagCData:
    case Heap::kTagNil:
     return HNumber::New(heap, Heap::kTenureNew, static_cast<int64_t>(0));
    case Heap::kTagNumber:
@@ -219,7 +219,7 @@ char* RuntimeToBoolean(Heap* heap, char* value) {
     return value;
    case Heap::kTagFunction:
    case Heap::kTagObject:
-   case Heap::kTagData:
+   case Heap::kTagCData:
     return HBoolean::New(heap, Heap::kTenureNew, true);
    case Heap::kTagNil:
     return HBoolean::New(heap, Heap::kTenureNew, false);
@@ -285,7 +285,7 @@ Heap::HeapTag RuntimeCoerceType(Heap* heap,
     break;
    case Heap::kTagFunction:
    case Heap::kTagObject:
-   case Heap::kTagData:
+   case Heap::kTagCData:
     if (!BinOp::is_math(type) && !BinOp::is_binary(type)) {
       lhs = RuntimeToString(heap, lhs);
       rhs = RuntimeToString(heap, rhs);
@@ -350,7 +350,7 @@ char* RuntimeBinOp(Heap* heap, char* lhs, char* rhs) {
       }
       break;
      case Heap::kTagObject:
-     case Heap::kTagData:
+     case Heap::kTagCData:
       // object (+) object = false
       result = false;
       break;

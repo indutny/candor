@@ -122,7 +122,7 @@ bool Value::Is() {
    case kString: tag = Heap::kTagString; break;
    case kFunction: tag = Heap::kTagFunction; break;
    case kObject: tag = Heap::kTagObject; break;
-   case kCData: tag = Heap::kTagData; break;
+   case kCData: tag = Heap::kTagCData; break;
    default: return false;
   }
 
@@ -270,12 +270,12 @@ Value* Object::Get(String* key) {
 
 
 CData* CData::New(size_t size) {
-  return Cast<CData>(HData::New(Isolate::GetCurrent()->heap, size));
+  return Cast<CData>(HCData::New(Isolate::GetCurrent()->heap, size));
 }
 
 
 void* CData::GetContents() {
-  return HData::Data(addr());
+  return HCData::Data(addr());
 }
 
 

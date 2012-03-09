@@ -188,7 +188,7 @@ void GC::VisitValue(HValue* value) {
    case Heap::kTagString:
    case Heap::kTagNumber:
    case Heap::kTagBoolean:
-   case Heap::kTagData:
+   case Heap::kTagCData:
     return;
    default:
     UNEXPECTED
