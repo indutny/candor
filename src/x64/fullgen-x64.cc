@@ -57,6 +57,7 @@ Fullgen::Fullgen(CodeSpace* space) : Masm(space),
   root_context()->Push(HString::New(heap(), Heap::kTenureOld, "number", 6));
   root_context()->Push(HString::New(heap(), Heap::kTenureOld, "string", 6));
   root_context()->Push(HString::New(heap(), Heap::kTenureOld, "object", 6));
+  root_context()->Push(HString::New(heap(), Heap::kTenureOld, "array", 5));
   root_context()->Push(HString::New(heap(), Heap::kTenureOld, "function", 8));
   root_context()->Push(HString::New(heap(), Heap::kTenureOld, "cdata", 5));
 }
@@ -427,7 +428,7 @@ AstNode* Fullgen::VisitValue(AstNode* node) {
 
 
 AstNode* Fullgen::VisitMember(AstNode* node) {
-  Label nil_error(this), non_object_error(this), done(this);
+  Label is_object(this), non_object_error(this), done(this);
 
   VisitForValue(node->lhs(), result());
 
@@ -436,7 +437,10 @@ AstNode* Fullgen::VisitMember(AstNode* node) {
   IsUnboxed(result(), NULL, &non_object_error);
 
   // Or into non-object
-  IsHeapObject(Heap::kTagObject, result(), &non_object_error, NULL);
+  IsHeapObject(Heap::kTagObject, result(), NULL, &is_object);
+  IsHeapObject(Heap::kTagArray, result(), &non_object_error, NULL);
+
+  bind(&is_object);
 
   // Calculate hash of property
 
@@ -662,7 +666,7 @@ AstNode* Fullgen::VisitObjectLiteral(AstNode* node) {
 
   // Ensure that map will be filled only by half at maximum
   movq(rbx, Immediate(TagNumber(PowerOfTwo(node->children()->length() << 1))));
-  AllocateObjectLiteral(rbx, rax);
+  AllocateObjectLiteral(Heap::kTagObject, rbx, rax);
 
   // Set every key/value pair
   assert(obj->keys()->length() == obj->values()->length());
@@ -704,7 +708,7 @@ AstNode* Fullgen::VisitArrayLiteral(AstNode* node) {
   // (items + `length` property)
   movq(rbx,
        Immediate(TagNumber(PowerOfTwo((node->children()->length() + 1) << 1))));
-  AllocateObjectLiteral(rbx, rax);
+  AllocateObjectLiteral(Heap::kTagArray, rbx, rax);
 
   AstList::Item* item = node->children()->head();
   uint64_t index = 0;

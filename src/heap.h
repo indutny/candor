@@ -96,12 +96,13 @@ class Heap {
  public:
   enum HeapTag {
     kTagNil = 0,
-    kTagFunction,
     kTagContext,
     kTagBoolean,
     kTagNumber,
     kTagString,
     kTagObject,
+    kTagArray,
+    kTagFunction,
     kTagCData,
 
     kTagMap,
@@ -139,8 +140,9 @@ class Heap {
     kRootNumberTypeIndex = 6,
     kRootStringTypeIndex = 7,
     kRootObjectTypeIndex = 8,
-    kRootFunctionTypeIndex = 9,
-    kRootCDataTypeIndex = 10
+    kRootArrayTypeIndex = 9,
+    kRootFunctionTypeIndex = 10,
+    kRootCDataTypeIndex = 11
   };
 
   // Tenure configuration (GC)
@@ -379,13 +381,28 @@ class HObject : public HValue {
   static char* NewEmpty(Heap* heap);
 
   inline char* map() { return *map_slot(); }
-  inline char** map_slot() { return reinterpret_cast<char**>(addr() + 16); }
+  inline char** map_slot() { return MapSlot(addr()); }
   inline uint32_t mask() { return *mask_slot(); }
-  inline uint32_t* mask_slot() {
-    return reinterpret_cast<uint32_t*>(addr() + 8);
+  inline uint32_t* mask_slot() { return MaskSlot(addr()); }
+
+  inline static char** MapSlot(char* addr) {
+    return reinterpret_cast<char**>(addr + 16);
   }
+  inline static char* Map(char* addr) { return *MapSlot(addr); }
+  inline static uint32_t* MaskSlot(char* addr) {
+    return reinterpret_cast<uint32_t*>(addr + 8);
+  }
+  inline static uint32_t Mask(char* addr) { return *MaskSlot(addr); }
 
   static const Heap::HeapTag class_tag = Heap::kTagObject;
+};
+
+
+class HArray : public HObject {
+ public:
+  static char* NewEmpty(Heap* heap);
+
+  static const Heap::HeapTag class_tag = Heap::kTagArray;
 };
 
 

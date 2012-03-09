@@ -164,6 +164,10 @@ HValue* HValue::CopyTo(Space* old_space, Space* new_space) {
     // mask + map
     size += 16;
     break;
+   case Heap::kTagArray:
+    // mask + map + length
+    size += 24;
+    break;
    case Heap::kTagMap:
     // size + space ( keys + values )
     size += 8 + (As<HMap>()->size() << 4);
@@ -283,6 +287,31 @@ char* HObject::NewEmpty(Heap* heap) {
   *reinterpret_cast<uint64_t*>(obj + 8) = (size - 1) << 3;
   // Set map
   *reinterpret_cast<char**>(obj + 16) = map;
+
+  // Set map's size
+  *reinterpret_cast<uint64_t*>(map + 8) = size;
+
+  // Nullify all map's slots (both keys and values)
+  memset(map + 16, 0, size << 4);
+
+  return obj;
+}
+
+
+char* HArray::NewEmpty(Heap* heap) {
+  uint32_t size = 16;
+
+  char* obj = heap->AllocateTagged(Heap::kTagObject, Heap::kTenureNew, 24);
+  char* map = heap->AllocateTagged(Heap::kTagMap,
+                                   Heap::kTenureNew,
+                                   (size << 4) + 8);
+
+  // Set mask
+  *reinterpret_cast<uint64_t*>(obj + 8) = (size - 1) << 3;
+  // Set map
+  *reinterpret_cast<char**>(obj + 16) = map;
+  // Set length
+  *reinterpret_cast<int64_t*>(obj + 24) = 0;
 
   // Set map's size
   *reinterpret_cast<uint64_t*>(map + 8) = size;

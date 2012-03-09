@@ -58,9 +58,9 @@ char* RuntimeLookupProperty(Heap* heap,
                             char* obj,
                             char* key,
                             off_t insert) {
-  char* map = HValue::As<HObject>(obj)->map();
+  char* map = HObject::Map(obj);
   char* space = HValue::As<HMap>(map)->space();
-  uint32_t mask = HValue::As<HObject>(obj)->mask();
+  uint32_t mask = HObject::Mask(obj);
 
   char* strkey = RuntimeToString(heap, key);
 
@@ -98,8 +98,8 @@ char* RuntimeLookupProperty(Heap* heap,
 
 
 char* RuntimeGrowObject(Heap* heap, char* obj) {
-  char** map_addr = HValue::As<HObject>(obj)->map_slot();
-  char* map = HValue::As<HObject>(obj)->map();
+  char** map_addr = HObject::MapSlot(obj);
+  char* map = *map_addr;
   uint32_t size = HValue::As<HMap>(map)->size();
 
   char* new_map = heap->AllocateTagged(Heap::kTagMap,
@@ -116,7 +116,7 @@ char* RuntimeGrowObject(Heap* heap, char* obj) {
 
   // Change mask
   uint32_t mask = (size << 4) - 8;
-  *HValue::As<HObject>(obj)->mask_slot() = mask;
+  *HObject::MaskSlot(obj) = mask;
 
   char* space = HValue::As<HMap>(map)->space();
 
@@ -144,6 +144,7 @@ char* RuntimeToString(Heap* heap, char* value) {
     return value;
    case Heap::kTagFunction:
    case Heap::kTagObject:
+   case Heap::kTagArray:
    case Heap::kTagCData:
    case Heap::kTagNil:
     return HString::New(heap, Heap::kTenureNew, "", 0);
@@ -196,6 +197,7 @@ char* RuntimeToNumber(Heap* heap, char* value) {
     }
    case Heap::kTagFunction:
    case Heap::kTagObject:
+   case Heap::kTagArray:
    case Heap::kTagCData:
    case Heap::kTagNil:
     return HNumber::New(heap, Heap::kTenureNew, static_cast<int64_t>(0));
@@ -219,6 +221,7 @@ char* RuntimeToBoolean(Heap* heap, char* value) {
     return value;
    case Heap::kTagFunction:
    case Heap::kTagObject:
+   case Heap::kTagArray:
    case Heap::kTagCData:
     return HBoolean::New(heap, Heap::kTenureNew, true);
    case Heap::kTagNil:
@@ -285,6 +288,7 @@ Heap::HeapTag RuntimeCoerceType(Heap* heap,
     break;
    case Heap::kTagFunction:
    case Heap::kTagObject:
+   case Heap::kTagArray:
    case Heap::kTagCData:
     if (!BinOp::is_math(type) && !BinOp::is_binary(type)) {
       lhs = RuntimeToString(heap, lhs);
@@ -350,6 +354,7 @@ char* RuntimeBinOp(Heap* heap, char* lhs, char* rhs) {
       }
       break;
      case Heap::kTagObject:
+     case Heap::kTagArray:
      case Heap::kTagCData:
       // object (+) object = false
       result = false;
@@ -475,6 +480,7 @@ char* RuntimeSizeof(Heap* heap, char* value) {
     size = HCData::Size(value);
     break;
    case Heap::kTagObject:
+   case Heap::kTagArray:
    case Heap::kTagNil:
    case Heap::kTagFunction:
    case Heap::kTagBoolean:

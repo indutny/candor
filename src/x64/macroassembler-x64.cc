@@ -215,12 +215,20 @@ void Masm::AllocateString(const char* value,
 }
 
 
-void Masm::AllocateObjectLiteral(Register size, Register result) {
+void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
+                                 Register size,
+                                 Register result) {
   // mask + map
-  Allocate(Heap::kTagObject, reg_nil, 16, result);
+  Allocate(tag,
+           reg_nil,
+           tag == Heap::kTagArray ? 24 : 16,
+           result);
 
   Operand qmask(result, 8);
   Operand qmap(result, 16);
+
+  // Array only field
+  Operand qlength(result, 24);
 
   // Set mask
   movq(scratch, size);
@@ -263,6 +271,11 @@ void Masm::AllocateObjectLiteral(Register size, Register result) {
   Fill(result, size, Immediate(Heap::kTagNil));
   Pop(result);
   Pop(size);
+
+  // Set length
+  if (tag == Heap::kTagArray) {
+    movq(qlength, Immediate(0));
+  }
 
   CheckGC();
 }

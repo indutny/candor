@@ -57,7 +57,7 @@ class Masm : public Assembler {
   void AllocateString(const char* value, uint32_t length, Register result);
 
   // Allocate object&map
-  void AllocateObjectLiteral(Register size, Register result);
+  void AllocateObjectLiteral(Heap::HeapTag tag, Register size, Register result);
 
   // Fills memory segment with immediate value
   void Fill(Register start, Register end, Immediate value);

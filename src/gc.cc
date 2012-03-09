@@ -180,6 +180,8 @@ void GC::VisitValue(HValue* value) {
    case Heap::kTagFunction:
     return VisitFunction(value->As<HFunction>());
    case Heap::kTagObject:
+   case Heap::kTagArray:
+    // Objects and arrays have the same structure
     return VisitObject(value->As<HObject>());
    case Heap::kTagMap:
     return VisitMap(value->As<HMap>());
