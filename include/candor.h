@@ -184,6 +184,18 @@ class Handle {
   T* value;
 };
 
+class CWrapper {
+ public:
+  CWrapper();
+  virtual ~CWrapper();
+
+  inline CData* Unwrap() { return data; }
+  static void WeakCallback(CData* data);
+
+ private:
+  CData* data;
+};
+
 } // namespace candor
 
 #endif // _INCLUDE_CANDOR_H_

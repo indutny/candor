@@ -279,6 +279,27 @@ void* CData::GetContents() {
 }
 
 
+CWrapper::CWrapper() : data(CData::New(sizeof(void*))) {
+  // Save pointer of class
+  *reinterpret_cast<void**>(data->GetContents()) = this;
+
+  // Mark handle as weak
+  Handle<CData> handle(data);
+  handle.SetWeakCallback(CWrapper::WeakCallback);
+}
+
+
+CWrapper::~CWrapper() {
+  // Do nothing
+}
+
+
+void CWrapper::WeakCallback(CData* data) {
+  CWrapper* wrapper = *reinterpret_cast<CWrapper**>(data->GetContents());
+  delete wrapper;
+}
+
+
 Value* Arguments::operator[] (const int index) {
   return *(reinterpret_cast<Value**>(this) - index - 1);
 }

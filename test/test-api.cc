@@ -86,6 +86,23 @@ static Value* UseCDataCallback(uint32_t argc, Arguments& argv) {
   return Nil::New();
 }
 
+static int wrapper_destroyed = 0;
+
+class WrapTest : public CWrapper {
+ public:
+  ~WrapTest() {
+    wrapper_destroyed++;
+  }
+};
+
+static Value* GetWrapper(uint32_t argc, Arguments& argv) {
+  assert(argc == 0);
+
+  WrapTest* w = new WrapTest();
+
+  return w->Unwrap();
+}
+
 TEST_START("API test")
   FUN_TEST("return (a, b, c) {\n"
            "return a + b + c(1, 2, () { __$gc()\nreturn 3 }) + 2\n"
@@ -196,6 +213,26 @@ TEST_START("API test")
     Value* argv[0];
     Value* ret = f->Call(global, 0, argv);
     assert(ret->Is<Nil>());
+  }
+
+  // CWrapper
+  {
+    Isolate i;
+    const char* code = "(() {\n"
+                       "  scope get\n"
+                       "  x = get()\n"
+                       "})()\n"
+                       "__$gc()\n__$gc()";
+
+    Function* f = Function::New(code, strlen(code));
+
+    Object* global = Object::New();
+    global->Set(String::New("get", 3), Function::New(GetWrapper));
+
+    Value* argv[0];
+    Value* ret = f->Call(global, 0, argv);
+    assert(ret->Is<Nil>());
+    assert(wrapper_destroyed == 1);
   }
 
   // Regressions
