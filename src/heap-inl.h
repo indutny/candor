@@ -53,6 +53,26 @@ inline void HValue::IncrementGeneration() {
 }
 
 
+inline bool HContext::HasSlot(uint32_t index) {
+  return *GetSlotAddress(index) != NULL;
+}
+
+
+inline HValue* HContext::GetSlot(uint32_t index) {
+  return HValue::Cast(*GetSlotAddress(index));
+}
+
+
+inline char** HContext::GetSlotAddress(uint32_t index) {
+  return reinterpret_cast<char**>(addr() + GetIndexDisp(index));
+}
+
+
+inline uint32_t HContext::GetIndexDisp(uint32_t index) {
+  return 24 + index * 8;
+}
+
+
 inline uint8_t HValue::Generation() {
   return *reinterpret_cast<uint8_t*>(addr() + 1);
 }

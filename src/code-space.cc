@@ -98,7 +98,9 @@ Value* CodeSpace::Run(char* fn,
     // Note: that context have 0 index in root register
     HContext* hroot = HValue::As<HContext>(root);
 
-    *reinterpret_cast<Object**>(hroot->GetSlotAddress(0)) = context;
+    Object** root_slot = reinterpret_cast<Object**>(
+        hroot->GetSlotAddress(Heap::kRootGlobalIndex));
+    *root_slot = context;
   }
 
   return reinterpret_cast<Code>(entry_)(root,

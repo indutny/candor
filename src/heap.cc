@@ -191,21 +191,6 @@ char* HContext::New(Heap* heap,
 }
 
 
-bool HContext::HasSlot(uint32_t index) {
-  return *GetSlotAddress(index) != NULL;
-}
-
-
-HValue* HContext::GetSlot(uint32_t index) {
-  return HValue::Cast(*GetSlotAddress(index));
-}
-
-
-char** HContext::GetSlotAddress(uint32_t index) {
-  return reinterpret_cast<char**>(addr() + 24 + index * 8);
-}
-
-
 char* HNumber::New(Heap* heap, int64_t value) {
   return reinterpret_cast<char*>(Tag(value));
 }

@@ -117,6 +117,13 @@ class Heap {
     kErrorCallWithoutVariable
   };
 
+  // Positions in root register
+  static const int32_t kRootGlobalIndex = 0;
+  static const int32_t kRootNilIndex = 1;
+  static const int32_t kRootTrueIndex = 2;
+  static const int32_t kRootFalseIndex = 3;
+
+  // Tenure configuration (GC)
   static const int8_t kMinOldSpaceGeneration = 5;
 
   Heap(uint32_t page_size) : new_space_(this, page_size),
@@ -221,14 +228,23 @@ class HValueReference {
 };
 
 
+class HNil : public HValue {
+ public:
+  static inline char* New(Heap* heap) { return NULL; }
+
+  static const Heap::HeapTag class_tag = Heap::kTagNil;
+};
+
+
 class HContext : public HValue {
  public:
   static char* New(Heap* heap,
                    List<char*, ZoneObject>* values);
 
-  bool HasSlot(uint32_t index);
-  HValue* GetSlot(uint32_t index);
-  char** GetSlotAddress(uint32_t index);
+  inline bool HasSlot(uint32_t index);
+  inline HValue* GetSlot(uint32_t index);
+  inline char** GetSlotAddress(uint32_t index);
+  inline static uint32_t GetIndexDisp(uint32_t index);
 
   inline char* parent() { return *parent_slot(); }
   inline bool has_parent() { return parent() != NULL; }

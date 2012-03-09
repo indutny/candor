@@ -45,6 +45,11 @@ Fullgen::Fullgen(CodeSpace* space) : Masm(space),
                                      current_function_(NULL) {
   // Create a `global` object
   root_context()->Push(HObject::NewEmpty(heap()));
+
+  // Place some root values
+  root_context()->Push(HNil::New(heap()));
+  root_context()->Push(HBoolean::New(heap(), true));
+  root_context()->Push(HBoolean::New(heap(), false));
 }
 
 
@@ -371,7 +376,7 @@ AstNode* Fullgen::VisitValue(AstNode* node) {
     } else if (depth == -1) {
       // Global lookup
       slot()->base(root_reg);
-      slot()->disp(24);
+      slot()->disp(HContext::GetIndexDisp(Heap::kRootGlobalIndex));
 
       AstNode* member = new AstNode(AstNode::kMember);
       member->children()->Push(new FAstOperand(slot()));
@@ -460,7 +465,12 @@ AstNode* Fullgen::VisitMember(AstNode* node) {
   bind(&non_object_error);
 
   // Non object lookups will return nil
-  movq(result(), Immediate(Heap::kTagNil));
+  if (visiting_for_value()) {
+    movq(result(), Immediate(Heap::kTagNil));
+  } else {
+    movq(result(), root_reg);
+    addq(result(), HContext::GetIndexDisp(Heap::kRootNilIndex));
+  }
 
   bind(&done);
 
@@ -607,7 +617,8 @@ AstNode* Fullgen::VisitTrue(AstNode* node) {
     return node;
   }
 
-  PlaceInRoot(HBoolean::New(heap(), true));
+  Operand true_slot(root_reg, HContext::GetIndexDisp(Heap::kRootTrueIndex));
+  movq(result(), true_slot);
 
   return node;
 }
@@ -619,7 +630,8 @@ AstNode* Fullgen::VisitFalse(AstNode* node) {
     return node;
   }
 
-  PlaceInRoot(HBoolean::New(heap(), false));
+  Operand false_slot(root_reg, HContext::GetIndexDisp(Heap::kRootFalseIndex));
+  movq(result(), false_slot);
 
   return node;
 }

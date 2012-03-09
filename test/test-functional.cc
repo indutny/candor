@@ -150,6 +150,11 @@ TEST_START("functional test")
     assert(result->As<Number>()->Value() == 28);
   })
 
+  // Nil slot lookup
+  FUN_TEST("a.x = 1", {
+    assert(result->Is<Nil>());
+  })
+
   FUN_TEST("a = { a : { b : 1 } }\n"
            "a = { x: { y: a } }\n"
            "return a.x.y.a.b", {
