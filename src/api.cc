@@ -27,7 +27,9 @@ using namespace internal;
     template V* Value::Cast<V>(char* addr);\
     template V* Value::Cast<V>(Value* value);\
     template bool Value::Is<V>();\
-    template Handle<V>::Handle(V* v);
+    template Handle<V>::Handle(V* v);\
+    template void Handle<V>::Persist();\
+    template void Handle<V>::Weaken();
 TYPES_LIST(METHODS_ENUM)
 #undef METHODS_ENUM
 
