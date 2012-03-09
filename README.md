@@ -207,16 +207,19 @@ Things that are implemented currently:
 * Unboxing of heap numbers
 * Floating point operations
 * Function calls, passing arguments and using returned value
-* Stop-the-world copying garbage collector
+* Stop-the-world copying two-space garbage collector
 * Hash-maps (objects), numeric and string keys
+* Arrays
+* Typeof, Sizeof, Keysof
 * String concatenation
+* C++/C bindings support for candor
 
 Things to come:
 
+* C++/C bindings documentation
 * On-stack replacement and profile-based optimizations
 * Incremental GC
 * Usage in multiple-threads (aka isolates)
-* C++/C bindings support for candor
 * Inline caching
 * Break statement
 * Better parser/lexer errors
