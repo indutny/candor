@@ -259,6 +259,8 @@ void CallBindingStub::Generate() {
 
   // Restore all except rax
   __ Popad(rax);
+
+  __ CheckGC();
   GenerateEpilogue(2);
 }
 
@@ -306,6 +308,8 @@ void LookupPropertyStub::Generate() {
   __ callq(rax);
 
   __ Popad(rax);
+
+  __ CheckGC();
   GenerateEpilogue(3);
 }
 

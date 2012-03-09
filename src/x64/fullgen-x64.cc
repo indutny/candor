@@ -382,7 +382,12 @@ AstNode* Fullgen::VisitValue(AstNode* node) {
       property->length(value->name()->length());
 
       member->children()->Push(property);
-      VisitForSlot(member, slot(), result());
+      if (visiting_for_slot()) {
+        VisitForSlot(member, slot(), result());
+      } else {
+        VisitForValue(member, result());
+      }
+      return node;
     } else {
       // Context variables
       movq(result(), rdi);

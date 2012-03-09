@@ -141,7 +141,9 @@ void ScopeSlot::Enumerate(void* scope, ScopeSlot* slot) {
         item = item->next();
       }
 
-      if (slot->index() == -1) slot->index(scope_->context_index_++);
+      if (slot->index() == -1) {
+        slot->index(slot->depth() >= 0 ? scope_->context_index_++ : 0);
+      }
 
       item = slot->uses()->head();
       while (item != NULL) {
