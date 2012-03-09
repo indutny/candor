@@ -250,12 +250,14 @@ void CallBindingStub::Generate() {
   __ shl(scratch, Immediate(3));
   __ addq(rsi, scratch);
 
-  __ ExitFrame();
+  __ ExitFramePrologue();
 
   Operand code(scratch, 16);
 
   __ movq(scratch, fn);
   __ Call(code);
+
+  __ ExitFrameEpilogue();
 
   // Restore all except rax
   __ Popad(rax);

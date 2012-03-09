@@ -68,7 +68,8 @@ class Masm : public Assembler {
   // Generate enter/exit frame sequences
   void EnterFramePrologue();
   void EnterFrameEpilogue();
-  void ExitFrame();
+  void ExitFramePrologue();
+  void ExitFrameEpilogue();
 
   // Perform garbage collection if needed (heap flag is set)
   void CheckGC();

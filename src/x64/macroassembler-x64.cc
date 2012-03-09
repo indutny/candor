@@ -310,8 +310,7 @@ void Masm::EnterFramePrologue() {
   Operand scratch_op(scratch, 0);
 
   movq(scratch, last_stack);
-  movq(scratch, scratch_op);
-  push(scratch);
+  push(scratch_op);
   push(Immediate(0xFEEDBEEF));
 }
 
@@ -321,13 +320,33 @@ void Masm::EnterFrameEpilogue() {
 }
 
 
-void Masm::ExitFrame() {
+void Masm::ExitFramePrologue() {
   Immediate last_stack(reinterpret_cast<uint64_t>(heap()->last_stack()));
   Operand scratch_op(scratch, 0);
 
   movq(scratch, last_stack);
+  push(scratch_op);
+  push(Immediate(0));
   movq(scratch_op, rsp);
   xorq(scratch, scratch);
+}
+
+
+void Masm::ExitFrameEpilogue() {
+  pop(scratch);
+  pop(scratch);
+
+  Immediate last_stack(reinterpret_cast<uint64_t>(heap()->last_stack()));
+  Operand scratch_op(scratch, 0);
+
+  // Restore previous last_stack
+  push(rax);
+
+  movq(rax, scratch);
+  movq(scratch, last_stack);
+  movq(scratch_op, rax);
+
+  pop(rax);
 }
 
 

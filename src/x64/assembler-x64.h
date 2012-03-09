@@ -238,6 +238,7 @@ class Assembler {
   void cpuid();
 
   void push(Register src);
+  void push(Operand& src);
   void push(Immediate imm);
   void pop(Register dst);
   void ret(uint16_t imm);

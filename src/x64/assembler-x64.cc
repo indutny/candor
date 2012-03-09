@@ -77,6 +77,13 @@ void Assembler::push(Immediate imm) {
 }
 
 
+void Assembler::push(Operand& src) {
+  emit_rexw(rax, src);
+  emitb(0xFF);
+  emit_modrm(src, 6);
+}
+
+
 void Assembler::pop(Register dst) {
   emit_rex_if_high(dst);
   emitb(0x58 | dst.low());
