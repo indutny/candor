@@ -62,10 +62,25 @@ char* RuntimeLookupProperty(Heap* heap,
   char* space = HValue::As<HMap>(map)->space();
   uint32_t mask = HObject::Mask(obj);
 
-  char* strkey = RuntimeToString(heap, key);
+  bool is_array = HValue::GetTag(obj) == Heap::kTagArray;
 
-  // Compute hash lazily
-  uint32_t hash = HString::Hash(strkey);
+  char* strkey;
+  int64_t numkey;
+  uint32_t hash;
+
+  if (is_array) {
+    numkey = HNumber::IntegralValue(RuntimeToNumber(heap, key));
+    strkey = reinterpret_cast<char*>(HNumber::Tag(numkey));
+    hash = ComputeHash(numkey);
+
+    // Update array's length on insertion (if increased)
+    if (insert && numkey > 0 && HArray::Length(obj) <= numkey) {
+      HArray::SetLength(obj, numkey + 1);
+    }
+  } else {
+    strkey = RuntimeToString(heap, key);
+    hash = HString::Hash(strkey);
+  }
 
   // Dive into space and walk it in circular manner
   uint32_t start = hash & mask;
@@ -76,7 +91,11 @@ char* RuntimeLookupProperty(Heap* heap,
   while (index != end) {
     key_slot = *reinterpret_cast<char**>(space + index);
     if (key_slot == NULL) break;
-    if (RuntimeStringCompare(key_slot, strkey) == 0) break;
+    if (is_array) {
+      if (key_slot == strkey) break;
+    } else {
+      if (RuntimeStringCompare(key_slot, strkey) == 0) break;
+    }
 
     index += 8;
     if (index > mask) index = 0;
@@ -86,6 +105,7 @@ char* RuntimeLookupProperty(Heap* heap,
   if (index == end) {
     assert(insert);
     RuntimeGrowObject(heap, obj);
+
     return RuntimeLookupProperty(heap, obj, strkey, insert);
   }
 
@@ -479,8 +499,10 @@ char* RuntimeSizeof(Heap* heap, char* value) {
    case Heap::kTagCData:
     size = HCData::Size(value);
     break;
-   case Heap::kTagObject:
    case Heap::kTagArray:
+    size = HArray::Length(value);
+    break;
+   case Heap::kTagObject:
    case Heap::kTagNil:
    case Heap::kTagFunction:
    case Heap::kTagBoolean:

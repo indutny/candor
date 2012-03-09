@@ -402,15 +402,23 @@ class HArray : public HObject {
  public:
   static char* NewEmpty(Heap* heap);
 
+  static inline int64_t Length(char* obj) {
+    return *reinterpret_cast<int64_t*>(obj + 24);
+  }
+
+  static inline void SetLength(char* obj, int64_t length) {
+    *reinterpret_cast<int64_t*>(obj + 24) = length;
+  }
+
   static const Heap::HeapTag class_tag = Heap::kTagArray;
 };
 
 
 class HMap : public HValue {
  public:
-  bool IsEmptySlot(uint32_t index);
-  HValue* GetSlot(uint32_t index);
-  char** GetSlotAddress(uint32_t index);
+  inline bool IsEmptySlot(uint32_t index);
+  inline HValue* GetSlot(uint32_t index);
+  inline char** GetSlotAddress(uint32_t index);
 
   inline uint32_t size() { return *reinterpret_cast<uint32_t*>(addr() + 8); }
   inline char* space() { return addr() + 16; }

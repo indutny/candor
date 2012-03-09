@@ -705,16 +705,15 @@ AstNode* Fullgen::VisitArrayLiteral(AstNode* node) {
   Save(rbx);
 
   // Ensure that map will be filled only by half at maximum
-  // (items + `length` property)
   movq(rbx,
-       Immediate(TagNumber(PowerOfTwo((node->children()->length() + 1) << 1))));
+       Immediate(TagNumber(PowerOfTwo(node->children()->length() << 1))));
   AllocateObjectLiteral(Heap::kTagArray, rbx, rax);
 
   AstList::Item* item = node->children()->head();
   uint64_t index = 0;
   while (item != NULL) {
     char keystr[32];
-    AstNode* key = new AstNode(AstNode::kProperty);
+    AstNode* key = new AstNode(AstNode::kNumber);
     key->value(keystr);
     key->length(snprintf(keystr, sizeof(keystr), "%llu", index));
 
@@ -730,29 +729,6 @@ AstNode* Fullgen::VisitArrayLiteral(AstNode* node) {
 
     item = item->next();
     index++;
-  }
-
-  {
-    // Set `length`
-    AstNode* key = new AstNode(AstNode::kProperty);
-    key->value("length");
-    key->length(6);
-
-    char lenstr[32];
-    AstNode* value = new AstNode(AstNode::kNumber);
-    value->value(lenstr);
-    value->length(snprintf(lenstr, sizeof(lenstr), "%llu", index));
-
-    // arr.length = num
-    AstNode* member = new AstNode(AstNode::kMember);
-    member->children()->Push(new FAstRegister(rax));
-    member->children()->Push(key);
-
-    AstNode* assign = new AstNode(AstNode::kAssign);
-    assign->children()->Push(member);
-    assign->children()->Push(value);
-
-    VisitForValue(assign, rbx);
   }
 
   Result(rax);

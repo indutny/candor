@@ -121,6 +121,21 @@ inline bool HNumber::IsIntegral(char* addr) {
   return IsUnboxed(addr);
 }
 
+
+inline bool HMap::IsEmptySlot(uint32_t index) {
+  return *GetSlotAddress(index) == NULL;
+}
+
+
+inline HValue* HMap::GetSlot(uint32_t index) {
+  return HValue::Cast(*GetSlotAddress(index));
+}
+
+
+inline char** HMap::GetSlotAddress(uint32_t index) {
+  return reinterpret_cast<char**>(space() + index * 8);
+}
+
 } // namespace internal
 } // namespace candor
 

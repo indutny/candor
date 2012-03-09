@@ -222,7 +222,7 @@ TEST_START("functional test")
     assert(result->As<Number>()->Value() == 10);
   })
 
-  FUN_TEST("a = [ 1, 2, 3, 4 ]\nreturn a.length", {
+  FUN_TEST("a = [ 1, 2, 3, 4 ]\nreturn sizeof a", {
     assert(result->As<Number>()->Value() == 4);
   })
 

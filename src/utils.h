@@ -13,6 +13,27 @@ namespace internal {
 
 #define UNEXPECTED assert(0 && "Unexpected");
 
+inline uint32_t ComputeHash(int64_t key) {
+  uint32_t hash = 0;
+
+  // high
+  hash += key >> 32;
+  hash += (hash << 10);
+  hash ^= (hash >> 6);
+
+  // low
+  hash += key & 0xffffffff;
+  hash += (hash << 10);
+  hash ^= (hash >> 6);
+
+  // mixup
+  hash += (hash << 3);
+  hash ^= (hash >> 11);
+  hash += (hash << 15);
+
+  return hash;
+}
+
 inline uint32_t ComputeHash(const char* key, uint32_t length) {
   uint32_t hash = 0;
   for (uint32_t i = 0; i < length; i++) {
@@ -304,6 +325,7 @@ inline bool StringIsDouble(const char* value, uint32_t length) {
 inline int64_t StringToInt(const char* value, uint32_t length) {
   int64_t result = 0;
   for (uint32_t index = 0; index < length; index++) {
+    if (value[index] < '0' || value[index] > '9') return 0;
     result *= 10;
     result += value[index] - '0';
   }
@@ -318,12 +340,14 @@ inline double StringToDouble(const char* value, uint32_t length) {
   uint32_t index;
   for (index = 0; index < length; index++) {
     if (value[index] == '.') break;
+    if (value[index] < '0' || value[index] > '9') return 0;
     integral *= 10;
     integral += value[index] - '0';
   }
 
   if (index < length) {
     for (uint32_t i = length - 1; i > index; i--) {
+      if (value[i] < '0' || value[i] > '9') return 0;
       floating += value[i] - '0';
       floating /= 10;
     }

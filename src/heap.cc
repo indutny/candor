@@ -310,8 +310,9 @@ char* HArray::NewEmpty(Heap* heap) {
   *reinterpret_cast<uint64_t*>(obj + 8) = (size - 1) << 3;
   // Set map
   *reinterpret_cast<char**>(obj + 16) = map;
+
   // Set length
-  *reinterpret_cast<int64_t*>(obj + 24) = 0;
+  SetLength(obj, 0);
 
   // Set map's size
   *reinterpret_cast<uint64_t*>(map + 8) = size;
@@ -320,21 +321,6 @@ char* HArray::NewEmpty(Heap* heap) {
   memset(map + 16, 0, size << 4);
 
   return obj;
-}
-
-
-bool HMap::IsEmptySlot(uint32_t index) {
-  return *GetSlotAddress(index) == NULL;
-}
-
-
-HValue* HMap::GetSlot(uint32_t index) {
-  return HValue::Cast(*GetSlotAddress(index));
-}
-
-
-char** HMap::GetSlotAddress(uint32_t index) {
-  return reinterpret_cast<char**>(space() + index * 8);
 }
 
 
