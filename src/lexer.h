@@ -75,6 +75,9 @@ class Lexer {
     kReturn,
     kScope,
     kNew,
+    kTypeof,
+    kSizeof,
+    kKeysof,
     kEnd
   };
 

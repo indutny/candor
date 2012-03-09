@@ -44,6 +44,9 @@ typedef List<AstNode*, ZoneObject> AstList;
     V(kString)\
     V(kTrue)\
     V(kFalse)\
+    V(kTypeof)\
+    V(kSizeof)\
+    V(kKeysof)\
     V(kNil)
 
 // Base class

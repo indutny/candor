@@ -42,6 +42,9 @@ TEST_START("parser test")
   PARSER_TEST("+a", "[kPlus [a]]")
   PARSER_TEST("!a", "[kNot [a]]")
   PARSER_TEST("a++", "[kPostInc [a]]")
+  PARSER_TEST("typeof a", "[kTypeof [a]]")
+  PARSER_TEST("sizeof a", "[kSizeof [a]]")
+  PARSER_TEST("keysof a", "[kKeysof [a]]")
 
   // Mixed binop + prefix
   PARSER_TEST("++a === b++", "[kPreInc [kStrictEq [a] [kPostInc [b]]]]")

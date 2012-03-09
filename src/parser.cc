@@ -170,6 +170,23 @@ AstNode* Parser::ParseExpression(int priority) {
     return ParseObjectLiteral();
    case kArrayOpen:
     return ParseArrayLiteral();
+   case kTypeof:
+   case kSizeof:
+   case kKeysof:
+    {
+      Position pos(this);
+
+      TokenType type = Peek()->type();
+      Skip();
+
+      AstNode* expr = ParseExpression();
+      if (expr == NULL) return NULL;
+
+      result = new AstNode(AstNode::ConvertType(type));
+      result->children()->Push(expr);
+
+      return pos.Commit(result);
+    }
    default:
     break;
   }
@@ -464,7 +481,6 @@ AstNode* Parser::ParseBlock(AstNode* block) {
 
   Skip();
 
-  while (Peek()->is(kCr)) Skip();
   AstNode* result = fn ? block : new AstNode(AstNode::kBlock);
 
   AstNode* scope = ParseScope();
@@ -490,6 +506,8 @@ AstNode* Parser::ParseBlock(AstNode* block) {
 
 
 AstNode* Parser::ParseScope() {
+  while (Peek()->is(kCr)) Skip();
+
   if (!Peek()->is(kScope)) return NULL;
   Position pos(this);
 
