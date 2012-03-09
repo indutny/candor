@@ -507,7 +507,8 @@ char* RuntimeSizeof(Heap* heap, char* value) {
    case Heap::kTagFunction:
    case Heap::kTagBoolean:
    case Heap::kTagNumber:
-    return HNil::New(heap);
+    size = 0;
+    break;
    default:
     UNEXPECTED
   }
