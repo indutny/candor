@@ -131,17 +131,7 @@ while (i < 10) {
   i++
 }
 
-// for(;;) loops
-// With block
-for (i = 0, sum = 0; i < 10; i++) {
-  scope i, sum
-  sum = sum + i
-}
-
-// without block
-for (i = 0, sum = 0; i < 10; i++) sum = sum + i
-
-// break and continue.  Both `while` and `for` can have `break` and `continue`
+// break and continue. `while` loop can have `break` and `continue`
 // break exits a loop immediately, continue, skips to the next iteration
 
 ```
@@ -161,7 +151,11 @@ factorial(10)
 forEach(array, callback) {
   if (typeof array != "array") return
   length = sizeof array
-  for (i = 0; i < length; i++) callback(i, array[i])
+  i = 0
+  while (i < length) {
+    callback(i, array[i])
+    i++
+  }
 }
 
 // Implementing switch with chained if..else
