@@ -23,6 +23,15 @@ static Value* ObjectCallback(uint32_t argc, Arguments& argv) {
   return obj;
 }
 
+static Value* ArrayCallback(uint32_t argc, Arguments& argv) {
+  Array* arr = Array::New();
+  arr->Set(3, Number::NewIntegral(4));
+
+  assert(arr->Length() == 4);
+
+  return arr;
+}
+
 static Value* FnThreeCallback(uint32_t argc, Arguments& argv) {
   assert(argc == 3);
 
@@ -162,6 +171,12 @@ TEST_START("API test")
     Value* argv[1] = { Function::New(ObjectCallback) };
     Value* ret = result->As<Function>()->Call(NULL, 1, argv);
     assert(ret->As<Number>()->Value() == 1234);
+  })
+
+  FUN_TEST("return (x) { return x()[3] }", {
+    Value* argv[1] = { Function::New(ArrayCallback) };
+    Value* ret = result->As<Function>()->Call(NULL, 1, argv);
+    assert(ret->As<Number>()->Value() == 4);
   })
 
   FUN_TEST("return (fn1, fn2) { return fn1(fn2(1, 2), 1, 2) }", {

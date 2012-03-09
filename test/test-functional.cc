@@ -226,6 +226,12 @@ TEST_START("functional test")
     assert(result->As<Number>()->Value() == 4);
   })
 
+  FUN_TEST("a = [ 1, 2, 3, 4 ]\nreturn typeof a", {
+    String* str = result->As<String>();
+    assert(str->Length() == 5);
+    assert(strncmp(str->Value(), "array", str->Length()) == 0);
+  })
+
   // Global lookup
   FUN_TEST("scope a\na = 1\nreturn a", {
     assert(result->As<Number>()->Value() == 1);

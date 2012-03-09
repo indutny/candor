@@ -21,6 +21,7 @@ using namespace internal;
     V(String)\
     V(Function)\
     V(Object)\
+    V(Array)\
     V(CData)
 
 #define METHODS_ENUM(V)\
@@ -122,6 +123,7 @@ bool Value::Is() {
    case kString: tag = Heap::kTagString; break;
    case kFunction: tag = Heap::kTagFunction; break;
    case kObject: tag = Heap::kTagObject; break;
+   case kArray: tag = Heap::kTagArray; break;
    case kCData: tag = Heap::kTagCData; break;
    default: return false;
   }
@@ -266,6 +268,33 @@ Value* Object::Get(String* key) {
         Isolate::GetCurrent()->heap, addr(), key->addr(), 0));
 
   return Value::New(*slot);
+}
+
+
+Array* Array::New() {
+  return Cast<Array>(HArray::NewEmpty(Isolate::GetCurrent()->heap));
+}
+
+
+void Array::Set(int64_t key, Value* value) {
+  char* keyptr = reinterpret_cast<char*>(HNumber::Tag(key));
+  char** slot = reinterpret_cast<char**>(RuntimeLookupProperty(
+        Isolate::GetCurrent()->heap, addr(), keyptr, 1));
+  *slot = value->addr();
+}
+
+
+Value* Array::Get(int64_t key) {
+  char* keyptr = reinterpret_cast<char*>(HNumber::Tag(key));
+  char** slot = reinterpret_cast<char**>(RuntimeLookupProperty(
+        Isolate::GetCurrent()->heap, addr(), keyptr, 1));
+
+  return Value::New(*slot);
+}
+
+
+int64_t Array::Length() {
+  return HArray::Length(addr());
 }
 
 

@@ -21,6 +21,7 @@ class Number;
 class Boolean;
 class String;
 class Object;
+class Array;
 class CData;
 class Arguments;
 
@@ -41,6 +42,7 @@ class Isolate {
   friend class Boolean;
   friend class String;
   friend class Object;
+  friend class Array;
   friend class CData;
 
   template <class T>
@@ -57,6 +59,7 @@ class Value {
     kString,
     kFunction,
     kObject,
+    kArray,
     kCData
   };
 
@@ -144,6 +147,17 @@ class Object : public Value {
   Value* Get(String* key);
 
   static const ValueType tag = kObject;
+};
+
+class Array : public Value {
+ public:
+  static Array* New();
+
+  void Set(int64_t key, Value* value);
+  Value* Get(int64_t key);
+  int64_t Length();
+
+  static const ValueType tag = kArray;
 };
 
 class CData : public Value {

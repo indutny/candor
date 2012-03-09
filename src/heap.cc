@@ -301,7 +301,7 @@ char* HObject::NewEmpty(Heap* heap) {
 char* HArray::NewEmpty(Heap* heap) {
   uint32_t size = 16;
 
-  char* obj = heap->AllocateTagged(Heap::kTagObject, Heap::kTenureNew, 24);
+  char* obj = heap->AllocateTagged(Heap::kTagArray, Heap::kTenureNew, 24);
   char* map = heap->AllocateTagged(Heap::kTagMap,
                                    Heap::kTenureNew,
                                    (size << 4) + 8);
