@@ -1,8 +1,6 @@
 #include "test.h"
 
 static Value* Callback(uint32_t argc, Arguments& argv) {
-  HandleScope scope;
-
   assert(argc == 3);
 
   Handle<Number> lhs(argv[0]->As<Number>());

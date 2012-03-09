@@ -110,10 +110,8 @@ void Heap::Reference(HValue** reference, HValue* value) {
 void Heap::Dereference(HValue** reference, HValue* value) {
   HValueRefList::Item* tail = references()->tail();
   while (tail != NULL) {
-    if (reference == NULL ?
-            tail->value()->value() == value
-            :
-            tail->value()->reference() == reference) {
+    if (tail->value()->reference() == reference &&
+        tail->value()->value() == value) {
       references()->Remove(tail);
       break;
     }

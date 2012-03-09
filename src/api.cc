@@ -28,8 +28,7 @@ using namespace internal;
     template V* Value::Cast<V>(Value* value);\
     template bool Value::Is<V>();\
     template Handle<V>::Handle(V* v);\
-    template void Handle<V>::Persist();\
-    template void Handle<V>::Weaken();
+    template Handle<V>::~Handle();
 TYPES_LIST(METHODS_ENUM)
 #undef METHODS_ENUM
 
@@ -41,7 +40,6 @@ Isolate::Isolate() {
   heap = new Heap(2 * 1024 * 1024);
   space = new CodeSpace(heap);
   current_isolate = this;
-  scope = NULL;
 }
 
 
@@ -57,51 +55,17 @@ Isolate* Isolate::GetCurrent() {
 }
 
 
-HandleScope::HandleScope() : isolate(Isolate::GetCurrent()) {
-  parent = isolate->scope;
-  isolate->scope = this;
-
-  references = new ValueList();
-}
-
-
-HandleScope::~HandleScope() {
-  ValueList::Item* item = references->tail();
-  while (item != NULL) {
-    isolate->heap->Dereference(
-        NULL, reinterpret_cast<HValue*>(item->value()));
-    item = item->prev();
-  }
-  delete references;
-
-  isolate->scope = parent;
-}
-
-
-void HandleScope::Put(Handle<Value> handle) {
-  references->Push(*handle);
-  isolate->heap->Reference(NULL, reinterpret_cast<HValue*>(*handle));
-}
-
-
 template <class T>
 Handle<T>::Handle(T* v) : isolate(Isolate::GetCurrent()), value(v) {
-  if (isolate->scope != NULL) {
-    isolate->scope->Put(*reinterpret_cast<Handle<Value>*>(this));
-  }
-}
-
-
-template <class T>
-void Handle<T>::Persist() {
-  isolate->heap->Reference(reinterpret_cast<HValue**>(addr()),
+  isolate->heap->Reference(reinterpret_cast<HValue**>(&value),
                            reinterpret_cast<HValue*>(value));
 }
 
 
 template <class T>
-void Handle<T>::Weaken() {
-  isolate->heap->Dereference(reinterpret_cast<HValue**>(addr()), NULL);
+Handle<T>::~Handle() {
+  isolate->heap->Dereference(reinterpret_cast<HValue**>(&value),
+                             reinterpret_cast<HValue*>(value));
 }
 
 

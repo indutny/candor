@@ -1,4 +1,6 @@
 * C++/C bindings support for candor
+* Typeof, sizeof
+* Weak references and cdata heap tag
 * Compile errors instead of runtime errors
 * Functions as objects
 * Escape characters in strings

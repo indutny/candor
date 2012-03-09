@@ -20,7 +20,6 @@ class Number;
 class Boolean;
 class String;
 class Object;
-class HandleScope;
 class Arguments;
 
 class Isolate {
@@ -34,8 +33,6 @@ class Isolate {
   internal::Heap* heap;
   internal::CodeSpace* space;
 
-  HandleScope* scope;
-
   friend class Value;
   friend class Function;
   friend class Number;
@@ -43,7 +40,6 @@ class Isolate {
   friend class String;
   friend class Object;
 
-  friend class HandleScope;
   template <class T>
   friend class Handle;
 };
@@ -155,14 +151,10 @@ template <class T>
 class Handle {
  public:
   Handle(T* v);
-
-  void Persist();
-  void Weaken();
+  ~Handle();
 
   inline T* operator*() { return value; }
   inline T* operator->() { return value; }
-
-  inline T** addr() { return &value; }
 
   template <class S>
   inline static Handle<T> Cast(Handle<S> handle) {
@@ -172,22 +164,6 @@ class Handle {
  protected:
   Isolate* isolate;
   T* value;
-};
-
-class HandleScope {
- public:
-  HandleScope();
-  ~HandleScope();
-
-  typedef internal::List<Value*, internal::EmptyClass> ValueList;
-
-  void Put(Handle<Value> handle);
-
- private:
-  Isolate* isolate;
-  HandleScope* parent;
-
-  ValueList* references;
 };
 
 } // namespace candor
