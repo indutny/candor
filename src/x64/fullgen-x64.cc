@@ -41,7 +41,7 @@ void FFunction::Allocate(uint32_t addr) {
 Fullgen::Fullgen(CodeSpace* space) : Masm(space),
                                      Visitor(kPreorder),
                                      space_(space),
-                                     visitor_type_(kSlot),
+                                     visitor_type_(kValue),
                                      current_function_(NULL) {
   // Create a `global` object
   root_context()->Push(HObject::NewEmpty(heap()));
@@ -209,20 +209,14 @@ AstNode* Fullgen::VisitFunction(AstNode* stmt) {
   // and have address of actual code
   AllocateFunction(rcx, rax);
 
-  if (visiting_for_value()) {
+  if (visiting_for_value() && fn->variable() == NULL) {
     Result(rax);
   } else {
-    // Declaration of anonymous function is impossible
-    if (fn->variable() == NULL) {
-      Throw(Heap::kErrorIncorrectLhs);
-    } else {
-      // Get slot
-      Operand name(rax, 0);
-      VisitForSlot(fn->variable(), &name, rcx);
+    AstNode* assign = new AstNode(AstNode::kAssign);
+    assign->children()->Push(fn->variable());
+    assign->children()->Push(new FAstRegister(rax));
 
-      // Put context into slot
-      movq(name, rax);
-    }
+    Visit(assign);
   }
 
   Restore(rcx);
@@ -235,9 +229,13 @@ AstNode* Fullgen::VisitFunction(AstNode* stmt) {
 AstNode* Fullgen::VisitCall(AstNode* stmt) {
   FunctionLiteral* fn = FunctionLiteral::Cast(stmt);
 
-  // Get pointer to function in a heap
   if (fn->variable() == NULL) {
     Throw(Heap::kErrorCallWithoutVariable);
+    return stmt;
+  }
+
+  if (!visiting_for_value()) {
+    Throw(Heap::kErrorIncorrectLhs);
     return stmt;
   }
 
@@ -597,7 +595,7 @@ AstNode* Fullgen::VisitNil(AstNode* node) {
     return node;
   }
 
-  movq(result(), Immediate(0));
+  movq(result(), Immediate(Heap::kTagNil));
 
   return node;
 }
@@ -743,7 +741,7 @@ AstNode* Fullgen::VisitReturn(AstNode* node) {
     VisitForValue(node->lhs(), rax);
   } else {
     // Or just nullify output
-    movq(rax, Immediate(0));
+    movq(rax, Immediate(Heap::kTagNil));
   }
 
   GenerateEpilogue(current_function()->fn());

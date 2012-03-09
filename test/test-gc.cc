@@ -4,9 +4,17 @@ TEST_START("GC test")
   FUN_TEST("x=1.0\n"
            "__$gc()\n__$gc()\n__$gc()\n"
            "__$gc()\n__$gc()\n__$gc()\n"
-           "return 1", {
+           "return x", {
     assert(result->As<Number>()->Value() == 1);
   })
+
+  FUN_TEST("scope x\n"
+           "x = () { return 1 }\n"
+           "__$gc()\n"
+           "return x()", {
+    assert(result->As<Number>()->Value() == 1);
+  })
+
   FUN_TEST("x = { y : { z : 3 } }\n"
            "a() {\n"
            "return (() {\nscope x\nx.y = 2\n__$gc()\nreturn x.y\n})()\n"

@@ -165,7 +165,6 @@ void GC::VisitObject(HObject* obj) {
 
 void GC::VisitMap(HMap* map) {
   for (uint32_t i = 0; i < map->size(); i++) {
-    if (map->IsEmptySlot(i)) continue;
     grey_items()->Push(new GCValue(map->GetSlot(i),
                                    map->GetSlotAddress(i)));
     grey_items()->Push(new GCValue(map->GetSlot(i + map->size()),
