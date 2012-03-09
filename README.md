@@ -4,6 +4,9 @@ Candor is a language inspired by javascript, but with less features and,
 therefore, less complexity. So no semicolons, no exceptions and simplified
 anonymous function syntax (dart-like).
 
+Main goal of Candor is to provide a powerful and developer-friendly language
+that can be easily optimized by compiler.
+
 ## Description
 
 Experimental implementation of Candor language VM. Join #candor channel on
