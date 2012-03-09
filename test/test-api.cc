@@ -69,6 +69,23 @@ static Value* GetWeak(uint32_t argc, Arguments& argv) {
   return *obj;
 }
 
+struct CDataStruct {
+  int x;
+  int y;
+};
+
+static Value* UseCDataCallback(uint32_t argc, Arguments& argv) {
+  assert(argc == 1);
+
+  CDataStruct* s = reinterpret_cast<CDataStruct*>(
+      argv[0]->As<CData>()->GetContents());
+
+  assert(s->x == 1);
+  assert(s->y == 2);
+
+  return Nil::New();
+}
+
 TEST_START("API test")
   FUN_TEST("return (a, b, c) {\n"
            "return a + b + c(1, 2, () { __$gc()\nreturn 3 }) + 2\n"
@@ -155,6 +172,30 @@ TEST_START("API test")
     Value* ret = f->Call(global, 0, argv);
     assert(ret->Is<Nil>());
     assert(weak_called == 1);
+  }
+
+  // CData
+  {
+    Isolate i;
+    const char* code = "scope use, data\n"
+                       "use(data)";
+
+    Function* f = Function::New(code, strlen(code));
+
+    CDataStruct* s;
+    CData* data = CData::New(sizeof(*s));
+    s = reinterpret_cast<CDataStruct*>(data->GetContents());
+
+    s->x = 1;
+    s->y = 2;
+
+    Object* global = Object::New();
+    global->Set(String::New("use", 3), Function::New(UseCDataCallback));
+    global->Set(String::New("data", 4), data);
+
+    Value* argv[0];
+    Value* ret = f->Call(global, 0, argv);
+    assert(ret->Is<Nil>());
   }
 
   // Regressions

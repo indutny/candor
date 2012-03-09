@@ -426,7 +426,7 @@ class HData : public HValue {
   }
 
   inline static void* Data(char* addr) {
-    return *reinterpret_cast<void**>(addr + 16);
+    return reinterpret_cast<void*>(addr + 16);
   }
 
   inline uint32_t size() { return Size(addr()); }
