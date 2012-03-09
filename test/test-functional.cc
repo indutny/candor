@@ -104,6 +104,13 @@ TEST_START("functional test")
     assert(result->As<Number>()->Value() == 1);
   });
 
+  FUN_TEST("return ((x) { "
+           "  y = x\n"
+           "  return b() { scope x, y\nreturn y(2) }"
+           "})((x) { return 2 * x })()", {
+    assert(result->As<Number>()->Value() == 4);
+  });
+
   // Unary ops
   FUN_TEST("a = 1\nreturn ++a", {
     assert(result->As<Number>()->Value() == 2);
