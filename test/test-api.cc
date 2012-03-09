@@ -45,9 +45,28 @@ static Value* FnCallback(uint32_t argc, Arguments& argv) {
 static Value* PrintCallback(uint32_t argc, Arguments& argv) {
   assert(argc == 1);
 
-  fprintf(stdout, "%s\n", argv[0]->ToString()->Value());
-
   return Nil::New();
+}
+
+static int weak_called = 0;
+
+static void WeakCallback(Object* obj) {
+  assert(obj->Is<Object>());
+  assert(obj->Get(String::New("key", 3))->As<Boolean>()->IsTrue());
+
+  weak_called++;
+}
+
+static Value* GetWeak(uint32_t argc, Arguments& argv) {
+  assert(argc == 0);
+
+  Handle<Object> obj(Object::New());
+
+  obj->Set(String::New("key", 3), Boolean::True());
+
+  obj.SetWeakCallback(WeakCallback);
+
+  return *obj;
 }
 
 TEST_START("API test")
@@ -119,6 +138,26 @@ TEST_START("API test")
     assert(ret->Is<Nil>());
   })
 
+  {
+    Isolate i;
+    const char* code = "(() {\n"
+                       "  scope get\n"
+                       "  x = get()\n"
+                       "})()\n"
+                       "__$gc()\n__$gc()";
+
+    Function* f = Function::New(code, strlen(code));
+
+    Object* global = Object::New();
+    global->Set(String::New("get", 3), Function::New(GetWeak));
+
+    Value* argv[0];
+    Value* ret = f->Call(global, 0, argv);
+    assert(ret->Is<Nil>());
+    assert(weak_called == 1);
+  }
+
+  // Regressions
   {
     Isolate i;
     const char* code = "((fn) {\n"

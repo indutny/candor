@@ -35,6 +35,54 @@ void GC::CollectGarbage(char* stack_top) {
   Space tmp_space(heap(), space->page_size());
 
   // Add referenced in C++ land values to the grey list
+  ColourHandles();
+
+  // Colour on-stack registers
+  ColourStack(stack_top);
+
+  while (grey_items()->length() != 0) {
+    GCValue* value = grey_items()->Shift();
+
+    // Skip unboxed address
+    if (value->value() == NULL || HValue::IsUnboxed(value->value()->addr())) {
+      continue;
+    }
+
+    if (!value->value()->IsGCMarked()) {
+      // Object is in not in current space, don't move it
+      if (!IsInCurrentSpace(value->value())) {
+        GC::VisitValue(value->value());
+        continue;
+      }
+
+      HValue* hvalue;
+
+      if (heap()->needs_gc() == Heap::kGCNewSpace) {
+        // New space GC
+        hvalue = value->value()->CopyTo(heap()->old_space(), &tmp_space);
+      } else {
+        // Old space GC
+        hvalue = value->value()->CopyTo(&tmp_space, heap()->new_space());
+      }
+
+      value->Relocate(hvalue->addr());
+      GC::VisitValue(hvalue);
+    } else {
+      value->Relocate(value->value()->GetGCMark());
+    }
+  }
+
+  // Visit all weak references and call callbacks if some of them are dead
+  HandleWeakReferences();
+
+  space->Swap(&tmp_space);
+
+  // Reset GC flag
+  heap()->needs_gc(Heap::kGCNone);
+}
+
+
+void GC::ColourHandles() {
   HValueRefList::Item* item = heap()->references()->head();
   while (item != NULL) {
     HValueReference* ref = item->value();
@@ -45,7 +93,10 @@ void GC::CollectGarbage(char* stack_top) {
 
     item = item->next();
   }
+}
 
+
+void GC::ColourStack(char* stack_top) {
   // Go through the stack
   char** top = reinterpret_cast<char**>(stack_top);
   for (; top != NULL; top++) {
@@ -73,46 +124,38 @@ void GC::CollectGarbage(char* stack_top) {
 
     grey_items()->Push(new GCValue(hvalue, top));
   }
+}
 
-  while (grey_items()->length() != 0) {
-    GCValue* value = grey_items()->Shift();
 
-    // Skip unboxed address
-    if (value->value() == NULL || HValue::IsUnboxed(value->value()->addr())) {
-      continue;
-    }
-
-    if (!value->value()->IsGCMarked()) {
-      // Object is in not in current space, don't move it
-      if ((heap()->needs_gc() == Heap::kGCOldSpace &&
-          value->value()->Generation() < Heap::kMinOldSpaceGeneration) ||
-          (heap()->needs_gc() == Heap::kGCNewSpace &&
-          value->value()->Generation() >= Heap::kMinOldSpaceGeneration)) {
-        GC::VisitValue(value->value());
+void GC::HandleWeakReferences() {
+  HValueWeakRefList::Item* item = heap()->weak_references()->head();
+  while (item != NULL) {
+    HValueWeakRef* ref = item->value();
+    if (!ref->value()->IsGCMarked()) {
+      if (IsInCurrentSpace(ref->value())) {
+        // Value is in GC space and wasn't marked
+        // call callback as it was GCed
+        ref->callback()(ref->value());
+        HValueWeakRefList::Item* current = item;
+        item = item->next();
+        heap()->weak_references()->Remove(current);
         continue;
       }
-
-      HValue* hvalue;
-
-      if (heap()->needs_gc() == Heap::kGCNewSpace) {
-        // New space GC
-        hvalue = value->value()->CopyTo(heap()->old_space(), &tmp_space);
-      } else {
-        // Old space GC
-        hvalue = value->value()->CopyTo(&tmp_space, heap()->new_space());
-      }
-
-      value->Relocate(hvalue->addr());
-      GC::VisitValue(hvalue);
     } else {
-      value->Relocate(value->value()->GetGCMark());
+      // Value wasn't GCed, but was moved
+      ref->value(reinterpret_cast<HValue*>(ref->value()->GetGCMark()));
     }
+
+    item = item->next();
   }
+}
 
-  space->Swap(&tmp_space);
 
-  // Reset GC flag
-  heap()->needs_gc(Heap::kGCNone);
+bool GC::IsInCurrentSpace(HValue* value) {
+  return (heap()->needs_gc() == Heap::kGCOldSpace &&
+         value->Generation() >= Heap::kMinOldSpaceGeneration) ||
+         (heap()->needs_gc() == Heap::kGCNewSpace &&
+         value->Generation() < Heap::kMinOldSpaceGeneration);
 }
 
 

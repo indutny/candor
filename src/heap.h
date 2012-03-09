@@ -250,7 +250,7 @@ class HValueWeakRef {
   }
 
   inline HValue* value() { return value_; }
-  inline HValue** valueptr() { return &value_; }
+  inline void value(HValue* value) { value_ = value; }
   inline Heap::WeakCallback callback() { return callback_; }
 
  private:

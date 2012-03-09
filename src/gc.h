@@ -37,11 +37,18 @@ class GC {
   }
 
   void CollectGarbage(char* stack_top);
+
+  void ColourHandles();
+  void ColourStack(char* stack_top);
+  void HandleWeakReferences();
+
   void VisitValue(HValue* value);
   void VisitContext(HContext* context);
   void VisitFunction(HFunction* fn);
   void VisitObject(HObject* obj);
   void VisitMap(HMap* map);
+
+  bool IsInCurrentSpace(HValue* value);
 
   inline GCList* grey_items() { return &grey_items_; }
   inline Heap* heap() { return heap_; }
