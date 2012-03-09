@@ -51,6 +51,10 @@ TEST_START("functional test")
     assert(strncmp(str->Value(), "string", str->Length()) == 0);
   })
 
+  FUN_TEST("return sizeof '123'", {
+    assert(result->As<Number>()->Value() == 3);
+  })
+
   // Boolean
   FUN_TEST("return true", {
     assert(result->As<Boolean>()->IsTrue());

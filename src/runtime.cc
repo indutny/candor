@@ -462,5 +462,29 @@ char* RuntimeBinOp(Heap* heap, char* lhs, char* rhs) {
   return NULL;
 }
 
+
+char* RuntimeSizeof(Heap* heap, char* value) {
+  Heap::HeapTag tag = HValue::GetTag(value);
+
+  int64_t size = 0;
+  switch (tag) {
+   case Heap::kTagString:
+    size = HString::Length(value);
+    break;
+   case Heap::kTagCData:
+    size = HCData::Size(value);
+    break;
+   case Heap::kTagObject:
+   case Heap::kTagNil:
+   case Heap::kTagFunction:
+   case Heap::kTagBoolean:
+   case Heap::kTagNumber:
+    return HNil::New(heap);
+   default:
+    UNEXPECTED
+  }
+  return HNumber::New(heap, size);
+}
+
 } // namespace internal
 } // namespace candor

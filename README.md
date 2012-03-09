@@ -213,7 +213,6 @@ Things that are implemented currently:
 
 Things to come:
 
-* Functions as objects
 * On-stack replacement and profile-based optimizations
 * Incremental GC
 * Usage in multiple-threads (aka isolates)

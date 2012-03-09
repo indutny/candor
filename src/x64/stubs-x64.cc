@@ -324,6 +324,25 @@ void TypeofStub::Generate() {
 }
 
 
+void SizeofStub::Generate() {
+  GeneratePrologue();
+  RuntimeSizeofCallback sizeofc = &RuntimeSizeof;
+
+  __ Pushad();
+
+  // RuntimeSizeof(heap, obj)
+  // (returns addr of slot)
+  __ movq(rdi, Immediate(reinterpret_cast<uint64_t>(masm()->heap())));
+  __ movq(rsi, rax);
+  __ movq(rax, Immediate(*reinterpret_cast<uint64_t*>(&sizeofc)));
+  __ callq(rax);
+
+  __ Popad(rax);
+
+  GenerateEpilogue(0);
+}
+
+
 void LookupPropertyStub::Generate() {
   GeneratePrologue();
   RuntimeLookupPropertyCallback lookup = &RuntimeLookupProperty;

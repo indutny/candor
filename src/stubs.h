@@ -19,6 +19,7 @@ namespace internal {
     V(CollectGarbage)\
     V(Throw)\
     V(Typeof)\
+    V(Sizeof)\
     V(LookupProperty)\
     V(CoerceToBoolean)\
 
