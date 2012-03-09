@@ -1,5 +1,11 @@
 # Candor
 
+Candor is a language inspired by javascript, but with less features and,
+therefore, less complexity. So no semicolons, no exceptions and simplified
+anonymous function syntax (dart-like).
+
+## Description
+
 Experimental implementation of Candor language VM. Join #candor channel on
 irc.freenode.net to discuss language features.
 

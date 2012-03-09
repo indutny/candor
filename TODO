@@ -1,3 +1,4 @@
+* Decrement array length
 * Compile errors instead of runtime errors
 * Escape characters in strings
 * % - mod operation
