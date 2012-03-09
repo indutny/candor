@@ -30,7 +30,7 @@ void Masm::Pushad() {
   push(r9);
   // Root register
   push(root_reg);
-  push(scratch);
+  push(r12);
 
   // Last one just for alignment
   push(r15);
@@ -39,7 +39,7 @@ void Masm::Pushad() {
 
 void Masm::Popad(Register preserve) {
   PreservePop(r15, preserve);
-  PreservePop(scratch, preserve);
+  PreservePop(r12, preserve);
   PreservePop(root_reg, preserve);
   PreservePop(r9, preserve);
   PreservePop(r8, preserve);
