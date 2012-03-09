@@ -100,7 +100,7 @@ static Value* GetWrapper(uint32_t argc, Arguments& argv) {
 
   WrapTest* w = new WrapTest();
 
-  return w->Unwrap();
+  return w->Wrap();
 }
 
 TEST_START("API test")

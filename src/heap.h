@@ -306,7 +306,7 @@ class HContext : public HValue {
   inline bool HasSlot(uint32_t index);
   inline HValue* GetSlot(uint32_t index);
   inline char** GetSlotAddress(uint32_t index);
-  inline static uint32_t GetIndexDisp(uint32_t index);
+  static inline uint32_t GetIndexDisp(uint32_t index);
 
   inline char* parent() { return *parent_slot(); }
   inline bool has_parent() { return parent() != NULL; }
@@ -366,9 +366,9 @@ class HString : public HValue {
   inline uint32_t hash() { return Hash(addr()); }
 
   static uint32_t Hash(char* addr);
-  inline static char* Value(char* addr) { return addr + 24; }
+  static inline char* Value(char* addr) { return addr + 24; }
 
-  inline static uint32_t Length(char* addr) {
+  static inline uint32_t Length(char* addr) {
     return *reinterpret_cast<uint32_t*>(addr + 16);
   }
 
@@ -385,14 +385,14 @@ class HObject : public HValue {
   inline uint32_t mask() { return *mask_slot(); }
   inline uint32_t* mask_slot() { return MaskSlot(addr()); }
 
-  inline static char** MapSlot(char* addr) {
+  static inline char** MapSlot(char* addr) {
     return reinterpret_cast<char**>(addr + 16);
   }
-  inline static char* Map(char* addr) { return *MapSlot(addr); }
-  inline static uint32_t* MaskSlot(char* addr) {
+  static inline char* Map(char* addr) { return *MapSlot(addr); }
+  static inline uint32_t* MaskSlot(char* addr) {
     return reinterpret_cast<uint32_t*>(addr + 8);
   }
-  inline static uint32_t Mask(char* addr) { return *MaskSlot(addr); }
+  static inline uint32_t Mask(char* addr) { return *MaskSlot(addr); }
 
   static const Heap::HeapTag class_tag = Heap::kTagObject;
 };
@@ -424,13 +424,13 @@ class HFunction : public HValue {
   static char* New(Heap* heap, char* parent, char* addr, char* root);
   static char* NewBinding(Heap* heap, char* addr, char* root);
 
-  inline static char* Root(char* addr) {
+  static inline char* Root(char* addr) {
     return *reinterpret_cast<char**>(addr + 24);
   }
-  inline static char* Code(char* addr) {
+  static inline char* Code(char* addr) {
     return *reinterpret_cast<char**>(addr + 16);
   }
-  inline static char* Parent(char* addr) {
+  static inline char* Parent(char* addr) {
     return *reinterpret_cast<char**>(addr + 8);
   }
 
@@ -447,11 +447,11 @@ class HCData : public HValue {
  public:
   static char* New(Heap* heap, size_t size);
 
-  inline static uint32_t Size(char* addr) {
+  static inline uint32_t Size(char* addr) {
     return *reinterpret_cast<uint32_t*>(addr + 8);
   }
 
-  inline static void* Data(char* addr) {
+  static inline void* Data(char* addr) {
     return reinterpret_cast<void*>(addr + 16);
   }
 

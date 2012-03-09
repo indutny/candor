@@ -175,7 +175,7 @@ class Handle {
   inline T* operator->() { return value; }
 
   template <class S>
-  inline static Handle<T> Cast(Handle<S> handle) {
+  static inline Handle<T> Cast(Handle<S> handle) {
     return Handle<T>(Value::Cast<T>(*handle));
   }
 
@@ -189,7 +189,13 @@ class CWrapper {
   CWrapper();
   virtual ~CWrapper();
 
-  inline CData* Unwrap() { return data; }
+  inline CData* Wrap() { return data; }
+
+  template <class T>
+  static inline T* Unwrap(CData* data) {
+    return reinterpret_cast<T*>(data->GetContents());
+  }
+
   static void WeakCallback(CData* data);
 
  private:

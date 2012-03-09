@@ -74,7 +74,7 @@ class AstNode : public ZoneObject {
   }
 
   // Converts lexer's token type to ast node type if possible
-  inline static Type ConvertType(Lexer::TokenType type) {
+  static inline Type ConvertType(Lexer::TokenType type) {
     switch (type) {
 #define MAP_DF(x) case Lexer::x: return x;
       TYPE_MAPPING_LEXER(MAP_DF)
@@ -212,7 +212,7 @@ class BinOp : public AstNode {
   }
 
   // Converts lexer's token type to binop node type if possible
-  inline static BinOpType ConvertType(Lexer::TokenType type) {
+  static inline BinOpType ConvertType(Lexer::TokenType type) {
     switch (type) {
 #define MAP_DF(x) case Lexer::x: return x;
       TYPE_MAPPING_BINOP(MAP_DF)
@@ -321,7 +321,7 @@ class UnOp : public AstNode {
   }
 
   // Converts lexer's token type to unop node type if possible
-  inline static UnOpType ConvertPrefixType(Lexer::TokenType type) {
+  static inline UnOpType ConvertPrefixType(Lexer::TokenType type) {
     switch (type) {
      case Lexer::kAdd:
       return kPlus;
