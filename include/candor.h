@@ -153,6 +153,11 @@ class Handle {
   Handle(Value* v);
   ~Handle();
 
+  typedef void (*WeakCallback)(T* value);
+
+  void SetWeakCallback(WeakCallback callback);
+  void ClearWeak();
+
   inline T* operator*() { return value; }
   inline T* operator->() { return value; }
 

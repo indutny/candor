@@ -120,6 +120,21 @@ void Heap::Dereference(HValue** reference, HValue* value) {
 }
 
 
+void Heap::AddWeak(HValue* value, WeakCallback callback) {
+  weak_references()->Push(new HValueWeakRef(value, callback));
+}
+
+
+void Heap::RemoveWeak(HValue* value) {
+  HValueWeakRefList::Item* tail = weak_references()->tail();
+  while (tail != NULL) {
+    if (tail->value()->value() == value) {
+      weak_references()->Remove(tail);
+    }
+  }
+}
+
+
 HValue* HValue::CopyTo(Space* old_space, Space* new_space) {
   assert(!IsUnboxed(addr()));
 

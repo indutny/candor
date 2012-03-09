@@ -22,6 +22,7 @@ namespace internal {
 // Forward declarations
 class Heap;
 class HValueReference;
+class HValueWeakRef;
 
 class Space {
  public:
@@ -88,6 +89,7 @@ class Space {
 };
 
 typedef List<HValueReference*, EmptyClass> HValueRefList;
+typedef List<HValueWeakRef*, EmptyClass> HValueWeakRefList;
 
 class Heap {
  public:
@@ -118,10 +120,12 @@ class Heap {
   };
 
   // Positions in root register
-  static const int32_t kRootGlobalIndex = 0;
-  static const int32_t kRootNilIndex = 1;
-  static const int32_t kRootTrueIndex = 2;
-  static const int32_t kRootFalseIndex = 3;
+  enum RootPositions {
+    kRootGlobalIndex = 0,
+    kRootNilIndex = 1,
+    kRootTrueIndex = 2,
+    kRootFalseIndex = 3
+  };
 
   // Tenure configuration (GC)
   static const int8_t kMinOldSpaceGeneration = 5;
@@ -134,14 +138,23 @@ class Heap {
                              gc_(this) {
     current_ = this;
     references_.allocated = true;
+    weak_references_.allocated = true;
   }
 
   // TODO: Use thread id
   static inline Heap* Current() { return current_; }
 
   char* AllocateTagged(HeapTag tag, uint32_t bytes);
+
+  // Referencing C++ handles
   void Reference(HValue** reference, HValue* value);
   void Dereference(HValue** reference, HValue* value);
+
+  // Weakening C++ handles
+  typedef void (*WeakCallback)(HValue* value);
+
+  void AddWeak(HValue* value, WeakCallback callback);
+  void RemoveWeak(HValue* value);
 
   inline Space* new_space() { return &new_space_; }
   inline Space* old_space() { return &old_space_; }
@@ -154,6 +167,7 @@ class Heap {
   }
   inline void needs_gc(GCType value) { needs_gc_ = value; }
   inline HValueRefList* references() { return &references_; }
+  inline HValueWeakRefList* weak_references() { return &weak_references_; }
 
   inline GC* gc() { return &gc_; }
 
@@ -169,6 +183,7 @@ class Heap {
   uint64_t needs_gc_;
 
   HValueRefList references_;
+  HValueWeakRefList weak_references_;
 
   GC gc_;
 
@@ -225,6 +240,22 @@ class HValueReference {
  private:
   HValue** reference_;
   HValue* value_;
+};
+
+
+class HValueWeakRef {
+ public:
+  HValueWeakRef(HValue* value, Heap::WeakCallback callback) :
+      value_(value), callback_(callback) {
+  }
+
+  inline HValue* value() { return value_; }
+  inline HValue** valueptr() { return &value_; }
+  inline Heap::WeakCallback callback() { return callback_; }
+
+ private:
+  HValue* value_;
+  Heap::WeakCallback callback_;
 };
 
 
