@@ -192,8 +192,8 @@ class CWrapper {
   inline CData* Wrap() { return data; }
 
   template <class T>
-  static inline T* Unwrap(CData* data) {
-    return reinterpret_cast<T*>(data->GetContents());
+  static inline T* Unwrap(Value* value) {
+    return reinterpret_cast<T*>(value->As<CData>()->GetContents());
   }
 
   static void WeakCallback(CData* data);
