@@ -25,6 +25,18 @@ static Value* ObjectCallback(uint32_t argc, Arguments& argv) {
   return obj;
 }
 
+static Value* FnThreeCallback(uint32_t argc, Arguments& argv) {
+  assert(argc == 3);
+
+  return Nil::New();
+}
+
+static Value* FnTwoCallback(uint32_t argc, Arguments& argv) {
+  assert(argc == 2);
+
+  return Nil::New();
+}
+
 TEST_START("API test")
   FUN_TEST("return (a, b, c) {\n"
            "return a + b + c(1, 2, () { __$gc()\nreturn 3 }) + 2\n"
@@ -84,5 +96,13 @@ TEST_START("API test")
     Value* argv[1] = { Function::New(ObjectCallback) };
     Value* ret = result->As<Function>()->Call(NULL, 1, argv);
     assert(ret->As<Number>()->Value() == 1234);
+  })
+
+  FUN_TEST("return (fn1, fn2) { return fn1(fn2(1, 2), 1, 2) }", {
+    Value* argv[2];
+    argv[0] = Function::New(FnThreeCallback);
+    argv[1] = Function::New(FnTwoCallback);
+    Value* ret = result->As<Function>()->Call(NULL, 2, argv);
+    assert(ret->Is<Nil>());
   })
 TEST_END("API test")

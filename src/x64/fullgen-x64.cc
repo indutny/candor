@@ -63,6 +63,7 @@ void Fullgen::CandorFunction::Generate() {
 
 void Fullgen::Throw(Heap::Error err) {
   // TODO: set error flag
+  emitb(0xcc);
 }
 
 
@@ -234,70 +235,69 @@ AstNode* Fullgen::VisitFunction(AstNode* stmt) {
 AstNode* Fullgen::VisitCall(AstNode* stmt) {
   FunctionLiteral* fn = FunctionLiteral::Cast(stmt);
 
-  Label not_function(this), done(this);
-
   // Get pointer to function in a heap
   if (fn->variable() == NULL) {
     Throw(Heap::kErrorCallWithoutVariable);
-  } else {
-    AstNode* name = AstValue::Cast(fn->variable())->name();
-
-    // handle __$gc() call
-    if (fn->variable()->is(AstNode::kValue) &&
-        name->length() == 5 && strncmp(name->value(), "__$gc", 5) == 0) {
-      Call(stubs()->GetCollectGarbageStub());
-      movq(result(), Immediate(0));
-
-      return stmt;
-    }
-
-    // Save rax if we're not going to overwrite it
-    Save(rax);
-
-    VisitForValue(fn->variable(), rax);
-    IsNil(rax, NULL, &not_function);
-    IsUnboxed(result(), NULL, &not_function);
-    IsHeapObject(Heap::kTagFunction, rax, &not_function, NULL);
-
-    Push(rsi);
-    Push(rdi);
-    Push(root_reg);
-    {
-      ChangeAlign(fn->args()->length());
-      Align a(this);
-      ChangeAlign(-fn->args()->length());
-
-      AstList::Item* item = fn->args()->head();
-      while (item != NULL) {
-        {
-          Align a(this);
-          VisitForValue(item->value(), rsi);
-        }
-
-        // Push argument and change alignment
-        push(rsi);
-        ChangeAlign(1);
-        item = item->next();
-      }
-      // Restore alignment
-      ChangeAlign(-fn->args()->length());
-
-      // Generate calling code
-      Call(rax, fn->args()->length());
-
-      if (fn->args()->length() != 0) {
-        // Unwind stack
-        addq(rsp, Immediate(fn->args()->length() * 8));
-      }
-    }
-    Pop(root_reg);
-    Pop(rdi);
-    Pop(rsi);
-
-    // Restore rax and set result if needed
-    Result(rax);
-    Restore(rax);
+    return stmt;
   }
+
+  Label not_function(this), done(this);
+
+  AstNode* name = AstValue::Cast(fn->variable())->name();
+
+  // handle __$gc() call
+  if (fn->variable()->is(AstNode::kValue) &&
+      name->length() == 5 && strncmp(name->value(), "__$gc", 5) == 0) {
+    Call(stubs()->GetCollectGarbageStub());
+    movq(result(), Immediate(0));
+
+    return stmt;
+  }
+
+  // Save rax if we're not going to overwrite it
+  Save(rax);
+
+  VisitForValue(fn->variable(), rax);
+  IsNil(rax, NULL, &not_function);
+  IsUnboxed(rax, NULL, &not_function);
+  IsHeapObject(Heap::kTagFunction, rax, &not_function, NULL);
+
+  Push(rsi);
+  Push(rdi);
+  Push(root_reg);
+  {
+    ChangeAlign(fn->args()->length());
+    Align a(this);
+    ChangeAlign(-fn->args()->length());
+
+    AstList::Item* item = fn->args()->head();
+    while (item != NULL) {
+      {
+        Align a(this);
+        VisitForValue(item->value(), rsi);
+      }
+
+      // Push argument and change alignment
+      push(rsi);
+      ChangeAlign(1);
+      item = item->next();
+    }
+    // Restore alignment
+    ChangeAlign(-fn->args()->length());
+
+    // Generate calling code
+    Call(rax, fn->args()->length());
+
+    if (fn->args()->length() != 0) {
+      // Unwind stack
+      addq(rsp, Immediate(fn->args()->length() * 8));
+    }
+  }
+  Pop(root_reg);
+  Pop(rdi);
+  Pop(rsi);
+
+  Result(rax);
 
   jmp(&done);
   bind(&not_function);
@@ -305,6 +305,8 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
   movq(result(), Immediate(Heap::kTagNil));
 
   bind(&done);
+
+  Restore(rax);
 
   return stmt;
 }

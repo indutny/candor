@@ -1,82 +1,8 @@
 #include "test.h"
 
 TEST_START("functional test")
-  // Basics: return + assign
-  FUN_TEST("return 1", {
-    assert(result->As<Number>()->Value() == 1);
-  })
-
-  FUN_TEST("return", {
-    assert(result->Is<Nil>());
-  })
-
-  FUN_TEST("a = 32\nreturn a", {
-    assert(result->As<Number>()->Value() == 32);
-  })
-
-  FUN_TEST("a = b = 32\nreturn a", {
-    assert(result->As<Number>()->Value() == 32);
-  })
-
-  FUN_TEST("a = 32\nb = a\nreturn b", {
-    assert(result->As<Number>()->Value() == 32);
-  })
-
-  FUN_TEST("a = nil\nreturn a", {
-    assert(result->Is<Nil>());
-  })
-
-  FUN_TEST("return 'abcdef'", {
-    String* str = result->As<String>();
-    assert(str->Length() == 6);
-    assert(strncmp(str->Value(), "abcdef", str->Length()) == 0);
-  })
-
-  // Boolean
-  FUN_TEST("return true", {
-    assert(result->As<Boolean>()->IsTrue());
-  })
-
-  FUN_TEST("return false", {
-    assert(result->As<Boolean>()->IsFalse());
-  })
-
-  // Functions
-  FUN_TEST("a() {}\nreturn a", {
-    assert(result->Is<Function>());
-  })
-
-  FUN_TEST("a() { return 1 }\nreturn a()", {
-    assert(result->As<Number>()->Value() == 1);
-  })
-
-  // Regression
-  FUN_TEST("a() { return 1 }\nreturn a({})", {
-    assert(result->As<Number>()->Value() == 1);
-  })
-
-  FUN_TEST("a() { return 1 }\nreturn a('' + 1)", {
-    assert(result->As<Number>()->Value() == 1);
-  })
-
-  FUN_TEST("a(x) { return x }\nreturn a('' + 1)", {
-    assert(result->ToNumber()->Value() == 1);
-  })
-
-  FUN_TEST("a() { return 1 }\nreturn a('' + 1, '' + 1, '' + 1, ''+ 1)", {
-    assert(result->As<Number>()->Value() == 1);
-  })
-
-  FUN_TEST("a(b) { return b }\nreturn a(3) + a(4)", {
-    assert(result->As<Number>()->Value() == 7);
-  })
-
-  FUN_TEST("a(b) { return b }\nreturn a()", {
-    assert(result->Is<Nil>());
-  })
-
-  FUN_TEST("a(b, c) { return b + 2 * c }\nreturn a(1, 2)", {
-    assert(result->As<Number>()->Value() == 5);
+  FUN_TEST("a(b, c) { return b + 2 * c }\nreturn a(a(3, 4), 2)", {
+    assert(result->As<Number>()->Value() == 15);
   })
 
   FUN_TEST("b() {\nreturn 1\n}\na(c) {\nreturn c()\n}\nreturn a(b)", {
