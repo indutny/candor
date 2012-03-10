@@ -955,7 +955,7 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
     ChangeAlign(2);
     Align a(this);
 
-    Label not_unboxed(this), done(this);
+    Label restore(this), not_unboxed(this), done(this);
     Label lhs_to_heap(this), rhs_to_heap(this);
 
     VisitForValue(op->lhs(), rax);
@@ -968,8 +968,8 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
     IsNil(rax, NULL, &not_unboxed);
     IsNil(rbx, NULL, &not_unboxed);
 
-    IsUnboxed(rax, &rhs_to_heap, NULL);
-    IsUnboxed(rbx, &lhs_to_heap, NULL);
+    IsUnboxed(rax, &not_unboxed, NULL);
+    IsUnboxed(rbx, &not_unboxed, NULL);
 
     // Number (+) Number
     if (BinOp::is_math(op->subtype())) {
@@ -986,10 +986,10 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
       }
 
       // Call stub on overflow
-      jmp(kOverflow, &lhs_to_heap);
+      jmp(kOverflow, &restore);
 
       TagNumber(rax);
-      jmp(kCarry, &lhs_to_heap);
+      jmp(kCarry, &restore);
 
       movq(result(), rax);
     } else if (BinOp::is_binary(op->subtype())) {
@@ -1033,42 +1033,13 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
 
     jmp(&done);
 
-    bind(&lhs_to_heap);
+    bind(&restore);
 
-    Pop(rbx);
-    Pop(rax);
-
-    Untag(rax);
-
-    // Translate lhs to heap number
-    xorqd(xmm1, xmm1);
-    cvtsi2sd(xmm1, rax);
-    xorq(rax, rax);
-    AllocateNumber(xmm1, rax);
-
-    // Replace on-stack value of rax
-    Push(rax);
-    Push(rbx);
-
-    bind(&rhs_to_heap);
-
-    // Check if rhs was unboxed after all
-    // i.e. we may came from this case: 1 + 3.5
-    IsUnboxed(rbx, &not_unboxed, NULL);
-
-    Pop(rbx);
-
-    Untag(rbx);
-
-    // Translate rhs to heap number
-    xorqd(xmm1, xmm1);
-    cvtsi2sd(xmm1, rbx);
-    xorq(rbx, rbx);
-
-    AllocateNumber(xmm1, rbx);
-
-    // Replace on-stack value of rbx
-    Push(rbx);
+    // Restore numbers
+    pop(rbx);
+    pop(rax);
+    push(rax);
+    push(rbx);
 
     bind(&not_unboxed);
 

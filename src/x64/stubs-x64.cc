@@ -437,10 +437,37 @@ void BinaryOpStub::Generate() {
   Operand lhs(rbp, 24);
   Operand rhs(rbp, 16);
 
+  Label box_rhs(masm()), both_boxed(masm());
   Label call_runtime(masm()), nil_result(masm()), done(masm());
 
   __ movq(rax, lhs);
   __ movq(rbx, rhs);
+
+  // Convert lhs to heap number if needed
+  __ IsUnboxed(rax, &box_rhs, NULL);
+
+  __ Untag(rax);
+
+  __ xorqd(xmm1, xmm1);
+  __ cvtsi2sd(xmm1, rax);
+  __ xorq(rax, rax);
+  __ AllocateNumber(xmm1, rax);
+
+  __ bind(&box_rhs);
+
+  // Convert rhs to heap number if needed
+  __ IsUnboxed(rbx, &both_boxed, NULL);
+
+  __ Untag(rbx);
+
+  __ xorqd(xmm1, xmm1);
+  __ cvtsi2sd(xmm1, rbx);
+  __ xorq(rbx, rbx);
+
+  __ AllocateNumber(xmm1, rbx);
+
+  // Both lhs and rhs are heap values (not-unboxed)
+  __ bind(&both_boxed);
 
   if (BinOp::is_bool_logic(type())) {
     // Call runtime w/o any checks

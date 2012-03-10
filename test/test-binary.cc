@@ -31,6 +31,16 @@ TEST_START("binary operations test")
     assert(result->As<Boolean>()->IsFalse());
   })
 
+  // heap + unboxed, unboxed + heap
+
+  FUN_TEST("return 1 + 1.0", {
+    assert(result->As<Number>()->Value() == 2);
+  })
+
+  FUN_TEST("return 1.0 + 1", {
+    assert(result->As<Number>()->Value() == 2);
+  })
+
   // Equality
 
   FUN_TEST("return nil === {}", {
