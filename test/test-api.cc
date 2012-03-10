@@ -150,7 +150,7 @@ TEST_START("API test")
     assert(result->As<Number>()->Value() == 1234);
   })
 
-  FUN_TEST("return () { scope g\n return g }", {
+  FUN_TEST("return () { return @g }", {
     Value* argv[0];
 
     Handle<Object> global(Object::New());
@@ -193,8 +193,7 @@ TEST_START("API test")
   {
     Isolate i;
     const char* code = "(() {\n"
-                       "  scope get\n"
-                       "  x = get()\n"
+                       "  x = @get()\n"
                        "})()\n"
                        "__$gc()\n__$gc()";
 
@@ -214,8 +213,7 @@ TEST_START("API test")
   // CData
   {
     Isolate i;
-    const char* code = "scope use, data\n"
-                       "use(data)";
+    const char* code = "@use(@data)";
 
     Function* f = Function::New(code, strlen(code));
 
@@ -241,8 +239,7 @@ TEST_START("API test")
   {
     Isolate i;
     const char* code = "(() {\n"
-                       "  scope get\n"
-                       "  x = get()\n"
+                       "  x = @get()\n"
                        "})()\n"
                        "__$gc()\n__$gc()";
 
@@ -263,12 +260,11 @@ TEST_START("API test")
   {
     Isolate i;
     const char* code = "((fn) {\n"
-                       "  scope print\n"
-                       "  print(fn)\n"
+                       "  @print(fn)\n"
                        "  fn2 = fn\n"
                        "  return () {\n"
-                       "    scope fn, fn2, print\n"
-                       "    print(fn2)\n"
+                       "    @fn\n"
+                       "    @print(@fn2)\n"
                        "  }\n"
                        "})(() {\n"
                        "})()";
@@ -288,8 +284,7 @@ TEST_START("API test")
   {
     Isolate i;
     const char* code = "fn() {\n"
-                       "  scope print\n"
-                       "  return print\n"
+                       "  return @print\n"
                        "}\n"
                        "__$gc()\n"
                        "return fn()";

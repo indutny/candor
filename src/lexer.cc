@@ -94,33 +94,16 @@ Lexer::Token* Lexer::Consume() {
   {
     TokenType type = kEnd;
     switch (get(0)) {
-     case '.':
-      type = kDot;
-      break;
-     case ',':
-      type = kComma;
-      break;
-     case ':':
-      type = kColon;
-      break;
-     case '(':
-      type = kParenOpen;
-      break;
-     case ')':
-      type = kParenClose;
-      break;
-     case '{':
-      type = kBraceOpen;
-      break;
-     case '}':
-      type = kBraceClose;
-      break;
-     case '[':
-      type = kArrayOpen;
-      break;
-     case ']':
-      type = kArrayClose;
-      break;
+     case '.': type = kDot; break;
+     case ',': type = kComma; break;
+     case ':': type = kColon; break;
+     case '@': type = kAt; break;
+     case '(': type = kParenOpen; break;
+     case ')': type = kParenClose; break;
+     case '{': type = kBraceOpen; break;
+     case '}': type = kBraceClose; break;
+     case '[': type = kArrayOpen; break;
+     case ']': type = kArrayClose; break;
      default:
       break;
     }
@@ -228,7 +211,6 @@ Lexer::Token* Lexer::Consume() {
     CHECK_KEYWORD(value, len, 3, "NaN", kNan)
     CHECK_KEYWORD(value, len, 4, "else", kElse)
     CHECK_KEYWORD(value, len, 4, "true", kTrue)
-    CHECK_KEYWORD(value, len, 5, "scope", kScope)
     CHECK_KEYWORD(value, len, 5, "while", kWhile)
     CHECK_KEYWORD(value, len, 5, "break", kBreak)
     CHECK_KEYWORD(value, len, 5, "false", kFalse)

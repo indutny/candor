@@ -6,16 +6,17 @@
 namespace candor {
 namespace internal {
 
-Scope::Scope(ScopeAnalyze* a, Type type) : a_(a), type_(type) {
-  parent_ = a_->scope_;
+Scope::Scope(ScopeAnalyze* a, Type type) : a_(a),
+                                           type_(type),
+                                           parent_(a->scope_) {
   a_->scope_ = this;
 
   stack_count_ = 0;
   context_count_ = 0;
 
-  if (parent_ != NULL && type_ != kFunction) {
-    stack_index_ = parent_->stack_index_;
-    context_index_ = parent_->context_index_;
+  if (parent() != NULL && type_ != kFunction) {
+    stack_index_ = parent()->stack_index_;
+    context_index_ = parent()->context_index_;
   } else {
     stack_index_ = 0;
     context_index_ = 0;
@@ -23,7 +24,7 @@ Scope::Scope(ScopeAnalyze* a, Type type) : a_(a), type_(type) {
 
   // Increase depth when entering function
   // depth_ = 0 is for global object
-  depth_ = parent_ == NULL ? 1 : parent_->depth_;
+  depth_ = parent() == NULL ? 1 : parent()->depth_;
   if (type_ == kFunction) depth_++;
 }
 
@@ -36,15 +37,15 @@ Scope::~Scope() {
   Enumerate(ScopeSlot::Enumerate);
 
   // Lift up stack and context sizes
-  if (type_ != kFunction && parent_ != NULL) {
-    parent_->stack_count_ += stack_count_;
-    parent_->context_count_ += context_count_;
+  if (type_ != kFunction && parent() != NULL) {
+    parent()->stack_count_ += stack_count_;
+    parent()->context_count_ += context_count_;
 
-    parent_->stack_index_ = stack_index_;
-    parent_->context_index_ = context_index_;
+    parent()->stack_index_ = stack_index_;
+    parent()->context_index_ = context_index_;
   }
 
-  a_->scope_ = parent_;
+  a_->scope_ = parent();
 }
 
 
@@ -63,60 +64,37 @@ ScopeSlot* Scope::GetSlot(const char* name,
 }
 
 
-void Scope::MoveToContext(const char* name, uint32_t length) {
-  ScopeSlot* slot = Get(name, length);
+AstValue* Scope::MoveToContext(AstNode* name) {
+  int32_t depth = type() == kFunction ? 1 : 0;
+  Scope* scope = parent();
 
-  if (slot == NULL) {
-    // Variable wasn't used here so far
-    // Mark it as context variable in parent scope
-    // Bubble up until parent will be found
-    Scope* scope = parent_;
-    ScopeSlot* source = NULL;
+  ScopeSlot* slot = NULL;
+  while (scope != NULL) {
+    slot = scope->Get(name->value(), name->length());
+    if (slot != NULL) {
+      if (slot->is_stack()) {
+        slot->type(ScopeSlot::kContext);
 
-    // If current scope is a function's scope and it doesn't have
-    // variable that we're seeking for - lookup depth should be set to 1
-    int32_t depth = type_ == kFunction;
-    while (scope != NULL) {
-      if ((slot = scope->Get(name, length)) != NULL &&
-          (slot->is_stack() || slot->depth() == 0))  {
-
-        // Check if slot is on the same depth with parent
-        // i.e. a = 1\n{ scope a }
-        // In such case it should not be moved to context
-        if (depth == 0 && slot->is_stack()) {
-          // Source should be reused instead
-          Set(name, length, slot);
-          return;
-        }
-
-        // Move parent's slot to context if it is stack allocated
-        if (slot->is_stack()) scope->MoveToContext(name, length);
-
-        source = slot;
-        break;
+        scope->stack_count_--;
+        scope->context_count_++;
       }
-
-      // Increase depth as we go further
-      // Contexts are allocated only in functions, so we should not
-      // increase depth when traversing block scopes
-      if (scope->type_ == kFunction) depth++;
-
-      scope = scope->parent_;
+      break;
     }
 
-    if (scope == NULL) depth = -1;
-
-    slot = new ScopeSlot(ScopeSlot::kContext, depth);
-    Set(name, length, slot);
-
-    // Store reference in original slot
-    if (source != NULL) source->uses()->Push(slot);
-  } else if (slot->is_stack()) {
-    // Variable was stored in stack, but should be moved into context
-    slot->type_ = ScopeSlot::kContext;
-    stack_count_--;
-    context_count_++;
+    if (scope->type() == kFunction) depth++;
+    scope = scope->parent();
   }
+
+  if (slot == NULL) {
+    // No matching scope was found - allocate in global
+    slot = new ScopeSlot(ScopeSlot::kContext, -1);
+  } else {
+    // Slot was found, create new one and link to it
+    ScopeSlot* source = slot;
+    slot = new ScopeSlot(ScopeSlot::kContext, depth);
+    source->uses()->Push(slot);
+  }
+  return new AstValue(slot, name);
 }
 
 
@@ -217,13 +195,11 @@ AstNode* ScopeAnalyze::VisitBlock(AstNode* node) {
 }
 
 
-AstNode* ScopeAnalyze::VisitScopeDecl(AstNode* node) {
-  AstList::Item* child = node->children()->head();
-  while (child != NULL) {
-    scope_->MoveToContext(child->value()->value(), child->value()->length());
-    child = child->next();
-  }
-  return node;
+AstNode* ScopeAnalyze::VisitAt(AstNode* node) {
+  AstNode* name = node->lhs();
+  assert(name != NULL);
+
+  return scope()->MoveToContext(name);
 }
 
 

@@ -69,11 +69,10 @@ Candor is essentially inspired by the [ECMA-script](http://www.ecmascript.org/),
 but has much less features and complexity (for compiler).
 
 Functions are declared in [dart](http://www.dartlang.org/)-like style, variables
-are block scoped by default (use `scope` keyword for accessing outer-scope
-variables).
+are block scoped by default (use `@` prefix for accessing outer-scope variables)
 
 ```candor
-// Keywords: nil, true, false, typeof, sizeof, keysof, scope, if, else, while,
+// Keywords: nil, true, false, typeof, sizeof, keysof, if, else, while,
 // for, break, continue, return, new
 
 // Primitives
@@ -145,8 +144,8 @@ keys           // -> ["name", "age"]
   // statement.  For example, the body of an `if or `while` loop. Blocks also
   // create a new local variable scope.
 
-  scope a // use this to interact with variables from outer blocks
-          // NOTE: the closest one will be chosen
+  @a // use this to interact with variables from outer blocks
+     // NOTE: the closest one will be chosen
 }
 
 // Control flow
@@ -159,8 +158,7 @@ person = { age: 29, name: "Tim" }
 
 // With block
 if (person.age > 18) {
-  scope person
-  person.name  // -> "Tim"
+  @person.name  // -> "Tim"
 }
 
 // Without block
@@ -168,7 +166,7 @@ if (person.age > 18) person.name
 
 // using else
 if (person.age > 18) {
-  scope person
+  @person
   // do something with `person`
 } else {
   // do something else
@@ -181,9 +179,8 @@ else otherAction()
 i = 0
 sum = 0
 while (i < 10) {
-  scope i, sum
-  sum = sum + i
-  i++
+  @sum = @sum + @i
+  @i++
 }
 
 // break and continue. `while` loop can have `break` and `continue`

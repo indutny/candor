@@ -12,6 +12,7 @@ namespace internal {
 
 // Forward declarations
 class AstNode;
+class AstValue;
 class Scope;
 class ScopeAnalyze;
 
@@ -27,9 +28,9 @@ class ScopeSlot : public ZoneObject {
   ScopeSlot(Type type) : type_(type), index_(-1), depth_(0) {
   }
 
-  ScopeSlot(Type type, uint32_t depth) : type_(type),
-                                         index_(-1),
-                                         depth_(depth) {
+  ScopeSlot(Type type, int32_t depth) : type_(type),
+                                        index_(depth < 0 ? 0 : -1),
+                                        depth_(depth) {
   }
 
   static void Enumerate(void* scope, ScopeSlot* slot);
@@ -37,9 +38,12 @@ class ScopeSlot : public ZoneObject {
   inline bool is_stack() { return type_ == kStack; }
   inline bool is_context() { return type_ == kContext; }
 
+  inline void type(Type type) { type_ = type; }
+
   inline int32_t index() { return index_; }
   inline void index(int32_t index) { index_ = index; }
   inline int32_t depth() { return depth_; }
+  inline void depth(int32_t depth) { depth_ = depth; }
 
   inline List<ScopeSlot*, ZoneObject>* uses() { return &uses_; }
 
@@ -64,15 +68,12 @@ class Scope : public HashMap<ScopeSlot*, ZoneObject> {
   ~Scope();
 
   ScopeSlot* GetSlot(const char* name, uint32_t length);
-  void MoveToContext(const char* name, uint32_t length);
+  AstValue* MoveToContext(AstNode* name);
 
-  inline int32_t stack_count() {
-    return stack_count_;
-  }
-
-  inline int32_t context_count() {
-    return context_count_;
-  }
+  inline int32_t stack_count() { return stack_count_; }
+  inline int32_t context_count() { return context_count_; }
+  inline Scope* parent() { return parent_; }
+  inline Type type() { return type_; }
 
  protected:
   int32_t stack_count_;
@@ -100,7 +101,7 @@ class ScopeAnalyze : public Visitor {
   AstNode* VisitFunction(AstNode* node);
   AstNode* VisitCall(AstNode* node);
   AstNode* VisitBlock(AstNode* node);
-  AstNode* VisitScopeDecl(AstNode* node);
+  AstNode* VisitAt(AstNode* node);
   AstNode* VisitName(AstNode* node);
 
   inline Scope* scope() { return scope_; }

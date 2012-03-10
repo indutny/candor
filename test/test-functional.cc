@@ -120,21 +120,21 @@ TEST_START("functional test")
   })
 
   // Context slots
-  FUN_TEST("b = 13589\na() { scope b }\nreturn b", {
+  FUN_TEST("b = 13589\na() { @b }\nreturn b", {
     assert(result->As<Number>()->Value() == 13589);
   })
 
-  FUN_TEST("a() { scope a, b\nb = 1234 }\nb = 13589\na()\nreturn b", {
+  FUN_TEST("a() { @a\n@b = 1234 }\nb = 13589\na()\nreturn b", {
     assert(result->As<Number>()->Value() == 1234);
   })
 
-  FUN_TEST("a(x) { return b() { scope x\nreturn x} }\nreturn a(1)()", {
+  FUN_TEST("a(x) { return b() { return @x} }\nreturn a(1)()", {
     assert(result->As<Number>()->Value() == 1);
   });
 
   FUN_TEST("return ((x) { "
            "  y = x\n"
-           "  return b() { scope x, y\nreturn y(2) }"
+           "  return b() { @x\nreturn @y(2) }"
            "})((x) { return 2 * x })()", {
     assert(result->As<Number>()->Value() == 4);
   });
@@ -238,7 +238,7 @@ TEST_START("functional test")
   })
 
   // Global lookup
-  FUN_TEST("scope a\na = 1\nreturn a", {
+  FUN_TEST("@a = 1\nreturn @a", {
     assert(result->As<Number>()->Value() == 1);
   })
 
@@ -273,7 +273,7 @@ TEST_START("functional test")
 
   // While
   FUN_TEST("i = 10\nj = 0\n"
-           "while (i--) {scope i, j\nj = j + 1\n}\n"
+           "while (i--) { @i\n@j = @j + 1\n}\n"
            "return j", {
     assert(result->As<Number>()->Value() == 10);
   })

@@ -20,6 +20,7 @@ class Lexer {
     // Punctuation
     kCr,
     kDot,
+    kAt,
     kComma,
     kColon,
     kAssign,
@@ -73,7 +74,6 @@ class Lexer {
     kWhile,
     kBreak,
     kReturn,
-    kScope,
     kNew,
     kTypeof,
     kSizeof,

@@ -130,7 +130,6 @@ class Parser : public Lexer {
   AstNode* ParseObjectLiteral();
   AstNode* ParseArrayLiteral();
   AstNode* ParseBlock(AstNode* block);
-  AstNode* ParseScope();
 
   ParserSign sign_;
 

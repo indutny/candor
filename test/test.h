@@ -34,8 +34,8 @@ using namespace internal;
       Zone z;\
       char out[1024];\
       Parser p(code, strlen(code));\
-      assert(!p.has_error());\
       AstNode* ast = p.Execute();\
+      assert(!p.has_error());\
       p.Print(out, 1000);\
       assert(ast != NULL);\
       assert(strcmp(expected, out) == 0);\
@@ -47,8 +47,8 @@ using namespace internal;
       Zone z;\
       char out[1024];\
       Parser p(code, strlen(code));\
-      assert(!p.has_error());\
       AstNode* ast = p.Execute();\
+      assert(!p.has_error());\
       Scope::Analyze(ast);\
       p.Print(out, 1000);\
       assert(ast != NULL);\
@@ -60,6 +60,10 @@ using namespace internal;
     {\
       Isolate i;\
       Function* f = Function::New(code, strlen(code));\
+      if (i.HasSyntaxError()) {\
+        i.PrintSyntaxError();\
+        abort();\
+      }\
       Value* argv[0];\
       Value* result = f->Call(0, argv);\
       block\

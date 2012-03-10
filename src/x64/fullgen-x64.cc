@@ -876,15 +876,11 @@ AstNode* Fullgen::VisitUnOp(AstNode* node) {
     VisitForSlot(op->lhs(), &result_slot, result());
 
     // Get value
-    movq(result(), result_slot);
+    movq(scratch, result_slot);
+    Spill scratch_s(this, scratch);
 
-    Spill result_s(this, result());
-    Spill rax_s(this, rax, result());
+    Spill rcx_s(this, rcx, result());
     Spill rbx_s(this, rbx, result());
-
-    // Put slot into rax
-    movq(rax, result_slot.base());
-    result_slot.base(rax);
 
     // Put slot's value into rbx
     movq(rbx, result_slot);
@@ -894,8 +890,8 @@ AstNode* Fullgen::VisitUnOp(AstNode* node) {
     VisitForValue(assign, result());
 
     rbx_s.Unspill();
-    rax_s.Unspill();
-    result_s.Unspill();
+    rcx_s.Unspill();
+    scratch_s.Unspill(result());
   } else if (op->subtype() == UnOp::kPlus || op->subtype() == UnOp::kMinus) {
     // +a = 0 + a
     // -a = 0 - a

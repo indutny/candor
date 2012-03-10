@@ -95,9 +95,7 @@ candor::Object* CreateGlobal() {
 
 
 char* PrependGlobals(List* list) {
-  const char* globals = "scope print, assert\n";
-
-  int length = strlen(globals);
+  int length = 0;
 
   // Get total length
   List::Item* item = list->head();
@@ -110,8 +108,7 @@ char* PrependGlobals(List* list) {
   char* result = new char[length];
 
   // Copy all strings into it
-  int offset = strlen(globals);
-  memcpy(result, globals, offset);
+  int offset = 0;
 
   item = list->head();
   while (item != NULL) {

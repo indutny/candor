@@ -8,10 +8,6 @@ namespace internal {
 
 AstNode* Parser::Execute() {
   AstNode* stmt;
-  AstNode* scope = ParseScope();
-  if (scope != NULL) {
-    ast()->children()->Push(scope);
-  }
   while ((stmt = ParseStatement()) != NULL) {
     ast()->children()->Push(stmt);
   }
@@ -356,6 +352,21 @@ AstNode* Parser::ParsePrimary() {
   Lexer::Token* token = Peek();
   AstNode* result = NULL;
 
+  if (token->is(kAt)) {
+    Skip();
+    result = new AstNode(AstNode::kAt);
+
+    AstNode* name = ParsePrimary();
+    if (name == NULL || !name->is(AstNode::kName)) {
+      SetError("Expected name after '@'");
+      return NULL;
+    }
+
+    result->children()->Push(name);
+
+    return pos.Commit(result);
+  }
+
   switch (token->type()) {
    case kName:
    case kNumber:
@@ -449,10 +460,8 @@ AstNode* Parser::ParseMember() {
           next = NULL;
         }
       }
-      if (next == NULL) {
-        SetError("Expected expression after '.' or '['");
-        break;
-      }
+
+      if (next == NULL) break;
 
       result = Wrap(AstNode::kMember, result);
       result->children()->Push(next);
@@ -581,11 +590,6 @@ AstNode* Parser::ParseBlock(AstNode* block) {
 
   AstNode* result = fn ? block : new AstNode(AstNode::kBlock);
 
-  AstNode* scope = ParseScope();
-  if (scope != NULL) {
-    result->children()->Push(scope);
-  }
-
   while (!Peek()->is(kEnd) && !Peek()->is(kBraceClose)) {
     AstNode* stmt = ParseStatement();
     if (stmt == NULL) {
@@ -601,45 +605,6 @@ AstNode* Parser::ParseBlock(AstNode* block) {
   if (result->children()->length() == 0) {
     result->children()->Push(new AstNode(AstNode::kNop));
   }
-
-  return pos.Commit(result);
-}
-
-
-AstNode* Parser::ParseScope() {
-  while (Peek()->is(kCr)) Skip();
-
-  if (!Peek()->is(kScope)) {
-    SetError("Expected 'scope' or '}'");
-    return NULL;
-  }
-  Position pos(this);
-
-  Skip();
-
-  AstNode* result = new AstNode(AstNode::kScopeDecl);
-
-  while (!Peek()->is(kCr) && !Peek()->is(kBraceClose)) {
-    if (!Peek()->is(kName)) {
-      SetError("Expected name after 'scope'");
-      break;
-    }
-
-    AstNode* name = (new AstNode(AstNode::kName))->FromToken(Peek());
-    result->children()->Push(name);
-    Skip();
-
-    if (!Peek()->is(kComma) && !Peek()->is(kCr) && !Peek()->is(kBraceClose)) {
-      SetError("Expected comma after name in 'scope' declaration");
-      break;
-    }
-    if (Peek()->is(kComma)) Skip();
-  }
-
-  if (!Peek()->is(kCr) && !Peek()->is(kBraceClose)) {
-    result = NULL;
-  }
-  if (Peek()->is(kCr)) Skip();
 
   return pos.Commit(result);
 }

@@ -21,7 +21,6 @@ typedef List<AstNode*, ZoneObject> AstList;
 
 #define TYPE_MAPPING_NORMAL(V)\
     V(kBlock)\
-    V(kScopeDecl)\
     V(kObjectLiteral)\
     V(kArrayLiteral)\
     V(kMember)\
@@ -39,6 +38,7 @@ typedef List<AstNode*, ZoneObject> AstList;
     V(kBinOp)
 
 #define TYPE_MAPPING_LEXER(V)\
+    V(kAt)\
     V(kName)\
     V(kNumber)\
     V(kString)\
@@ -142,7 +142,8 @@ class AstNode : public ZoneObject {
       break;
     }
 
-    return (is(kName) || is(kTrue) || is (kFalse) || is(kNumber) || is(kNil) ?
+    return (is(kName) || is(kTrue) || is(kFalse) ||
+            is(kNumber) || is(kNil) ?
                p->Print("[")
                :
                p->Print("[%s ", strtype)
@@ -486,9 +487,16 @@ class AstValue : public AstNode {
     kRegister
   };
 
-  AstValue(Scope* scope, AstNode* name) : AstNode(kValue), type_(kSlot) {
+  AstValue(Scope* scope, AstNode* name) : AstNode(kValue),
+                                          type_(kSlot),
+                                          name_(name) {
     slot_ = scope->GetSlot(name->value(), name->length());
-    name_ = name;
+  }
+
+  AstValue(ScopeSlot* slot, AstNode* name) : AstNode(kValue),
+                                             type_(kSlot),
+                                             slot_(slot),
+                                             name_(name) {
   }
 
   AstValue(AstValueType type) : AstNode(kValue), type_(type) {
@@ -517,7 +525,6 @@ class AstValue : public AstNode {
 
   inline ScopeSlot* slot() { return slot_; }
   inline AstNode* name() { return name_; }
-
 
  protected:
   AstValueType type_;
