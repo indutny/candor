@@ -235,48 +235,6 @@ Any bug-fixes or feature implementations are always welcome! Only one
 restriction is applied to the code - it should follow
 [Google C++ Style Guide](http://google-styleguide.googlecode.com/svn/trunk/cppguide.xml).
 
-## Grammar (basics)
-
-```
-code := statement*
-
-scope := "scope" (name ",")* name CR
-block := "{" scope? statement* "}"
-args := ((name ",")* name)?
-
-array := "[" ((expr ",")* expr)? "]"
-objectKv := (name|string) ":" expr
-object := "{" ((objectKv ",")* objectKv)? "}"
-
-primary := name | number | string | array | object | "(" expr ")"
-member := primary ("[" expression "]" | "." name)*
-callOrFun := member ("(" ((expr ",")* expr)? ")")+ |
-             member "(" ((expr ",")* expr)? ")" block |
-             member? "(" ((expr ",")* expr)? ")" block
-assign := member "=" expr
-
-prefix := ("!" | "--" | "++", "-", "+") expr
-postfix := expr ("--" | "++")
-
-binop1 := expr (("*" | "/") expr)*
-binop2 := binop1 (("+" | "-") binop1)*
-binop3 := binop2 (("&" | "|" | "^") binop2)*
-binop4 := binop3 (("&&" | "||") binop3)*
-binop5 := binop4 ((">" | "<" | "<=" | ">=") binop4)*
-binop := binop5 (("==" | "===" | "!=" | "!==") binop5)*
-
-return := "return" expr?
-break := "break"
-if := "if" "(" expr ")" block ("else" block)? |
-      "if" "(" expr ")" stmt
-while := "while" "(" expr ")" block
-
-statement := (return | break | if | while | block | expr) CR
-
-expr := binop | prefix | postfix |
-        assign | callOrFun | member
-```
-
 ## Credits
 
 Special thanks to [creationix](https://github.com/creationix) for suggesting the
