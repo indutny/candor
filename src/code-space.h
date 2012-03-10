@@ -9,6 +9,7 @@ namespace candor {
 
 // Forward declaration
 class Value;
+struct SyntaxError;
 
 namespace internal {
 
@@ -26,7 +27,10 @@ class CodeSpace {
   ~CodeSpace();
 
   char* Put(Masm* masm);
-  char* Compile(const char* source, uint32_t length, char** root);
+  char* Compile(const char* source,
+                uint32_t length,
+                char** root,
+                SyntaxError** error);
   char* Insert(char* code, uint32_t length);
 
   Value* Run(char* fn, uint32_t argc, Value* argv[]);

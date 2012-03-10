@@ -44,6 +44,8 @@ static Isolate* current_isolate = NULL;
 Isolate::Isolate() {
   heap = new Heap(2 * 1024 * 1024);
   space = new CodeSpace(heap);
+  syntax_error = NULL;
+
   current_isolate = this;
 }
 
@@ -57,6 +59,24 @@ Isolate::~Isolate() {
 Isolate* Isolate::GetCurrent() {
   // TODO: Support multiple isolates
   return current_isolate;
+}
+
+
+bool Isolate::HasSyntaxError() {
+  return syntax_error != NULL;
+}
+
+
+SyntaxError* Isolate::GetSyntaxError() {
+  return syntax_error;
+}
+
+
+void Isolate::SetSyntaxError(SyntaxError* err) {
+  if (HasSyntaxError()) {
+    delete syntax_error;
+  }
+  syntax_error = err;
 }
 
 
@@ -150,7 +170,16 @@ String* Value::ToString() {
 
 Function* Function::New(const char* source, uint32_t length) {
   char* root;
-  char* code = Isolate::GetCurrent()->space->Compile(source, length, &root);
+  SyntaxError* error;
+  char* code = Isolate::GetCurrent()->space->Compile(source,
+                                                     length,
+                                                     &root,
+                                                     &error);
+  if (code == NULL) {
+    Isolate::GetCurrent()->SetSyntaxError(error);
+    return NULL;
+  }
+
   char* obj = HFunction::New(Isolate::GetCurrent()->heap, NULL, code, root);
 
   Function* fn = Cast<Function>(obj);

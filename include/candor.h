@@ -24,6 +24,7 @@ class Object;
 class Array;
 class CData;
 class Arguments;
+struct SyntaxError;
 
 class Isolate {
  public:
@@ -32,9 +33,17 @@ class Isolate {
 
   static Isolate* GetCurrent();
 
+  bool HasSyntaxError();
+  SyntaxError* GetSyntaxError();
+
  protected:
+
+  void SetSyntaxError(SyntaxError* err);
+
   internal::Heap* heap;
   internal::CodeSpace* space;
+
+  SyntaxError* syntax_error;
 
   friend class Value;
   friend class Function;
@@ -47,6 +56,14 @@ class Isolate {
 
   template <class T>
   friend class Handle;
+};
+
+struct SyntaxError {
+  const char* message;
+  uint32_t offset;
+
+  const char* source;
+  uint32_t length;
 };
 
 class Value {

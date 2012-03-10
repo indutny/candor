@@ -1,4 +1,5 @@
 #include "code-space.h"
+#include "candor.h" // SyntaxError
 #include "heap.h" // Heap
 #include "heap-inl.h" // Heap
 #include "parser.h" // Parser
@@ -37,12 +38,29 @@ char* CodeSpace::Put(Masm* masm) {
 }
 
 
-char* CodeSpace::Compile(const char* source, uint32_t length, char** root) {
+char* CodeSpace::Compile(const char* source,
+                         uint32_t length,
+                         char** root,
+                         SyntaxError** error) {
   Zone zone;
   Parser p(source, length);
   Fullgen f(this);
 
   AstNode* ast = p.Execute();
+
+  if (p.has_error()) {
+    SyntaxError* err = new SyntaxError();
+
+    err->message = p.error_msg();
+    err->offset = p.error_pos();
+
+    err->source = source;
+    err->length = length;
+
+    *error = err;
+
+    return NULL;
+  }
 
   // Add scope information to variables (i.e. stack vs context, and indexes)
   Scope::Analyze(ast);
@@ -86,6 +104,8 @@ char* CodeSpace::Insert(char* code, uint32_t length) {
 
 
 Value* CodeSpace::Run(char* fn, uint32_t argc, Value* argv[]) {
+  if (fn == NULL) return NULL;
+
   char* code = HFunction::Code(fn);
   char* parent = HFunction::Parent(fn);
   char* root = HFunction::Root(fn);

@@ -96,9 +96,16 @@ class Parser : public Lexer {
     }
   }
 
+  inline bool has_error() { return error_msg_ != NULL; }
   inline const char* error_msg() { return error_msg_; }
   inline uint32_t error_pos() { return error_pos_; }
+
   inline void SetError(const char* msg) {
+    if (msg == NULL) {
+      error_msg_ = NULL;
+      error_pos_ = 0;
+    }
+
     if (error_pos_ < Peek()->offset()) {
       error_pos_ = Peek()->offset();
       error_msg_ = msg;

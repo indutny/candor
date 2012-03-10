@@ -34,6 +34,7 @@ using namespace internal;
       Zone z;\
       char out[1024];\
       Parser p(code, strlen(code));\
+      assert(!p.has_error());\
       AstNode* ast = p.Execute();\
       p.Print(out, 1000);\
       assert(ast != NULL);\
@@ -46,6 +47,7 @@ using namespace internal;
       Zone z;\
       char out[1024];\
       Parser p(code, strlen(code));\
+      assert(!p.has_error());\
       AstNode* ast = p.Execute();\
       Scope::Analyze(ast);\
       p.Print(out, 1000);\
