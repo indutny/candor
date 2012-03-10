@@ -52,7 +52,7 @@ char* CodeSpace::Compile(const char* source,
     SyntaxError* err = new SyntaxError();
 
     err->message = p.error_msg();
-    err->offset = p.error_pos();
+    err->line = GetSourceLineByOffset(source, p.error_pos(), &err->offset);
 
     err->source = source;
     err->length = length;

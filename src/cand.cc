@@ -144,6 +144,11 @@ int main(int argc, char** argv) {
     candor::Function* code = candor::Function::New(script, size);
     delete script;
 
+    if (isolate.HasSyntaxError()) {
+      isolate.PrintSyntaxError();
+      exit(1);
+    }
+
     candor::Value* args[0];
 
     code->SetContext(CreateGlobal());

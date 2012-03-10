@@ -357,6 +357,29 @@ inline double StringToDouble(const char* value, uint32_t length) {
 }
 
 
+inline int GetSourceLineByOffset(const char* source,
+                                 uint32_t offset,
+                                 int* pos) {
+  int result = 0;
+  uint32_t line_start = 0;
+
+  for (uint32_t i = 0; i < offset; i++) {
+    if (source[i] == '\r') {
+      if (i + 1 < offset && source[i] == '\n') i++;
+      result++;
+      line_start = offset + 1;
+    } else if (source[i] == '\n') {
+      result++;
+      line_start = offset + 1;
+    }
+  }
+
+  *pos = offset - line_start;
+
+  return result;
+}
+
+
 inline uint32_t GetPageSize() {
 #ifdef __DARWIN
   return getpagesize();

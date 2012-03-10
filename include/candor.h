@@ -35,6 +35,7 @@ class Isolate {
 
   bool HasSyntaxError();
   SyntaxError* GetSyntaxError();
+  void PrintSyntaxError();
 
  protected:
 
@@ -60,7 +61,8 @@ class Isolate {
 
 struct SyntaxError {
   const char* message;
-  uint32_t offset;
+  int line;
+  int offset;
 
   const char* source;
   uint32_t length;

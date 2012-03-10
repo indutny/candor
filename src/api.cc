@@ -5,6 +5,7 @@
 #include "runtime.h"
 #include "utils.h"
 
+#include <stdio.h> // fprintf
 #include <stdint.h> // uint32_t
 #include <string.h> // strlen
 #include <stdlib.h> // NULL
@@ -69,6 +70,16 @@ bool Isolate::HasSyntaxError() {
 
 SyntaxError* Isolate::GetSyntaxError() {
   return syntax_error;
+}
+
+
+void Isolate::PrintSyntaxError() {
+  if (!HasSyntaxError()) return;
+
+  fprintf(stderr,
+          "SyntaxError on line %d: %s\n",
+          syntax_error->line,
+          syntax_error->message);
 }
 
 

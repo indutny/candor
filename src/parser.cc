@@ -116,6 +116,9 @@ AstNode* Parser::ParseStatement() {
       Skip();
 
       AstNode* body = ParseBlock(NULL);
+      if (body == NULL) {
+        return NULL;
+      }
 
       result = new AstNode(AstNode::kWhile);
       result->children()->Push(cond);
@@ -256,7 +259,6 @@ AstNode* Parser::ParseExpression(int priority) {
   }
 
   if (result == NULL) {
-    SetError("Expected after '='");
     return result;
   }
 
@@ -608,7 +610,7 @@ AstNode* Parser::ParseScope() {
   while (Peek()->is(kCr)) Skip();
 
   if (!Peek()->is(kScope)) {
-    SetError("Expected 'scope'");
+    SetError("Expected 'scope' or '}'");
     return NULL;
   }
   Position pos(this);
