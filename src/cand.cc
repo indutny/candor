@@ -142,6 +142,7 @@ int main(int argc, char** argv) {
     const char* script = ReadContents(argv[1], &size);
 
     candor::Function* code = candor::Function::New(script, size);
+    delete script;
 
     candor::Value* args[0];
 
