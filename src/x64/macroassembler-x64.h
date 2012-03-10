@@ -33,6 +33,7 @@ class Masm : public Assembler {
   class Spill {
    public:
     Spill(Masm* masm, Register src, Register preserve = reg_nil);
+    ~Spill();
 
     void Unspill(Register dst);
     void Unspill();
@@ -147,6 +148,7 @@ class Masm : public Assembler {
 
   RelocationInfo* spill_reloc_;
   uint32_t spill_offset_;
+  int32_t spill_index_;
   int32_t spills_;
 
   friend class Align;

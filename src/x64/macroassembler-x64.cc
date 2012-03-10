@@ -76,10 +76,18 @@ Masm::Spill::Spill(Masm* masm, Register src, Register preserve) :
     masm_(masm), src_(src), index_(0), empty_(preserve.is(src)) {
   if (empty_) return;
 
-  index_ = masm->spills_++;
+  index_ = masm->spill_index_++;
   Operand slot(rax, 0);
   masm->SpillSlot(index(), slot);
   masm->movq(slot, src);
+
+  if (masm->spill_index_ > masm->spills_) masm->spills_ = masm->spill_index_;
+}
+
+
+Masm::Spill::~Spill() {
+  if (empty_) return;
+  masm()->spill_index_--;
 }
 
 
@@ -100,6 +108,7 @@ void Masm::Spill::Unspill() {
 void Masm::AllocateSpills(uint32_t spill_offset) {
   spill_offset_ = spill_offset;
   spills_ = 0;
+  spill_index_ = 0;
   subq(rsp, Immediate(0));
   spill_reloc_ = new RelocationInfo(RelocationInfo::kValue,
                                     RelocationInfo::kLong,
