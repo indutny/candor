@@ -28,6 +28,7 @@ TEST_START("parser test")
   PARSER_TEST("a - b - c - d", "[kSub [a] [kAdd [b] [kAdd [c] [d]]]]")
   PARSER_TEST("a + b + c", "[kAdd [a] [kAdd [b] [c]]]")
   PARSER_TEST("a + b * c", "[kAdd [a] [kMul [b] [c]]]")
+  PARSER_TEST("a + b * c + d", "[kAdd [a] [kAdd [kMul [b] [c]] [d]]]")
   PARSER_TEST("a * b + c", "[kAdd [kMul [a] [b]] [c]]")
   PARSER_TEST("a * b + c - d * e",
               "[kAdd [kMul [a] [b]] [kSub [c] [kMul [d] [e]]]]")
@@ -36,6 +37,7 @@ TEST_START("parser test")
               "4611686018427387904",
               "[kReturn [kAdd [4611686018427387904] "
               "[kAdd [4611686018427387904] [4611686018427387904]]]]")
+  PARSER_TEST("a == 1 || b == 2", "[kLOr [kEq [a] [1]] [kEq [b] [2]]]")
 
   // Prefix & Postfix
   PARSER_TEST("++a", "[kPreInc [a]]")

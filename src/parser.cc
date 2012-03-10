@@ -114,22 +114,21 @@ AstNode* Parser::ParseStatement() {
   return pos.Commit(result);
 }
 
-
 #define BINOP_PRI1\
+    case kLOr:\
+    case kLAnd:
+
+#define BINOP_PRI2\
     case kEq:\
     case kNe:\
     case kStrictEq:\
     case kStrictNe:
 
-#define BINOP_PRI2\
+#define BINOP_PRI3\
     case kLt:\
     case kGt:\
     case kLe:\
     case kGe:
-
-#define BINOP_PRI3\
-    case kLOr:\
-    case kLAnd:
 
 #define BINOP_PRI4\
     case kBOr:\

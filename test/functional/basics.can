@@ -8,3 +8,17 @@ assert(i == -1, "i-- should decrement")
 i = 1000000
 while (--i) { }
 assert(i == 0, "--i should decrement")
+
+// Arrays
+a = keysof { a: 1, b: 2, c: 3 }
+i = 0
+while (i < sizeof a) {
+  scope assert, print, a, i
+  assert(a[i] == 'a' || a[i] == 'b' || a[i] == 'c')
+  i++
+}
+
+a = [1,2,3]
+assert(a[-1] === nil)
+a[-1] = 1
+assert(a[-1] === 1)
