@@ -73,6 +73,7 @@ void Fullgen::CandorFunction::Generate() {
   masm()->movq(rax, 0);
 
   fullgen()->GenerateEpilogue(fn());
+  fullgen()->FinalizeSpills();
 }
 
 
@@ -148,8 +149,6 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
 
 
 void Fullgen::GenerateEpilogue(AstNode* stmt) {
-  FinalizeSpills();
-
   // rax will hold result of function
   movq(rsp, rbp);
   pop(rbp);

@@ -32,9 +32,7 @@ class Masm : public Assembler {
 
   class Spill {
    public:
-    Spill(Masm* masm, Register src);
-    // If result is src - do not spill anything
-    Spill(Masm* masm, Register result, Register src);
+    Spill(Masm* masm, Register src, Register preserve = reg_nil);
 
     void Unspill(Register dst);
     void Unspill();

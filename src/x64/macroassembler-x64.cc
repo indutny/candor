@@ -72,18 +72,8 @@ Masm::Align::~Align() {
 }
 
 
-Masm::Spill::Spill(Masm* masm, Register src) : masm_(masm),
-                                               src_(src),
-                                               index_(masm->spills_++),
-                                               empty_(false) {
-  Operand slot(rax, 0);
-  masm->SpillSlot(index(), slot);
-  masm->movq(slot, src);
-}
-
-
-Masm::Spill::Spill(Masm* masm, Register src, Register result) :
-    masm_(masm), src_(src), index_(0), empty_(result.is(src)) {
+Masm::Spill::Spill(Masm* masm, Register src, Register preserve) :
+    masm_(masm), src_(src), index_(0), empty_(preserve.is(src)) {
   if (empty_) return;
 
   index_ = masm->spills_++;
