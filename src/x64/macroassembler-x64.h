@@ -33,14 +33,21 @@ class Masm : public Assembler {
   class Spill {
    public:
     Spill(Masm* masm, Register src);
+    // If result is src - do not spill anything
+    Spill(Masm* masm, Register result, Register src);
+
     void Unspill(Register dst);
+    void Unspill();
 
     inline Masm* masm() { return masm_; }
     inline int32_t index() { return index_; }
 
    private:
     Masm* masm_;
+
+    Register src_;
     int32_t index_;
+    bool empty_;
   };
 
   // Allocate slots for spills
@@ -80,7 +87,7 @@ class Masm : public Assembler {
   void Fill(Register start, Register end, Immediate value);
 
   // Fill stack slots with nil
-  void FillStackSlots(uint32_t slots);
+  void FillStackSlots();
 
   // Generate enter/exit frame sequences
   void EnterFramePrologue();

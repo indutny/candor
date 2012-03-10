@@ -117,7 +117,7 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
 
   // Allocate context and clear stack slots
   AllocateContext(stmt->context_slots());
-  FillStackSlots(on_stack_size >> 3);
+  FillStackSlots();
 
   // Place all arguments into their slots
   Label body(this);
@@ -219,8 +219,8 @@ AstNode* Fullgen::VisitFunction(AstNode* stmt) {
   FFunction* ffn = new CandorFunction(this, fn);
   fns_.Push(ffn);
 
-  Save(rax);
-  Save(rcx);
+  Spill rax_s(this, rax, result());
+  Spill rcx_s(this, rcx, result());
 
   movq(rcx, Immediate(0));
   ffn->Use(offset());
@@ -239,8 +239,8 @@ AstNode* Fullgen::VisitFunction(AstNode* stmt) {
     Visit(assign);
   }
 
-  Restore(rcx);
-  Restore(rax);
+  rcx_s.Unspill();
+  rax_s.Unspill();
 
   return stmt;
 }
@@ -273,16 +273,14 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
   }
 
   // Save rax if we're not going to overwrite it
-  Save(rax);
+  Spill rax_s(this, rax, result());
 
   VisitForValue(fn->variable(), rax);
   IsNil(rax, NULL, &not_function);
   IsUnboxed(rax, NULL, &not_function);
   IsHeapObject(Heap::kTagFunction, rax, &not_function, NULL);
 
-  Push(rsi);
-  Push(rdi);
-  Push(root_reg);
+  Spill rsi_s(this, rsi), rdi_s(this, rdi), root_s(this, root_reg);
   {
     ChangeAlign(fn->args()->length());
     Align a(this);
@@ -311,9 +309,9 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
       addq(rsp, Immediate(fn->args()->length() * 8));
     }
   }
-  Pop(root_reg);
-  Pop(rdi);
-  Pop(rsi);
+  root_s.Unspill();
+  rdi_s.Unspill();
+  rsi_s.Unspill();
 
   Result(rax);
 
@@ -324,15 +322,15 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
 
   bind(&done);
 
-  Restore(rax);
+  rax_s.Unspill();
 
   return stmt;
 }
 
 
 AstNode* Fullgen::VisitAssign(AstNode* stmt) {
-  Save(rax);
-  Save(rbx);
+  Spill rax_s(this, rax, result());
+  Spill rbx_s(this, rbx, result());
 
   // Get value of right-hand side expression in rbx
   VisitForValue(stmt->rhs(), rbx);
@@ -346,8 +344,9 @@ AstNode* Fullgen::VisitAssign(AstNode* stmt) {
 
   // Propagate result of assign operation
   Result(rbx);
-  Restore(rbx);
-  Restore(rax);
+
+  rbx_s.Unspill();
+  rax_s.Unspill();
 
   return stmt;
 }
@@ -449,7 +448,7 @@ AstNode* Fullgen::VisitMember(AstNode* node) {
 
   // Calculate hash of property
 
-  Save(rax);
+  Spill rax_s(this, rax, result());
   {
     // Stub(change, property, object)
     ChangeAlign(3);
@@ -468,7 +467,7 @@ AstNode* Fullgen::VisitMember(AstNode* node) {
     ChangeAlign(-3);
   }
   Result(rax);
-  Restore(rax);
+  rax_s.Unspill();
 
   slot()->base(result());
   slot()->disp(0);
@@ -567,7 +566,7 @@ void Fullgen::ConvertToBoolean() {
   bind(&not_bool);
 
   // Coerce type to boolean
-  Save(rax);
+  Spill s(this, result(), rax);
   {
     // Stub(value)
     ChangeAlign(1);
@@ -578,8 +577,7 @@ void Fullgen::ConvertToBoolean() {
     // Stub will unwind stack automatically
     ChangeAlign(-1);
   }
-  Result(rax);
-  Restore(rax);
+  s.Unspill();
 
   bind(&coerced_type);
 }
@@ -683,8 +681,8 @@ AstNode* Fullgen::VisitObjectLiteral(AstNode* node) {
 
   ObjectLiteral* obj = ObjectLiteral::Cast(node);
 
-  Save(rax);
-  Save(rbx);
+  Spill rax_s(this, rax, result());
+  Spill rbx_s(this, rbx, result());
 
   // Ensure that map will be filled only by half at maximum
   movq(rbx, Immediate(TagNumber(PowerOfTwo(node->children()->length() << 1))));
@@ -710,8 +708,8 @@ AstNode* Fullgen::VisitObjectLiteral(AstNode* node) {
   }
 
   Result(rax);
-  Restore(rbx);
-  Restore(rax);
+  rbx_s.Unspill();
+  rax_s.Unspill();
 
   return node;
 }
@@ -723,8 +721,8 @@ AstNode* Fullgen::VisitArrayLiteral(AstNode* node) {
     return node;
   }
 
-  Save(rax);
-  Save(rbx);
+  Spill rax_s(this, rax, result());
+  Spill rbx_s(this, rbx, result());
 
   // Ensure that map will be filled only by half at maximum
   movq(rbx,
@@ -754,8 +752,8 @@ AstNode* Fullgen::VisitArrayLiteral(AstNode* node) {
   }
 
   Result(rax);
-  Restore(rax);
-  Restore(rbx);
+  rbx_s.Unspill();
+  rax_s.Unspill();
 
   return node;
 }
@@ -782,7 +780,7 @@ AstNode* Fullgen::VisitTypeof(AstNode* node) {
     return node;
   }
 
-  Save(rax);
+  Spill rax_s(this, rax, result());
   {
     Align a(this);
 
@@ -790,7 +788,7 @@ AstNode* Fullgen::VisitTypeof(AstNode* node) {
     Call(stubs()->GetTypeofStub());
   }
   Result(rax);
-  Restore(rax);
+  rax_s.Unspill();
 
   return node;
 }
@@ -802,7 +800,7 @@ AstNode* Fullgen::VisitSizeof(AstNode* node) {
     return node;
   }
 
-  Save(rax);
+  Spill rax_s(this, rax, result());
   {
     Align a(this);
 
@@ -810,7 +808,7 @@ AstNode* Fullgen::VisitSizeof(AstNode* node) {
     Call(stubs()->GetSizeofStub());
   }
   Result(rax);
-  Restore(rax);
+  rax_s.Unspill();
 
   return node;
 }
@@ -822,7 +820,7 @@ AstNode* Fullgen::VisitKeysof(AstNode* node) {
     return node;
   }
 
-  Save(rax);
+  Spill rax_s(this, rax, result());
   {
     Align a(this);
 
@@ -830,7 +828,7 @@ AstNode* Fullgen::VisitKeysof(AstNode* node) {
     Call(stubs()->GetKeysofStub());
   }
   Result(rax);
-  Restore(rax);
+  rax_s.Unspill();
 
   return node;
 }
@@ -881,9 +879,9 @@ AstNode* Fullgen::VisitUnOp(AstNode* node) {
     // Get value
     movq(result(), result_slot);
 
-    Push(result());
-    Save(rax);
-    Save(rbx);
+    Spill result_s(this, result());
+    Spill rax_s(this, rax, result());
+    Spill rbx_s(this, rbx, result());
 
     // Put slot into rax
     movq(rax, result_slot.base());
@@ -896,10 +894,9 @@ AstNode* Fullgen::VisitUnOp(AstNode* node) {
     rhs->children()->head()->value(new FAstRegister(rbx));
     VisitForValue(assign, result());
 
-    Restore(rbx);
-    Restore(rax);
-    Pop(result());
-
+    rbx_s.Unspill();
+    rax_s.Unspill();
+    result_s.Unspill();
   } else if (op->subtype() == UnOp::kPlus || op->subtype() == UnOp::kMinus) {
     // +a = 0 + a
     // -a = 0 - a
@@ -952,12 +949,10 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
     return node;
   }
 
-  Save(rax);
-  Save(rbx);
+  Spill rax_s(this, rax, result());
+  Spill rbx_s(this, rbx, result());
 
   {
-    // lhs and rhs values will be pushed later
-    ChangeAlign(2);
     Align a(this);
 
     Label restore(this), not_unboxed(this), done(this);
@@ -967,8 +962,8 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
     VisitForValue(op->rhs(), rbx);
 
     // No need to change align here, because it was already changed above
-    push(rax);
-    push(rbx);
+    Spill lvalue(this, rax);
+    Spill rvalue(this, rbx);
 
     IsNil(rax, NULL, &not_unboxed);
     IsNil(rbx, NULL, &not_unboxed);
@@ -1041,10 +1036,8 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
     bind(&restore);
 
     // Restore numbers
-    pop(rbx);
-    pop(rax);
-    push(rax);
-    push(rbx);
+    lvalue.Unspill();
+    rvalue.Unspill();
 
     bind(&not_unboxed);
 
@@ -1080,20 +1073,18 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
 #undef BINARY_SUB_ENUM
 #undef BINARY_SUB_TYPES
 
-    // rax and rbx are already on stack
-    // so just call stub
-    if (stub != NULL) Call(stub);
+    assert(stub != NULL);
+
+    push(rax);
+    push(rbx);
+    Call(stub);
 
     bind(&done);
-
-    // Unwind stored rax and rbx
-    addq(rsp, 16);
-    ChangeAlign(-2);
   }
 
   Result(rax);
-  Restore(rbx);
-  Restore(rax);
+  rbx_s.Unspill();
+  rax_s.Unspill();
 
   return node;
 }

@@ -73,7 +73,20 @@ Masm::Align::~Align() {
 
 
 Masm::Spill::Spill(Masm* masm, Register src) : masm_(masm),
-                                               index_(masm->spills_++) {
+                                               src_(src),
+                                               index_(masm->spills_++),
+                                               empty_(false) {
+  Operand slot(rax, 0);
+  masm->SpillSlot(index(), slot);
+  masm->movq(slot, src);
+}
+
+
+Masm::Spill::Spill(Masm* masm, Register src, Register result) :
+    masm_(masm), src_(src), empty_(result.is(src)) {
+  if (empty_) return;
+
+  index_ = masm->spills_++;
   Operand slot(rax, 0);
   masm->SpillSlot(index(), slot);
   masm->movq(slot, src);
@@ -81,9 +94,16 @@ Masm::Spill::Spill(Masm* masm, Register src) : masm_(masm),
 
 
 void Masm::Spill::Unspill(Register dst) {
+  if (empty_) return;
+
   Operand slot(rax, 0);
   masm()->SpillSlot(index(), slot);
   masm()->movq(dst, slot);
+}
+
+
+void Masm::Spill::Unspill() {
+  return Unspill(src_);
 }
 
 
@@ -99,7 +119,7 @@ void Masm::AllocateSpills(uint32_t spill_offset) {
 
 
 void Masm::FinalizeSpills() {
-  spill_reloc_->target(RoundUp(spills_ << 3, 16));
+  spill_reloc_->target(RoundUp((spills_ + 1) << 3, 16));
 }
 
 
@@ -338,14 +358,10 @@ void Masm::Fill(Register start, Register end, Immediate value) {
 }
 
 
-void Masm::FillStackSlots(uint32_t slots) {
-  if (slots == 0) return;
-
-  movq(scratch, Immediate(Heap::kTagNil));
-  for (uint32_t i = 0; i < slots; i ++) {
-    Operand slot(rbp, -8 * (i + 1));
-    movq(slot, scratch);
-  }
+void Masm::FillStackSlots() {
+  movq(rax, rsp);
+  Fill(rax, rbp, Immediate(Heap::kTagNil));
+  xorq(rax, rax);
 }
 
 
