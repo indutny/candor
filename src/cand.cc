@@ -106,6 +106,7 @@ char* PrependGlobals(char* cmd) {
 
 
 void StartRepl() {
+  candor::Isolate isolate;
   candor::Object* global = CreateGlobal();
 
   while (true) {
@@ -114,6 +115,13 @@ void StartRepl() {
     cmd = PrependGlobals(cmd);
 
     candor::Function* cmdfn = candor::Function::New(cmd, strlen(cmd));
+
+    if (isolate.HasSyntaxError()) {
+      isolate.PrintSyntaxError();
+      delete cmd;
+      continue;
+    }
+
     cmdfn->SetContext(global);
 
     candor::Value* args[0];
@@ -131,12 +139,12 @@ void StartRepl() {
 
 
 int main(int argc, char** argv) {
-  candor::Isolate isolate;
-
   if (argc < 2) {
     // Start repl
     StartRepl();
   } else {
+    candor::Isolate isolate;
+
     // Load script and run
     off_t size = 0;
     const char* script = ReadContents(argv[1], &size);
@@ -149,10 +157,9 @@ int main(int argc, char** argv) {
       exit(1);
     }
 
-    candor::Value* args[0];
-
     code->SetContext(CreateGlobal());
 
+    candor::Value* args[0];
     return code->Call(0, args)->ToNumber()->IntegralValue();
   }
 }
