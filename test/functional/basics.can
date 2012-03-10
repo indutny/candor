@@ -1,0 +1,10 @@
+scope assert, print
+
+// Basic flow and binary ops checks
+i = 1000000
+while (i--) { }
+assert(i == -1, "i-- should decrement")
+
+i = 1000000
+while (--i) { }
+assert(i == 0, "--i should decrement")

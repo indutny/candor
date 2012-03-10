@@ -5,3 +5,6 @@
 /test/*
 !/test/*.h
 !/test/*.cc
+!/test/*/
+/test/*.dSYM/
+!/test/*/*.can
