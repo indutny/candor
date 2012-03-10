@@ -151,22 +151,27 @@ void StartRepl() {
     candor::Function* cmdfn = candor::Function::New(prepended,
                                                     strlen(prepended));
 
-    // Continue collecting string on syntax error
-    if (isolate.HasSyntaxError()) {
-      delete prepended;
-      multiline = true;
-      continue;
-    }
+    if (!multiline || strlen(cmd) != 0) {
 
-    // Insert line into repl's history
-    if (!multiline) {
-      add_history(cmd);
+      // Continue collecting string on syntax error
+      if (isolate.HasSyntaxError()) {
+        delete prepended;
+        multiline = true;
+        continue;
+      }
+
+      // Insert line into repl's history
+      if (!multiline) {
+        add_history(cmd);
+      }
     }
-    delete prepended;
 
     // Remove all collected lines
+    delete prepended;
     multiline = false;
     while (list.length() != 0) delete list.Shift();
+
+    if (cmdfn == NULL) continue;
 
     // Call compiled function
     cmdfn->SetContext(global);
