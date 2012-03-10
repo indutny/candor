@@ -15,7 +15,11 @@ AstNode* Parser::Execute() {
   while ((stmt = ParseStatement()) != NULL) {
     ast()->children()->Push(stmt);
   }
-  assert(Peek()->is(kEnd));
+
+  // If parsing was successful - reset any errors
+  if (Peek()->is(kEnd)) {
+    SetError(NULL);
+  }
 
   return ast();
 }
@@ -50,13 +54,22 @@ AstNode* Parser::ParseStatement() {
    case kIf:
     Skip();
     {
-      if (!Peek()->is(kParenOpen)) break;
+      if (!Peek()->is(kParenOpen)) {
+        SetError("Expected '(' before if's condition");
+        return NULL;
+      }
       Skip();
 
       AstNode* cond = ParseExpression();
-      if (cond == NULL) break;
+      if (cond == NULL) {
+        SetError("Expected if's condition");
+        return NULL;
+      }
 
-      if (!Peek()->is(kParenClose)) break;
+      if (!Peek()->is(kParenClose)) {
+        SetError("Expected ')' after if's condition");
+        return NULL;
+      }
       Skip();
 
       AstNode* body = ParseBlock(NULL);
@@ -71,7 +84,10 @@ AstNode* Parser::ParseStatement() {
         }
       }
 
-      if (body == NULL) return NULL;
+      if (body == NULL) {
+        SetError("Expected if's body");
+        return NULL;
+      }
 
       result = new AstNode(AstNode::kIf);
       result->children()->Push(cond);
@@ -82,12 +98,21 @@ AstNode* Parser::ParseStatement() {
    case kWhile:
     Skip();
     {
-      if (!Peek()->is(kParenOpen)) break;
+      if (!Peek()->is(kParenOpen)) {
+        SetError("Expected '(' before while's condition");
+        return NULL;
+      }
       Skip();
 
       AstNode* cond = ParseExpression();
-      if (cond == NULL) break;
-      if (!Peek()->is(kParenClose)) break;
+      if (cond == NULL) {
+        SetError("Expected while's condition");
+        return NULL;
+      }
+      if (!Peek()->is(kParenClose)) {
+        SetError("Expected ')' after while's condition");
+        return NULL;
+      }
       Skip();
 
       AstNode* body = ParseBlock(NULL);
@@ -107,6 +132,7 @@ AstNode* Parser::ParseStatement() {
 
   // Consume kCr or kBraceClose
   if (!Peek()->is(kEnd) && !Peek()->is(kCr) && !Peek()->is(kBraceClose)) {
+    SetError("Expected CR, EOF, or '}' after statement");
     return NULL;
   }
   if (Peek()->is(kCr)) Skip();
@@ -151,7 +177,10 @@ AstNode* Parser::ParseStatement() {
      default:\
       break;\
     }\
-    if (result == NULL) return result;
+    if (result == NULL) {\
+      SetError("Failed to parse binary operation");\
+      return result;\
+    }
 
 
 AstNode* Parser::ParseExpression(int priority) {
@@ -185,7 +214,10 @@ AstNode* Parser::ParseExpression(int priority) {
       Skip();
 
       AstNode* expr = ParseExpression(7);
-      if (expr == NULL) return NULL;
+      if (expr == NULL) {
+        SetError("Expected body of prefix operation");
+        return NULL;
+      }
 
       member = new AstNode(AstNode::ConvertType(type));
       member->children()->Push(expr);
@@ -200,13 +232,19 @@ AstNode* Parser::ParseExpression(int priority) {
 
   switch (Peek()->type()) {
    case kAssign:
-    if (member == NULL) return NULL;
+    if (member == NULL) {
+      SetError("Expected lhs before '='");
+      return NULL;
+    }
 
     // member "=" expr
     {
       Skip();
       AstNode* value = ParseExpression();
-      if (value == NULL) break;
+      if (value == NULL) {
+        SetError("Expected rhs after '='");
+        return NULL;
+      }
       result = new AstNode(AstNode::kAssign);
       result->children()->Push(member);
       result->children()->Push(value);
@@ -217,7 +255,10 @@ AstNode* Parser::ParseExpression(int priority) {
     break;
   }
 
-  if (result == NULL) return result;
+  if (result == NULL) {
+    SetError("Expected after '='");
+    return result;
+  }
 
   // Parse postfixes
   TokenType type = Peek()->type();
@@ -275,7 +316,10 @@ AstNode* Parser::ParsePrefixUnOp(TokenType type) {
     expr = ParseExpression(7);
   }
 
-  if (expr == NULL) return NULL;
+  if (expr == NULL) {
+    SetError("Expected expression after unary operation");
+    return NULL;
+  }
 
   return pos.Commit(new UnOp(UnOp::ConvertPrefixType(NegateType(type)), expr));
 }
@@ -294,7 +338,10 @@ AstNode* Parser::ParseBinOp(TokenType type, AstNode* lhs, int priority) {
     rhs = ParseExpression(priority);
   }
 
-  if (rhs == NULL) return NULL;
+  if (rhs == NULL) {
+    SetError("Expected rhs for binary operation");
+    return NULL;
+  }
 
   AstNode* result = new BinOp(BinOp::ConvertType(NegateType(type)), lhs, rhs);
 
@@ -322,15 +369,18 @@ AstNode* Parser::ParsePrimary() {
     Skip();
     result = ParseExpression();
     if (!Peek()->is(kParenClose)) {
+      SetError("Expected closing paren for primary expression");
       return NULL;
     } else {
       Skip();
     }
 
     // Check if we haven't parsed function's declaration by occasion
-    if (Peek()->is(kBraceOpen)) return NULL;
+    if (Peek()->is(kBraceOpen)) {
+      SetError("Unexpected '{' after expression in parens");
+      return NULL;
+    }
     break;
-   // TODO: implement others
    default:
     result = NULL;
     break;
@@ -359,16 +409,25 @@ AstNode* Parser::ParseMember() {
         // Skip commas
         if (Peek()->is(kComma)) Skip();
       }
-      if (!Peek()->is(kParenClose)) break;
+      if (!Peek()->is(kParenClose)) {
+        SetError("Failed to parse function's arguments");
+        break;
+      }
       Skip();
 
       // Optional body (for function declaration)
       ParseBlock(reinterpret_cast<AstNode*>(fn));
-      if (!fn->CheckDeclaration()) break;
+      if (!fn->CheckDeclaration()) {
+        SetError("Incorrect function declaration or call");
+        break;
+      }
 
       result = fn->End(Peek()->offset());
     } else {
-      if (result == NULL) break;
+      if (result == NULL) {
+        SetError("Unexpected '.' or '['");
+        break;
+      }
 
       AstNode* next = NULL;
       if (Peek()->is(kDot)) {
@@ -388,7 +447,10 @@ AstNode* Parser::ParseMember() {
           next = NULL;
         }
       }
-      if (next == NULL) break;
+      if (next == NULL) {
+        SetError("Expected expression after '.' or '['");
+        break;
+      }
 
       result = Wrap(AstNode::kMember, result);
       result->children()->Push(next);
@@ -403,7 +465,10 @@ AstNode* Parser::ParseObjectLiteral() {
   Position pos(this);
 
   // Skip '{'
-  if (!Peek()->is(kBraceOpen)) return NULL;
+  if (!Peek()->is(kBraceOpen)) {
+    SetError("Expected '{'");
+    return NULL;
+  }
   Skip();
 
   ObjectLiteral* result = new ObjectLiteral();
@@ -417,16 +482,23 @@ AstNode* Parser::ParseObjectLiteral() {
       key = (new AstNode(AstNode::kProperty))->FromToken(Peek());
       Skip();
     } else {
+      SetError("Expected string or number as object literal's key");
       return NULL;
     }
 
     // Skip ':'
-    if (!Peek()->is(kColon)) return NULL;
+    if (!Peek()->is(kColon)) {
+      SetError("Expected colon after object literal's key");
+      return NULL;
+    }
     Skip();
 
     // Parse expression
     AstNode* value = ParseExpression();
-    if (value == NULL) return NULL;
+    if (value == NULL) {
+      SetError("Expected expression after colon");
+      return NULL;
+    }
 
     result->keys()->Push(key);
     result->values()->Push(value);
@@ -435,12 +507,16 @@ AstNode* Parser::ParseObjectLiteral() {
     if (Peek()->is(kComma)) {
       Skip();
     } else if (!Peek()->is(kBraceClose)) {
+      SetError("Expected '}' or ','");
       return NULL;
     }
   }
 
   // Skip '}'
-  if (!Peek()->is(kBraceClose)) return NULL;
+  if (!Peek()->is(kBraceClose)) {
+    SetError("Expected '}'");
+    return NULL;
+  }
   Skip();
 
   return pos.Commit(result);
@@ -451,7 +527,10 @@ AstNode* Parser::ParseArrayLiteral() {
   Position pos(this);
 
   // Skip '['
-  if (!Peek()->is(kArrayOpen)) return NULL;
+  if (!Peek()->is(kArrayOpen)) {
+    SetError("Expected '['");
+    return NULL;
+  }
   Skip();
 
   AstNode* result = new AstNode(AstNode::kArrayLiteral);
@@ -459,7 +538,10 @@ AstNode* Parser::ParseArrayLiteral() {
   while (!Peek()->is(kArrayClose) && !Peek()->is(kEnd)) {
     // Parse expression
     AstNode* value = ParseExpression();
-    if (value == NULL) return NULL;
+    if (value == NULL) {
+      SetError("Expected expression after array literal's start");
+      return NULL;
+    }
 
     result->children()->Push(value);
 
@@ -467,12 +549,16 @@ AstNode* Parser::ParseArrayLiteral() {
     if (Peek()->is(kComma)) {
       Skip();
     } else if (!Peek()->is(kArrayClose)) {
+      SetError("Expected ']' or ','");
       return NULL;
     }
   }
 
-  // Skip '}'
-  if (!Peek()->is(kArrayClose)) return NULL;
+  // Skip ']'
+  if (!Peek()->is(kArrayClose)) {
+    SetError("Expected ']'");
+    return NULL;
+  }
   Skip();
 
   return pos.Commit(result);
@@ -480,7 +566,10 @@ AstNode* Parser::ParseArrayLiteral() {
 
 
 AstNode* Parser::ParseBlock(AstNode* block) {
-  if (!Peek()->is(kBraceOpen)) return NULL;
+  if (!Peek()->is(kBraceOpen)) {
+    SetError("Expected '{'");
+    return NULL;
+  }
 
   bool fn = block != NULL;
 
@@ -497,10 +586,13 @@ AstNode* Parser::ParseBlock(AstNode* block) {
 
   while (!Peek()->is(kEnd) && !Peek()->is(kBraceClose)) {
     AstNode* stmt = ParseStatement();
-    if (stmt == NULL) break;
+    if (stmt == NULL) {
+      SetError("Expected statement after '{'");
+      break;
+    }
     result->children()->Push(stmt);
   }
-  if (!Peek()->is(kEnd) && !Peek()->is(kBraceClose)) return NULL;
+  if (!Peek()->is(kBraceClose)) return NULL;
   Skip();
 
   // Block should not be empty
@@ -515,7 +607,10 @@ AstNode* Parser::ParseBlock(AstNode* block) {
 AstNode* Parser::ParseScope() {
   while (Peek()->is(kCr)) Skip();
 
-  if (!Peek()->is(kScope)) return NULL;
+  if (!Peek()->is(kScope)) {
+    SetError("Expected 'scope'");
+    return NULL;
+  }
   Position pos(this);
 
   Skip();
@@ -523,13 +618,17 @@ AstNode* Parser::ParseScope() {
   AstNode* result = new AstNode(AstNode::kScopeDecl);
 
   while (!Peek()->is(kCr) && !Peek()->is(kBraceClose)) {
-    if (!Peek()->is(kName)) break;
+    if (!Peek()->is(kName)) {
+      SetError("Expected name after 'scope'");
+      break;
+    }
 
     AstNode* name = (new AstNode(AstNode::kName))->FromToken(Peek());
     result->children()->Push(name);
     Skip();
 
     if (!Peek()->is(kComma) && !Peek()->is(kCr) && !Peek()->is(kBraceClose)) {
+      SetError("Expected comma after name in 'scope' declaration");
       break;
     }
     if (Peek()->is(kComma)) Skip();

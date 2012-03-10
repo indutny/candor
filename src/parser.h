@@ -19,6 +19,9 @@ class Parser : public Lexer {
   };
 
   Parser(const char* source, uint32_t length) : Lexer(source, length) {
+    error_pos_ = 0;
+    error_msg_ = NULL;
+
     ast_ = new FunctionLiteral(NULL, 0);
     ast_->make_root();
     sign_ = kNormal;
@@ -93,6 +96,15 @@ class Parser : public Lexer {
     }
   }
 
+  inline const char* error_msg() { return error_msg_; }
+  inline uint32_t error_pos() { return error_pos_; }
+  inline void SetError(const char* msg) {
+    if (error_pos_ < Peek()->offset()) {
+      error_pos_ = Peek()->offset();
+      error_msg_ = msg;
+    }
+  }
+
   // AST (result)
   inline AstNode* ast() {
     return ast_;
@@ -114,6 +126,9 @@ class Parser : public Lexer {
   AstNode* ParseScope();
 
   ParserSign sign_;
+
+  uint32_t error_pos_;
+  const char* error_msg_;
 
   AstNode* ast_;
 };
