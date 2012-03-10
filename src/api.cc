@@ -319,7 +319,7 @@ Value* Array::Get(int64_t key) {
 
 
 int64_t Array::Length() {
-  return HArray::Length(addr());
+  return HArray::Length(addr(), true);
 }
 
 

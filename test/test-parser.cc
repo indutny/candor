@@ -41,6 +41,7 @@ TEST_START("parser test")
 
   // Prefix & Postfix
   PARSER_TEST("++a", "[kPreInc [a]]")
+  PARSER_TEST("++a + 1", "[kAdd [kPreInc [a]] [1]]")
   PARSER_TEST("+a", "[kPlus [a]]")
   PARSER_TEST("!a", "[kNot [a]]")
   PARSER_TEST("a++", "[kPostInc [a]]")
@@ -49,8 +50,7 @@ TEST_START("parser test")
   PARSER_TEST("keysof a", "[kKeysof [a]]")
 
   // Mixed binop + prefix
-  PARSER_TEST("++a === b++", "[kPreInc [kStrictEq [a] [kPostInc [b]]]]")
-  PARSER_TEST("++a !== b++", "[kPreInc [kStrictNe [a] [kPostInc [b]]]]")
+  PARSER_TEST("++a === b++", "[kStrictEq [kPreInc [a]] [kPostInc [b]]]")
 
   // Function delcaration and call
   PARSER_TEST("a()", "[kCall [a] @[] ]")

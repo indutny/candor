@@ -1,5 +1,6 @@
 #include "heap.h"
 #include "heap-inl.h"
+#include "runtime.h" // RuntimeLookupProperty
 
 #include <stdint.h> // uint32_t
 #include <sys/types.h> // off_t
@@ -321,6 +322,38 @@ char* HArray::NewEmpty(Heap* heap) {
   memset(map + 16, 0, size << 4);
 
   return obj;
+}
+
+int64_t HArray::Length(char* obj, bool shrink) {
+  int64_t result = *reinterpret_cast<int64_t*>(obj + 24);
+
+  if (shrink) {
+    // Lookup property at [length - 1]
+    // Shrink if it's nil
+    //
+    // NOTE: passing NULL as heap is completely safe here,
+    // as we ain't going to allocate or change anything
+    int64_t shrinked = result;
+    char* shrinkedptr;
+    char** slot;
+    do {
+      if (shrinked < 0) break;
+      shrinked--;
+      shrinkedptr = reinterpret_cast<char*>(HNumber::Tag(shrinked));
+      slot = reinterpret_cast<char**>(RuntimeLookupProperty(NULL,
+                                                            obj,
+                                                            shrinkedptr,
+                                                            0));
+    } while (*slot == NULL);
+
+    // If array was shrinked - change length
+    if (result != (shrinked - 1)) {
+      result = shrinked + 1;
+      SetLength(obj, result);
+    }
+  }
+
+  return result;
 }
 
 

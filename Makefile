@@ -83,6 +83,8 @@ test: candor.a cand $(TESTS)
 	@test/test-binary
 	@test/test-numbers
 	@test/test-gc
+	@echo "-- Functional test --"
+	@echo test/functional/*.can | xargs ./cand
 
 test/%: test/%.cc candor.a
 	$(CXX) $(CPPFLAGS) -Isrc $< -o $@ candor.a

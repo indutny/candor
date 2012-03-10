@@ -156,6 +156,9 @@ AstNode* Parser::ParseStatement() {
 
 AstNode* Parser::ParseExpression(int priority) {
   AstNode* result = NULL;
+  AstNode* member = NULL;
+
+  Position pos(this);
 
   // Parse prefix unops and block expression
   switch (Peek()->type()) {
@@ -164,11 +167,14 @@ AstNode* Parser::ParseExpression(int priority) {
    case kNot:
    case kAdd:
    case kSub:
-    return ParsePrefixUnOp(Peek()->type());
+    member = ParsePrefixUnOp(Peek()->type());
+    break;
    case kBraceOpen:
-    return ParseObjectLiteral();
+    member = ParseObjectLiteral();
+    break;
    case kArrayOpen:
-    return ParseArrayLiteral();
+    member = ParseArrayLiteral();
+    break;
    case kTypeof:
    case kSizeof:
    case kKeysof:
@@ -178,20 +184,19 @@ AstNode* Parser::ParseExpression(int priority) {
       TokenType type = Peek()->type();
       Skip();
 
-      AstNode* expr = ParseExpression();
+      AstNode* expr = ParseExpression(7);
       if (expr == NULL) return NULL;
 
-      result = new AstNode(AstNode::ConvertType(type));
-      result->children()->Push(expr);
+      member = new AstNode(AstNode::ConvertType(type));
+      member->children()->Push(expr);
 
-      return pos.Commit(result);
+      pos.Commit(member);
+      break;
     }
    default:
+    member = ParseMember();
     break;
   }
-
-  Position pos(this);
-  AstNode* member = ParseMember();
 
   switch (Peek()->type()) {
    case kAssign:
@@ -247,6 +252,9 @@ AstNode* Parser::ParseExpression(int priority) {
       BINOP_SWITCH(type, result, 5, BINOP_PRI5)
      case 6:
       BINOP_SWITCH(type, result, 6, BINOP_PRI6)
+     case 7:
+      break;
+      // Do not parse binary operations
     }
   } while (initial != result);
 
@@ -264,7 +272,7 @@ AstNode* Parser::ParsePrefixUnOp(TokenType type) {
   {
     NegateSign n(this, type);
 
-    expr = ParseExpression();
+    expr = ParseExpression(7);
   }
 
   if (expr == NULL) return NULL;

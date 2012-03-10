@@ -402,9 +402,7 @@ class HArray : public HObject {
  public:
   static char* NewEmpty(Heap* heap);
 
-  static inline int64_t Length(char* obj) {
-    return *reinterpret_cast<int64_t*>(obj + 24);
-  }
+  static int64_t Length(char* obj, bool shrink);
 
   static inline void SetLength(char* obj, int64_t length) {
     *reinterpret_cast<int64_t*>(obj + 24) = length;

@@ -74,7 +74,7 @@ char* RuntimeLookupProperty(Heap* heap,
     hash = ComputeHash(numkey);
 
     // Update array's length on insertion (if increased)
-    if (insert && numkey > 0 && HArray::Length(obj) <= numkey) {
+    if (insert && numkey > 0 && HArray::Length(obj, false) <= numkey) {
       HArray::SetLength(obj, numkey + 1);
     }
   } else {
@@ -500,7 +500,7 @@ char* RuntimeSizeof(Heap* heap, char* value) {
     size = HCData::Size(value);
     break;
    case Heap::kTagArray:
-    size = HArray::Length(value);
+    size = HArray::Length(value, true);
     break;
    case Heap::kTagObject:
    case Heap::kTagNil:
