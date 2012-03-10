@@ -71,7 +71,7 @@ class Space {
   inline uint32_t size() { return size_; }
   inline uint32_t size_limit() { return size_limit_; }
   inline void compute_size_limit() {
-    size_limit_ = (size_ * 3) >> 1;
+    size_limit_ = size_ << 1;
   }
 
  protected:
