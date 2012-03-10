@@ -9,6 +9,8 @@ void RelocationInfo::Relocate(char* buffer) {
 
   if (type_ == kAbsolute) {
     addr = reinterpret_cast<uint64_t>(buffer) + target_;
+  } else if (type_ == kValue) {
+    addr = target_;
   } else {
     addr = target_ - offset_;
   }

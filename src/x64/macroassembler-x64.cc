@@ -91,9 +91,10 @@ void Masm::AllocateSpills(uint32_t spill_offset) {
   spill_offset_ = spill_offset;
   spills_ = 0;
   subq(rsp, Immediate(0));
-  spill_reloc_ = new RelocationInfo(RelocationInfo::kAbsolute,
-                                    RelocationInfo::kQuad,
-                                    offset());
+  spill_reloc_ = new RelocationInfo(RelocationInfo::kValue,
+                                    RelocationInfo::kLong,
+                                    offset() - 4);
+  relocation_info_.Push(spill_reloc_);
 }
 
 

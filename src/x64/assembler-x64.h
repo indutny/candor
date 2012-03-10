@@ -155,6 +155,7 @@ class RelocationInfo : public ZoneObject {
 
   enum RelocationInfoType {
     kAbsolute,
+    kValue,
     kRelative
   };
 
