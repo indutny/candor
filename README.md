@@ -17,6 +17,52 @@ may/will change in future**
 
 Note: only x64 is supported now.
 
+## Example
+
+```candor
+// Defining a recursive function
+factorial(x) {
+  if (x == 1) return 1
+  return x * factorial(x - 1)
+}
+
+factorial(10)
+
+// Implementing a forEach function
+forEach(array, callback) {
+  if (typeof array != "array") return
+  length = sizeof array
+  i = 0
+  while (i < length) {
+    callback(i, array[i])
+    i++
+  }
+}
+
+// Implementing switch with chained if..else
+type = typeof value
+if      (type == "nil")     handleNil(value)
+else if (type == "boolean") handleBoolean(value)
+else if (type == "number")  handleNumber(value)
+else if (type == "string")  handleString(value)
+else handleObject(value)
+
+// Implementing switch using objects
+handlers = {
+  "nil":     handleNil,
+  "boolean": handleBoolean,
+  "number":  handleNumber,
+  "string":  handleString
+}
+handler = handlers[typeof value]
+if (handler) handler(value)
+else handleObject(value)
+
+```
+
+As you can see, there're no semicolons, statements are separated by newline
+symbols (whitespace is ignored).
+
 ## Language basics
 
 Candor is essentially inspired by the [ECMA-script](http://www.ecmascript.org/),
@@ -144,53 +190,6 @@ while (i < 10) {
 // break exits a loop immediately, continue, skips to the next iteration
 
 ```
-
-## Example
-
-```candor
-// Defining a recursive function
-factorial(x) {
-  if (x == 1) return 1
-  return x * factorial(x - 1)
-}
-
-factorial(10)
-
-// Implementing a forEach function
-forEach(array, callback) {
-  if (typeof array != "array") return
-  length = sizeof array
-  i = 0
-  while (i < length) {
-    callback(i, array[i])
-    i++
-  }
-}
-
-// Implementing switch with chained if..else
-type = typeof value
-if      (type == "nil")     handleNil(value)
-else if (type == "boolean") handleBoolean(value)
-else if (type == "number")  handleNumber(value)
-else if (type == "string")  handleString(value)
-else handleObject(value)
-
-// Implementing switch using objects
-handlers = {
-  "nil":     handleNil,
-  "boolean": handleBoolean,
-  "number":  handleNumber,
-  "string":  handleString
-}
-handler = handlers[typeof value]
-if (handler) handler(value)
-else handleObject(value)
-
-```
-
-As you can see Candor's syntax is very close to the ecmascript's one. But
-there're no semicolons, statements are separated by newline symbols (whitespace
-is ignored).
 
 ## Building
 
