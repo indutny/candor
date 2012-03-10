@@ -186,9 +186,12 @@ Function* Function::New(const char* source, uint32_t length) {
                                                      length,
                                                      &root,
                                                      &error);
+  // Set errors
   if (code == NULL) {
     Isolate::GetCurrent()->SetSyntaxError(error);
     return NULL;
+  } else {
+    Isolate::GetCurrent()->SetSyntaxError(NULL);
   }
 
   char* obj = HFunction::New(Isolate::GetCurrent()->heap, NULL, code, root);

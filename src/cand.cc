@@ -1,4 +1,5 @@
 #include "candor.h"
+#include "utils.h" // candor::internal::List
 
 #include <stdio.h> // fprintf
 #include <stdlib.h> // abort
@@ -9,6 +10,8 @@
 
 #include <readline/readline.h>
 #include <readline/history.h>
+
+typedef candor::internal::List<char*, candor::internal::EmptyClass> List;
 
 const char* ReadContents(const char* filename, off_t* size) {
   int fd = open(filename, O_RDONLY, S_IRUSR | S_IRGRP);
@@ -91,15 +94,34 @@ candor::Object* CreateGlobal() {
 }
 
 
-char* PrependGlobals(char* cmd) {
+char* PrependGlobals(List* list) {
   const char* globals = "scope print, assert\n";
-  char* result = new char[strlen(globals) + strlen(cmd) + 1];
 
-  memcpy(result, globals, strlen(globals));
-  memcpy(result + strlen(globals), cmd, strlen(cmd));
+  int length = strlen(globals);
 
-  // Readline is using malloc()
-  free(cmd);
+  // Get total length
+  List::Item* item = list->head();
+  while (item != NULL) {
+    length += strlen(item->value()) + 1;
+    item = item->next();
+  }
+
+  // Allocate string
+  char* result = new char[length];
+
+  // Copy all strings into it
+  int offset = strlen(globals);
+  memcpy(result, globals, offset);
+
+  item = list->head();
+  while (item != NULL) {
+    memcpy(result + offset, item->value(), strlen(item->value()) + 1);
+    offset += strlen(item->value()) + 1;
+
+    item = item->next();
+    // Insert newlines between strings
+    if (item != NULL) result[offset - 1] = '\n';
+  }
 
   return result;
 }
@@ -109,31 +131,58 @@ void StartRepl() {
   candor::Isolate isolate;
   candor::Object* global = CreateGlobal();
 
+  List list;
+  list.allocated = true;
+
+  bool multiline = false;
+
   while (true) {
-    char* cmd = readline("> ");
+    char* cmd = readline(multiline ? "...   " : "cand> ");
 
-    cmd = PrependGlobals(cmd);
+    // cmd was malloc'ed, realloc it with a 'new'
+    {
+      char* tcmd = new char[strlen(cmd) + 1];
+      memcpy(tcmd, cmd, strlen(cmd) + 1);
+      free(cmd);
+      cmd = tcmd;
+    }
 
-    candor::Function* cmdfn = candor::Function::New(cmd, strlen(cmd));
+    // Push item to the list
+    list.Push(cmd);
 
+    const char* prepended = PrependGlobals(&list);
+    candor::Function* cmdfn = candor::Function::New(prepended,
+                                                    strlen(prepended));
+
+    // Continue collecting string on syntax error
     if (isolate.HasSyntaxError()) {
-      isolate.PrintSyntaxError();
-      delete cmd;
+      delete prepended;
+      multiline = true;
       continue;
     }
 
+    // Insert line into repl's history
+    if (!multiline) {
+      add_history(cmd);
+    }
+    delete prepended;
+
+    // Remove all collected lines
+    multiline = false;
+    while (list.length() != 0) delete list.Shift();
+
+    // Call compiled function
     cmdfn->SetContext(global);
 
     candor::Value* args[0];
     candor::Value* result = cmdfn->Call(0, args);
 
+    // Print result
     if (!result->Is<candor::Nil>()) {
       const char* value = StringToChar(result->ToString());
       fprintf(stdout, "%s\n", value);
       delete value;
     }
-
-    delete cmd;
   }
 }
 
