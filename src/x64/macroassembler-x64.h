@@ -30,6 +30,23 @@ class Masm : public Assembler {
     int32_t align_;
   };
 
+  class Spill {
+   public:
+    Spill(Masm* masm, Register src);
+    void Unspill(Register dst);
+
+    inline Masm* masm() { return masm_; }
+    inline int32_t index() { return index_; }
+
+   private:
+    Masm* masm_;
+    int32_t index_;
+  };
+
+  // Allocate slots for spills
+  void AllocateSpills(uint32_t spill_offset);
+  void FinalizeSpills();
+
   // Skip some bytes to make code aligned
   void AlignCode();
 
@@ -107,6 +124,7 @@ class Masm : public Assembler {
   inline void TagNumber(Register src);
   inline void Untag(Register src);
   inline Condition BinOpToCondition(BinOp::BinOpType type, BinOpUsage usage);
+  inline void SpillSlot(uint32_t index, Operand& op);
 
   // See VisitForSlot and VisitForValue in fullgen for disambiguation
   inline Register result() { return result_; }
@@ -121,6 +139,10 @@ class Masm : public Assembler {
   CodeSpace* space_;
 
   int32_t align_;
+
+  RelocationInfo* spill_reloc_;
+  uint32_t spill_offset_;
+  int32_t spills_;
 
   friend class Align;
 };

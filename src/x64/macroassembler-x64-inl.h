@@ -104,6 +104,12 @@ inline Condition Masm::BinOpToCondition(BinOp::BinOpType type,
   return kEq;
 }
 
+
+inline void Masm::SpillSlot(uint32_t index, Operand& op) {
+  op.base(rbp);
+  op.disp(-spill_offset_ - 8 * index);
+}
+
 } // namespace internal
 } // namespace candor
 

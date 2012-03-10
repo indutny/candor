@@ -72,6 +72,36 @@ Masm::Align::~Align() {
 }
 
 
+Masm::Spill::Spill(Masm* masm, Register src) : masm_(masm),
+                                               index_(masm->spills_++) {
+  Operand slot(rax, 0);
+  masm->SpillSlot(index(), slot);
+  masm->movq(slot, src);
+}
+
+
+void Masm::Spill::Unspill(Register dst) {
+  Operand slot(rax, 0);
+  masm()->SpillSlot(index(), slot);
+  masm()->movq(dst, slot);
+}
+
+
+void Masm::AllocateSpills(uint32_t spill_offset) {
+  spill_offset_ = spill_offset;
+  spills_ = 0;
+  subq(rsp, Immediate(0));
+  spill_reloc_ = new RelocationInfo(RelocationInfo::kAbsolute,
+                                    RelocationInfo::kQuad,
+                                    offset());
+}
+
+
+void Masm::FinalizeSpills() {
+  spill_reloc_->target(RoundUp(spills_ << 3, 16));
+}
+
+
 void Masm::Allocate(Heap::HeapTag tag,
                     Register size_reg,
                     uint32_t size,

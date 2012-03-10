@@ -112,6 +112,9 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
   uint32_t on_stack_size = RoundUp(8 + (stmt->stack_slots() + 1) * 8, 16);
   subq(rsp, Immediate(on_stack_size));
 
+  // Allocate space for spill slots
+  AllocateSpills(on_stack_size);
+
   // Allocate context and clear stack slots
   AllocateContext(stmt->context_slots());
   FillStackSlots(on_stack_size >> 3);
@@ -145,6 +148,8 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
 
 
 void Fullgen::GenerateEpilogue(AstNode* stmt) {
+  FinalizeSpills();
+
   // rax will hold result of function
   movq(rsp, rbp);
   pop(rbp);
