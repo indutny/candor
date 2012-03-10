@@ -131,6 +131,7 @@ class Number : public Value {
 
 class String : public Value {
  public:
+  static String* New(const char* value);
   static String* New(const char* value, uint32_t len);
 
   const char* Value();
@@ -144,7 +145,9 @@ class Object : public Value {
   static Object* New();
 
   void Set(String* key, Value* value);
+  void Set(const char* key, Value* value);
   Value* Get(String* key);
+  Value* Get(const char* key);
 
   static const ValueType tag = kObject;
 };

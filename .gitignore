@@ -1,6 +1,7 @@
 *.o
 *.a
 *.dSYM
+/cand
 /test/*
 !/test/*.h
 !/test/*.cc

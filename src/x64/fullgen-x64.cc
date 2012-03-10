@@ -534,12 +534,29 @@ AstNode* Fullgen::VisitProperty(AstNode* node) {
 
 
 void Fullgen::ConvertToBoolean() {
-  Label not_bool(this), coerced_type(this);
+  Label unboxed(this), truel(this), not_bool(this), coerced_type(this);
 
   // Check type and coerce if not boolean
   IsNil(result(), NULL, &not_bool);
-  IsUnboxed(result(), NULL, &not_bool);
+  IsUnboxed(result(), NULL, &unboxed);
   IsHeapObject(Heap::kTagBoolean, result(), &not_bool, NULL);
+
+  jmp(&coerced_type);
+
+  bind(&unboxed);
+
+  Operand truev(root_reg, HContext::GetIndexDisp(Heap::kRootTrueIndex));
+  Operand falsev(root_reg, HContext::GetIndexDisp(Heap::kRootFalseIndex));
+
+  cmpq(result(), Immediate(TagNumber(0)));
+  jmp(kNe, &truel);
+
+  movq(result(), falsev);
+
+  jmp(&coerced_type);
+  bind(&truel);
+
+  movq(result(), truev);
 
   jmp(&coerced_type);
   bind(&not_bool);
@@ -997,16 +1014,18 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
 
       Label true_(this), cond_end(this);
 
+      Operand truev(root_reg, HContext::GetIndexDisp(Heap::kRootTrueIndex));
+      Operand falsev(root_reg, HContext::GetIndexDisp(Heap::kRootFalseIndex));
+
       jmp(cond, &true_);
 
-      movq(scratch, Immediate(TagNumber(0)));
+      movq(rax, falsev);
       jmp(&cond_end);
 
       bind(&true_);
-      movq(scratch, Immediate(TagNumber(1)));
-      bind(&cond_end);
 
-      AllocateBoolean(scratch, result());
+      movq(rax, truev);
+      bind(&cond_end);
     } else {
       // Call runtime for all other binary ops (boolean logic)
       jmp(&not_unboxed);

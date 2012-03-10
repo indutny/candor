@@ -6,6 +6,7 @@
 #include "utils.h"
 
 #include <stdint.h> // uint32_t
+#include <string.h> // strlen
 #include <stdlib.h> // NULL
 
 namespace candor {
@@ -241,6 +242,12 @@ String* String::New(const char* value, uint32_t len) {
 }
 
 
+String* String::New(const char* value) {
+  return Cast<String>(HString::New(
+        Isolate::GetCurrent()->heap, Heap::kTenureNew, value, strlen(value)));
+}
+
+
 const char* String::Value() {
   return HString::Value(addr());
 }
@@ -268,6 +275,16 @@ Value* Object::Get(String* key) {
         Isolate::GetCurrent()->heap, addr(), key->addr(), 0));
 
   return Value::New(*slot);
+}
+
+
+void Object::Set(const char* key, Value* value) {
+  return Set(String::New(key), value);
+}
+
+
+Value* Object::Get(const char* key) {
+  return Get(String::New(key));
 }
 
 

@@ -541,9 +541,9 @@ void BinaryOpStub::Generate() {
 
   __ bind(&done);
 
-  __ pop(rbx);
-
   __ CheckGC();
+
+  __ pop(rbx);
 
   // Caller should unwind stack
   GenerateEpilogue(0);

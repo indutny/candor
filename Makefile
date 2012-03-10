@@ -75,7 +75,7 @@ TESTS += test/test-binary
 TESTS += test/test-numbers
 TESTS += test/test-gc
 
-test: $(TESTS)
+test: candor.a cand $(TESTS)
 	@test/test-parser
 	@test/test-scope
 	@test/test-api
@@ -86,6 +86,10 @@ test: $(TESTS)
 
 test/%: test/%.cc candor.a
 	$(CXX) $(CPPFLAGS) -Isrc $< -o $@ candor.a
+
+cand: src/cand.cc candor.a
+	$(CXX) $(CPPFLAGS) -Isrc $< -o $@ candor.a
+
 
 clean:
 	rm -f $(OBJS) candor.a
