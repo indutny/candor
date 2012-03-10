@@ -83,7 +83,7 @@ Masm::Spill::Spill(Masm* masm, Register src) : masm_(masm),
 
 
 Masm::Spill::Spill(Masm* masm, Register src, Register result) :
-    masm_(masm), src_(src), empty_(result.is(src)) {
+    masm_(masm), src_(src), index_(0), empty_(result.is(src)) {
   if (empty_) return;
 
   index_ = masm->spills_++;
@@ -127,9 +127,7 @@ void Masm::Allocate(Heap::HeapTag tag,
                     Register size_reg,
                     uint32_t size,
                     Register result) {
-  if (!result.is(rax)) {
-    Push(rax);
-  }
+  Spill rax_s(this, rax, result);
 
   // Two arguments
   ChangeAlign(2);
@@ -156,13 +154,13 @@ void Masm::Allocate(Heap::HeapTag tag,
 
   if (!result.is(rax)) {
     movq(result, rax);
-    Pop(rax);
+    rax_s.Unspill();
   }
 }
 
 
 void Masm::AllocateContext(uint32_t slots) {
-  Push(rax);
+  Spill rax_s(this, rax);
 
   // parent + number of slots + slots
   Allocate(Heap::kTagContext, reg_nil, 8 * (slots + 2), rax);
@@ -184,7 +182,7 @@ void Masm::AllocateContext(uint32_t slots) {
   // Replace current context
   // (It'll be restored by caller)
   movq(rdi, rax);
-  Pop(rax);
+  rax_s.Unspill();
 
   CheckGC();
 }
@@ -218,18 +216,17 @@ void Masm::AllocateNumber(DoubleRegister value, Register result) {
 
 void Masm::AllocateBoolean(Register value, Register result) {
   // Value is often a scratch register, so store it before doing a stub call
-  Push(value);
+  Spill value_s(this, value);
 
   Allocate(Heap::kTagBoolean, reg_nil, 8, result);
 
-  Pop(value);
-  Push(value);
+  value_s.Unspill();
 
   Operand qvalue(result, 8);
   Untag(value);
   movb(qvalue, value);
 
-  Pop(value);
+  value_s.Unspill();
 
   CheckGC();
 }
@@ -292,7 +289,7 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
   xorq(scratch, scratch);
 
   // Create map
-  Push(size);
+  Spill size_s(this, size);
 
   Untag(size);
   // keys + values
@@ -304,10 +301,8 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
   Allocate(Heap::kTagMap, size, 0, scratch);
   movq(qmap, scratch);
 
-  Pop(size);
-
-  Push(size);
-  Push(result);
+  size_s.Unspill();
+  Spill result_s(this, result);
   movq(result, scratch);
 
   // Save map size for GC
@@ -320,8 +315,9 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
   addq(result, Immediate(16));
   addq(size, result);
   Fill(result, size, Immediate(Heap::kTagNil));
-  Pop(result);
-  Pop(size);
+
+  result_s.Unspill();
+  size_s.Unspill();
 
   // Set length
   if (tag == Heap::kTagArray) {

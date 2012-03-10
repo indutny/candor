@@ -430,6 +430,10 @@ void CoerceToBooleanStub::Generate() {
 
 void BinaryOpStub::Generate() {
   GeneratePrologue();
+
+  // Allocate space for spill slots
+  __ AllocateSpills(8);
+
   __ push(Immediate(0));
   __ push(rbx);
 
@@ -572,8 +576,9 @@ void BinaryOpStub::Generate() {
 
   __ pop(rbx);
 
-  // Caller should unwind stack
-  GenerateEpilogue(0);
+  __ FinalizeSpills();
+
+  GenerateEpilogue(2);
 }
 
 #undef BINARY_SUB_TYPES

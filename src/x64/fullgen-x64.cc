@@ -952,136 +952,141 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
   Spill rax_s(this, rax, result());
   Spill rbx_s(this, rbx, result());
 
-  {
-    Align a(this);
 
-    Label restore(this), not_unboxed(this), done(this);
-    Label lhs_to_heap(this), rhs_to_heap(this);
+  Label not_unboxed(this), done(this);
+  Label lhs_to_heap(this), rhs_to_heap(this);
 
-    VisitForValue(op->lhs(), rax);
-    VisitForValue(op->rhs(), rbx);
+  VisitForValue(op->lhs(), rax);
+  VisitForValue(op->rhs(), rbx);
 
-    // No need to change align here, because it was already changed above
+  IsNil(rax, NULL, &not_unboxed);
+  IsNil(rbx, NULL, &not_unboxed);
+
+  IsUnboxed(rax, &not_unboxed, NULL);
+  IsUnboxed(rbx, &not_unboxed, NULL);
+
+  // Number (+) Number
+  if (BinOp::is_math(op->subtype())) {
+    Label restore(this);
     Spill lvalue(this, rax);
     Spill rvalue(this, rbx);
 
-    IsNil(rax, NULL, &not_unboxed);
-    IsNil(rbx, NULL, &not_unboxed);
+    Untag(rax);
+    Untag(rbx);
 
-    IsUnboxed(rax, &not_unboxed, NULL);
-    IsUnboxed(rbx, &not_unboxed, NULL);
+    switch (op->subtype()) {
+     case BinOp::kAdd: addq(rax, rbx); break;
+     case BinOp::kSub: subq(rax, rbx); break;
+     case BinOp::kMul: push(rdx); imulq(rbx); pop(rdx); break;
+     case BinOp::kDiv: push(rdx); idivq(rbx); pop(rdx); break;
 
-    // Number (+) Number
-    if (BinOp::is_math(op->subtype())) {
-      Untag(rax);
-      Untag(rbx);
-
-      switch (op->subtype()) {
-       case BinOp::kAdd: addq(rax, rbx); break;
-       case BinOp::kSub: subq(rax, rbx); break;
-       case BinOp::kMul: push(rdx); imulq(rbx); pop(rdx); break;
-       case BinOp::kDiv: push(rdx); idivq(rbx); pop(rdx); break;
-
-       default: emitb(0xcc); break;
-      }
-
-      // Call stub on overflow
-      jmp(kOverflow, &restore);
-
-      TagNumber(rax);
-      jmp(kCarry, &restore);
-
-      movq(result(), rax);
-    } else if (BinOp::is_binary(op->subtype())) {
-      Untag(rax);
-      Untag(rbx);
-
-      switch (op->subtype()) {
-       case BinOp::kBAnd: andq(rax, rbx); break;
-       case BinOp::kBOr: orq(rax, rbx); break;
-       case BinOp::kBXor: xorq(rax, rbx); break;
-
-       default: emitb(0xcc); break;
-      }
-
-      TagNumber(rax);
-      movq(result(), rax);
-    } else if (BinOp::is_logic(op->subtype())) {
-      Condition cond = BinOpToCondition(op->subtype(), kIntegral);
-      // Note: rax and rbx are boxed here
-      // Otherwise cmp won't work for negative numbers
-      cmpq(rax, rbx);
-
-      Label true_(this), cond_end(this);
-
-      Operand truev(root_reg, HContext::GetIndexDisp(Heap::kRootTrueIndex));
-      Operand falsev(root_reg, HContext::GetIndexDisp(Heap::kRootFalseIndex));
-
-      jmp(cond, &true_);
-
-      movq(rax, falsev);
-      jmp(&cond_end);
-
-      bind(&true_);
-
-      movq(rax, truev);
-      bind(&cond_end);
-    } else {
-      // Call runtime for all other binary ops (boolean logic)
-      jmp(&not_unboxed);
+     default: emitb(0xcc); break;
     }
 
-    jmp(&done);
+    // Call stub on overflow
+    jmp(kOverflow, &restore);
 
+    TagNumber(rax);
+    jmp(kCarry, &restore);
+
+    movq(result(), rax);
+
+    jmp(&done);
     bind(&restore);
 
     // Restore numbers
     lvalue.Unspill();
     rvalue.Unspill();
 
-    bind(&not_unboxed);
-
-    char* stub = NULL;
-
-#define BINARY_SUB_TYPES(V)\
-    V(Add)\
-    V(Sub)\
-    V(Mul)\
-    V(Div)\
-    V(BAnd)\
-    V(BOr)\
-    V(BXor)\
-    V(Eq)\
-    V(StrictEq)\
-    V(Ne)\
-    V(StrictNe)\
-    V(Lt)\
-    V(Gt)\
-    V(Le)\
-    V(Ge)\
-    V(LOr)\
-    V(LAnd)
-
-#define BINARY_SUB_ENUM(V)\
-    case BinOp::k##V: stub = stubs()->GetBinary##V##Stub(); break;
-
+    jmp(&not_unboxed);
+  } else if (BinOp::is_binary(op->subtype())) {
+    Untag(rax);
+    Untag(rbx);
 
     switch (op->subtype()) {
-     BINARY_SUB_TYPES(BINARY_SUB_ENUM)
+     case BinOp::kBAnd: andq(rax, rbx); break;
+     case BinOp::kBOr: orq(rax, rbx); break;
+     case BinOp::kBXor: xorq(rax, rbx); break;
+
      default: emitb(0xcc); break;
     }
+
+    TagNumber(rax);
+    movq(result(), rax);
+  } else if (BinOp::is_logic(op->subtype())) {
+    Condition cond = BinOpToCondition(op->subtype(), kIntegral);
+    // Note: rax and rbx are boxed here
+    // Otherwise cmp won't work for negative numbers
+    cmpq(rax, rbx);
+
+    Label true_(this), cond_end(this);
+
+    Operand truev(root_reg, HContext::GetIndexDisp(Heap::kRootTrueIndex));
+    Operand falsev(root_reg, HContext::GetIndexDisp(Heap::kRootFalseIndex));
+
+    jmp(cond, &true_);
+
+    movq(rax, falsev);
+    jmp(&cond_end);
+
+    bind(&true_);
+
+    movq(rax, truev);
+    bind(&cond_end);
+  } else {
+    // Call runtime for all other binary ops (boolean logic)
+    jmp(&not_unboxed);
+  }
+
+  jmp(&done);
+
+  char* stub = NULL;
+
+#define BINARY_SUB_TYPES(V)\
+  V(Add)\
+  V(Sub)\
+  V(Mul)\
+  V(Div)\
+  V(BAnd)\
+  V(BOr)\
+  V(BXor)\
+  V(Eq)\
+  V(StrictEq)\
+  V(Ne)\
+  V(StrictNe)\
+  V(Lt)\
+  V(Gt)\
+  V(Le)\
+  V(Ge)\
+  V(LOr)\
+  V(LAnd)
+
+#define BINARY_SUB_ENUM(V)\
+  case BinOp::k##V: stub = stubs()->GetBinary##V##Stub(); break;
+
+
+  switch (op->subtype()) {
+   BINARY_SUB_TYPES(BINARY_SUB_ENUM)
+   default: emitb(0xcc); break;
+  }
 #undef BINARY_SUB_ENUM
 #undef BINARY_SUB_TYPES
+
+  bind(&not_unboxed);
+  {
+    ChangeAlign(2);
+    Align a(this);
 
     assert(stub != NULL);
 
     push(rax);
     push(rbx);
     Call(stub);
+    ChangeAlign(-2);
 
-    bind(&done);
   }
 
+  bind(&done);
   Result(rax);
   rbx_s.Unspill();
   rax_s.Unspill();
