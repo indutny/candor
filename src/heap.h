@@ -442,6 +442,9 @@ class HFunction : public HValue {
     return *reinterpret_cast<char**>(addr + 8);
   }
 
+  static inline char* GetContext(char* addr);
+  static inline void SetContext(char* addr, char* context);
+
   inline char* root() { return *root_slot(); }
   inline char** root_slot() { return reinterpret_cast<char**>(addr() + 24); }
   inline char* parent() { return *parent_slot(); }

@@ -7,7 +7,8 @@
 #include <sys/types.h> // off_t
 #include <string.h> // memcpy
 
-using namespace candor;
+#include <readline/readline.h>
+#include <readline/history.h>
 
 const char* ReadContents(const char* filename, off_t* size) {
   int fd = open(filename, O_RDONLY, S_IRUSR | S_IRGRP);
@@ -36,7 +37,7 @@ const char* ReadContents(const char* filename, off_t* size) {
 }
 
 
-const char* StringToChar(String* str) {
+const char* StringToChar(candor::String* str) {
   char* result = new char[str->Length() + 1];
 
   memcpy(result, str->Value(), str->Length());
@@ -46,7 +47,7 @@ const char* StringToChar(String* str) {
 }
 
 
-Value* APIAssert(uint32_t argc, Arguments& argv) {
+candor::Value* APIAssert(uint32_t argc, candor::Arguments& argv) {
   if (argc < 1) {
     fprintf(stderr, "assert(): at least one argument is required\n");
     abort();
@@ -63,12 +64,12 @@ Value* APIAssert(uint32_t argc, Arguments& argv) {
     abort();
   }
 
-  return Boolean::True();
+  return candor::Boolean::True();
 }
 
 
-Value* APIPrint(uint32_t argc, Arguments& argv) {
-  if (argc < 1) return Nil::New();
+candor::Value* APIPrint(uint32_t argc, candor::Arguments& argv) {
+  if (argc < 1) return candor::Nil::New();
 
   const char* value = StringToChar(argv[0]->ToString());
 
@@ -76,36 +77,76 @@ Value* APIPrint(uint32_t argc, Arguments& argv) {
 
   delete value;
 
-  return Nil::New();
+  return candor::Nil::New();
 }
 
 
-Object* CreateGlobal() {
-  Object* obj = Object::New();
+candor::Object* CreateGlobal() {
+  candor::Object* obj = candor::Object::New();
 
-  obj->Set("assert", Function::New(APIAssert));
-  obj->Set("print", Function::New(APIPrint));
+  obj->Set("assert", candor::Function::New(APIAssert));
+  obj->Set("print", candor::Function::New(APIPrint));
 
   return obj;
 }
 
 
-int main(int argc, char** argv) {
-  if (argc < 2) {
-    fprintf(stdout, "Usage: cand [filename]\n");
-    exit(0);
+char* PrependGlobals(char* cmd) {
+  const char* globals = "scope print, assert\n";
+  char* result = new char[strlen(globals) + strlen(cmd) + 1];
+
+  memcpy(result, globals, strlen(globals));
+  memcpy(result + strlen(globals), cmd, strlen(cmd));
+
+  // Readline is using malloc()
+  free(cmd);
+
+  return result;
+}
+
+
+void StartRepl() {
+  candor::Object* global = CreateGlobal();
+
+  while (true) {
+    char* cmd = readline("> ");
+
+    cmd = PrependGlobals(cmd);
+
+    candor::Function* cmdfn = candor::Function::New(cmd, strlen(cmd));
+    cmdfn->SetContext(global);
+
+    candor::Value* args[0];
+    candor::Value* result = cmdfn->Call(0, args);
+
+    if (!result->Is<candor::Nil>()) {
+      const char* value = StringToChar(result->ToString());
+      fprintf(stdout, "%s\n", value);
+      delete value;
+    }
+
+    delete cmd;
   }
+}
 
-  off_t size = 0;
-  const char* script = ReadContents(argv[1], &size);
 
-  Isolate isolate;
-  Function* code = Function::New(script, size);
+int main(int argc, char** argv) {
+  candor::Isolate isolate;
 
-  Object* global = CreateGlobal();
+  if (argc < 2) {
+    // Start repl
+    StartRepl();
+  } else {
+    // Load script and run
+    off_t size = 0;
+    const char* script = ReadContents(argv[1], &size);
 
-  Value* args[0];
-  code->Call(global, 0, args);
+    candor::Function* code = candor::Function::New(script, size);
 
-  return 0;
+    candor::Value* args[0];
+
+    code->SetContext(CreateGlobal());
+
+    return code->Call(0, args)->ToNumber()->IntegralValue();
+  }
 }

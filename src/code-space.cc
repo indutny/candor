@@ -85,23 +85,10 @@ char* CodeSpace::Insert(char* code, uint32_t length) {
 }
 
 
-Value* CodeSpace::Run(char* fn,
-                      Object* context,
-                      uint32_t argc,
-                      Value* argv[]) {
+Value* CodeSpace::Run(char* fn, uint32_t argc, Value* argv[]) {
   char* code = HFunction::Code(fn);
   char* parent = HFunction::Parent(fn);
   char* root = HFunction::Root(fn);
-
-  // Set new context
-  if (context != NULL) {
-    // Note: that context have 0 index in root register
-    HContext* hroot = HValue::As<HContext>(root);
-
-    Object** root_slot = reinterpret_cast<Object**>(
-        hroot->GetSlotAddress(Heap::kRootGlobalIndex));
-    *root_slot = context;
-  }
 
   return reinterpret_cast<Code>(entry_)(root,
                                         HNumber::Tag(argc),

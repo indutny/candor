@@ -174,10 +174,18 @@ Function* Function::New(BindingCallback callback) {
 }
 
 
-Value* Function::Call(Object* context,
-                      uint32_t argc,
-                      Value* argv[]) {
-  return Isolate::GetCurrent()->space->Run(addr(), context, argc, argv);
+Object* Function::GetContext() {
+  return Cast<Object>(HFunction::GetContext(addr()));
+}
+
+
+void Function::SetContext(Object* context) {
+  return HFunction::SetContext(addr(), context->addr());
+}
+
+
+Value* Function::Call(uint32_t argc, Value* argv[]) {
+  return Isolate::GetCurrent()->space->Run(addr(), argc, argv);
 }
 
 

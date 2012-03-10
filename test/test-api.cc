@@ -11,7 +11,7 @@ static Value* Callback(uint32_t argc, Arguments& argv) {
   int64_t rhs_value = rhs->IntegralValue();
 
   Value* fargv[0];
-  int64_t fn_ret = fn->Call(NULL, 0, fargv)->As<Number>()->IntegralValue();
+  int64_t fn_ret = fn->Call(0, fargv)->As<Number>()->IntegralValue();
 
   return Number::NewIntegral(lhs_value + 2 * rhs_value + 3 * fn_ret);
 }
@@ -121,7 +121,7 @@ TEST_START("API test")
     argv[1] = Number::NewIntegral(2);
     argv[2] = Function::New(Callback);
 
-    Value* num = result->As<Function>()->Call(NULL, 3, argv);
+    Value* num = result->As<Function>()->Call(3, argv);
     assert(num->As<Number>()->Value() == 19);
   })
 
@@ -146,7 +146,7 @@ TEST_START("API test")
     data->Set(*key, Number::NewIntegral(1234));
     Value* argv[1] = { *data };
 
-    Value* result = callback->Call(NULL, 1, argv);
+    Value* result = callback->Call(1, argv);
     assert(result->As<Number>()->Value() == 1234);
   })
 
@@ -156,7 +156,10 @@ TEST_START("API test")
     Handle<Object> global(Object::New());
     global->Set(String::New("g", 1), Number::NewIntegral(1234));
 
-    Value* ret = result->As<Function>()->Call(*global, 0, argv);
+    Function* fn = result->As<Function>();
+    fn->SetContext(*global);
+
+    Value* ret = fn->Call(0, argv);
     assert(ret->As<Number>()->Value() == 1234);
   })
 
@@ -169,13 +172,13 @@ TEST_START("API test")
 
   FUN_TEST("return (x) { return x().y }", {
     Value* argv[1] = { Function::New(ObjectCallback) };
-    Value* ret = result->As<Function>()->Call(NULL, 1, argv);
+    Value* ret = result->As<Function>()->Call(1, argv);
     assert(ret->As<Number>()->Value() == 1234);
   })
 
   FUN_TEST("return (x) { return x()[3] }", {
     Value* argv[1] = { Function::New(ArrayCallback) };
-    Value* ret = result->As<Function>()->Call(NULL, 1, argv);
+    Value* ret = result->As<Function>()->Call(1, argv);
     assert(ret->As<Number>()->Value() == 4);
   })
 
@@ -183,7 +186,7 @@ TEST_START("API test")
     Value* argv[2];
     argv[0] = Function::New(FnThreeCallback);
     argv[1] = Function::New(FnTwoCallback);
-    Value* ret = result->As<Function>()->Call(NULL, 2, argv);
+    Value* ret = result->As<Function>()->Call(2, argv);
     assert(ret->Is<Nil>());
   })
 
@@ -200,8 +203,10 @@ TEST_START("API test")
     Object* global = Object::New();
     global->Set(String::New("get", 3), Function::New(GetWeak));
 
+    f->SetContext(global);
+
     Value* argv[0];
-    Value* ret = f->Call(global, 0, argv);
+    Value* ret = f->Call(0, argv);
     assert(ret->Is<Nil>());
     assert(weak_called == 1);
   }
@@ -225,8 +230,10 @@ TEST_START("API test")
     global->Set(String::New("use", 3), Function::New(UseCDataCallback));
     global->Set(String::New("data", 4), data);
 
+    f->SetContext(global);
+
     Value* argv[0];
-    Value* ret = f->Call(global, 0, argv);
+    Value* ret = f->Call(0, argv);
     assert(ret->Is<Nil>());
   }
 
@@ -244,8 +251,10 @@ TEST_START("API test")
     Object* global = Object::New();
     global->Set(String::New("get", 3), Function::New(GetWrapper));
 
+    f->SetContext(global);
+
     Value* argv[0];
-    Value* ret = f->Call(global, 0, argv);
+    Value* ret = f->Call(0, argv);
     assert(ret->Is<Nil>());
     assert(wrapper_destroyed == 1);
   }
@@ -269,8 +278,10 @@ TEST_START("API test")
     Object* global = Object::New();
     global->Set(String::New("print", 5), Function::New(FnCallback));
 
+    f->SetContext(global);
+
     Value* argv[0];
-    Value* ret = f->Call(global, 0, argv);
+    Value* ret = f->Call(0, argv);
     assert(ret->Is<Nil>());
   }
 
@@ -288,8 +299,10 @@ TEST_START("API test")
     Object* global = Object::New();
     global->Set(String::New("print", 5), Function::New(PrintCallback));
 
+    f->SetContext(global);
+
     Value* argv[0];
-    Value* ret = f->Call(global, 0, argv);
+    Value* ret = f->Call(0, argv);
     assert(ret->Is<Function>());
   }
 TEST_END("API test")

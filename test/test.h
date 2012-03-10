@@ -59,7 +59,7 @@ using namespace internal;
       Isolate i;\
       Function* f = Function::New(code, strlen(code));\
       Value* argv[0];\
-      Value* result = f->Call(NULL, 0, argv);\
+      Value* result = f->Call(0, argv);\
       block\
     }
 

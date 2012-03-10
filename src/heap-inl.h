@@ -136,6 +136,22 @@ inline char** HMap::GetSlotAddress(uint32_t index) {
   return reinterpret_cast<char**>(space() + index * 8);
 }
 
+
+inline char* HFunction::GetContext(char* addr) {
+  HContext* hroot = HValue::As<HContext>(HFunction::Root(addr));
+
+  char** root_slot = hroot->GetSlotAddress(Heap::kRootGlobalIndex);
+  return *root_slot;
+}
+
+
+inline void HFunction::SetContext(char* addr, char* context) {
+  HContext* hroot = HValue::As<HContext>(HFunction::Root(addr));
+
+  char** root_slot = hroot->GetSlotAddress(Heap::kRootGlobalIndex);
+  *root_slot = context;
+}
+
 } // namespace internal
 } // namespace candor
 

@@ -8,7 +8,6 @@
 namespace candor {
 
 // Forward declaration
-class Object;
 class Value;
 
 namespace internal {
@@ -30,7 +29,7 @@ class CodeSpace {
   char* Compile(const char* source, uint32_t length, char** root);
   char* Insert(char* code, uint32_t length);
 
-  Value* Run(char* fn, Object* context, uint32_t argc, Value* argv[]);
+  Value* Run(char* fn, uint32_t argc, Value* argv[]);
 
   inline Heap* heap() { return heap_; }
   inline Stubs* stubs() { return stubs_; }

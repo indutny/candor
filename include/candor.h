@@ -93,7 +93,10 @@ class Function : public Value {
   static Function* New(const char* source, uint32_t length);
   static Function* New(BindingCallback callback);
 
-  Value* Call(Object* context, uint32_t argc, Value* argv[]);
+  Object* GetContext();
+  void SetContext(Object* context);
+
+  Value* Call(uint32_t argc, Value* argv[]);
 
   static const ValueType tag = kFunction;
 };
