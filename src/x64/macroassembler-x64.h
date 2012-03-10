@@ -123,8 +123,6 @@ class Masm : public Assembler {
   inline void PushTagged(Register src);
   inline void PopTagged(Register src);
   inline void PreservePop(Register src, Register preserve);
-  inline void Save(Register src);
-  inline void Restore(Register src);
   inline void Result(Register src);
   inline uint64_t TagNumber(uint64_t number);
   inline void TagNumber(Register src);

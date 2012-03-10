@@ -41,16 +41,6 @@ inline void Masm::PreservePop(Register src, Register preserve) {
 }
 
 
-inline void Masm::Save(Register src) {
-  if (!result().is(src)) Push(src);
-}
-
-
-inline void Masm::Restore(Register src) {
-  if (!result().is(src)) Pop(src);
-}
-
-
 inline void Masm::Result(Register src) {
   if (!result().is(src)) movq(result(), src);
 }
