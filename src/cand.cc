@@ -8,9 +8,6 @@
 #include <sys/types.h> // off_t
 #include <string.h> // memcpy
 
-#include <readline/readline.h>
-#include <readline/history.h>
-
 typedef candor::internal::List<char*, candor::internal::EmptyClass> List;
 
 const char* ReadContents(const char* filename, off_t* size) {
@@ -134,15 +131,12 @@ void StartRepl() {
   bool multiline = false;
 
   while (true) {
-    char* cmd = readline(multiline ? "...   " : "cand> ");
+    char* cmd = new char[1000];
+    fprintf(stdout, multiline ? "...   " : "cand> ");
+    fgets(cmd, 1000, stdin);
 
-    // cmd was malloc'ed, realloc it with a 'new'
-    {
-      char* tcmd = new char[strlen(cmd) + 1];
-      memcpy(tcmd, cmd, strlen(cmd) + 1);
-      free(cmd);
-      cmd = tcmd;
-    }
+    // Replace '\n' with '\0'
+    cmd[strlen(cmd) - 1] = 0;
 
     // Push item to the list
     list.Push(cmd);
@@ -158,11 +152,6 @@ void StartRepl() {
         delete prepended;
         multiline = true;
         continue;
-      }
-
-      // Insert line into repl's history
-      if (!multiline) {
-        add_history(cmd);
       }
     }
 

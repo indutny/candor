@@ -90,7 +90,7 @@ test/%: test/%.cc candor.a
 	$(CXX) $(CPPFLAGS) -Isrc $< -o $@ candor.a
 
 cand: src/cand.cc candor.a
-	$(CXX) $(CPPFLAGS) -lreadline -Isrc $< -o $@ candor.a
+	$(CXX) $(CPPFLAGS) -Isrc $< -o $@ candor.a
 
 
 clean:
