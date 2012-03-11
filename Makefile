@@ -83,8 +83,9 @@ test: candor.a cand $(TESTS)
 	@test/test-binary
 	@test/test-numbers
 	@test/test-gc
-	@echo "-- Functional test --"
-	@find test/functional/ -name "*.can" | xargs ./cand
+	@./cand test/functional/basics.can
+	@./cand test/functional/arrays.can
+	@./cand test/functional/binary.can
 
 test/%: test/%.cc candor.a
 	$(CXX) $(CPPFLAGS) -Isrc $< -o $@ candor.a
