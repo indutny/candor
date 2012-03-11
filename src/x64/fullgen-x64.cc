@@ -1009,8 +1009,18 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
         movq(rax, rdx);
         movq(rdx, scratch);
         break;
-       case BinOp::kShl: emitb(0xcc); break;
-       case BinOp::kShr: emitb(0xcc); break;
+       case BinOp::kShl:
+        movq(scratch, rcx);
+        movq(rcx, rbx);
+        shl(rax);
+        movq(rcx, scratch);
+        break;
+       case BinOp::kShr:
+        movq(scratch, rcx);
+        movq(rcx, rbx);
+        shr(rax);
+        movq(rcx, scratch);
+        break;
 
        default: emitb(0xcc); break;
       }

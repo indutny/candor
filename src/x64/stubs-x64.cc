@@ -520,8 +520,18 @@ void BinaryOpStub::Generate() {
       __ movq(rax, rdx);
       __ movq(rdx, scratch);
       break;
-     case BinOp::kShl: __ emitb(0xcc); break;
-     case BinOp::kShr: __ emitb(0xcc); break;
+     case BinOp::kShl:
+      __ movq(scratch, rcx);
+      __ movq(rcx, rbx);
+      __ shl(rax);
+      __ movq(rcx, scratch);
+      break;
+     case BinOp::kShr:
+      __ movq(scratch, rcx);
+      __ movq(rcx, rbx);
+      __ shr(rax);
+      __ movq(rcx, scratch);
+      break;
      default: __ emitb(0xcc); break;
     }
 

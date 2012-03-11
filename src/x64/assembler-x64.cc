@@ -383,6 +383,20 @@ void Assembler::shr(Register dst, Immediate src) {
 }
 
 
+void Assembler::shl(Register dst) {
+  emit_rexw(rcx, dst);
+  emitb(0xD3);
+  emit_modrm(dst, 0x04);
+}
+
+
+void Assembler::shr(Register dst) {
+  emit_rexw(rcx, dst);
+  emitb(0xD3);
+  emit_modrm(dst, 0x05);
+}
+
+
 void Assembler::callq(Register dst) {
   emit_rexw(rax, dst);
   emitb(0xFF);
