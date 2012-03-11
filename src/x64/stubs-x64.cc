@@ -530,10 +530,18 @@ void BinaryOpStub::Generate() {
       __ movq(rcx, rbx);
 
       switch (type()) {
+       case BinOp::kUShl:
+       case BinOp::kUShr:
+         __ shl(rax, Immediate(1));
+         if (type() == BinOp::kShl) {
+           __ shl(rax);
+         } else {
+           __ shr(rax);
+         }
+         __ shr(rax, Immediate(1));
+         break;
        case BinOp::kShl: __ shl(rax); break;
        case BinOp::kShr: __ shr(rax); break;
-       case BinOp::kUShl: __ sal(rax); break;
-       case BinOp::kUShr: __ sar(rax); break;
        default: __ emitb(0xcc); break;
       }
 

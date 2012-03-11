@@ -38,13 +38,14 @@ inline uint64_t Masm::TagNumber(int64_t number) {
 
 
 inline void Masm::TagNumber(Register src) {
-  shl(src, Immediate(1));
+  // 1xxxxxxxx1 -> 11xxxxxxxx
+  sal(src, Immediate(1));
   orqb(src, Immediate(1));
 }
 
 
 inline void Masm::Untag(Register src) {
-  shr(src, Immediate(1));
+  sar(src, Immediate(1));
 }
 
 
