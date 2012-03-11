@@ -74,7 +74,7 @@ char* RuntimeLookupProperty(Heap* heap,
     hash = ComputeHash(numkey);
 
     // Update array's length on insertion (if increased)
-    if (insert && numkey > 0 && HArray::Length(obj, false) <= numkey) {
+    if (insert && numkey >= 0 && HArray::Length(obj, false) <= numkey) {
       HArray::SetLength(obj, numkey + 1);
     }
   } else {
