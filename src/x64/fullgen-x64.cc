@@ -976,7 +976,6 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
        case BinOp::kAdd: addq(rax, rbx); break;
        case BinOp::kSub: subq(rax, rbx); break;
        case BinOp::kMul: push(rdx); imulq(rbx); pop(rdx); break;
-       case BinOp::kDiv: push(rdx); idivq(rbx); pop(rdx); break;
 
        default: emitb(0xcc); break;
       }
