@@ -352,21 +352,6 @@ AstNode* Parser::ParsePrimary() {
   Lexer::Token* token = Peek();
   AstNode* result = NULL;
 
-  if (token->is(kAt)) {
-    Skip();
-    result = new AstNode(AstNode::kAt);
-
-    AstNode* name = ParsePrimary();
-    if (name == NULL || !name->is(AstNode::kName)) {
-      SetError("Expected name after '@'");
-      return NULL;
-    }
-
-    result->children()->Push(name);
-
-    return pos.Commit(result);
-  }
-
   switch (token->type()) {
    case kName:
    case kNumber:

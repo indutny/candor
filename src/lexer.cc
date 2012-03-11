@@ -97,7 +97,6 @@ Lexer::Token* Lexer::Consume() {
      case '.': type = kDot; break;
      case ',': type = kComma; break;
      case ':': type = kColon; break;
-     case '@': type = kAt; break;
      case '(': type = kParenOpen; break;
      case ')': type = kParenClose; break;
      case '{': type = kBraceOpen; break;

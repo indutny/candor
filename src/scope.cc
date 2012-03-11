@@ -24,8 +24,12 @@ Scope::Scope(ScopeAnalyze* a, Type type) : a_(a),
 
   // Increase depth when entering function
   // depth_ = 0 is for global object
-  depth_ = parent() == NULL ? 1 : parent()->depth_;
-  if (type_ == kFunction) depth_++;
+  if (parent() == NULL) {
+    depth_ = 0;
+  } else {
+    depth_ = parent()->depth_;
+    if (type_ == kFunction) depth_++;
+  }
 }
 
 
@@ -53,48 +57,49 @@ ScopeSlot* Scope::GetSlot(const char* name,
                           uint32_t length) {
   ScopeSlot* slot = Get(name, length);
 
-  if (slot == NULL) {
-    slot = new ScopeSlot(ScopeSlot::kStack);
-    Set(name, length, slot);
+  if (slot != NULL) return slot;
 
-    stack_count_++;
-  }
-
-  return slot;
-}
-
-
-AstValue* Scope::MoveToContext(AstNode* name) {
-  int32_t depth = type() == kFunction ? 1 : 0;
+  // No slot was found - go through scopes up to the root one
+  int depth = 1;
   Scope* scope = parent();
-
-  ScopeSlot* slot = NULL;
   while (scope != NULL) {
-    slot = scope->Get(name->value(), name->length());
+    slot = scope->Get(name, length);
+
     if (slot != NULL) {
       if (slot->is_stack()) {
         slot->type(ScopeSlot::kContext);
 
         scope->stack_count_--;
         scope->context_count_++;
+      } else if (slot->is_context() && slot->depth() == -1) {
+        depth = -1;
       }
       break;
     }
 
-    if (scope->type() == kFunction) depth++;
+    depth++;
     scope = scope->parent();
   }
 
-  if (slot == NULL) {
-    // No matching scope was found - allocate in global
-    slot = new ScopeSlot(ScopeSlot::kContext, -1);
+  ScopeSlot* source = slot;
+
+  if (source == NULL) {
+    if (depth_ == 0) {
+      // Global variable
+      slot = new ScopeSlot(ScopeSlot::kContext, -1);
+    } else {
+      // Stack variable
+      slot = new ScopeSlot(ScopeSlot::kStack);
+      stack_count_++;
+    }
   } else {
-    // Slot was found, create new one and link to it
-    ScopeSlot* source = slot;
+    // Context variable
     slot = new ScopeSlot(ScopeSlot::kContext, depth);
     source->uses()->Push(slot);
   }
-  return new AstValue(slot, name);
+  Set(name, length, slot);
+
+  return slot;
 }
 
 
@@ -185,21 +190,6 @@ AstNode* ScopeAnalyze::VisitFunction(AstNode* node) {
 
 AstNode* ScopeAnalyze::VisitCall(AstNode* node) {
   return VisitFunction(node);
-}
-
-
-AstNode* ScopeAnalyze::VisitBlock(AstNode* node) {
-  Scope scope(this, Scope::kBlock);
-  VisitChildren(node);
-  return node;
-}
-
-
-AstNode* ScopeAnalyze::VisitAt(AstNode* node) {
-  AstNode* name = node->lhs();
-  assert(name != NULL);
-
-  return scope()->MoveToContext(name);
 }
 
 

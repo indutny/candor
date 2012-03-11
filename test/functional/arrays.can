@@ -1,12 +1,12 @@
 // Sizeof
 a = [1, 2, 3, 4]
-@assert(sizeof a == 4, "sizeof")
-@assert(sizeof [1] == 1, "sizeof [1]")
+assert(sizeof a == 4, "sizeof")
+assert(sizeof [1] == 1, "sizeof [1]")
 
 // Growing
 a[4] = 5
-@assert(sizeof a == 5, "growing")
+assert(sizeof a == 5, "growing")
 
 // Shrinking
 a[4] = nil
-@assert(sizeof a == 4, "shrinking")
+assert(sizeof a == 4, "shrinking")

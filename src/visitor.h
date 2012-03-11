@@ -28,7 +28,6 @@ class Visitor {
   virtual AstNode* VisitWhile(AstNode* node);
   virtual AstNode* VisitAssign(AstNode* node);
   virtual AstNode* VisitMember(AstNode* node);
-  virtual AstNode* VisitAt(AstNode* node);
   virtual AstNode* VisitName(AstNode* node);
   virtual AstNode* VisitValue(AstNode* node);
   virtual AstNode* VisitNumber(AstNode* node);

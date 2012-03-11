@@ -24,7 +24,6 @@ namespace internal {
     V(BinOp)
 
 #define VISITOR_MAPPING_REGULAR(V)\
-    V(At)\
     V(Name)\
     V(Value)\
     V(Number)\

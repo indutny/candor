@@ -44,13 +44,6 @@ static Value* FnTwoCallback(uint32_t argc, Arguments& argv) {
   return Nil::New();
 }
 
-static Value* FnCallback(uint32_t argc, Arguments& argv) {
-  assert(argc == 1);
-  assert(argv[0]->Is<Function>());
-
-  return Nil::New();
-}
-
 static Value* PrintCallback(uint32_t argc, Arguments& argv) {
   assert(argc == 1);
 
@@ -150,7 +143,7 @@ TEST_START("API test")
     assert(result->As<Number>()->Value() == 1234);
   })
 
-  FUN_TEST("return () { return @g }", {
+  FUN_TEST("g\nreturn () { return g }", {
     Value* argv[0];
 
     Handle<Object> global(Object::New());
@@ -192,8 +185,9 @@ TEST_START("API test")
 
   {
     Isolate i;
-    const char* code = "(() {\n"
-                       "  x = @get()\n"
+    const char* code = "get\n"
+                       "(() {\n"
+                       "  x = get()\n"
                        "})()\n"
                        "__$gc()\n__$gc()";
 
@@ -213,7 +207,7 @@ TEST_START("API test")
   // CData
   {
     Isolate i;
-    const char* code = "@use(@data)";
+    const char* code = "use(data)";
 
     Function* f = Function::New(code, strlen(code));
 
@@ -238,8 +232,9 @@ TEST_START("API test")
   // CWrapper
   {
     Isolate i;
-    const char* code = "(() {\n"
-                       "  x = @get()\n"
+    const char* code = "get\n"
+                       "(() {\n"
+                       "  x = get()\n"
                        "})()\n"
                        "__$gc()\n__$gc()";
 
@@ -259,32 +254,9 @@ TEST_START("API test")
   // Regressions
   {
     Isolate i;
-    const char* code = "((fn) {\n"
-                       "  @print(fn)\n"
-                       "  fn2 = fn\n"
-                       "  return () {\n"
-                       "    @fn\n"
-                       "    @print(@fn2)\n"
-                       "  }\n"
-                       "})(() {\n"
-                       "})()";
-
-    Function* f = Function::New(code, strlen(code));
-
-    Object* global = Object::New();
-    global->Set(String::New("print", 5), Function::New(FnCallback));
-
-    f->SetContext(global);
-
-    Value* argv[0];
-    Value* ret = f->Call(0, argv);
-    assert(ret->Is<Nil>());
-  }
-
-  {
-    Isolate i;
-    const char* code = "fn() {\n"
-                       "  return @print\n"
+    const char* code = "print\n"
+                       "fn() {\n"
+                       "  return print\n"
                        "}\n"
                        "__$gc()\n"
                        "return fn()";

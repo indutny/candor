@@ -68,7 +68,6 @@ class Scope : public HashMap<ScopeSlot*, ZoneObject> {
   ~Scope();
 
   ScopeSlot* GetSlot(const char* name, uint32_t length);
-  AstValue* MoveToContext(AstNode* name);
 
   inline int32_t stack_count() { return stack_count_; }
   inline int32_t context_count() { return context_count_; }
@@ -100,8 +99,6 @@ class ScopeAnalyze : public Visitor {
 
   AstNode* VisitFunction(AstNode* node);
   AstNode* VisitCall(AstNode* node);
-  AstNode* VisitBlock(AstNode* node);
-  AstNode* VisitAt(AstNode* node);
   AstNode* VisitName(AstNode* node);
 
   inline Scope* scope() { return scope_; }

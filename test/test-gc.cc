@@ -8,15 +8,15 @@ TEST_START("GC test")
     assert(result->As<Number>()->Value() == 1);
   })
 
-  FUN_TEST("@x = () { return 1 }\n"
+  FUN_TEST("x = () { return 1 }\n"
            "__$gc()\n"
-           "return @x()", {
+           "return x()", {
     assert(result->As<Number>()->Value() == 1);
   })
 
   FUN_TEST("x = { y : { z : 3 } }\n"
            "a() {\n"
-           "return (() {\n@x.y = 2\n__$gc()\nreturn @x.y\n})()\n"
+           "return (() {\nx.y = 2\n__$gc()\nreturn x.y\n})()\n"
            "}\n"
            "return a()", {
     assert(result->As<Number>()->Value() == 2);
@@ -39,10 +39,10 @@ TEST_START("GC test")
   // Stress test
   FUN_TEST("a = 0\ny = 100\nz=1.0\n"
            "while(--y) {\n"
-           "  @a = 0\n"
+           "  a = 0\n"
            "  x = 10000\n"
            "  while(--x) {\n"
-           "    @a = { x: { y: @a } }\n"
+           "    a = { x: { y: a } }\n"
            "  }\n"
            "}\n"
            "return a.x.y", {

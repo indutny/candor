@@ -38,7 +38,6 @@ typedef List<AstNode*, ZoneObject> AstList;
     V(kBinOp)
 
 #define TYPE_MAPPING_LEXER(V)\
-    V(kAt)\
     V(kName)\
     V(kNumber)\
     V(kString)\

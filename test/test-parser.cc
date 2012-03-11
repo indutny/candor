@@ -9,7 +9,6 @@ TEST_START("parser test")
   PARSER_TEST("1.23", "[1.23]")
   PARSER_TEST("-1.23", "[kMinus [1.23]]")
   PARSER_TEST("1 -1.23", "[kSub [1] [1.23]]")
-  PARSER_TEST("@x", "[kAt [x]]")
 
   // Comments
   PARSER_TEST("1// comment", "[1]")
@@ -59,7 +58,6 @@ TEST_START("parser test")
   PARSER_TEST("a()()()", "[kCall [kCall [kCall [a] @[] ] @[] ] @[] ]")
   PARSER_TEST("a(b,c,d)", "[kCall [a] @[[b] [c] [d]] ]")
   PARSER_TEST("a() {}", "[kFunction [a] @[] [kNop ]]")
-  PARSER_TEST("a() { @x }", "[kFunction [a] @[] [kAt [x]]]")
   PARSER_TEST("a(b, c, d) { return b }",
               "[kFunction [a] @[[b] [c] [d]] [kReturn [b]]]")
   PARSER_TEST("(b, c, d) { return b }",
