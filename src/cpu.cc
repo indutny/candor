@@ -2,12 +2,7 @@
 #include "zone.h" // Zone
 #include "code-space.h" // CodeSpace
 
-#if __ARCH == x64
-#include "x64/assembler-x64.h"
-#include "x64/assembler-x64-inl.h"
-#else
-#include "ia32/assembler-ia32.h"
-#endif
+#include "macroassembler.h"
 
 #include <stdint.h> // uint32_t
 #include <string.h> // memcpy

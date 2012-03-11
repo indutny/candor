@@ -6,6 +6,7 @@
 #include "ast.h" // AstNode
 #include "code-space.h" // CodeSpace
 #include "heap.h" // Heap::HeapTag and etc
+#include "heap-inl.h"
 
 namespace candor {
 namespace internal {
