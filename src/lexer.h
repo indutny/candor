@@ -44,6 +44,8 @@ class Lexer {
     kBXor,
     kShl,
     kShr,
+    kUShl,
+    kUShr,
 
     // Logic
     kEq,

@@ -397,6 +397,36 @@ void Assembler::shr(Register dst) {
 }
 
 
+void Assembler::sal(Register dst, Immediate src) {
+  emit_rexw(rax, dst);
+  emitb(0xC1);
+  emit_modrm(dst, 0x04);
+  emitb(src.value());
+}
+
+
+void Assembler::sar(Register dst, Immediate src) {
+  emit_rexw(rax, dst);
+  emitb(0xC1);
+  emit_modrm(dst, 0x07);
+  emitb(src.value());
+}
+
+
+void Assembler::sal(Register dst) {
+  emit_rexw(rcx, dst);
+  emitb(0xD3);
+  emit_modrm(dst, 0x04);
+}
+
+
+void Assembler::sar(Register dst) {
+  emit_rexw(rcx, dst);
+  emitb(0xD3);
+  emit_modrm(dst, 0x07);
+}
+
+
 void Assembler::callq(Register dst) {
   emit_rexw(rax, dst);
   emitb(0xFF);

@@ -35,6 +35,8 @@ namespace internal {
     V(BXor)\
     V(Shl)\
     V(Shr)\
+    V(UShl)\
+    V(UShr)\
     V(Eq)\
     V(StrictEq)\
     V(Ne)\

@@ -915,18 +915,20 @@ AstNode* Fullgen::VisitUnOp(AstNode* node) {
 
     Label done(this), ret_false(this);
 
+    Operand truev(root_reg, HContext::GetIndexDisp(Heap::kRootTrueIndex));
+    Operand falsev(root_reg, HContext::GetIndexDisp(Heap::kRootFalseIndex));
+
     // Negate it
     IsTrue(result(), NULL, &ret_false);
 
-    movq(scratch, Immediate(TagNumber(1)));
+    movq(result(), truev);
 
     jmp(&done);
     bind(&ret_false);
-    movq(scratch, Immediate(TagNumber(0)));
+
+    movq(result(), falsev);
 
     bind(&done);
-    AllocateBoolean(scratch, result());
-    xorq(scratch, scratch);
 
   } else {
     UNEXPECTED
@@ -1010,15 +1012,20 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
         movq(rdx, scratch);
         break;
        case BinOp::kShl:
-        movq(scratch, rcx);
-        movq(rcx, rbx);
-        shl(rax);
-        movq(rcx, scratch);
-        break;
        case BinOp::kShr:
+       case BinOp::kUShl:
+       case BinOp::kUShr:
         movq(scratch, rcx);
         movq(rcx, rbx);
-        shr(rax);
+
+        switch (op->subtype()) {
+         case BinOp::kShl: shl(rax); break;
+         case BinOp::kShr: shr(rax); break;
+         case BinOp::kUShl: sal(rax); break;
+         case BinOp::kUShr: sar(rax); break;
+         default: emitb(0xcc); break;
+        }
+
         movq(rcx, scratch);
         break;
 
@@ -1068,6 +1075,8 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
     V(BXor)\
     V(Shl)\
     V(Shr)\
+    V(UShl)\
+    V(UShr)\
     V(Eq)\
     V(StrictEq)\
     V(Ne)\

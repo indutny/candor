@@ -288,6 +288,10 @@ class Assembler {
   void shr(Register dst, Immediate src);
   void shl(Register dst);
   void shr(Register dst);
+  void sal(Register dst, Immediate src);
+  void sar(Register dst, Immediate src);
+  void sal(Register dst);
+  void sar(Register dst);
 
   void callq(Register dst);
   void callq(Operand& dst);

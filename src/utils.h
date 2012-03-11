@@ -322,38 +322,58 @@ inline bool StringIsDouble(const char* value, uint32_t length) {
 }
 
 
+inline uint32_t StringGetNumSign(const char* value, uint32_t length, bool* s) {
+  uint32_t index = 0;
+  // Skip spaces
+  while (index < length && value[index] == ' ') index++;
+
+  // Check if we found sign
+  if (index < length && value[index] == '-') {
+    *s = true;
+    index++;
+  }
+
+  return index;
+}
+
+
 inline int64_t StringToInt(const char* value, uint32_t length) {
   int64_t result = 0;
-  for (uint32_t index = 0; index < length; index++) {
-    if (value[index] < '0' || value[index] > '9') return 0;
+  bool sign = false;
+
+  uint32_t index = StringGetNumSign(value, length, &sign);
+  for (; index < length; index++) {
+    if (value[index] < '0' || value[index] > '9') break;
     result *= 10;
     result += value[index] - '0';
   }
-  return result;
+
+  return sign ? -result : result;
 }
 
 
 inline double StringToDouble(const char* value, uint32_t length) {
   double integral = 0;
   double floating = 0;
+  bool sign = false;
 
-  uint32_t index;
-  for (index = 0; index < length; index++) {
+  uint32_t index = StringGetNumSign(value, length, &sign);
+  for (; index < length; index++) {
     if (value[index] == '.') break;
-    if (value[index] < '0' || value[index] > '9') return 0;
+    if (value[index] < '0' || value[index] > '9') break;
     integral *= 10;
     integral += value[index] - '0';
   }
 
-  if (index < length) {
+  if (index < length && value[index] == '.') {
     for (uint32_t i = length - 1; i > index; i--) {
-      if (value[i] < '0' || value[i] > '9') return 0;
+      if (value[i] < '0' || value[i] > '9') break;
       floating += value[i] - '0';
       floating /= 10;
     }
   }
 
-  return integral + floating;
+  return sign ? -(integral + floating) : integral + floating;
 }
 
 

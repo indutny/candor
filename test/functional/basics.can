@@ -1,3 +1,5 @@
+print('-- can: basics --')
+
 // Basic flow and binary ops checks
 i = 1000000
 while (i--) { }

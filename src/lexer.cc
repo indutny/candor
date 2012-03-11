@@ -162,6 +162,8 @@ Lexer::Token* Lexer::Consume() {
     if (has(3)) {
       MATH_THREE('=', '=', '=', kStrictEq)
       MATH_THREE('!', '=', '=', kStrictNe)
+      MATH_THREE('>', '>', '>', kUShr)
+      MATH_THREE('<', '<', '<', kUShl)
     }
 
     // Two char ops

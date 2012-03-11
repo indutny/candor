@@ -73,9 +73,6 @@ class Masm : public Assembler {
   // Allocate heap numbers
   void AllocateNumber(DoubleRegister value, Register result);
 
-  // Allocate boolean value, `value` should be either 0 or 1
-  void AllocateBoolean(Register value, Register result);
-
   // Allocate heap string (symbol)
   void AllocateString(const char* value, uint32_t length, Register result);
 
@@ -120,11 +117,9 @@ class Masm : public Assembler {
 
   inline void Push(Register src);
   inline void Pop(Register src);
-  inline void PushTagged(Register src);
-  inline void PopTagged(Register src);
   inline void PreservePop(Register src, Register preserve);
   inline void Result(Register src);
-  inline uint64_t TagNumber(uint64_t number);
+  inline uint64_t TagNumber(int64_t number);
   inline void TagNumber(Register src);
   inline void Untag(Register src);
   inline Condition BinOpToCondition(BinOp::BinOpType type, BinOpUsage usage);

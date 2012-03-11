@@ -420,6 +420,8 @@ void CoerceToBooleanStub::Generate() {
     V(BXor)\
     V(Shl)\
     V(Shr)\
+    V(UShl)\
+    V(UShr)\
     V(Eq)\
     V(StrictEq)\
     V(Ne)\
@@ -521,15 +523,20 @@ void BinaryOpStub::Generate() {
       __ movq(rdx, scratch);
       break;
      case BinOp::kShl:
-      __ movq(scratch, rcx);
-      __ movq(rcx, rbx);
-      __ shl(rax);
-      __ movq(rcx, scratch);
-      break;
      case BinOp::kShr:
+     case BinOp::kUShl:
+     case BinOp::kUShr:
       __ movq(scratch, rcx);
       __ movq(rcx, rbx);
-      __ shr(rax);
+
+      switch (type()) {
+       case BinOp::kShl: __ shl(rax); break;
+       case BinOp::kShr: __ shr(rax); break;
+       case BinOp::kUShl: __ sal(rax); break;
+       case BinOp::kUShr: __ sar(rax); break;
+       default: __ emitb(0xcc); break;
+      }
+
       __ movq(rcx, scratch);
       break;
      default: __ emitb(0xcc); break;
@@ -542,16 +549,17 @@ void BinaryOpStub::Generate() {
 
     Label true_(masm()), comp_end(masm());
 
+    Operand truev(root_reg, HContext::GetIndexDisp(Heap::kRootTrueIndex));
+    Operand falsev(root_reg, HContext::GetIndexDisp(Heap::kRootFalseIndex));
+
     __ jmp(cond, &true_);
 
-    __ movq(scratch, Immediate(masm()->TagNumber(0)));
+    __ movq(rax, falsev);
     __ jmp(&comp_end);
 
     __ bind(&true_);
-    __ movq(scratch, Immediate(masm()->TagNumber(1)));
+    __ movq(rax, truev);
     __ bind(&comp_end);
-
-    __ AllocateBoolean(scratch, rax);
   } else if (BinOp::is_bool_logic(type())) {
     // Just call the runtime (see code above)
   }

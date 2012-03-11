@@ -1,3 +1,5 @@
+print('-- can: arrays --')
+
 // Sizeof
 a = [1, 2, 3, 4]
 assert(sizeof a == 4, "sizeof")

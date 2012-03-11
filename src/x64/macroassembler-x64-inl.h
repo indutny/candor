@@ -18,20 +18,6 @@ inline void Masm::Pop(Register src) {
 }
 
 
-inline void Masm::PushTagged(Register src) {
-  shl(src, Immediate(1));
-  orqb(src, Immediate(1));
-  Push(src);
-  shr(src, Immediate(1));
-}
-
-
-inline void Masm::PopTagged(Register src) {
-  Pop(src);
-  shr(src, Immediate(1));
-}
-
-
 inline void Masm::PreservePop(Register src, Register preserve) {
   if (src.is(preserve)) {
     pop(scratch);
@@ -46,7 +32,7 @@ inline void Masm::Result(Register src) {
 }
 
 
-inline uint64_t Masm::TagNumber(uint64_t number) {
+inline uint64_t Masm::TagNumber(int64_t number) {
   return number << 1 | 1;
 }
 

@@ -213,24 +213,6 @@ void Masm::AllocateNumber(DoubleRegister value, Register result) {
 }
 
 
-void Masm::AllocateBoolean(Register value, Register result) {
-  // Value is often a scratch register, so store it before doing a stub call
-  Spill value_s(this, value);
-
-  Allocate(Heap::kTagBoolean, reg_nil, 8, result);
-
-  value_s.Unspill();
-
-  Operand qvalue(result, 8);
-  Untag(value);
-  movb(qvalue, value);
-
-  value_s.Unspill();
-
-  CheckGC();
-}
-
-
 void Masm::AllocateString(const char* value,
                           uint32_t length,
                           Register result) {
