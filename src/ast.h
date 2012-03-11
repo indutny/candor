@@ -178,6 +178,9 @@ class AstNode : public ZoneObject {
     V(kSub)\
     V(kDiv)\
     V(kMul)\
+    V(kMod)\
+    V(kShl)\
+    V(kShr)\
     V(kBAnd)\
     V(kBOr)\
     V(kBXor)\
@@ -243,7 +246,8 @@ class BinOp : public AstNode {
   }
 
   static inline bool is_binary(BinOpType type) {
-    return type == kBAnd || type == kBOr || type == kBXor;
+    return type == kBAnd || type == kBOr || type == kBXor || type == kMod ||
+           type == kShl || type == kShr;
   }
 
   static inline bool is_logic(BinOpType type) {

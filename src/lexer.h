@@ -38,10 +38,12 @@ class Lexer {
     kSub,
     kDiv,
     kMul,
+    kMod,
     kBAnd,
     kBOr,
     kBXor,
-    kMod,
+    kShl,
+    kShr,
 
     // Logic
     kEq,

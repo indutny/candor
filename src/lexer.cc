@@ -174,6 +174,8 @@ Lexer::Token* Lexer::Consume() {
       MATH_TWO('!', '=', kNe)
       MATH_TWO('|', '|', kLOr)
       MATH_TWO('&', '&', kLAnd)
+      MATH_TWO('>', '>', kShr)
+      MATH_TWO('<', '<', kShl)
     }
 
     MATH_ONE('+', kAdd)

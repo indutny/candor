@@ -414,9 +414,12 @@ void CoerceToBooleanStub::Generate() {
     V(Sub)\
     V(Mul)\
     V(Div)\
+    V(Mod)\
     V(BAnd)\
     V(BOr)\
     V(BXor)\
+    V(Shl)\
+    V(Shr)\
     V(Eq)\
     V(StrictEq)\
     V(Ne)\
@@ -511,6 +514,14 @@ void BinaryOpStub::Generate() {
      case BinOp::kBAnd: __ andq(rax, rbx); break;
      case BinOp::kBOr: __ orq(rax, rbx); break;
      case BinOp::kBXor: __ xorq(rax, rbx); break;
+     case BinOp::kMod:
+      __ movq(scratch, rdx);
+      __ idivq(rbx);
+      __ movq(rax, rdx);
+      __ movq(rdx, scratch);
+      break;
+     case BinOp::kShl: __ emitb(0xcc); break;
+     case BinOp::kShr: __ emitb(0xcc); break;
      default: __ emitb(0xcc); break;
     }
 

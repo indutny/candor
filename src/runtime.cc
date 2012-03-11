@@ -18,9 +18,12 @@ namespace internal {
     V(Sub)\
     V(Mul)\
     V(Div)\
+    V(Mod)\
     V(BAnd)\
     V(BOr)\
     V(BXor)\
+    V(Shl)\
+    V(Shr)\
     V(Eq)\
     V(StrictEq)\
     V(Ne)\
