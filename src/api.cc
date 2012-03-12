@@ -376,7 +376,9 @@ void* CData::GetContents() {
 }
 
 
-CWrapper::CWrapper() : data(CData::New(sizeof(void*))) {
+CWrapper::CWrapper() : data(CData::New(sizeof(void*))),
+                       ref_count(0),
+                       ref(NULL) {
   // Save pointer of class
   *reinterpret_cast<CWrapper**>(data->GetContents()) = this;
 
@@ -388,6 +390,25 @@ CWrapper::CWrapper() : data(CData::New(sizeof(void*))) {
 
 CWrapper::~CWrapper() {
   // Do nothing
+}
+
+
+void CWrapper::Ref() {
+  if (ref == NULL) {
+    ref = new Handle<CData>(Wrap());
+  }
+  ref_count++;
+}
+
+
+void CWrapper::Unref() {
+  ref_count--;
+  assert(ref_count >= 0);
+
+  if (ref_count == 0) {
+    delete ref;
+    ref = NULL;
+  }
 }
 
 

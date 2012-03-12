@@ -110,6 +110,19 @@ static Value* GetWrapper(uint32_t argc, Arguments& argv) {
 
   WrapTest* w = new WrapTest();
 
+  w->Ref();
+
+  return w->Wrap();
+}
+
+
+static Value* Unref(uint32_t argc, Arguments& argv) {
+  assert(argc == 1);
+
+  WrapTest* w = CWrapper::Unwrap<WrapTest>(argv[0]);
+
+  w->Unref();
+
   return w->Wrap();
 }
 
@@ -252,16 +265,21 @@ TEST_START("API test")
   {
     Isolate i;
     const char* code = "get = global.get\n"
+                       "unref = global.unref\n"
+                       "unwrap = global.unwrap\n"
                        "(() {\n"
                        "  x = get()\n"
+                       "  __$gc()\n"
+                       "  unwrap(x)\n"
+                       "  unref(x)\n"
                        "})()\n"
-                       "__$gc()\n__$gc()\n"
-                       "global.unwrap(get())";
+                       "__$gc()\n__$gc()";
 
     Function* f = Function::New(code, strlen(code));
 
     Object* global = Object::New();
     global->Set(String::New("get", 3), Function::New(GetWrapper));
+    global->Set(String::New("unref", 5), Function::New(Unref));
     global->Set(String::New("unwrap", 6), Function::New(Unwrap));
 
     f->SetContext(global);

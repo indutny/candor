@@ -235,10 +235,16 @@ class CWrapper {
     return *reinterpret_cast<T**>(value->As<CData>()->GetContents());
   }
 
+  void Ref();
+  void Unref();
+
   static void WeakCallback(CData* data);
 
  private:
   CData* data;
+
+  int ref_count;
+  Handle<CData>* ref;
 };
 
 } // namespace candor

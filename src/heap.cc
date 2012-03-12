@@ -380,7 +380,11 @@ char* HFunction::NewBinding(Heap* heap, char* addr, char* root) {
 
 
 char* HCData::New(Heap* heap, size_t size) {
-  return heap->AllocateTagged(Heap::kTagCData, Heap::kTenureNew, 8 + size);
+  char* d = heap->AllocateTagged(Heap::kTagCData, Heap::kTenureNew, 8 + size);
+
+  *reinterpret_cast<uint32_t*>(d + 8) = size;
+
+  return d;
 }
 
 } // namespace internal
