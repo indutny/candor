@@ -92,9 +92,17 @@ static int wrapper_destroyed = 0;
 
 class WrapTest : public CWrapper {
  public:
+  WrapTest() {
+    x = 0;
+    y = 1;
+    z = 2;
+    j = 3;
+  }
   ~WrapTest() {
     wrapper_destroyed++;
   }
+
+  int x, y, z, j;
 };
 
 static Value* GetWrapper(uint32_t argc, Arguments& argv) {

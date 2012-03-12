@@ -378,7 +378,7 @@ void* CData::GetContents() {
 
 CWrapper::CWrapper() : data(CData::New(sizeof(void*))) {
   // Save pointer of class
-  *reinterpret_cast<void**>(data->GetContents()) = this;
+  *reinterpret_cast<CWrapper**>(data->GetContents()) = this;
 
   // Mark handle as weak
   Handle<CData> handle(data);
