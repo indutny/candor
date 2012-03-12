@@ -238,7 +238,7 @@ TEST_START("functional test")
   })
 
   // Global lookup
-  FUN_TEST("a = 1\nreturn a", {
+  FUN_TEST("global.a = 1\nreturn global.a", {
     assert(result->As<Number>()->Value() == 1);
   })
 

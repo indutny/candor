@@ -143,7 +143,7 @@ TEST_START("API test")
     assert(result->As<Number>()->Value() == 1234);
   })
 
-  FUN_TEST("g\nreturn () { return g }", {
+  FUN_TEST("return () { return global.g }", {
     Value* argv[0];
 
     Handle<Object> global(Object::New());
@@ -185,7 +185,7 @@ TEST_START("API test")
 
   {
     Isolate i;
-    const char* code = "get\n"
+    const char* code = "get = global.get\n"
                        "(() {\n"
                        "  x = get()\n"
                        "})()\n"
@@ -207,7 +207,7 @@ TEST_START("API test")
   // CData
   {
     Isolate i;
-    const char* code = "use(data)";
+    const char* code = "global.use(global.data)";
 
     Function* f = Function::New(code, strlen(code));
 
@@ -232,7 +232,7 @@ TEST_START("API test")
   // CWrapper
   {
     Isolate i;
-    const char* code = "get\n"
+    const char* code = "get = global.get\n"
                        "(() {\n"
                        "  x = get()\n"
                        "})()\n"
@@ -254,7 +254,7 @@ TEST_START("API test")
   // Regressions
   {
     Isolate i;
-    const char* code = "print\n"
+    const char* code = "print = global.print\n"
                        "fn() {\n"
                        "  return print\n"
                        "}\n"

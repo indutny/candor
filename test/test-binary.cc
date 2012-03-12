@@ -14,7 +14,7 @@ TEST_START("binary operations test")
     assert(result->As<Number>()->Value() == 0);
   })
 
-  FUN_TEST("a() { a = 1\nreturn b() { a = a + 1\nreturn a} }\n"
+  FUN_TEST("a() { x = 1\nreturn b() { x = x + 1\nreturn x} }\n"
            "c = a()\nreturn c() + c() + c()", {
     assert(result->As<Number>()->Value() == 9);
   });

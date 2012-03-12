@@ -26,6 +26,8 @@ Scope::Scope(ScopeAnalyze* a, Type type) : a_(a),
   // depth_ = 0 is for global object
   if (parent() == NULL) {
     depth_ = 0;
+    // And put a global object in
+    Set("global", 6, new ScopeSlot(ScopeSlot::kContext, -1));
   } else {
     depth_ = parent()->depth_;
     if (type_ == kFunction) depth_++;
@@ -84,14 +86,9 @@ ScopeSlot* Scope::GetSlot(const char* name,
   ScopeSlot* source = slot;
 
   if (source == NULL) {
-    if (depth_ == 0) {
-      // Global variable
-      slot = new ScopeSlot(ScopeSlot::kContext, -1);
-    } else {
-      // Stack variable
-      slot = new ScopeSlot(ScopeSlot::kStack);
-      stack_count_++;
-    }
+    // Stack variable
+    slot = new ScopeSlot(ScopeSlot::kStack);
+    stack_count_++;
   } else {
     // Context variable
     slot = new ScopeSlot(ScopeSlot::kContext, depth);
