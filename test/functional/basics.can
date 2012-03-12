@@ -1,3 +1,6 @@
+print = global.print
+assert = global.assert
+
 print('-- can: basics --')
 
 // Basic flow and binary ops checks
