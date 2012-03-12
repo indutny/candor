@@ -113,6 +113,17 @@ static Value* GetWrapper(uint32_t argc, Arguments& argv) {
   return w->Wrap();
 }
 
+
+static Value* Unwrap(uint32_t argc, Arguments& argv) {
+  assert(argc == 1);
+
+  WrapTest* w = CWrapper::Unwrap<WrapTest>(argv[0]);
+
+  assert(w->j == 3);
+
+  return w->Wrap();
+}
+
 TEST_START("API test")
   FUN_TEST("return (a, b, c) {\n"
            "return a + b + c(1, 2, () { __$gc()\nreturn 3 }) + 2\n"
@@ -244,12 +255,14 @@ TEST_START("API test")
                        "(() {\n"
                        "  x = get()\n"
                        "})()\n"
-                       "__$gc()\n__$gc()";
+                       "__$gc()\n__$gc()\n"
+                       "global.unwrap(get())";
 
     Function* f = Function::New(code, strlen(code));
 
     Object* global = Object::New();
     global->Set(String::New("get", 3), Function::New(GetWrapper));
+    global->Set(String::New("unwrap", 6), Function::New(Unwrap));
 
     f->SetContext(global);
 

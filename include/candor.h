@@ -232,7 +232,7 @@ class CWrapper {
 
   template <class T>
   static inline T* Unwrap(Value* value) {
-    return reinterpret_cast<T*>(value->As<CData>()->GetContents());
+    return *reinterpret_cast<T**>(value->As<CData>()->GetContents());
   }
 
   static void WeakCallback(CData* data);
