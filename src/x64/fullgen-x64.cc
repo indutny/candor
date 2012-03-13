@@ -929,6 +929,7 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
 
       // Check if we overflowed into sign bit
       lvalue.Unspill(scratch);
+      rvalue.Unspill(rbx);
       andq(scratch, rbx);
       // Scratch contains sign mask in the highest bit
       // check it and call stub if needed
