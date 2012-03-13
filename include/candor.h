@@ -202,8 +202,11 @@ class Arguments {
 template <class T>
 class Handle {
  public:
+  Handle();
   Handle(Value* v);
   ~Handle();
+
+  void Wrap(Value* v);
 
   typedef void (*WeakCallback)(T* value);
 

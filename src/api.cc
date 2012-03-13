@@ -31,8 +31,10 @@ using namespace internal;
     template V* Value::Cast<V>(char* addr);\
     template V* Value::Cast<V>(Value* value);\
     template bool Value::Is<V>();\
+    template Handle<V>::Handle();\
     template Handle<V>::Handle(Value* v);\
     template Handle<V>::~Handle();\
+    template void Handle<V>::Wrap(Value* v);\
     template void Handle<V>::SetWeakCallback(WeakCallback callback);\
     template void Handle<V>::ClearWeak();
 TYPES_LIST(METHODS_ENUM)
@@ -92,17 +94,29 @@ void Isolate::SetSyntaxError(SyntaxError* err) {
 
 
 template <class T>
-Handle<T>::Handle(Value* v) : isolate(Isolate::GetCurrent()),
-                              value(v->As<T>()) {
-  isolate->heap->Reference(reinterpret_cast<HValue**>(&value),
-                           reinterpret_cast<HValue*>(value));
+Handle<T>::Handle() : isolate(Isolate::GetCurrent()), value(NULL) {
+}
+
+
+template <class T>
+Handle<T>::Handle(Value* v) : isolate(Isolate::GetCurrent()), value(NULL) {
+  Wrap(v);
 }
 
 
 template <class T>
 Handle<T>::~Handle() {
+  if (value == NULL) return;
   isolate->heap->Dereference(reinterpret_cast<HValue**>(&value),
                              reinterpret_cast<HValue*>(value));
+}
+
+
+template <class T>
+void Handle<T>::Wrap(Value* v) {
+  value = v->As<T>();
+  isolate->heap->Reference(reinterpret_cast<HValue**>(&value),
+                           reinterpret_cast<HValue*>(value));
 }
 
 
