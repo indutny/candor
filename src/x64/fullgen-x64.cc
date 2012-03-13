@@ -133,9 +133,9 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
     cmpq(rsi, Immediate(TagNumber(i)));
     jmp(kLt, &body);
 
-    VisitForSlot(item->value(), &lhs, scratch);
+    VisitForSlot(item->value());
     movq(rdx, rhs);
-    movq(lhs, rdx);
+    movq(slot(), rdx);
 
     item = item->next();
   }
@@ -144,7 +144,6 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
 
   // Cleanup junk
   xorq(rdx, rdx);
-  xorq(scratch, scratch);
 }
 
 
@@ -159,7 +158,7 @@ void Fullgen::GenerateEpilogue(AstNode* stmt) {
 
 void Fullgen::PlaceInRoot(char* addr) {
   Operand root_op(root_reg, 8 * (3 + root_context()->length()));
-  movq(result(), root_op);
+  movq(rax, root_op);
 
   root_context()->Push(addr);
 }
@@ -170,43 +169,34 @@ char* Fullgen::AllocateRoot() {
 }
 
 
-AstNode* Fullgen::VisitForValue(AstNode* node, Register reg) {
+AstNode* Fullgen::VisitForValue(AstNode* node) {
   // Save previous data
-  Register stored = result_;
   VisitorType stored_type = visitor_type_;
 
   // Set new
-  result_ = reg;
   visitor_type_ = kValue;
 
   // Visit node
   AstNode* result = Visit(node);
 
   // Restore
-  result_ = stored;
   visitor_type_ = stored_type;
 
   return result;
 }
 
 
-AstNode* Fullgen::VisitForSlot(AstNode* node, Operand* op, Register base) {
+AstNode* Fullgen::VisitForSlot(AstNode* node) {
   // Save data
-  Operand* stored = slot_;
-  Register stored_base = result_;
   VisitorType stored_type = visitor_type_;
 
   // Set new
-  slot_ = op;
-  result_ = base;
   visitor_type_ = kSlot;
 
   // Visit node
   AstNode* result = Visit(node);
 
   // Restore
-  slot_ = stored;
-  result_ = stored_base;
   visitor_type_ = stored_type;
 
   return result;
@@ -218,28 +208,25 @@ AstNode* Fullgen::VisitFunction(AstNode* stmt) {
   FFunction* ffn = new CandorFunction(this, fn);
   fns_.Push(ffn);
 
-  Spill rax_s(this, rax, result());
-  Spill rcx_s(this, rcx, result());
-
   movq(rcx, Immediate(0));
   ffn->Use(offset());
 
   // Allocate function object that'll reference to current scope
   // and have address of actual code
-  AllocateFunction(rcx, rax);
 
-  if (visiting_for_value() && fn->variable() == NULL) {
-    Result(rax);
-  } else {
+  if (fn->variable() != NULL) {
+    AllocateFunction(rcx, rdx);
+
+    Spill rdx_s(this, rdx);
+
     AstNode* assign = new AstNode(AstNode::kAssign);
     assign->children()->Push(fn->variable());
-    assign->children()->Push(new FAstRegister(rax));
+    assign->children()->Push(new FAstSpill(&rdx_s));
 
     Visit(assign);
+  } else {
+    AllocateFunction(rcx, rax);
   }
-
-  rcx_s.Unspill();
-  rax_s.Unspill();
 
   return stmt;
 }
@@ -266,15 +253,14 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
   if (fn->variable()->is(AstNode::kValue) &&
       name->length() == 5 && strncmp(name->value(), "__$gc", 5) == 0) {
     Call(stubs()->GetCollectGarbageStub());
-    movq(result(), Immediate(0));
-
+    movq(rax, Immediate(Heap::kTagNil));
     return stmt;
   }
 
-  // Save rax if we're not going to overwrite it
-  Spill rax_s(this, rax, result());
+  VisitForValue(fn->variable());
 
-  VisitForValue(fn->variable(), rax);
+  Spill rax_s(this, rax);
+
   IsNil(rax, NULL, &not_function);
   IsUnboxed(rax, NULL, &not_function);
   IsHeapObject(Heap::kTagFunction, rax, &not_function, NULL);
@@ -289,11 +275,11 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
     while (item != NULL) {
       {
         Align a(this);
-        VisitForValue(item->value(), rsi);
+        VisitForValue(item->value());
       }
 
       // Push argument and change alignment
-      push(rsi);
+      push(rax);
       ChangeAlign(1);
       item = item->next();
     }
@@ -301,6 +287,7 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
     ChangeAlign(-fn->args()->length());
 
     // Generate calling code
+    rax_s.Unspill();
     Call(rax, fn->args()->length());
 
     if (fn->args()->length() != 0) {
@@ -312,40 +299,32 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
   rdi_s.Unspill();
   rsi_s.Unspill();
 
-  Result(rax);
-
   jmp(&done);
   bind(&not_function);
 
-  movq(result(), Immediate(Heap::kTagNil));
+  movq(rax, Immediate(Heap::kTagNil));
 
   bind(&done);
-
-  rax_s.Unspill();
 
   return stmt;
 }
 
 
 AstNode* Fullgen::VisitAssign(AstNode* stmt) {
-  Spill rax_s(this, rax, result());
-  Spill rbx_s(this, rbx, result());
-
   // Get value of right-hand side expression in rbx
-  VisitForValue(stmt->rhs(), rbx);
+  VisitForValue(stmt->rhs());
+  Spill rax_s(this, rax);
 
   // Get target slot for left-hand side
-  Operand lhs(rax, 0);
-  VisitForSlot(stmt->lhs(), &lhs, rax);
+  VisitForSlot(stmt->lhs());
+
+  rax_s.Unspill(scratch);
 
   // Put value into slot
-  movq(lhs, rbx);
+  movq(slot(), scratch);
 
   // Propagate result of assign operation
-  Result(rbx);
-
-  rbx_s.Unspill();
-  rax_s.Unspill();
+  movq(rax, scratch);
 
   return stmt;
 }
@@ -355,65 +334,65 @@ AstNode* Fullgen::VisitValue(AstNode* node) {
   AstValue* value = AstValue::Cast(node);
 
   // If it's Fullgen generated AST Value
-  if (value->is_register()) {
+  if (value->is_spill()) {
     assert(visiting_for_value());
-    movq(result(), FAstRegister::Cast(value)->reg());
+    FAstSpill::Cast(value)->spill()->Unspill(rax);
     return node;
   }
 
   if (value->is_operand()) {
-    slot()->base(FAstOperand::Cast(value)->op()->base());
-    slot()->disp(FAstOperand::Cast(value)->op()->disp());
+    slot().base(FAstOperand::Cast(value)->op()->base());
+    slot().disp(FAstOperand::Cast(value)->op()->disp());
 
     if (visiting_for_value()) {
-      movq(result(), *slot());
+      movq(rax, slot());
     }
 
     return node;
   }
 
-  slot()->scale(Operand::one);
+  slot().scale(Operand::one);
 
   // Get pointer to slot first
   if (value->slot()->is_stack()) {
     // On stack variables
-    slot()->base(rbp);
-    slot()->disp(-8 * (value->slot()->index() + 1));
+    slot().base(rbp);
+    slot().disp(-8 * (value->slot()->index() + 1));
   } else {
     int32_t depth = value->slot()->depth();
 
     if (depth == -2) {
       // Root register lookup
-      slot()->base(root_reg);
-      slot()->disp(8 * (value->slot()->index() + 3));
+      slot().base(root_reg);
+      slot().disp(8 * (value->slot()->index() + 3));
     } else if (depth == -1) {
       // Global lookup
-      slot()->base(root_reg);
-      slot()->disp(HContext::GetIndexDisp(Heap::kRootGlobalIndex));
+      slot().base(root_reg);
+      slot().disp(HContext::GetIndexDisp(Heap::kRootGlobalIndex));
 
       if (visiting_for_slot()) {
         Throw(Heap::kErrorIncorrectLhs);
       }
     } else {
       // Context variables
-      movq(result(), rdi);
+      movq(rax, rdi);
 
       // Lookup context
       while (--depth >= 0) {
-        Operand parent(result(), 8);
-        movq(result(), parent);
+        Operand parent(rax, 8);
+        movq(rax, parent);
       }
 
-      slot()->base(result());
-      slot()->scale(Operand::one);
+      slot().base(rax);
+      slot().scale(Operand::one);
       // Skip tag, code addr and reference to parent scope
-      slot()->disp(8 * (value->slot()->index() + 3));
+      slot().disp(8 * (value->slot()->index() + 3));
     }
   }
 
   // If we was asked to return value - dereference slot
   if (visiting_for_value()) {
-    movq(result(), *slot());
+    movq(rax, slot());
   }
 
   return node;
@@ -423,47 +402,41 @@ AstNode* Fullgen::VisitValue(AstNode* node) {
 AstNode* Fullgen::VisitMember(AstNode* node) {
   Label is_object(this), non_object_error(this), done(this);
 
-  VisitForValue(node->lhs(), result());
+  VisitForValue(node->lhs());
 
   // Throw error if we're trying to lookup into nil object
-  IsNil(result(), NULL, &non_object_error);
-  IsUnboxed(result(), NULL, &non_object_error);
+  IsNil(rax, NULL, &non_object_error);
+  IsUnboxed(rax, NULL, &non_object_error);
 
   // Or into non-object
-  IsHeapObject(Heap::kTagObject, result(), NULL, &is_object);
-  IsHeapObject(Heap::kTagArray, result(), &non_object_error, NULL);
+  IsHeapObject(Heap::kTagObject, rax, NULL, &is_object);
+  IsHeapObject(Heap::kTagArray, rax, &non_object_error, NULL);
 
   bind(&is_object);
 
-  // Calculate hash of property
-
-  Spill rax_s(this, rax, result());
   {
     // Stub(change, property, object)
     ChangeAlign(3);
     Align a(this);
 
-    push(result());
+    push(rax);
 
-    VisitForValue(node->rhs(), result());
-    push(result());
+    VisitForValue(node->rhs());
+    push(rax);
 
-    movq(result(), Immediate(visiting_for_slot()));
-    push(result());
+    push(Immediate(visiting_for_slot()));
 
     Call(stubs()->GetLookupPropertyStub());
     // Stub will unwind stack automatically
     ChangeAlign(-3);
   }
-  Result(rax);
-  rax_s.Unspill();
 
-  slot()->base(result());
-  slot()->disp(0);
+  slot().base(rax);
+  slot().disp(0);
 
   // Unbox value if asked
   if (visiting_for_value()) {
-    movq(result(), *slot());
+    movq(rax, slot());
   }
 
   jmp(&done);
@@ -472,10 +445,10 @@ AstNode* Fullgen::VisitMember(AstNode* node) {
 
   // Non object lookups will return nil
   if (visiting_for_value()) {
-    movq(result(), Immediate(Heap::kTagNil));
+    movq(rax, Immediate(Heap::kTagNil));
   } else {
-    movq(result(), root_reg);
-    addq(result(), HContext::GetIndexDisp(Heap::kRootNilIndex));
+    movq(rax, root_reg);
+    addq(rax, HContext::GetIndexDisp(Heap::kRootNilIndex));
   }
 
   bind(&done);
@@ -498,7 +471,7 @@ AstNode* Fullgen::VisitNumber(AstNode* node) {
   } else {
     // Allocate unboxed number
     int64_t value = StringToInt(node->value(), node->length());
-    movq(result(), Immediate(TagNumber(value)));
+    movq(rax, Immediate(TagNumber(value)));
   }
 
   return node;
@@ -530,9 +503,9 @@ void Fullgen::ConvertToBoolean() {
   Label unboxed(this), truel(this), not_bool(this), coerced_type(this);
 
   // Check type and coerce if not boolean
-  IsNil(result(), NULL, &not_bool);
-  IsUnboxed(result(), NULL, &unboxed);
-  IsHeapObject(Heap::kTagBoolean, result(), &not_bool, NULL);
+  IsNil(rax, NULL, &not_bool);
+  IsUnboxed(rax, NULL, &unboxed);
+  IsHeapObject(Heap::kTagBoolean, rax, &not_bool, NULL);
 
   jmp(&coerced_type);
 
@@ -541,32 +514,29 @@ void Fullgen::ConvertToBoolean() {
   Operand truev(root_reg, HContext::GetIndexDisp(Heap::kRootTrueIndex));
   Operand falsev(root_reg, HContext::GetIndexDisp(Heap::kRootFalseIndex));
 
-  cmpq(result(), Immediate(TagNumber(0)));
+  cmpq(rax, Immediate(TagNumber(0)));
   jmp(kNe, &truel);
 
-  movq(result(), falsev);
+  movq(rax, falsev);
 
   jmp(&coerced_type);
   bind(&truel);
 
-  movq(result(), truev);
+  movq(rax, truev);
 
   jmp(&coerced_type);
   bind(&not_bool);
 
-  // Coerce type to boolean
-  Spill s(this, result(), rax);
   {
     // Stub(value)
     ChangeAlign(1);
     Align a(this);
 
-    push(result());
+    push(rax);
     Call(stubs()->GetCoerceToBooleanStub());
     // Stub will unwind stack automatically
     ChangeAlign(-1);
   }
-  s.Unspill();
 
   bind(&coerced_type);
 }
@@ -581,18 +551,18 @@ AstNode* Fullgen::VisitIf(AstNode* node) {
   AstNode* fail = NULL;
   if (fail_item != NULL) fail = fail_item->value();
 
-  VisitForValue(expr, result());
+  VisitForValue(expr);
 
   ConvertToBoolean();
 
-  IsTrue(result(), &fail_body, NULL);
+  IsTrue(rax, &fail_body, NULL);
 
-  VisitForValue(success, result());
+  VisitForValue(success);
 
   jmp(&done);
   bind(&fail_body);
 
-  if (fail != NULL) VisitForValue(fail, result());
+  if (fail != NULL) VisitForValue(fail);
 
   bind(&done);
 
@@ -608,13 +578,13 @@ AstNode* Fullgen::VisitWhile(AstNode* node) {
 
   bind(&loop_start);
 
-  VisitForValue(expr, result());
+  VisitForValue(expr);
 
   ConvertToBoolean();
 
-  IsTrue(result(), &loop_end, NULL);
+  IsTrue(rax, &loop_end, NULL);
 
-  VisitForValue(body, result());
+  VisitForValue(body);
 
   jmp(&loop_start);
 
@@ -630,7 +600,7 @@ AstNode* Fullgen::VisitNil(AstNode* node) {
     return node;
   }
 
-  movq(result(), Immediate(Heap::kTagNil));
+  movq(rax, Immediate(Heap::kTagNil));
 
   return node;
 }
@@ -643,7 +613,7 @@ AstNode* Fullgen::VisitTrue(AstNode* node) {
   }
 
   Operand true_slot(root_reg, HContext::GetIndexDisp(Heap::kRootTrueIndex));
-  movq(result(), true_slot);
+  movq(rax, true_slot);
 
   return node;
 }
@@ -656,7 +626,7 @@ AstNode* Fullgen::VisitFalse(AstNode* node) {
   }
 
   Operand false_slot(root_reg, HContext::GetIndexDisp(Heap::kRootFalseIndex));
-  movq(result(), false_slot);
+  movq(rax, false_slot);
 
   return node;
 }
@@ -670,12 +640,11 @@ AstNode* Fullgen::VisitObjectLiteral(AstNode* node) {
 
   ObjectLiteral* obj = ObjectLiteral::Cast(node);
 
-  Spill rax_s(this, rax, result());
-  Spill rbx_s(this, rbx, result());
-
   // Ensure that map will be filled only by half at maximum
   movq(rbx, Immediate(TagNumber(PowerOfTwo(node->children()->length() << 1))));
-  AllocateObjectLiteral(Heap::kTagObject, rbx, rax);
+  AllocateObjectLiteral(Heap::kTagObject, rbx, rdx);
+
+  Spill rdx_s(this, rdx);
 
   // Set every key/value pair
   assert(obj->keys()->length() == obj->values()->length());
@@ -683,22 +652,20 @@ AstNode* Fullgen::VisitObjectLiteral(AstNode* node) {
   AstList::Item* value = obj->values()->head();
   while (key != NULL) {
     AstNode* member = new AstNode(AstNode::kMember);
-    member->children()->Push(new FAstRegister(rax));
+    member->children()->Push(new FAstSpill(&rdx_s));
     member->children()->Push(key->value());
 
     AstNode* assign = new AstNode(AstNode::kAssign);
     assign->children()->Push(member);
     assign->children()->Push(value->value());
 
-    VisitForValue(assign, rbx);
+    VisitForValue(assign);
 
     key = key->next();
     value = value->next();
   }
 
-  Result(rax);
-  rbx_s.Unspill();
-  rax_s.Unspill();
+  rdx_s.Unspill(rax);
 
   return node;
 }
@@ -710,13 +677,12 @@ AstNode* Fullgen::VisitArrayLiteral(AstNode* node) {
     return node;
   }
 
-  Spill rax_s(this, rax, result());
-  Spill rbx_s(this, rbx, result());
-
   // Ensure that map will be filled only by half at maximum
   movq(rbx,
        Immediate(TagNumber(PowerOfTwo(node->children()->length() << 1))));
-  AllocateObjectLiteral(Heap::kTagArray, rbx, rax);
+  AllocateObjectLiteral(Heap::kTagArray, rbx, rdx);
+
+  Spill rdx_s(this, rdx);
 
   AstList::Item* item = node->children()->head();
   uint64_t index = 0;
@@ -727,22 +693,20 @@ AstNode* Fullgen::VisitArrayLiteral(AstNode* node) {
     key->length(snprintf(keystr, sizeof(keystr), "%llu", index));
 
     AstNode* member = new AstNode(AstNode::kMember);
-    member->children()->Push(new FAstRegister(rax));
+    member->children()->Push(new FAstSpill(&rdx_s));
     member->children()->Push(key);
 
     AstNode* assign = new AstNode(AstNode::kAssign);
     assign->children()->Push(member);
     assign->children()->Push(item->value());
 
-    VisitForValue(assign, rbx);
+    VisitForValue(assign);
 
     item = item->next();
     index++;
   }
 
-  Result(rax);
-  rbx_s.Unspill();
-  rax_s.Unspill();
+  rdx_s.Unspill(rax);
 
   return node;
 }
@@ -751,7 +715,7 @@ AstNode* Fullgen::VisitArrayLiteral(AstNode* node) {
 AstNode* Fullgen::VisitReturn(AstNode* node) {
   if (node->lhs() != NULL) {
     // Get value of expression
-    VisitForValue(node->lhs(), rax);
+    VisitForValue(node->lhs());
   } else {
     // Or just nullify output
     movq(rax, Immediate(Heap::kTagNil));
@@ -769,15 +733,10 @@ AstNode* Fullgen::VisitTypeof(AstNode* node) {
     return node;
   }
 
-  Spill rax_s(this, rax, result());
-  {
-    Align a(this);
+  Align a(this);
 
-    VisitForValue(node->lhs(), rax);
-    Call(stubs()->GetTypeofStub());
-  }
-  Result(rax);
-  rax_s.Unspill();
+  VisitForValue(node->lhs());
+  Call(stubs()->GetTypeofStub());
 
   return node;
 }
@@ -789,15 +748,10 @@ AstNode* Fullgen::VisitSizeof(AstNode* node) {
     return node;
   }
 
-  Spill rax_s(this, rax, result());
-  {
-    Align a(this);
+  Align a(this);
 
-    VisitForValue(node->lhs(), rax);
-    Call(stubs()->GetSizeofStub());
-  }
-  Result(rax);
-  rax_s.Unspill();
+  VisitForValue(node->lhs());
+  Call(stubs()->GetSizeofStub());
 
   return node;
 }
@@ -809,15 +763,10 @@ AstNode* Fullgen::VisitKeysof(AstNode* node) {
     return node;
   }
 
-  Spill rax_s(this, rax, result());
-  {
-    Align a(this);
+  Align a(this);
 
-    VisitForValue(node->lhs(), rax);
-    Call(stubs()->GetKeysofStub());
-  }
-  Result(rax);
-  rax_s.Unspill();
+  VisitForValue(node->lhs());
+  Call(stubs()->GetKeysofStub());
 
   return node;
 }
@@ -862,26 +811,22 @@ AstNode* Fullgen::VisitUnOp(AstNode* node) {
     }
 
     // a++ => $scratch = a; a = $scratch + 1; $scratch
-    Operand result_slot(result(), 0);
-    VisitForSlot(op->lhs(), &result_slot, result());
+    VisitForSlot(op->lhs());
 
     // Get value
-    movq(scratch, result_slot);
+    movq(scratch, slot());
     Spill scratch_s(this, scratch);
 
-    Spill rcx_s(this, rcx, result());
-    Spill rbx_s(this, rbx, result());
-
     // Put slot's value into rbx
-    movq(rbx, result_slot);
+    movq(rbx, slot());
 
-    assign->children()->head()->value(new FAstOperand(&result_slot));
-    rhs->children()->head()->value(new FAstRegister(rbx));
-    VisitForValue(assign, result());
+    Spill rbx_s(this, rbx);
 
-    rbx_s.Unspill();
-    rcx_s.Unspill();
-    scratch_s.Unspill(result());
+    assign->children()->head()->value(new FAstOperand(&slot()));
+    rhs->children()->head()->value(new FAstSpill(&rbx_s));
+    VisitForValue(assign);
+
+    scratch_s.Unspill(rax);
   } else if (op->subtype() == UnOp::kPlus || op->subtype() == UnOp::kMinus) {
     // +a = 0 + a
     // -a = 0 - a
@@ -896,11 +841,11 @@ AstNode* Fullgen::VisitUnOp(AstNode* node) {
         zero,
         op->lhs());
 
-    VisitForValue(wrap, result());
+    VisitForValue(wrap);
 
   } else if (op->subtype() == UnOp::kNot) {
     // Get value and convert it to boolean
-    VisitForValue(op->lhs(), result());
+    VisitForValue(op->lhs());
     ConvertToBoolean();
 
     Label done(this), ret_false(this);
@@ -909,14 +854,14 @@ AstNode* Fullgen::VisitUnOp(AstNode* node) {
     Operand falsev(root_reg, HContext::GetIndexDisp(Heap::kRootFalseIndex));
 
     // Negate it
-    IsTrue(result(), NULL, &ret_false);
+    IsTrue(rax, NULL, &ret_false);
 
-    movq(result(), truev);
+    movq(rax, truev);
 
     jmp(&done);
     bind(&ret_false);
 
-    movq(result(), falsev);
+    movq(rax, falsev);
 
     bind(&done);
 
@@ -936,15 +881,17 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
     return node;
   }
 
-  Spill rax_s(this, rax, result());
-  Spill rbx_s(this, rbx, result());
-
-
   Label not_unboxed(this), done(this);
   Label lhs_to_heap(this), rhs_to_heap(this);
 
-  VisitForValue(op->lhs(), rax);
-  VisitForValue(op->rhs(), rbx);
+  {
+    VisitForValue(op->lhs());
+    Spill rax_s(this, rax);
+
+    VisitForValue(op->rhs());
+    movq(rbx, rax);
+    rax_s.Unspill(rax);
+  }
 
   if (op->subtype() != BinOp::kDiv) {
     IsNil(rax, NULL, &not_unboxed);
@@ -989,8 +936,6 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
       shl(scratch, Immediate(1));
       jmp(kCarry, &restore);
 
-      movq(result(), rax);
-
       jmp(&done);
       bind(&restore);
 
@@ -1008,16 +953,14 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
        case BinOp::kBOr: orq(rax, rbx); break;
        case BinOp::kBXor: xorq(rax, rbx); break;
        case BinOp::kMod:
-        movq(scratch, rdx);
+        xorq(rdx, rdx);
         idivq(rbx);
         movq(rax, rdx);
-        movq(rdx, scratch);
         break;
        case BinOp::kShl:
        case BinOp::kShr:
        case BinOp::kUShl:
        case BinOp::kUShr:
-        movq(scratch, rcx);
         movq(rcx, rbx);
 
         switch (op->subtype()) {
@@ -1027,15 +970,12 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
          case BinOp::kUShr: sar(rax); break;
          default: emitb(0xcc); break;
         }
-
-        movq(rcx, scratch);
         break;
 
        default: emitb(0xcc); break;
       }
 
       TagNumber(rax);
-      movq(result(), rax);
     } else if (BinOp::is_logic(op->subtype())) {
       Condition cond = BinOpToCondition(op->subtype(), kIntegral);
       // Note: rax and rbx are boxed here
@@ -1108,17 +1048,12 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
 
     assert(stub != NULL);
 
-    push(rax);
-    push(rbx);
     Call(stub);
     ChangeAlign(-2);
 
   }
 
   bind(&done);
-  Result(rax);
-  rbx_s.Unspill();
-  rax_s.Unspill();
 
   return node;
 }

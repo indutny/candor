@@ -12,8 +12,7 @@
 namespace candor {
 namespace internal {
 
-Masm::Masm(CodeSpace* space) : result_(rax),
-                               slot_(new Operand(rax, 0)),
+Masm::Masm(CodeSpace* space) : slot_(rax, 0),
                                space_(space),
                                align_(0) {
 }
@@ -72,10 +71,9 @@ Masm::Align::~Align() {
 }
 
 
-Masm::Spill::Spill(Masm* masm, Register src, Register preserve) :
-    masm_(masm), src_(src), index_(0), empty_(preserve.is(src)) {
-  if (empty_) return;
-
+Masm::Spill::Spill(Masm* masm, Register src) : masm_(masm),
+                                               src_(src),
+                                               index_(0) {
   index_ = masm->spill_index_++;
   Operand slot(rax, 0);
   masm->SpillSlot(index(), slot);
@@ -86,14 +84,11 @@ Masm::Spill::Spill(Masm* masm, Register src, Register preserve) :
 
 
 Masm::Spill::~Spill() {
-  if (empty_) return;
   masm()->spill_index_--;
 }
 
 
 void Masm::Spill::Unspill(Register dst) {
-  if (empty_) return;
-
   Operand slot(rax, 0);
   masm()->SpillSlot(index(), slot);
   masm()->movq(dst, slot);
@@ -126,7 +121,7 @@ void Masm::Allocate(Heap::HeapTag tag,
                     Register size_reg,
                     uint32_t size,
                     Register result) {
-  Spill rax_s(this, rax, result);
+  Spill rax_s(this, rax);
 
   // Two arguments
   ChangeAlign(2);
@@ -198,6 +193,8 @@ void Masm::AllocateFunction(Register addr, Register result) {
   movq(qparent, rdi);
   movq(qaddr, addr);
   movq(qroot, root_reg);
+
+  xorq(addr, addr);
 
   CheckGC();
 }

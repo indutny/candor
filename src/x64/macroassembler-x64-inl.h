@@ -27,11 +27,6 @@ inline void Masm::PreservePop(Register src, Register preserve) {
 }
 
 
-inline void Masm::Result(Register src) {
-  if (!result().is(src)) movq(result(), src);
-}
-
-
 inline uint64_t Masm::TagNumber(int64_t number) {
   return number << 1 | 1;
 }

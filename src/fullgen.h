@@ -36,20 +36,20 @@ class FFunction : public ZoneObject {
   uint32_t addr_;
 };
 
-class FAstRegister : public AstValue {
+class FAstSpill : public AstValue {
  public:
-  FAstRegister(Register reg) : AstValue(kRegister), reg_(reg) {
+  FAstSpill(Masm::Spill* spill) : AstValue(kSpill), spill_(spill) {
   }
 
-  static inline FAstRegister* Cast(AstValue* value) {
-    assert(value->is_register());
-    return reinterpret_cast<FAstRegister*>(value);
+  static inline FAstSpill* Cast(AstValue* value) {
+    assert(value->is_spill());
+    return reinterpret_cast<FAstSpill*>(value);
   }
 
-  inline Register reg() { return reg_; }
+  inline Masm::Spill* spill() { return spill_; }
 
  protected:
-  Register reg_;
+  Masm::Spill* spill_;
 };
 
 class FAstOperand : public AstValue {
@@ -143,8 +143,8 @@ class Fullgen : public Masm, public Visitor {
   AstNode* VisitUnOp(AstNode* node);
   AstNode* VisitBinOp(AstNode* node);
 
-  AstNode* VisitForValue(AstNode* node, Register reg);
-  AstNode* VisitForSlot(AstNode* node, Operand* op, Register base);
+  AstNode* VisitForValue(AstNode* node);
+  AstNode* VisitForSlot(AstNode* node);
 
   inline Heap* heap() { return space_->heap(); }
   inline bool visiting_for_value() { return visitor_type_ == kValue; }

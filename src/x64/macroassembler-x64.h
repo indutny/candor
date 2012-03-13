@@ -33,7 +33,7 @@ class Masm : public Assembler {
 
   class Spill {
    public:
-    Spill(Masm* masm, Register src, Register preserve = reg_nil);
+    Spill(Masm* masm, Register src);
     ~Spill();
 
     void Unspill(Register dst);
@@ -47,7 +47,6 @@ class Masm : public Assembler {
 
     Register src_;
     int32_t index_;
-    bool empty_;
   };
 
   // Allocate slots for spills
@@ -119,7 +118,6 @@ class Masm : public Assembler {
   inline void Push(Register src);
   inline void Pop(Register src);
   inline void PreservePop(Register src, Register preserve);
-  inline void Result(Register src);
   inline uint64_t TagNumber(int64_t number);
   inline void TagNumber(Register src);
   inline void Untag(Register src);
@@ -127,13 +125,11 @@ class Masm : public Assembler {
   inline void SpillSlot(uint32_t index, Operand& op);
 
   // See VisitForSlot and VisitForValue in fullgen for disambiguation
-  inline Register result() { return result_; }
-  inline Operand* slot() { return slot_; }
+  inline Operand& slot() { return slot_; }
   inline Heap* heap() { return space_->heap(); }
   inline Stubs* stubs() { return space_->stubs(); }
 
-  Register result_;
-  Operand* slot_;
+  Operand slot_;
 
  protected:
   CodeSpace* space_;

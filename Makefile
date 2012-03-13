@@ -69,10 +69,10 @@ src/%.o: src/%.cc
 
 TESTS += test/test-parser
 TESTS += test/test-scope
-TESTS += test/test-api
 TESTS += test/test-functional
 TESTS += test/test-binary
 TESTS += test/test-numbers
+TESTS += test/test-api
 TESTS += test/test-gc
 
 test: candor.a cand $(TESTS)

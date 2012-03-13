@@ -489,7 +489,7 @@ class AstValue : public AstNode {
   enum AstValueType {
     kSlot,
     kOperand,
-    kRegister
+    kSpill
   };
 
   AstValue(Scope* scope, AstNode* name) : AstNode(kValue),
@@ -512,7 +512,7 @@ class AstValue : public AstNode {
   }
 
   bool Print(PrintBuffer* p) {
-    assert(!is_register());
+    assert(!is_spill() && !is_operand());
 
     return p->Print("[") &&
            p->PrintValue(name()->value(), name()->length()) &&
@@ -526,7 +526,7 @@ class AstValue : public AstNode {
 
   inline bool is_slot() { return type_ == kSlot; }
   inline bool is_operand() { return type_ == kOperand; }
-  inline bool is_register() { return type_ == kRegister; }
+  inline bool is_spill() { return type_ == kSpill; }
 
   inline ScopeSlot* slot() { return slot_; }
   inline AstNode* name() { return name_; }

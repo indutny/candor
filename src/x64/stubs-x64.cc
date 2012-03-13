@@ -439,18 +439,8 @@ void BinaryOpStub::Generate() {
   // Allocate space for spill slots
   __ AllocateSpills(8);
 
-  __ push(Immediate(0));
-  __ push(rbx);
-
-  // Arguments
-  Operand lhs(rbp, 24);
-  Operand rhs(rbp, 16);
-
   Label box_rhs(masm()), both_boxed(masm());
   Label call_runtime(masm()), nil_result(masm()), done(masm());
-
-  __ movq(rax, lhs);
-  __ movq(rbx, rhs);
 
   // Convert lhs to heap number if needed
   __ IsUnboxed(rax, &box_rhs, NULL);
@@ -517,16 +507,14 @@ void BinaryOpStub::Generate() {
      case BinOp::kBOr: __ orq(rax, rbx); break;
      case BinOp::kBXor: __ xorq(rax, rbx); break;
      case BinOp::kMod:
-      __ movq(scratch, rdx);
+      __ xorq(rdx, rdx);
       __ idivq(rbx);
       __ movq(rax, rdx);
-      __ movq(rdx, scratch);
       break;
      case BinOp::kShl:
      case BinOp::kShr:
      case BinOp::kUShl:
      case BinOp::kUShr:
-      __ movq(scratch, rcx);
       __ movq(rcx, rbx);
 
       switch (type()) {
@@ -544,8 +532,6 @@ void BinaryOpStub::Generate() {
        case BinOp::kShr: __ shr(rax); break;
        default: __ emitb(0xcc); break;
       }
-
-      __ movq(rcx, scratch);
       break;
      default: __ emitb(0xcc); break;
     }
@@ -611,11 +597,9 @@ void BinaryOpStub::Generate() {
 
   __ CheckGC();
 
-  __ pop(rbx);
-
   __ FinalizeSpills();
 
-  GenerateEpilogue(2);
+  GenerateEpilogue(0);
 }
 
 #undef BINARY_SUB_TYPES

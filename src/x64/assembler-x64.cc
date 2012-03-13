@@ -273,6 +273,13 @@ void Assembler::movzxb(Register dst, Operand& src) {
 }
 
 
+void Assembler::xchg(Register dst, Register src) {
+  emit_rexw(dst, src);
+  emitb(0x87);
+  emit_modrm(dst, src);
+}
+
+
 void Assembler::addq(Register dst, Register src) {
   emit_rexw(dst, src);
   emitb(0x03);
