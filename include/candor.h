@@ -207,6 +207,7 @@ class Handle {
   ~Handle();
 
   void Wrap(Value* v);
+  void Unwrap();
 
   typedef void (*WeakCallback)(T* value);
 
