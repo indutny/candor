@@ -116,7 +116,8 @@ void Handle<T>::Wrap(Value* v) {
   Unwrap();
 
   value = v->As<T>();
-  isolate->heap->Reference(reinterpret_cast<HValue**>(&value),
+  isolate->heap->Reference(Heap::kRefPersistent,
+                           reinterpret_cast<HValue**>(&value),
                            reinterpret_cast<HValue*>(value));
 }
 
@@ -221,7 +222,8 @@ Function* Function::New(const char* source, uint32_t length) {
   char* obj = HFunction::New(Isolate::GetCurrent()->heap, NULL, code, root);
 
   Function* fn = Cast<Function>(obj);
-  Isolate::GetCurrent()->heap->Reference(NULL,
+  Isolate::GetCurrent()->heap->Reference(Heap::kRefPersistent,
+                                         NULL,
                                          reinterpret_cast<HValue*>(fn));
 
   return fn;
@@ -234,7 +236,8 @@ Function* Function::New(BindingCallback callback) {
                                     NULL);
 
   Function* fn = Cast<Function>(obj);
-  Isolate::GetCurrent()->heap->Reference(NULL,
+  Isolate::GetCurrent()->heap->Reference(Heap::kRefPersistent,
+                                         NULL,
                                          reinterpret_cast<HValue*>(fn));
 
   return fn;
@@ -400,7 +403,8 @@ void* CData::GetContents() {
 }
 
 
-CWrapper::CWrapper() : data(CData::New(sizeof(void*))),
+CWrapper::CWrapper() : isolate(Isolate::GetCurrent()),
+                       data(CData::New(sizeof(void*))),
                        ref_count(0),
                        ref(NULL) {
   // Save pointer of class
@@ -409,11 +413,17 @@ CWrapper::CWrapper() : data(CData::New(sizeof(void*))),
   // Mark handle as weak
   Handle<CData> handle(data);
   handle.SetWeakCallback(CWrapper::WeakCallback);
+
+  // Data field should be changed on reallocation
+  isolate->heap->Reference(Heap::kRefNormal,
+                           reinterpret_cast<HValue**>(&data),
+                           reinterpret_cast<HValue*>(data));
 }
 
 
 CWrapper::~CWrapper() {
-  // Do nothing
+  isolate->heap->Dereference(reinterpret_cast<HValue**>(&data),
+                             reinterpret_cast<HValue*>(data));
 }
 
 

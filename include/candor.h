@@ -57,6 +57,7 @@ class Isolate {
 
   template <class T>
   friend class Handle;
+  friend class CWrapper;
 };
 
 struct SyntaxError {
@@ -244,7 +245,8 @@ class CWrapper {
 
   static void WeakCallback(CData* data);
 
- private:
+ protected:
+  Isolate* isolate;
   CData* data;
 
   int ref_count;

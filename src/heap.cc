@@ -107,8 +107,8 @@ char* Heap::AllocateTagged(HeapTag tag, TenureType tenure, uint32_t bytes) {
 }
 
 
-void Heap::Reference(HValue** reference, HValue* value) {
-  references()->Push(new HValueReference(reference, value));
+void Heap::Reference(ReferenceType type, HValue** reference, HValue* value) {
+  references()->Push(new HValueReference(type, reference, value));
 }
 
 

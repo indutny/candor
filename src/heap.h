@@ -145,6 +145,11 @@ class Heap {
     kRootCDataTypeIndex = 11
   };
 
+  enum ReferenceType {
+    kRefNormal,
+    kRefPersistent
+  };
+
   // Tenure configuration (GC)
   static const int8_t kMinOldSpaceGeneration = 5;
 
@@ -156,6 +161,7 @@ class Heap {
                              gc_(this) {
     current_ = this;
     references_.allocated = true;
+    reloc_references_.allocated = true;
     weak_references_.allocated = true;
   }
 
@@ -165,7 +171,7 @@ class Heap {
   char* AllocateTagged(HeapTag tag, TenureType type, uint32_t bytes);
 
   // Referencing C++ handles
-  void Reference(HValue** reference, HValue* value);
+  void Reference(ReferenceType type, HValue** reference, HValue* value);
   void Dereference(HValue** reference, HValue* value);
 
   // Weakening C++ handles
@@ -194,6 +200,7 @@ class Heap {
   }
   inline void needs_gc(GCType value) { needs_gc_ = value; }
   inline HValueRefList* references() { return &references_; }
+  inline HValueRefList* reloc_references() { return &reloc_references_; }
   inline HValueWeakRefList* weak_references() { return &weak_references_; }
 
   inline GC* gc() { return &gc_; }
@@ -210,6 +217,7 @@ class Heap {
   uint64_t needs_gc_;
 
   HValueRefList references_;
+  HValueRefList reloc_references_;
   HValueWeakRefList weak_references_;
 
   GC gc_;
@@ -260,15 +268,20 @@ class HValue {
 
 class HValueReference {
  public:
-  HValueReference(HValue** reference, HValue* value) : reference_(reference),
-                                                       value_(value) {
+  HValueReference(Heap::ReferenceType type, HValue** reference, HValue* value) :
+    type_(type), reference_(reference), value_(value) {
   }
 
+  inline Heap::ReferenceType type() { return type_; }
   inline HValue** reference() { return reference_; }
   inline HValue* value() { return value_; }
   inline HValue** valueptr() { return &value_; }
 
+  inline bool is_normal() { return type() == Heap::kRefNormal; }
+  inline bool is_persistent() { return type() == Heap::kRefPersistent; }
+
  private:
+  Heap::ReferenceType type_;
   HValue** reference_;
   HValue* value_;
 };

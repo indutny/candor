@@ -39,7 +39,9 @@ class GC {
 
   void CollectGarbage(char* stack_top);
 
-  void ColourHandles();
+  void ColourPersistentHandles();
+  void RelocateNormalHandles();
+
   void ColourStack(char* stack_top);
   void HandleWeakReferences();
 

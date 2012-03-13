@@ -36,7 +36,7 @@ void GC::CollectGarbage(char* stack_top) {
   Space tmp_space(heap(), space->page_size());
 
   // Add referenced in C++ land values to the grey list
-  ColourHandles();
+  ColourPersistentHandles();
 
   // Colour on-stack registers
   ColourStack(stack_top);
@@ -86,6 +86,8 @@ void GC::CollectGarbage(char* stack_top) {
     value->value()->ResetSoftGCMark();
   }
 
+  RelocateNormalHandles();
+
   // Visit all weak references and call callbacks if some of them are dead
   HandleWeakReferences();
 
@@ -96,14 +98,34 @@ void GC::CollectGarbage(char* stack_top) {
 }
 
 
-void GC::ColourHandles() {
+void GC::ColourPersistentHandles() {
   HValueRefList::Item* item = heap()->references()->head();
   while (item != NULL) {
     HValueReference* ref = item->value();
-    grey_items()->Push(
-        new GCValue(ref->value(), reinterpret_cast<char**>(ref->reference())));
-    grey_items()->Push(
-        new GCValue(ref->value(), reinterpret_cast<char**>(ref->valueptr())));
+    if (ref->is_persistent()) {
+      grey_items()->Push(
+          new GCValue(ref->value(), reinterpret_cast<char**>(ref->reference())));
+      grey_items()->Push(
+          new GCValue(ref->value(), reinterpret_cast<char**>(ref->valueptr())));
+    }
+
+    item = item->next();
+  }
+}
+
+
+void GC::RelocateNormalHandles() {
+  HValueRefList::Item* item = heap()->references()->head();
+  while (item != NULL) {
+    HValueReference* ref = item->value();
+    if (ref->is_normal()) {
+      GCValue* v;
+      v = new GCValue(ref->value(), reinterpret_cast<char**>(ref->reference()));
+      if (v->value()->IsGCMarked()) v->Relocate(v->value()->GetGCMark());
+
+      v = new GCValue(ref->value(), reinterpret_cast<char**>(ref->valueptr()));
+      if (v->value()->IsGCMarked()) v->Relocate(v->value()->GetGCMark());
+    }
 
     item = item->next();
   }
