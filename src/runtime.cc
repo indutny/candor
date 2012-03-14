@@ -153,11 +153,12 @@ char* RuntimeGrowObject(Heap* heap, char* obj) {
   char* space = HValue::As<HMap>(map)->space();
 
   // And rehash properties to new map
-  for (uint32_t index = 0; index < size << 3; index += 8) {
+  uint32_t big_size = size << 3;
+  for (uint32_t index = 0; index < big_size; index += 8) {
     char* key = *reinterpret_cast<char**>(space + index);
-    if (key== HNil::New()) continue;
+    if (key == HNil::New()) continue;
 
-    char* value = *reinterpret_cast<char**>(space + index + (size << 3));
+    char* value = *reinterpret_cast<char**>(space + index + big_size);
 
     char* slot = RuntimeLookupProperty(heap, obj, key, true);
     *reinterpret_cast<char**>(slot) = value;

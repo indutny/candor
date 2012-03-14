@@ -16,10 +16,10 @@ BaseStub::BaseStub(CodeSpace* space, StubType type) : space_(space),
 }
 
 
-void BaseStub::GeneratePrologue() {
+void BaseStub::GeneratePrologue(int stack_slots) {
   __ push(rbp);
   __ movq(rbp, rsp);
-  __ push(Immediate(0));
+  __ push(Immediate((stack_slots + 1) << 3));
   __ push(Immediate(0));
 }
 
@@ -136,7 +136,7 @@ void EntryStub::Generate() {
 
 
 void AllocateStub::Generate() {
-  GeneratePrologue();
+  GeneratePrologue(0);
   // Align stack
   __ push(Immediate(0));
   __ push(rbx);
@@ -223,7 +223,7 @@ void AllocateStub::Generate() {
 
 
 void CallBindingStub::Generate() {
-  GeneratePrologue();
+  GeneratePrologue(0);
 
   Operand argc(rbp, 24);
   Operand fn(rbp, 16);
@@ -262,7 +262,7 @@ void CallBindingStub::Generate() {
 
 
 void CollectGarbageStub::Generate() {
-  GeneratePrologue();
+  GeneratePrologue(10);
 
   RuntimeCollectGarbageCallback gc = &RuntimeCollectGarbage;
   __ Pushad();
@@ -284,7 +284,7 @@ void CollectGarbageStub::Generate() {
 
 
 void TypeofStub::Generate() {
-  GeneratePrologue();
+  GeneratePrologue(0);
 
   Label not_nil(masm()), not_unboxed(masm()), done(masm());
 
@@ -319,7 +319,7 @@ void TypeofStub::Generate() {
 
 
 void SizeofStub::Generate() {
-  GeneratePrologue();
+  GeneratePrologue(0);
   RuntimeSizeofCallback sizeofc = &RuntimeSizeof;
 
   __ Pushad();
@@ -337,7 +337,7 @@ void SizeofStub::Generate() {
 
 
 void KeysofStub::Generate() {
-  GeneratePrologue();
+  GeneratePrologue(0);
   RuntimeKeysofCallback keysofc = &RuntimeKeysof;
 
   __ Pushad();
@@ -355,7 +355,7 @@ void KeysofStub::Generate() {
 
 
 void LookupPropertyStub::Generate() {
-  GeneratePrologue();
+  GeneratePrologue(0);
   RuntimeLookupPropertyCallback lookup = &RuntimeLookupProperty;
 
   // Arguments
@@ -382,7 +382,7 @@ void LookupPropertyStub::Generate() {
 
 
 void CoerceToBooleanStub::Generate() {
-  GeneratePrologue();
+  GeneratePrologue(0);
   RuntimeCoerceCallback to_boolean = &RuntimeToBoolean;
 
   // Arguments
@@ -428,7 +428,7 @@ void CoerceToBooleanStub::Generate() {
     V(LAnd)
 
 void BinaryOpStub::Generate() {
-  GeneratePrologue();
+  GeneratePrologue(0);
 
   // Allocate space for spill slots
   __ AllocateSpills(-1);

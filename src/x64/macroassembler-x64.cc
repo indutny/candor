@@ -337,8 +337,12 @@ void Masm::Fill(Register start, Register end, Immediate value) {
 
 void Masm::FillStackSlots() {
   movq(rax, rsp);
-  Fill(rax, rbp, Immediate(Heap::kTagNil));
+  movq(rbx, rbp);
+  // Skip frame info
+  subq(rbx, Immediate(8));
+  Fill(rax, rbx, Immediate(Heap::kTagNil));
   xorq(rax, rax);
+  xorq(rbx, rbx);
 }
 
 
