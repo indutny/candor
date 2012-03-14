@@ -188,6 +188,15 @@ TEST_START("API test")
     assert(ret->As<Number>()->Value() == 1234);
   })
 
+  FUN_TEST("x = { p: 1234 }\nreturn () { __$gc()\nreturn x.p }", {
+
+    Function* fn = result->As<Function>();
+
+    Value* argv[0];
+    Value* ret = fn->Call(0, argv);
+    assert(ret->As<Number>()->Value() == 1234);
+  })
+
   FUN_TEST("return 1", {
     String* str = result->ToString();
 
