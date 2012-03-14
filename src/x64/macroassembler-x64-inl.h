@@ -28,14 +28,12 @@ inline void Masm::PreservePop(Register src, Register preserve) {
 
 
 inline uint64_t Masm::TagNumber(int64_t number) {
-  return number << 1 | 1;
+  return number << 1;
 }
 
 
 inline void Masm::TagNumber(Register src) {
-  // 1xxxxxxxx1 -> 11xxxxxxxx
   sal(src, Immediate(1));
-  orqb(src, Immediate(1));
 }
 
 

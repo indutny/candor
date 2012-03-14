@@ -78,10 +78,10 @@ TESTS += test/test-gc
 test: candor.a cand $(TESTS)
 	@test/test-parser
 	@test/test-scope
-	@test/test-api
 	@test/test-functional
 	@test/test-binary
 	@test/test-numbers
+	@test/test-api
 	@test/test-gc
 	@./cand test/functional/basics.can
 	@./cand test/functional/arrays.can

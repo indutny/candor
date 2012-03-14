@@ -413,8 +413,8 @@ void Masm::IsNil(Register reference, Label* not_nil, Label* is_nil) {
 
 void Masm::IsUnboxed(Register reference, Label* not_unboxed, Label* unboxed) {
   testb(reference, Immediate(0x01));
-  if (not_unboxed != NULL) jmp(kEq, not_unboxed);
-  if (unboxed != NULL) jmp(kNe, unboxed);
+  if (not_unboxed != NULL) jmp(kNe, not_unboxed);
+  if (unboxed != NULL) jmp(kEq, unboxed);
 }
 
 

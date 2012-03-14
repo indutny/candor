@@ -16,6 +16,7 @@ namespace internal {
 } // namespace internal
 
 class Value;
+class Nil;
 class Function;
 class Number;
 class Boolean;
@@ -47,6 +48,7 @@ class Isolate {
   SyntaxError* syntax_error;
 
   friend class Value;
+  friend class Nil;
   friend class Function;
   friend class Number;
   friend class Boolean;

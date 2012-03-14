@@ -202,7 +202,7 @@ char* HContext::New(Heap* heap,
                                       16 + values->length() * 8);
 
   // Zero parent
-  *reinterpret_cast<char**>(result + 8) = NULL;
+  *reinterpret_cast<char**>(result + 8) = HNil::New();
 
   // Put size
   *reinterpret_cast<uint64_t*>(result + 16) = values->length();
@@ -293,7 +293,11 @@ char* HObject::NewEmpty(Heap* heap) {
   *reinterpret_cast<uint64_t*>(map + 8) = size;
 
   // Nullify all map's slots (both keys and values)
-  memset(map + 16, 0, size << 4);
+  size = size << 4;
+  memset(map + 16, 0x00, size);
+  for (uint32_t i = 0; i < size; i += 8) {
+    map[i + 16] = Heap::kTagNil;
+  }
 
   return obj;
 }
@@ -319,7 +323,11 @@ char* HArray::NewEmpty(Heap* heap) {
   *reinterpret_cast<uint64_t*>(map + 8) = size;
 
   // Nullify all map's slots (both keys and values)
-  memset(map + 16, 0, size << 4);
+  size = size << 4;
+  memset(map + 16, 0x00, size);
+  for (uint32_t i = 0; i < size; i += 8) {
+    map[i + 16] = Heap::kTagNil;
+  }
 
   return obj;
 }
@@ -344,7 +352,7 @@ int64_t HArray::Length(char* obj, bool shrink) {
                                                             obj,
                                                             shrinkedptr,
                                                             0));
-    } while (*slot == NULL);
+    } while (*slot == HNil::New());
 
     // If array was shrinked - change length
     if (result != (shrinked - 1)) {

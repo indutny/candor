@@ -5,7 +5,7 @@ namespace candor {
 namespace internal {
 
 inline Heap::HeapTag HValue::GetTag(char* addr) {
-  if (addr == NULL) return Heap::kTagNil;
+  if (addr == HNil::New()) return Heap::kTagNil;
 
   if (IsUnboxed(addr)) {
     return Heap::kTagNumber;
@@ -15,7 +15,7 @@ inline Heap::HeapTag HValue::GetTag(char* addr) {
 
 
 inline bool HValue::IsUnboxed(char* addr) {
-  return (reinterpret_cast<off_t>(addr) & 0x01) != 0;
+  return (reinterpret_cast<off_t>(addr) & 0x01) == 0;
 }
 
 
@@ -65,7 +65,7 @@ inline void HValue::IncrementGeneration() {
 
 
 inline bool HContext::HasSlot(uint32_t index) {
-  return *GetSlotAddress(index) != NULL;
+  return *GetSlotAddress(index) != HNil::New();
 }
 
 
@@ -95,7 +95,7 @@ inline int64_t HNumber::Untag(int64_t value) {
 
 
 inline int64_t HNumber::Tag(int64_t value) {
-  return (value << 1) | 1;
+  return value << 1;
 }
 
 
@@ -123,7 +123,7 @@ inline bool HNumber::IsIntegral(char* addr) {
 
 
 inline bool HMap::IsEmptySlot(uint32_t index) {
-  return *GetSlotAddress(index) == NULL;
+  return *GetSlotAddress(index) == HNil::New();
 }
 
 

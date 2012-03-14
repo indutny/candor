@@ -45,7 +45,8 @@ void GC::CollectGarbage(char* current_frame) {
     GCValue* value = grey_items()->Shift();
 
     // Skip unboxed address
-    if (value->value() == NULL || HValue::IsUnboxed(value->value()->addr())) {
+    if (value->value() == HValue::Cast(HNil::New()) ||
+        HValue::IsUnboxed(value->value()->addr())) {
       continue;
     }
 
@@ -153,12 +154,14 @@ void GC::ColourFrames(char* current_frame) {
     for (uint32_t i = 0; i < slots; i++) {
       char* value = *(frame - 2 - i);
 
-      // Skip NULL pointers, non-pointer values and rbp pushes
-      if (value == NULL || HValue::IsUnboxed(value)) continue;
+      // Skip nil, non-pointer values and rbp pushes
+      if (value == HNil::New() || HValue::IsUnboxed(value)) {
+        continue;
+      }
 
       // Ignore return addresses
       HValue* hvalue = HValue::Cast(value);
-      if (hvalue == NULL || hvalue->tag() == Heap::kTagCode) continue;
+      if (hvalue->tag() == Heap::kTagCode) continue;
 
       grey_items()->Push(new GCValue(hvalue, frame - 2 - i));
     }
@@ -266,7 +269,7 @@ void GC::VisitArray(HArray* arr) {
 void GC::VisitMap(HMap* map) {
   uint32_t size = map->size() << 1;
   for (uint32_t i = 0; i < size; i++) {
-    if (map->GetSlot(i) != NULL) {
+    if (map->GetSlot(i) != HValue::Cast(HNil::New())) {
       grey_items()->Push(new GCValue(map->GetSlot(i),
                                      map->GetSlotAddress(i)));
     }

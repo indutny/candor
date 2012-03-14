@@ -92,10 +92,10 @@ char* RuntimeLookupProperty(Heap* heap,
   uint32_t end = start == 0 ? mask : start - 8;
 
   uint32_t index = start;
-  char* key_slot = NULL;
+  char* key_slot;
   while (index != end) {
     key_slot = *reinterpret_cast<char**>(space + index);
-    if (key_slot == NULL) break;
+    if (key_slot == HNil::New()) break;
     if (is_array) {
       if (key_slot == strkey) break;
     } else {
@@ -134,7 +134,14 @@ char* RuntimeGrowObject(Heap* heap, char* obj) {
   *(uint32_t*)(new_map + 8) = size << 1;
 
   // Fill new map with zeroes
-  memset(new_map + 16, 0, size << 5);
+  {
+    uint32_t size_f = size << 5;
+    memset(new_map + 16, 0, size_f);
+
+    for (uint32_t i = 0; i < size_f; i += 8) {
+      new_map[i + 16] = Heap::kTagNil;
+    }
+  }
 
   // Replace old map with a new
   *map_addr = new_map;
@@ -148,10 +155,9 @@ char* RuntimeGrowObject(Heap* heap, char* obj) {
   // And rehash properties to new map
   for (uint32_t index = 0; index < size << 3; index += 8) {
     char* key = *reinterpret_cast<char**>(space + index);
-    if (key== NULL) continue;
+    if (key== HNil::New()) continue;
 
     char* value = *reinterpret_cast<char**>(space + index + (size << 3));
-    assert(value != NULL);
 
     char* slot = RuntimeLookupProperty(heap, obj, key, true);
     *reinterpret_cast<char**>(slot) = value;
@@ -200,7 +206,7 @@ char* RuntimeToString(Heap* heap, char* value) {
     UNEXPECTED
   }
 
-  return NULL;
+  return HNil::New();
 }
 
 
@@ -232,7 +238,7 @@ char* RuntimeToNumber(Heap* heap, char* value) {
     UNEXPECTED
   }
 
-  return NULL;
+  return HNil::New();
 }
 
 
@@ -263,7 +269,7 @@ char* RuntimeToBoolean(Heap* heap, char* value) {
     UNEXPECTED
   }
 
-  return NULL;
+  return HNil::New();
 }
 
 
@@ -309,7 +315,7 @@ Heap::HeapTag RuntimeCoerceType(Heap* heap,
     rhs = RuntimeToBoolean(heap, rhs);
     break;
    case Heap::kTagNil:
-    rhs = NULL;
+    rhs = HNil::New();
     break;
    case Heap::kTagFunction:
    case Heap::kTagObject:
@@ -335,7 +341,7 @@ Heap::HeapTag RuntimeCoerceType(Heap* heap,
 template <BinOp::BinOpType type>
 char* RuntimeBinOp(Heap* heap, char* lhs, char* rhs) {
   // Fast case: both sides are nil
-  if (lhs == NULL && rhs == NULL) {
+  if (lhs == HNil::New() && rhs == HNil::New()) {
     if (BinOp::is_math(type) || BinOp::is_binary(type)) {
       // nil (+) nil = 0
       return HNumber::New(heap, static_cast<int64_t>(0));
@@ -500,7 +506,7 @@ char* RuntimeBinOp(Heap* heap, char* lhs, char* rhs) {
     }
   }
 
-  return NULL;
+  return HNil::New();
 }
 
 
@@ -546,7 +552,7 @@ char* RuntimeKeysof(Heap* heap, char* value) {
   uint32_t size = map->size();
   uint32_t index = 0;
   for (uint32_t i = 0; i < size; i++) {
-    if (map->GetSlot(i) != NULL) {
+    if (map->GetSlot(i) != HValue::Cast(HNil::New())) {
       char* indexptr = reinterpret_cast<char*>(HNumber::Tag(index));
       char* slot = RuntimeLookupProperty(heap,
                                          result,

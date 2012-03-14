@@ -31,7 +31,8 @@ class Space {
    public:
     Page(uint32_t size) : size_(size) {
       data_ = new char[size];
-      top_ = data_;
+      // Make all offsets odd (pointers are tagged with 1 at last bit)
+      top_ = data_ + 1;
       limit_ = data_ + size;
     }
     ~Page() {
@@ -95,7 +96,7 @@ typedef List<HValueWeakRef*, EmptyClass> HValueWeakRefList;
 class Heap {
  public:
   enum HeapTag {
-    kTagNil = 0,
+    kTagNil = 0x01,
     kTagContext,
     kTagBoolean,
     kTagNumber,
@@ -305,7 +306,9 @@ class HValueWeakRef {
 
 class HNil : public HValue {
  public:
-  static inline char* New(Heap* heap) { return NULL; }
+  static inline char* New() {
+    return reinterpret_cast<char*>(Heap::kTagNil);
+  }
 
   static const Heap::HeapTag class_tag = Heap::kTagNil;
 };

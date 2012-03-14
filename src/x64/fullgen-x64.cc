@@ -47,7 +47,7 @@ Fullgen::Fullgen(CodeSpace* space) : Masm(space),
   root_context()->Push(HObject::NewEmpty(heap()));
 
   // Place some root values
-  root_context()->Push(HNil::New(heap()));
+  root_context()->Push(HNil::New());
   root_context()->Push(HBoolean::New(heap(), Heap::kTenureOld, true));
   root_context()->Push(HBoolean::New(heap(), Heap::kTenureOld, false));
 
@@ -70,7 +70,7 @@ void Fullgen::CandorFunction::Generate() {
 
   // In case if function doesn't have `return` statements
   // we should still return `nil` value
-  masm()->movq(rax, 0);
+  masm()->movq(rax, Immediate(Heap::kTagNil));
 
   fullgen()->GenerateEpilogue(fn());
   fullgen()->FinalizeSpills();

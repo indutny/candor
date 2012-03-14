@@ -260,7 +260,7 @@ Value* Function::Call(uint32_t argc, Value* argv[]) {
 
 
 Nil* Nil::New() {
-  return NULL;
+  return Cast<Nil>(HNil::New());
 }
 
 
