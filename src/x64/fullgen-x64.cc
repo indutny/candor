@@ -900,16 +900,15 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
       Label restore(this);
       Spill lvalue(this, rax);
       Spill rvalue(this, rbx);
+      movq(scratch, rax);
+      movq(rcx, rbx);
 
       switch (op->subtype()) {
        case BinOp::kAdd: addq(rax, rbx); break;
        case BinOp::kSub: subq(rax, rbx); break;
        case BinOp::kMul:
         Untag(rbx);
-
-        movq(scratch, rdx);
         imulq(rbx);
-        movq(rdx, scratch);
         break;
 
        default: emitb(0xcc); break;
@@ -919,9 +918,7 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
       jmp(kOverflow, &restore);
 
       // Check if we overflowed into sign bit
-      lvalue.Unspill(scratch);
-      rvalue.Unspill(rbx);
-      andq(scratch, rbx);
+      andq(scratch, rcx);
       // Scratch contains sign mask in the highest bit
       // check it and call stub if needed
       xorq(scratch, rax);
