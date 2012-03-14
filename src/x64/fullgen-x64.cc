@@ -901,13 +901,12 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
       Spill lvalue(this, rax);
       Spill rvalue(this, rbx);
 
-      Untag(rax);
-      Untag(rbx);
-
       switch (op->subtype()) {
        case BinOp::kAdd: addq(rax, rbx); break;
        case BinOp::kSub: subq(rax, rbx); break;
        case BinOp::kMul:
+        Untag(rbx);
+
         movq(scratch, rdx);
         imulq(rbx);
         movq(rdx, scratch);
@@ -918,9 +917,6 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
 
       // Call stub on overflow
       jmp(kOverflow, &restore);
-
-      TagNumber(rax);
-      jmp(kCarry, &restore);
 
       // Check if we overflowed into sign bit
       lvalue.Unspill(scratch);
