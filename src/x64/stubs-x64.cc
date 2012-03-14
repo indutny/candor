@@ -19,6 +19,8 @@ BaseStub::BaseStub(CodeSpace* space, StubType type) : space_(space),
 void BaseStub::GeneratePrologue() {
   __ push(rbp);
   __ movq(rbp, rsp);
+  __ push(Immediate(0));
+  __ push(Immediate(0));
 }
 
 
@@ -240,10 +242,10 @@ void CallBindingStub::Generate() {
   // binding(argc, argv)
   __ movq(rdi, argc);
   __ Untag(rdi);
-  __ movq(rsi, rsp);
+  __ movq(rsi, rbp);
 
-  // Add 10 saved registers + return address + 2 arguments
-  __ addq(rsi, Immediate((10 + 2 + 2) * 8));
+  // old rbp + return address + two arguments
+  __ addq(rsi, Immediate(4 * 8));
 
   // argv should point to the end of arguments array
   __ movq(scratch, rdi);
@@ -276,9 +278,9 @@ void CollectGarbageStub::Generate() {
   {
     Masm::Align a(masm());
 
-    // RuntimeCollectGarbage(heap, stack_top)
+    // RuntimeCollectGarbage(heap, current_frame)
     __ movq(rdi, Immediate(reinterpret_cast<uint64_t>(masm()->heap())));
-    __ movq(rsi, rsp);
+    __ movq(rsi, rbp);
     __ movq(rax, Immediate(*reinterpret_cast<uint64_t*>(&gc)));
     __ Call(rax);
   }
@@ -437,7 +439,7 @@ void BinaryOpStub::Generate() {
   GeneratePrologue();
 
   // Allocate space for spill slots
-  __ AllocateSpills(8);
+  __ AllocateSpills(-1);
 
   Label box_rhs(masm()), both_boxed(masm());
   Label call_runtime(masm()), nil_result(masm()), done(masm());

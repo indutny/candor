@@ -17,7 +17,7 @@ void GC::GCValue::Relocate(char* address) {
 }
 
 
-void GC::CollectGarbage(char* stack_top) {
+void GC::CollectGarbage(char* current_frame) {
   assert(grey_items()->length() == 0);
   assert(black_items()->length() == 0);
 
@@ -39,7 +39,7 @@ void GC::CollectGarbage(char* stack_top) {
   ColourPersistentHandles();
 
   // Colour on-stack registers
-  ColourStack(stack_top);
+  ColourFrames(current_frame);
 
   while (grey_items()->length() != 0) {
     GCValue* value = grey_items()->Shift();
@@ -132,33 +132,38 @@ void GC::RelocateNormalHandles() {
 }
 
 
-void GC::ColourStack(char* stack_top) {
-  // Go through the stack
-  char** top = reinterpret_cast<char**>(stack_top);
-  for (; top != NULL; top++) {
-    // Once found enter frame signature
-    // skip stack entities until last exit frame position (or NULL)
-    while (top != NULL && *reinterpret_cast<uint32_t*>(top) == 0xFEEDBEEF) {
-      top = *reinterpret_cast<char***>(top + 1);
+void GC::ColourFrames(char* current_frame) {
+  // Go through the frames
+  char** frame = reinterpret_cast<char**>(current_frame);
+  while (true) {
+    //
+    // Frame layout
+    // ... [previous frame] [on-stack vars (and spills) count] [...vars...]
+    // or
+    // [previous frame] [xFEEDBEEF] [return addr] [rbp] ....
+    //
+    while (frame != NULL &&
+           *reinterpret_cast<uint32_t*>(frame + 2) == 0xFEEDBEEF) {
+      frame = *reinterpret_cast<char***>(frame + 3);
     }
-    if (top == NULL) break;
+    if (frame == NULL) break;
 
-    // Skip rbp as well
-    if (HValue::GetTag(*(top + 1)) == Heap::kTagCode) {
-      top++;
-      continue;
+    uint32_t slots = (*reinterpret_cast<uint32_t*>(frame - 1)) >> 3;
+
+    for (uint32_t i = 0; i < slots; i++) {
+      char* value = *(frame - 2 - i);
+
+      // Skip NULL pointers, non-pointer values and rbp pushes
+      if (value == NULL || HValue::IsUnboxed(value)) continue;
+
+      // Ignore return addresses
+      HValue* hvalue = HValue::Cast(value);
+      if (hvalue == NULL || hvalue->tag() == Heap::kTagCode) continue;
+
+      grey_items()->Push(new GCValue(hvalue, frame - 2 - i));
     }
 
-    char* value = *top;
-
-    // Skip NULL pointers, non-pointer values and rbp pushes
-    if (value == NULL || HValue::IsUnboxed(value)) continue;
-
-    // Ignore return addresses
-    HValue* hvalue = HValue::Cast(value);
-    if (hvalue == NULL || hvalue->tag() == Heap::kTagCode) continue;
-
-    grey_items()->Push(new GCValue(hvalue, top));
+    frame = reinterpret_cast<char**>(*frame);
   }
 }
 

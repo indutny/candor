@@ -108,13 +108,8 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
   push(rbp);
   movq(rbp, rsp);
 
-  // Allocate space for on stack variables
-  // and align stack
-  uint32_t on_stack_size = RoundUp(8 + (stmt->stack_slots() + 1) * 8, 16);
-  subq(rsp, Immediate(on_stack_size));
-
-  // Allocate space for spill slots
-  AllocateSpills(on_stack_size);
+  // Allocate space for spill slots and on-stack variables
+  AllocateSpills(stmt->stack_slots());
 
   // Allocate context and clear stack slots
   AllocateContext(stmt->context_slots());
@@ -357,7 +352,7 @@ AstNode* Fullgen::VisitValue(AstNode* node) {
   if (value->slot()->is_stack()) {
     // On stack variables
     slot().base(rbp);
-    slot().disp(-8 * (value->slot()->index() + 1));
+    slot().disp(-8 * (value->slot()->index() + 2));
   } else {
     int32_t depth = value->slot()->depth();
 

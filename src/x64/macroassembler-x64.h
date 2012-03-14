@@ -50,7 +50,7 @@ class Masm : public Assembler {
   };
 
   // Allocate slots for spills
-  void AllocateSpills(uint32_t spill_offset);
+  void AllocateSpills(uint32_t stack_slots);
   void FinalizeSpills();
 
   // Skip some bytes to make code aligned

@@ -100,20 +100,23 @@ void Masm::Spill::Unspill() {
 }
 
 
-void Masm::AllocateSpills(uint32_t spill_offset) {
-  spill_offset_ = spill_offset;
+void Masm::AllocateSpills(uint32_t stack_slots) {
+  spill_offset_ = 8 + RoundUp((stack_slots + 1) * 8, 16);
   spills_ = 0;
   spill_index_ = 0;
-  subq(rsp, Immediate(0));
+  movq(scratch, Immediate(0));
   spill_reloc_ = new RelocationInfo(RelocationInfo::kValue,
-                                    RelocationInfo::kLong,
-                                    offset() - 4);
+                                    RelocationInfo::kQuad,
+                                    offset() - 8);
+  push(scratch);
+  subq(rsp, scratch);
+
   relocation_info_.Push(spill_reloc_);
 }
 
 
 void Masm::FinalizeSpills() {
-  spill_reloc_->target(RoundUp((spills_ + 1) << 3, 16));
+  spill_reloc_->target(spill_offset_ + RoundUp((spills_ + 1) << 3, 16));
 }
 
 
@@ -361,7 +364,7 @@ void Masm::ExitFramePrologue() {
   movq(scratch, last_stack);
   push(scratch_op);
   push(Immediate(0));
-  movq(scratch_op, rsp);
+  movq(scratch_op, rbp);
   xorq(scratch, scratch);
 }
 
