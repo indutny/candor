@@ -136,7 +136,7 @@ void EntryStub::Generate() {
 
 
 void AllocateStub::Generate() {
-  GeneratePrologue(0);
+  GeneratePrologue(2);
   // Align stack
   __ push(Immediate(0));
   __ push(rbx);

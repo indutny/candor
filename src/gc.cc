@@ -167,6 +167,7 @@ void GC::ColourFrames(char* current_frame) {
     if (frame == NULL) break;
 
     frame = reinterpret_cast<char**>(*frame);
+    if (frame == NULL) break;
   }
 }
 
