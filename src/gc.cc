@@ -33,52 +33,13 @@ void GC::CollectGarbage(char* current_frame) {
       heap()->old_space();
 
   // Temporary space which will contain copies of all visited objects
-  Space tmp_space(heap(), space->page_size());
+  tmp_space(new Space(heap(), space->page_size()));
 
   // Add referenced in C++ land values to the grey list
   ColourPersistentHandles();
 
   // Colour on-stack registers
   ColourFrames(current_frame);
-
-  while (grey_items()->length() != 0) {
-    GCValue* value = grey_items()->Shift();
-
-    // Skip unboxed address
-    if (value->value() == HValue::Cast(HNil::New()) ||
-        HValue::IsUnboxed(value->value()->addr())) {
-      continue;
-    }
-
-    if (!value->value()->IsGCMarked()) {
-      // Object is in not in current space, don't move it
-      if (!IsInCurrentSpace(value->value())) {
-        if (!value->value()->IsSoftGCMarked()) {
-          // Set soft mark and add item to black list to reset mark later
-          value->value()->SetSoftGCMark();
-          black_items()->Push(value);
-
-          GC::VisitValue(value->value());
-        }
-        continue;
-      }
-
-      HValue* hvalue;
-
-      if (heap()->needs_gc() == Heap::kGCNewSpace) {
-        // New space GC
-        hvalue = value->value()->CopyTo(heap()->old_space(), &tmp_space);
-      } else {
-        // Old space GC
-        hvalue = value->value()->CopyTo(&tmp_space, heap()->new_space());
-      }
-
-      value->Relocate(hvalue->addr());
-      GC::VisitValue(hvalue);
-    } else {
-      value->Relocate(value->value()->GetGCMark());
-    }
-  }
 
   // Reset marks for items from external space
   while (black_items()->length() != 0) {
@@ -92,7 +53,8 @@ void GC::CollectGarbage(char* current_frame) {
   // Visit all weak references and call callbacks if some of them are dead
   HandleWeakReferences();
 
-  space->Swap(&tmp_space);
+  space->Swap(tmp_space());
+  delete tmp_space();
 
   // Reset GC flag
   heap()->needs_gc(Heap::kGCNone);
@@ -108,6 +70,7 @@ void GC::ColourPersistentHandles() {
           new GCValue(ref->value(), reinterpret_cast<char**>(ref->reference())));
       grey_items()->Push(
           new GCValue(ref->value(), reinterpret_cast<char**>(ref->valueptr())));
+      ProcessGrey();
     }
 
     item = item->next();
@@ -152,6 +115,7 @@ void GC::ColourFrames(char* current_frame) {
       if (hvalue->tag() == Heap::kTagCode) continue;
 
       grey_items()->Push(new GCValue(hvalue, frame - 2 - i));
+      ProcessGrey();
     }
 
     //
@@ -192,6 +156,48 @@ void GC::HandleWeakReferences() {
     }
 
     item = item->next();
+  }
+}
+
+
+void GC::ProcessGrey() {
+  while (grey_items()->length() != 0) {
+    GCValue* value = grey_items()->Shift();
+
+    // Skip unboxed address
+    if (value->value() == HValue::Cast(HNil::New()) ||
+        HValue::IsUnboxed(value->value()->addr())) {
+      continue;
+    }
+
+    if (!value->value()->IsGCMarked()) {
+      // Object is in not in current space, don't move it
+      if (!IsInCurrentSpace(value->value())) {
+        if (!value->value()->IsSoftGCMarked()) {
+          // Set soft mark and add item to black list to reset mark later
+          value->value()->SetSoftGCMark();
+          black_items()->Push(value);
+
+          GC::VisitValue(value->value());
+        }
+        continue;
+      }
+
+      HValue* hvalue;
+
+      if (heap()->needs_gc() == Heap::kGCNewSpace) {
+        // New space GC
+        hvalue = value->value()->CopyTo(heap()->old_space(), tmp_space());
+      } else {
+        // Old space GC
+        hvalue = value->value()->CopyTo(tmp_space(), heap()->new_space());
+      }
+
+      value->Relocate(hvalue->addr());
+      GC::VisitValue(hvalue);
+    } else {
+      value->Relocate(value->value()->GetGCMark());
+    }
   }
 }
 

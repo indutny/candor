@@ -9,6 +9,7 @@ namespace internal {
 
 // Forward declarations
 class Heap;
+class Space;
 class HValue;
 class HContext;
 class HFunction;
@@ -45,6 +46,8 @@ class GC {
   void ColourFrames(char* current_frame);
   void HandleWeakReferences();
 
+  void ProcessGrey();
+
   void VisitValue(HValue* value);
   void VisitContext(HContext* context);
   void VisitFunction(HFunction* fn);
@@ -57,11 +60,14 @@ class GC {
   inline GCList* grey_items() { return &grey_items_; }
   inline GCList* black_items() { return &black_items_; }
   inline Heap* heap() { return heap_; }
+  inline void tmp_space(Space* space) { tmp_space_ = space; }
+  inline Space* tmp_space() { return tmp_space_; }
 
  protected:
   GCList grey_items_;
   GCList black_items_;
   Heap* heap_;
+  Space* tmp_space_;
 };
 
 } // namespace internal
