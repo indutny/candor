@@ -28,6 +28,22 @@ CodeSpace::~CodeSpace() {
 }
 
 
+Error* CodeSpace::CreateError(const char* source,
+                              uint32_t length,
+                              const char* message,
+                              uint32_t offset) {
+  Error* err = new Error();
+
+  err->message = message;
+  err->line = GetSourceLineByOffset(source, offset, &err->offset);
+
+  err->source = source;
+  err->length = length;
+
+  return err;
+}
+
+
 char* CodeSpace::Put(Masm* masm) {
   masm->AlignCode();
 
@@ -49,16 +65,7 @@ char* CodeSpace::Compile(const char* source,
   AstNode* ast = p.Execute();
 
   if (p.has_error()) {
-    Error* err = new Error();
-
-    err->message = p.error_msg();
-    err->line = GetSourceLineByOffset(source, p.error_pos(), &err->offset);
-
-    err->source = source;
-    err->length = length;
-
-    *error = err;
-
+    *error = CreateError(source, length, p.error_msg(), p.error_pos());
     return NULL;
   }
 
@@ -69,15 +76,8 @@ char* CodeSpace::Compile(const char* source,
   f.Generate(ast);
 
   if (f.has_error()) {
-    Error* err = new Error();
-
-    err->message = f.error_msg();
-    err->line = GetSourceLineByOffset(source, 0, &err->offset);
-
-    err->source = source;
-    err->length = length;
-
-    *error = err;
+    *error = CreateError(source, length, f.error_msg(), f.error_pos());
+    return NULL;
   }
 
   // Store root

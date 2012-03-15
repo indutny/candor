@@ -26,6 +26,11 @@ class CodeSpace {
   CodeSpace(Heap* heap);
   ~CodeSpace();
 
+  Error* CreateError(const char* source,
+                     uint32_t length,
+                     const char* message,
+                     uint32_t offset);
+
   char* Put(Masm* masm);
   char* Compile(const char* source,
                 uint32_t length,

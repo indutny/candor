@@ -1,4 +1,3 @@
-* Compile errors instead of runtime errors
 * Optimize `while` benchmark
 * Support : "1 +\n 1" in parser
 * Escape characters in strings

@@ -43,7 +43,8 @@ Fullgen::Fullgen(CodeSpace* space) : Masm(space),
                                      space_(space),
                                      visitor_type_(kValue),
                                      current_function_(NULL),
-                                     error_msg_(NULL) {
+                                     error_msg_(NULL),
+                                     error_pos_(0) {
   // Create a `global` object
   root_context()->Push(HObject::NewEmpty(heap()));
 
@@ -80,7 +81,7 @@ void Fullgen::CandorFunction::Generate() {
 
 void Fullgen::Throw(Heap::Error err) {
   assert(current_node() != NULL);
-  SetError(Heap::ErrorToString(err));
+  SetError(Heap::ErrorToString(err), current_node()->offset());
   // TODO: set error flag
   emitb(0xcc);
 }

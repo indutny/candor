@@ -380,7 +380,7 @@ inline double StringToDouble(const char* value, uint32_t length) {
 inline int GetSourceLineByOffset(const char* source,
                                  uint32_t offset,
                                  int* pos) {
-  int result = 0;
+  int result = 1;
   uint32_t line_start = 0;
 
   for (uint32_t i = 0; i < offset; i++) {
