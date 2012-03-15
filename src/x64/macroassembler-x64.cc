@@ -59,7 +59,7 @@ void Masm::AlignCode() {
 Masm::Align::Align(Masm* masm) : masm_(masm), align_(masm->align_) {
   if (align_ % 2 == 0) return;
 
-  masm->push(Immediate(0));
+  masm->push(Immediate(Heap::kTagNil));
   masm->align_ += 1;
 }
 
@@ -173,7 +173,7 @@ void Masm::AllocateContext(uint32_t slots) {
   // Clear context
   for (uint32_t i = 0; i < slots; i++) {
     Operand qslot(rax, 24 + i * 8);
-    movq(qslot, Immediate(0));
+    movq(qslot, Immediate(Heap::kTagNil));
   }
 
   // Replace current context
@@ -367,7 +367,7 @@ void Masm::ExitFramePrologue() {
 
   movq(scratch, last_stack);
   push(scratch_op);
-  push(Immediate(0));
+  push(Immediate(Heap::kTagNil));
   movq(scratch_op, rbp);
   xorq(scratch, scratch);
 }

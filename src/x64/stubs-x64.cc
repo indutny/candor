@@ -19,8 +19,10 @@ BaseStub::BaseStub(CodeSpace* space, StubType type) : space_(space),
 void BaseStub::GeneratePrologue(int stack_slots) {
   __ push(rbp);
   __ movq(rbp, rsp);
-  __ push(Immediate((stack_slots + 1) << 3));
-  __ push(Immediate(0));
+  if (stack_slots != -1) {
+    __ push(Immediate((stack_slots + 1) << 3));
+    __ push(Immediate(0));
+  }
 }
 
 
