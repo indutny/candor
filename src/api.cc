@@ -185,6 +185,11 @@ bool Value::Is() {
    default: return false;
   }
 
+  if (addr() != NULL && addr() != HNil::New()) {
+    assert(!HValue::Cast(addr())->IsSoftGCMarked() &&
+           !HValue::Cast(addr())->IsGCMarked());
+  }
+
   return HValue::GetTag(addr()) == tag;
 }
 

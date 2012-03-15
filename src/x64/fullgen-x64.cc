@@ -79,6 +79,7 @@ void Fullgen::CandorFunction::Generate() {
 
 
 void Fullgen::Throw(Heap::Error err) {
+  assert(current_node() != NULL);
   SetError(Heap::ErrorToString(err));
   // TODO: set error flag
   emitb(0xcc);
