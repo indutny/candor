@@ -60,8 +60,8 @@ using namespace internal;
     {\
       Isolate i;\
       Function* f = Function::New(code, strlen(code));\
-      if (i.HasSyntaxError()) {\
-        i.PrintSyntaxError();\
+      if (i.HasError()) {\
+        i.PrintError();\
         abort();\
       }\
       Value* argv[0];\

@@ -95,6 +95,20 @@ void Space::Clear() {
 }
 
 
+const char* Heap::ErrorToString(Error err) {
+  switch (err) {
+   case kErrorNone:
+    return NULL;
+   case kErrorIncorrectLhs:
+    return "Incorrect left-hand side";
+   case kErrorCallWithoutVariable:
+    return "Call without variable";
+  }
+
+  return NULL;
+}
+
+
 char* Heap::AllocateTagged(HeapTag tag, TenureType tenure, uint32_t bytes) {
   char* result = space(tenure)->Allocate(bytes + 8);
   uint64_t qtag = tag;

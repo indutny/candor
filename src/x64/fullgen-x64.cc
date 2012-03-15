@@ -42,7 +42,8 @@ Fullgen::Fullgen(CodeSpace* space) : Masm(space),
                                      Visitor(kPreorder),
                                      space_(space),
                                      visitor_type_(kValue),
-                                     current_function_(NULL) {
+                                     current_function_(NULL),
+                                     error_msg_(NULL) {
   // Create a `global` object
   root_context()->Push(HObject::NewEmpty(heap()));
 
@@ -78,6 +79,7 @@ void Fullgen::CandorFunction::Generate() {
 
 
 void Fullgen::Throw(Heap::Error err) {
+  SetError(Heap::ErrorToString(err));
   // TODO: set error flag
   emitb(0xcc);
 }
@@ -399,7 +401,7 @@ AstNode* Fullgen::VisitMember(AstNode* node) {
 
   VisitForValue(node->lhs());
 
-  // Throw error if we're trying to lookup into nil object
+  // Return nil on non-object's property access
   IsNil(rax, NULL, &non_object_error);
   IsUnboxed(rax, NULL, &non_object_error);
 

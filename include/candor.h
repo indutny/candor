@@ -25,7 +25,7 @@ class Object;
 class Array;
 class CData;
 class Arguments;
-struct SyntaxError;
+struct Error;
 
 class Isolate {
  public:
@@ -34,18 +34,18 @@ class Isolate {
 
   static Isolate* GetCurrent();
 
-  bool HasSyntaxError();
-  SyntaxError* GetSyntaxError();
-  void PrintSyntaxError();
+  bool HasError();
+  Error* GetError();
+  void PrintError();
 
  protected:
 
-  void SetSyntaxError(SyntaxError* err);
+  void SetError(Error* err);
 
   internal::Heap* heap;
   internal::CodeSpace* space;
 
-  SyntaxError* syntax_error;
+  Error* error;
 
   friend class Value;
   friend class Nil;
@@ -62,7 +62,7 @@ class Isolate {
   friend class CWrapper;
 };
 
-struct SyntaxError {
+struct Error {
   const char* message;
   int line;
   int offset;

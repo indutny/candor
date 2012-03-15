@@ -13,9 +13,9 @@ TEST_START("parser test")
   // Comments
   PARSER_TEST("1// comment", "[1]")
   PARSER_TEST("1 // comment", "[1]")
-  PARSER_TEST("1// comment\nreturn 1", "[1] [kReturn [1]]")
-  PARSER_TEST("return\n// comment", "[kReturn [nil]]")
-  PARSER_TEST("return nil\n// nill is default\n", "[kReturn [nil]]")
+  PARSER_TEST("1// comment\nreturn 1", "[1] [return [1]]")
+  PARSER_TEST("return\n// comment", "[return [nil]]")
+  PARSER_TEST("return nil\n// nill is default\n", "[return [nil]]")
   PARSER_TEST("1/* comment */ + 1", "[kAdd [1] [1]]")
 
   // Eq
@@ -35,7 +35,7 @@ TEST_START("parser test")
   PARSER_TEST("(a + b) * c", "[kMul [kAdd [a] [b]] [c]]")
   PARSER_TEST("return 4611686018427387904 + 4611686018427387904 + "
               "4611686018427387904",
-              "[kReturn [kAdd [4611686018427387904] "
+              "[return [kAdd [4611686018427387904] "
               "[kAdd [4611686018427387904] [4611686018427387904]]]]")
   PARSER_TEST("a == 1 || b == 2", "[kLOr [kEq [a] [1]] [kEq [b] [2]]]")
 
@@ -59,16 +59,16 @@ TEST_START("parser test")
   PARSER_TEST("a(b,c,d)", "[kCall [a] @[[b] [c] [d]] ]")
   PARSER_TEST("a() {}", "[kFunction [a] @[] [kNop ]]")
   PARSER_TEST("a(b, c, d) { return b }",
-              "[kFunction [a] @[[b] [c] [d]] [kReturn [b]]]")
+              "[kFunction [a] @[[b] [c] [d]] [return [b]]]")
   PARSER_TEST("(b, c, d) { return b }",
-              "[kFunction (anonymous) @[[b] [c] [d]] [kReturn [b]]]")
+              "[kFunction (anonymous) @[[b] [c] [d]] [return [b]]]")
   PARSER_TEST("return (a) {\nreturn a + 2\n}",
-              "[kReturn [kFunction (anonymous) @[[a]] "
-              "[kReturn [kAdd [a] [2]]]]]")
+              "[return [kFunction (anonymous) @[[a]] "
+              "[return [kAdd [a] [2]]]]]")
   PARSER_TEST("return",
-              "[kReturn [nil]]")
+              "[return [nil]]")
   PARSER_TEST("return nil",
-              "[kReturn [nil]]")
+              "[return [nil]]")
 
   // Member
   PARSER_TEST("a.b.c.d.e",
@@ -89,17 +89,17 @@ TEST_START("parser test")
               "[kWhile [kGe [i] [0]] [kBlock [kPostInc [x]]]]")
 
   // If
-  PARSER_TEST("if(true) {}", "[kIf [true] [kBlock [kNop ]]]")
+  PARSER_TEST("if(true) {}", "[if [true] [kBlock [kNop ]]]")
   PARSER_TEST("if(true) {} else {}",
-              "[kIf [true] [kBlock [kNop ]] [kBlock [kNop ]]]")
-  PARSER_TEST("if (true) { x }", "[kIf [true] [kBlock [x]]]")
+              "[if [true] [kBlock [kNop ]] [kBlock [kNop ]]]")
+  PARSER_TEST("if (true) { x }", "[if [true] [kBlock [x]]]")
   PARSER_TEST("if (true) { x } else { y }",
-              "[kIf [true] [kBlock [x]] [kBlock [y]]]")
+              "[if [true] [kBlock [x]] [kBlock [y]]]")
 
   // Complex
   PARSER_TEST("p = 0\r\nwhile (true) {\r\nif (p++ > 10) break\n}",
               "[kAssign [p] [0]] [kWhile [true] "
-              "[kBlock [kIf [kGt [kPostInc [p]] [10]] [kBreak ]]]]")
+              "[kBlock [if [kGt [kPostInc [p]] [10]] [break]]]]")
 
   // Object literal
   PARSER_TEST("a({})", "[kCall [a] @[[kObjectLiteral ]] ]")
@@ -115,9 +115,9 @@ TEST_START("parser test")
               "[kAssign [a] [kObjectLiteral "
               "[kProperty 1]:[1] [kProperty 2]:[2]]]")
   PARSER_TEST("key() {\nreturn 'key'\n}\na = { key: 2 }\nreturn a.key",
-              "[kFunction [key] @[] [kReturn [kString key]]] "
+              "[kFunction [key] @[] [return [kString key]]] "
               "[kAssign [a] [kObjectLiteral [kProperty key]:[2]]] "
-              "[kReturn [kMember [a] [kProperty key]]]")
+              "[return [kMember [a] [kProperty key]]]")
 
   // Array literal
   PARSER_TEST("a = [ 1, 2, 3, 4]",

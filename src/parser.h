@@ -22,7 +22,7 @@ class Parser : public Lexer {
     error_pos_ = 0;
     error_msg_ = NULL;
 
-    ast_ = new FunctionLiteral(NULL, 0);
+    ast_ = new FunctionLiteral(NULL);
     ast_->make_root();
     sign_ = kNormal;
   }

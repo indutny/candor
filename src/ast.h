@@ -63,10 +63,20 @@ class AstNode : public ZoneObject {
 
   AstNode(Type type) : type_(type),
                        value_(NULL),
+                       offset_(0),
                        length_(0),
                        stack_count_(0),
                        context_count_(0),
                        root_(false) {
+  }
+
+  AstNode(Type type, Lexer::Token* token) : type_(type),
+                                            value_(token->value()),
+                                            offset_(token->offset()),
+                                            length_(token->length()),
+                                            stack_count_(0),
+                                            context_count_(0),
+                                            root_(false) {
   }
 
   virtual ~AstNode() {
@@ -83,14 +93,6 @@ class AstNode : public ZoneObject {
     }
   }
 
-  // Loads token value and length into ast node
-  inline AstNode* FromToken(Lexer::Token* token) {
-    value_ = token->value();
-    length_ = token->length();
-
-    return this;
-  }
-
   // Some shortcuts
   inline AstList* children() { return &children_; }
   inline AstNode* lhs() { return children()->head()->value(); }
@@ -105,8 +107,14 @@ class AstNode : public ZoneObject {
 
   inline void value(const char* value) { value_ = value; }
   inline const char* value() { return value_; }
+
+  inline void offset(uint32_t offset) { offset_ = offset; }
+  inline uint32_t offset() { return offset_; }
+
   inline void length(uint32_t length) { length_ = length; }
   inline uint32_t length() { return length_; }
+
+  inline void end(uint32_t pos) { length(pos - offset()); }
 
   inline int32_t stack_slots() { return stack_count_; }
   inline int32_t context_slots() { return context_count_; }
@@ -142,7 +150,8 @@ class AstNode : public ZoneObject {
     }
 
     return (is(kName) || is(kTrue) || is(kFalse) ||
-            is(kNumber) || is(kNil) ?
+            is(kNumber) || is(kNil) || is(kBreak) ||
+            is(kReturn) || is(kIf) ?
                p->Print("[")
                :
                p->Print("[%s ", strtype)
@@ -160,6 +169,7 @@ class AstNode : public ZoneObject {
   Type type_;
 
   const char* value_;
+  uint32_t offset_;
   uint32_t length_;
 
   int32_t stack_count_;
@@ -414,11 +424,13 @@ class ObjectLiteral : public AstNode {
 // contains name and variables list
 class FunctionLiteral : public AstNode {
  public:
-  FunctionLiteral(AstNode* variable, uint32_t offset) : AstNode(kFunction) {
-    variable_ = variable;
+  FunctionLiteral(AstNode* variable) : AstNode(kFunction) {
+    if (variable != NULL) {
+      offset(variable->offset());
+      length(variable->length());
+    }
 
-    offset_ = offset;
-    length_ = 0;
+    variable_ = variable;
   }
 
   static inline FunctionLiteral* Cast(AstNode* node) {
@@ -446,12 +458,6 @@ class FunctionLiteral : public AstNode {
     }
 
     return true;
-  }
-
-  // Function literal will keep it's boundaries in original source
-  inline FunctionLiteral* End(uint32_t end) {
-    length_ = end - offset_;
-    return this;
   }
 
 

@@ -47,8 +47,12 @@ class Visitor {
   virtual AstNode* VisitUnOp(AstNode* node);
   virtual AstNode* VisitBinOp(AstNode* node);
 
+  inline AstNode* current_node() { return current_node_; }
+
  private:
   Type type_;
+
+  AstNode* current_node_;
 };
 
 } // namespace internal

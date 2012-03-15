@@ -148,7 +148,7 @@ void StartRepl() {
     if (!multiline || strlen(cmd) != 0) {
 
       // Continue collecting string on syntax error
-      if (isolate.HasSyntaxError()) {
+      if (isolate.HasError()) {
         delete prepended;
         multiline = true;
         continue;
@@ -192,8 +192,8 @@ int main(int argc, char** argv) {
     candor::Function* code = candor::Function::New(script, size);
     delete script;
 
-    if (isolate.HasSyntaxError()) {
-      isolate.PrintSyntaxError();
+    if (isolate.HasError()) {
+      isolate.PrintError();
       exit(1);
     }
 

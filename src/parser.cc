@@ -31,9 +31,9 @@ AstNode* Parser::ParseStatement() {
 
   switch (Peek()->type()) {
    case kReturn:
-    Skip();
     {
-      result = new AstNode(AstNode::kReturn);
+      result = new AstNode(AstNode::kReturn, Peek());
+      Skip();
       AstNode* value = ParseExpression();
       if (value == NULL) {
         value = new AstNode(AstNode::kNil);
@@ -44,12 +44,14 @@ AstNode* Parser::ParseStatement() {
     }
     break;
    case kBreak:
+    result = new AstNode(AstNode::kBreak, Peek());
     Skip();
-    result = new AstNode(AstNode::kBreak);
     break;
    case kIf:
-    Skip();
     {
+      Lexer::Token* if_tok = Peek();
+
+      Skip();
       if (!Peek()->is(kParenOpen)) {
         SetError("Expected '(' before if's condition");
         return NULL;
@@ -85,7 +87,7 @@ AstNode* Parser::ParseStatement() {
         return NULL;
       }
 
-      result = new AstNode(AstNode::kIf);
+      result = new AstNode(AstNode::kIf, if_tok);
       result->children()->Push(cond);
       result->children()->Push(body);
       if (elseBody != NULL) result->children()->Push(elseBody);
@@ -364,8 +366,7 @@ AstNode* Parser::ParsePrimary() {
    case kTrue:
    case kFalse:
    case kNil:
-    result = new AstNode(AstNode::ConvertType(token->type()));
-    result->FromToken(token);
+    result = new AstNode(AstNode::ConvertType(token->type()), token);
     Skip();
     break;
    case kParenOpen:
@@ -400,7 +401,7 @@ AstNode* Parser::ParseMember() {
   while (!Peek()->is(kEnd) && !Peek()->is(kCr)) {
     if (Peek()->is(kParenOpen)) {
       // Calls and function declarations
-      FunctionLiteral* fn = new FunctionLiteral(result, Peek()->offset());
+      FunctionLiteral* fn = new FunctionLiteral(result);
       result = NULL;
       Skip();
 
@@ -425,7 +426,8 @@ AstNode* Parser::ParseMember() {
         break;
       }
 
-      result = fn->End(Peek()->offset());
+      fn->end(Peek()->offset());
+      result = fn;
     } else {
       if (result == NULL) {
         SetError("Unexpected '.' or '['");
@@ -477,10 +479,10 @@ AstNode* Parser::ParseObjectLiteral() {
   while (!Peek()->is(kBraceClose) && !Peek()->is(kEnd)) {
     AstNode* key;
     if (Peek()->is(kString) || Peek()->is(kName)) {
-      key = (new AstNode(AstNode::kProperty))->FromToken(Peek());
+      key = new AstNode(AstNode::kProperty, Peek());
       Skip();
     } else if (Peek()->is(kNumber)) {
-      key = (new AstNode(AstNode::kProperty))->FromToken(Peek());
+      key = new AstNode(AstNode::kProperty, Peek());
       Skip();
     } else {
       SetError("Expected string or number as object literal's key");
@@ -532,9 +534,9 @@ AstNode* Parser::ParseArrayLiteral() {
     SetError("Expected '['");
     return NULL;
   }
-  Skip();
 
-  AstNode* result = new AstNode(AstNode::kArrayLiteral);
+  AstNode* result = new AstNode(AstNode::kArrayLiteral, Peek());
+  Skip();
 
   while (!Peek()->is(kArrayClose) && !Peek()->is(kEnd)) {
     // Parse expression
@@ -576,9 +578,11 @@ AstNode* Parser::ParseBlock(AstNode* block) {
 
   Position pos(this);
 
+  AstNode* result = fn ?
+      block
+      :
+      new AstNode(AstNode::kBlock, Peek());
   Skip();
-
-  AstNode* result = fn ? block : new AstNode(AstNode::kBlock);
 
   while (!Peek()->is(kEnd) && !Peek()->is(kBraceClose)) {
     AstNode* stmt = ParseStatement();

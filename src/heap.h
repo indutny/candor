@@ -169,6 +169,8 @@ class Heap {
   // TODO: Use thread id
   static inline Heap* Current() { return current_; }
 
+  static const char* ErrorToString(Error err);
+
   char* AllocateTagged(HeapTag tag, TenureType type, uint32_t bytes);
 
   // Referencing C++ handles

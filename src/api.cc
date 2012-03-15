@@ -48,7 +48,7 @@ static Isolate* current_isolate = NULL;
 Isolate::Isolate() {
   heap = new Heap(2 * 1024 * 1024);
   space = new CodeSpace(heap);
-  syntax_error = NULL;
+  error = NULL;
 
   current_isolate = this;
 }
@@ -66,31 +66,31 @@ Isolate* Isolate::GetCurrent() {
 }
 
 
-bool Isolate::HasSyntaxError() {
-  return syntax_error != NULL;
+bool Isolate::HasError() {
+  return error != NULL;
 }
 
 
-SyntaxError* Isolate::GetSyntaxError() {
-  return syntax_error;
+Error* Isolate::GetError() {
+  return error;
 }
 
 
-void Isolate::PrintSyntaxError() {
-  if (!HasSyntaxError()) return;
+void Isolate::PrintError() {
+  if (!HasError()) return;
 
   fprintf(stderr,
-          "SyntaxError on line %d: %s\n",
-          syntax_error->line,
-          syntax_error->message);
+          "Error on line %d: %s\n",
+          error->line,
+          error->message);
 }
 
 
-void Isolate::SetSyntaxError(SyntaxError* err) {
-  if (HasSyntaxError()) {
-    delete syntax_error;
+void Isolate::SetError(Error* err) {
+  if (HasError()) {
+    delete error;
   }
-  syntax_error = err;
+  error = err;
 }
 
 
@@ -206,17 +206,17 @@ String* Value::ToString() {
 
 Function* Function::New(const char* source, uint32_t length) {
   char* root;
-  SyntaxError* error;
+  Error* error;
   char* code = Isolate::GetCurrent()->space->Compile(source,
                                                      length,
                                                      &root,
                                                      &error);
   // Set errors
   if (code == NULL) {
-    Isolate::GetCurrent()->SetSyntaxError(error);
+    Isolate::GetCurrent()->SetError(error);
     return NULL;
   } else {
-    Isolate::GetCurrent()->SetSyntaxError(NULL);
+    Isolate::GetCurrent()->SetError(NULL);
   }
 
   char* obj = HFunction::New(Isolate::GetCurrent()->heap, NULL, code, root);

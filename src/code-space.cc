@@ -1,5 +1,5 @@
 #include "code-space.h"
-#include "candor.h" // SyntaxError
+#include "candor.h" // Error
 #include "heap.h" // Heap
 #include "heap-inl.h" // Heap
 #include "parser.h" // Parser
@@ -41,7 +41,7 @@ char* CodeSpace::Put(Masm* masm) {
 char* CodeSpace::Compile(const char* source,
                          uint32_t length,
                          char** root,
-                         SyntaxError** error) {
+                         Error** error) {
   Zone zone;
   Parser p(source, length);
   Fullgen f(this);
@@ -49,7 +49,7 @@ char* CodeSpace::Compile(const char* source,
   AstNode* ast = p.Execute();
 
   if (p.has_error()) {
-    SyntaxError* err = new SyntaxError();
+    Error* err = new Error();
 
     err->message = p.error_msg();
     err->line = GetSourceLineByOffset(source, p.error_pos(), &err->offset);
@@ -67,6 +67,18 @@ char* CodeSpace::Compile(const char* source,
 
   // Generate machine code
   f.Generate(ast);
+
+  if (f.has_error()) {
+    Error* err = new Error();
+
+    err->message = f.error_msg();
+    err->line = GetSourceLineByOffset(source, 0, &err->offset);
+
+    err->source = source;
+    err->length = length;
+
+    *error = err;
+  }
 
   // Store root
   *root = f.AllocateRoot();

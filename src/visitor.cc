@@ -49,6 +49,8 @@ namespace internal {
     }
 
 AstNode* Visitor::Visit(AstNode* node) {
+  current_node_ = node;
+
   switch (node->type()) {
    VISITOR_MAPPING_BLOCK(VISITOR_SWITCH)
    VISITOR_MAPPING_REGULAR(VISITOR_SWITCH)

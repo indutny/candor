@@ -146,6 +146,15 @@ class Fullgen : public Masm, public Visitor {
   AstNode* VisitForValue(AstNode* node);
   AstNode* VisitForSlot(AstNode* node);
 
+  inline void SetError(const char* message) {
+    if (error_msg_ != NULL) return;
+
+    error_msg_ = message;
+  }
+
+  inline bool has_error() { return error_msg_ != NULL; }
+  inline const char* error_msg() { return error_msg_; }
+
   inline Heap* heap() { return space_->heap(); }
   inline bool visiting_for_value() { return visitor_type_ == kValue; }
   inline bool visiting_for_slot() { return visitor_type_ == kSlot; }
@@ -160,6 +169,8 @@ class Fullgen : public Masm, public Visitor {
   List<FFunction*, ZoneObject> fns_;
   CandorFunction* current_function_;
   List<char*, ZoneObject> root_context_;
+
+  const char* error_msg_;
 };
 
 } // namespace internal
