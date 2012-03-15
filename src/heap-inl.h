@@ -21,7 +21,7 @@ inline bool HValue::IsUnboxed(char* addr) {
 
 inline bool HValue::IsGCMarked() {
   if (IsUnboxed(addr())) return false;
-  return (*reinterpret_cast<uint64_t*>(addr()) & 0x80000000) != 0;
+  return (*reinterpret_cast<uint8_t*>(addr() + 7) & 0x80) != 0;
 }
 
 
@@ -32,25 +32,25 @@ inline char* HValue::GetGCMark() {
 
 
 inline void HValue::SetGCMark(char* new_addr) {
-  *reinterpret_cast<uint64_t*>(addr()) |= 0x80000000;
+  *reinterpret_cast<uint8_t*>(addr() + 7) |= 0x80;
   *reinterpret_cast<char**>(addr() + 8) = new_addr;
 }
 
 
 inline bool HValue::IsSoftGCMarked() {
   if (IsUnboxed(addr())) return false;
-  return (*reinterpret_cast<uint64_t*>(addr()) & 0x40000000) != 0;
+  return (*reinterpret_cast<uint8_t*>(addr() + 7) & 0x40) != 0;
 }
 
 
 inline void HValue::SetSoftGCMark() {
-  *reinterpret_cast<uint64_t*>(addr()) |= 0x40000000;
+  *reinterpret_cast<uint8_t*>(addr() + 7) |= 0x40;
 }
 
 
 inline void HValue::ResetSoftGCMark() {
   if (IsSoftGCMarked()) {
-    *reinterpret_cast<uint64_t*>(addr()) ^= 0x40000000;
+    *reinterpret_cast<uint8_t*>(addr() + 7) ^= 0x40;
   }
 }
 

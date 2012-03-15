@@ -435,7 +435,7 @@ char* RuntimeBinOp(Heap* heap, char* lhs, char* rhs) {
 
     if (BinOp::is_negative_eq(type)) result = !result;
 
-    return HBoolean::New(heap, Heap::kTenureOld, result);
+    return HBoolean::New(heap, Heap::kTenureNew, result);
   } else if (BinOp::is_bool_logic(type)) {
     lhs = RuntimeToBoolean(heap, lhs);
     rhs = RuntimeToBoolean(heap, rhs);
