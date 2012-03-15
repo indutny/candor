@@ -20,6 +20,7 @@ void BaseStub::GeneratePrologue(int stack_slots) {
   __ push(rbp);
   __ movq(rbp, rsp);
   if (stack_slots != -1) {
+    // Stack slots + padding zero
     __ push(Immediate((stack_slots + 1) << 3));
     __ push(Immediate(0));
   }

@@ -110,11 +110,7 @@ void GC::ColourFrames(char* current_frame) {
         continue;
       }
 
-      // Ignore return addresses
-      HValue* hvalue = HValue::Cast(value);
-      if (hvalue->tag() == Heap::kTagCode) continue;
-
-      grey_items()->Push(new GCValue(hvalue, frame - 2 - i));
+      grey_items()->Push(new GCValue(HValue::Cast(value), frame - 2 - i));
       ProcessGrey();
     }
 

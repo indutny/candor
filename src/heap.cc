@@ -22,6 +22,8 @@ Space::Space(Heap* heap, uint32_t page_size) : heap_(heap),
   pages_.allocated = true;
 
   select(pages_.head()->value());
+
+  compute_size_limit();
 }
 
 
