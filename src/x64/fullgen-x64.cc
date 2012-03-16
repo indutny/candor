@@ -115,9 +115,10 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
   // Allocate space for spill slots and on-stack variables
   AllocateSpills(stmt->stack_slots());
 
+  FillStackSlots();
+
   // Allocate context and clear stack slots
   AllocateContext(stmt->context_slots());
-  FillStackSlots();
 
   // Place all arguments into their slots
   Label body(this);
