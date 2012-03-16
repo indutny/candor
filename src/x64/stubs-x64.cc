@@ -435,10 +435,10 @@ void CoerceToBooleanStub::Generate() {
     V(LAnd)
 
 void BinaryOpStub::Generate() {
-  GeneratePrologue(0);
+  GeneratePrologue(-1);
 
   // Allocate space for spill slots
-  __ AllocateSpills(-1);
+  __ AllocateSpills(0);
 
   Label box_rhs(masm()), both_boxed(masm());
   Label call_runtime(masm()), nil_result(masm()), done(masm());
@@ -575,24 +575,21 @@ void BinaryOpStub::Generate() {
   }
 #undef BINARY_ENUM_CASES
 
-  {
-    Label call(masm());
+  Label call(masm());
 
-    Masm::Align a(masm());
-    __ Pushad();
+  __ Pushad();
 
-    Immediate heapref(reinterpret_cast<uint64_t>(masm()->heap()));
+  Immediate heapref(reinterpret_cast<uint64_t>(masm()->heap()));
 
-    // binop(heap, lhs, rhs)
-    __ movq(rdi, heapref);
-    __ movq(rsi, rax);
-    __ movq(rdx, rbx);
+  // binop(heap, lhs, rhs)
+  __ movq(rdi, heapref);
+  __ movq(rsi, rax);
+  __ movq(rdx, rbx);
 
-    __ movq(scratch, Immediate(*reinterpret_cast<uint64_t*>(&cb)));
-    __ callq(scratch);
+  __ movq(scratch, Immediate(*reinterpret_cast<uint64_t*>(&cb)));
+  __ callq(scratch);
 
-    __ Popad(rax);
-  }
+  __ Popad(rax);
 
   __ bind(&done);
 
