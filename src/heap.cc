@@ -187,7 +187,7 @@ HValue* HValue::CopyTo(Space* old_space, Space* new_space) {
     break;
    case Heap::kTagMap:
     // size + space ( keys + values )
-    size += 8 + (As<HMap>()->size() << 4);
+    size += 9 + (As<HMap>()->size() << 4);
     break;
    case Heap::kTagCData:
     // size + data
@@ -298,7 +298,7 @@ char* HObject::NewEmpty(Heap* heap) {
   char* obj = heap->AllocateTagged(Heap::kTagObject, Heap::kTenureNew, 16);
   char* map = heap->AllocateTagged(Heap::kTagMap,
                                    Heap::kTenureNew,
-                                   (size << 4) + 8);
+                                   (size << 4) + 9);
 
   // Set mask
   *reinterpret_cast<uint64_t*>(obj + 8) = (size - 1) << 3;
@@ -309,14 +309,26 @@ char* HObject::NewEmpty(Heap* heap) {
   *reinterpret_cast<uint64_t*>(map + 8) = size;
 
   // Nullify all map's slots (both keys and values)
+  // NOTE: 17 was put here intentionally, with such offset all interior pointers
+  // will be treated by GC as unboxed numbers
   size = size << 4;
-  memset(map + 16, 0x00, size);
+  memset(map + 16, 0x00, size + 1);
   for (uint32_t i = 0; i < size; i += 8) {
-    map[i + 16] = Heap::kTagNil;
+    map[i + 17] = Heap::kTagNil;
   }
 
   return obj;
 }
+
+
+char** HObject::LookupProperty(Heap* heap, char* addr, char* key, int insert) {
+  return reinterpret_cast<char**>(RuntimeLookupProperty(heap,
+                                                        addr,
+                                                        key,
+                                                        insert));
+}
+
+
 
 
 char* HArray::NewEmpty(Heap* heap) {
@@ -340,9 +352,9 @@ char* HArray::NewEmpty(Heap* heap) {
 
   // Nullify all map's slots (both keys and values)
   size = size << 4;
-  memset(map + 16, 0x00, size);
+  memset(map + 16, 0x00, size + 1);
   for (uint32_t i = 0; i < size; i += 8) {
-    map[i + 16] = Heap::kTagNil;
+    map[i + 17] = Heap::kTagNil;
   }
 
   return obj;
@@ -364,10 +376,7 @@ int64_t HArray::Length(char* obj, bool shrink) {
       if (shrinked < 0) break;
       shrinked--;
       shrinkedptr = reinterpret_cast<char*>(HNumber::Tag(shrinked));
-      slot = reinterpret_cast<char**>(RuntimeLookupProperty(NULL,
-                                                            obj,
-                                                            shrinkedptr,
-                                                            0) - 1);
+      slot = HObject::LookupProperty(NULL, obj, shrinkedptr, 0);
     } while (*slot == HNil::New());
 
     // If array was shrinked - change length

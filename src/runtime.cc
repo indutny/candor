@@ -118,8 +118,7 @@ char* RuntimeLookupProperty(Heap* heap,
     *reinterpret_cast<char**>(space + index) = strkey;
   }
 
-  // Increment address, to make GC ignore it
-  return space + index + (mask + 8) + 1;
+  return space + index + (mask + 8);
 }
 
 
@@ -130,17 +129,17 @@ char* RuntimeGrowObject(Heap* heap, char* obj) {
 
   char* new_map = heap->AllocateTagged(Heap::kTagMap,
                                        Heap::kTenureNew,
-                                       8 + (size << 5));
+                                       9 + (size << 5));
   // Set map size
   *(uint32_t*)(new_map + 8) = size << 1;
 
   // Fill new map with zeroes
   {
     uint32_t size_f = size << 5;
-    memset(new_map + 16, 0, size_f);
+    memset(new_map + 16, 0, size_f + 1);
 
     for (uint32_t i = 0; i < size_f; i += 8) {
-      new_map[i + 16] = Heap::kTagNil;
+      new_map[i + 17] = Heap::kTagNil;
     }
   }
 
@@ -161,8 +160,8 @@ char* RuntimeGrowObject(Heap* heap, char* obj) {
 
     char* value = *reinterpret_cast<char**>(space + index + big_size);
 
-    char* slot = RuntimeLookupProperty(heap, obj, key, true) - 1;
-    *reinterpret_cast<char**>(slot) = value;
+    char** slot = HObject::LookupProperty(heap, obj, key, 1);
+    *slot = value;
   }
 
   return 0;
@@ -556,11 +555,8 @@ char* RuntimeKeysof(Heap* heap, char* value) {
   for (uint32_t i = 0; i < size; i++) {
     if (map->GetSlot(i) != HValue::Cast(HNil::New())) {
       char* indexptr = reinterpret_cast<char*>(HNumber::Tag(index));
-      char* slot = RuntimeLookupProperty(heap,
-                                         result,
-                                         indexptr,
-                                         1) - 1;
-      *reinterpret_cast<char**>(slot) = map->GetSlot(i)->addr();
+      char** slot = HObject::LookupProperty(heap, result, indexptr, 1);
+      *slot = map->GetSlot(i)->addr();
       index++;
     }
   }

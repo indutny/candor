@@ -412,6 +412,8 @@ class HObject : public HValue {
   }
   static inline uint32_t Mask(char* addr) { return *MaskSlot(addr); }
 
+  static char** LookupProperty(Heap* heap, char* addr, char* key, int insert);
+
   static const Heap::HeapTag class_tag = Heap::kTagObject;
 };
 
@@ -437,7 +439,7 @@ class HMap : public HValue {
   inline char** GetSlotAddress(uint32_t index);
 
   inline uint32_t size() { return *reinterpret_cast<uint32_t*>(addr() + 8); }
-  inline char* space() { return addr() + 16; }
+  inline char* space() { return addr() + 17; }
 
   static const Heap::HeapTag class_tag = Heap::kTagMap;
 };

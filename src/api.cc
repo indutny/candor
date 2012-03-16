@@ -347,17 +347,19 @@ Object* Object::New() {
 
 
 void Object::Set(String* key, Value* value) {
-  char** slot = reinterpret_cast<char**>(RuntimeLookupProperty(
-        Isolate::GetCurrent()->heap, addr(), key->addr(), 1) - 1);
+  char** slot = HObject::LookupProperty(Isolate::GetCurrent()->heap,
+                                        addr(),
+                                        key->addr(),
+                                        1);
   *slot = value->addr();
 }
 
 
 Value* Object::Get(String* key) {
-  char** slot = reinterpret_cast<char**>(RuntimeLookupProperty(
-        Isolate::GetCurrent()->heap, addr(), key->addr(), 0) - 1);
-
-  return Value::New(*slot);
+  return Value::New(*HObject::LookupProperty(Isolate::GetCurrent()->heap,
+                                             addr(),
+                                             key->addr(),
+                                             0));
 }
 
 
@@ -378,18 +380,20 @@ Array* Array::New() {
 
 void Array::Set(int64_t key, Value* value) {
   char* keyptr = reinterpret_cast<char*>(HNumber::Tag(key));
-  char** slot = reinterpret_cast<char**>(RuntimeLookupProperty(
-        Isolate::GetCurrent()->heap, addr(), keyptr, 1) - 1);
+  char** slot = HObject::LookupProperty(Isolate::GetCurrent()->heap,
+                                        addr(),
+                                        keyptr,
+                                        1);
   *slot = value->addr();
 }
 
 
 Value* Array::Get(int64_t key) {
   char* keyptr = reinterpret_cast<char*>(HNumber::Tag(key));
-  char** slot = reinterpret_cast<char**>(RuntimeLookupProperty(
-        Isolate::GetCurrent()->heap, addr(), keyptr, 1) - 1);
-
-  return Value::New(*slot);
+  return Value::New(*HObject::LookupProperty(Isolate::GetCurrent()->heap,
+                                             addr(),
+                                             keyptr,
+                                             1));
 }
 
 

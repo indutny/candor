@@ -276,7 +276,7 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
   // keys + values
   shl(size, Immediate(4));
   // + size
-  addq(size, Immediate(8));
+  addq(size, Immediate(9));
   TagNumber(size);
 
   Allocate(Heap::kTagMap, size, 0, scratch);
@@ -293,7 +293,7 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
 
   // Fill map with nil
   shl(size, Immediate(4));
-  addq(result, Immediate(16));
+  addq(result, Immediate(17));
   addq(size, result);
   Fill(result, size, Immediate(Heap::kTagNil));
 
