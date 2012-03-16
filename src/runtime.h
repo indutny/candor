@@ -21,11 +21,11 @@ void RuntimeCollectGarbage(Heap* heap, char* current_frame);
 
 // Performs lookup into a hashmap
 // if insert=1 - inserts key into map space
-typedef char* (*RuntimeLookupPropertyCallback)(Heap* heap,
+typedef off_t (*RuntimeLookupPropertyCallback)(Heap* heap,
                                                char* obj,
                                                char* key,
                                                off_t insert);
-char* RuntimeLookupProperty(Heap* heap,
+off_t RuntimeLookupProperty(Heap* heap,
                             char* obj,
                             char* key,
                             off_t insert);

@@ -412,6 +412,7 @@ AstNode* Fullgen::VisitMember(AstNode* node) {
   IsHeapObject(Heap::kTagArray, rax, &non_object_error, NULL);
 
   bind(&is_object);
+  Spill rax_s(this, rax);
 
   {
     // Stub(change, property, object)
@@ -429,6 +430,12 @@ AstNode* Fullgen::VisitMember(AstNode* node) {
     // Stub will unwind stack automatically
     ChangeAlign(-3);
   }
+
+  rax_s.Unspill(rbx);
+
+  Operand qmap(rbx, HObject::map_offset);
+  movq(rbx, qmap);
+  addq(rax, rbx);
 
   slot().base(rax);
   slot().disp(0);

@@ -298,7 +298,7 @@ char* HObject::NewEmpty(Heap* heap) {
   char* obj = heap->AllocateTagged(Heap::kTagObject, Heap::kTenureNew, 16);
   char* map = heap->AllocateTagged(Heap::kTagMap,
                                    Heap::kTenureNew,
-                                   (size << 4) + 9);
+                                   (size << 4) + 8);
 
   // Set mask
   *reinterpret_cast<uint64_t*>(obj + 8) = (size - 1) << 3;
@@ -309,12 +309,10 @@ char* HObject::NewEmpty(Heap* heap) {
   *reinterpret_cast<uint64_t*>(map + 8) = size;
 
   // Nullify all map's slots (both keys and values)
-  // NOTE: 17 was put here intentionally, with such offset all interior pointers
-  // will be treated by GC as unboxed numbers
   size = size << 4;
-  memset(map + 16, 0x00, size + 1);
+  memset(map + 16, 0x00, size);
   for (uint32_t i = 0; i < size; i += 8) {
-    map[i + 17] = Heap::kTagNil;
+    map[i + 16] = Heap::kTagNil;
   }
 
   return obj;
@@ -322,7 +320,8 @@ char* HObject::NewEmpty(Heap* heap) {
 
 
 char** HObject::LookupProperty(Heap* heap, char* addr, char* key, int insert) {
-  return reinterpret_cast<char**>(RuntimeLookupProperty(heap,
+  return reinterpret_cast<char**>(HObject::Map(addr) +
+                                  RuntimeLookupProperty(heap,
                                                         addr,
                                                         key,
                                                         insert));
@@ -352,9 +351,9 @@ char* HArray::NewEmpty(Heap* heap) {
 
   // Nullify all map's slots (both keys and values)
   size = size << 4;
-  memset(map + 16, 0x00, size + 1);
+  memset(map + 16, 0x00, size);
   for (uint32_t i = 0; i < size; i += 8) {
-    map[i + 17] = Heap::kTagNil;
+    map[i + 16] = Heap::kTagNil;
   }
 
   return obj;

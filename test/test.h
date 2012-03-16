@@ -59,6 +59,7 @@ using namespace internal;
 #define FUN_TEST(code, block)\
     {\
       Isolate i;\
+      fprintf(stdout, "%s\n", code);\
       Function* f = Function::New(code, strlen(code));\
       if (i.HasError()) {\
         i.PrintError();\

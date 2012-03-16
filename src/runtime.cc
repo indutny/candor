@@ -59,7 +59,7 @@ void RuntimeCollectGarbage(Heap* heap, char* current_frame) {
 }
 
 
-char* RuntimeLookupProperty(Heap* heap,
+off_t RuntimeLookupProperty(Heap* heap,
                             char* obj,
                             char* key,
                             off_t insert) {
@@ -118,7 +118,7 @@ char* RuntimeLookupProperty(Heap* heap,
     *reinterpret_cast<char**>(space + index) = strkey;
   }
 
-  return space + index + (mask + 8);
+  return HMap::space_offset + index + (mask + 8);
 }
 
 
@@ -139,7 +139,7 @@ char* RuntimeGrowObject(Heap* heap, char* obj) {
     memset(new_map + 16, 0, size_f + 1);
 
     for (uint32_t i = 0; i < size_f; i += 8) {
-      new_map[i + 17] = Heap::kTagNil;
+      new_map[i + 16] = Heap::kTagNil;
     }
   }
 
