@@ -118,7 +118,8 @@ char* RuntimeLookupProperty(Heap* heap,
     *reinterpret_cast<char**>(space + index) = strkey;
   }
 
-  return space + index + (mask + 8);
+  // Increment address, to make GC ignore it
+  return space + index + (mask + 8) + 1;
 }
 
 
@@ -160,7 +161,7 @@ char* RuntimeGrowObject(Heap* heap, char* obj) {
 
     char* value = *reinterpret_cast<char**>(space + index + big_size);
 
-    char* slot = RuntimeLookupProperty(heap, obj, key, true);
+    char* slot = RuntimeLookupProperty(heap, obj, key, true) - 1;
     *reinterpret_cast<char**>(slot) = value;
   }
 
@@ -558,7 +559,7 @@ char* RuntimeKeysof(Heap* heap, char* value) {
       char* slot = RuntimeLookupProperty(heap,
                                          result,
                                          indexptr,
-                                         1);
+                                         1) - 1;
       *reinterpret_cast<char**>(slot) = map->GetSlot(i)->addr();
       index++;
     }

@@ -80,7 +80,7 @@ inline char** HContext::GetSlotAddress(uint32_t index) {
 
 
 inline uint32_t HContext::GetIndexDisp(uint32_t index) {
-  return 24 + index * 8;
+  return (3 + index) << 3;
 }
 
 

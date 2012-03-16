@@ -272,10 +272,10 @@ void GC::VisitArray(HArray* arr) {
 void GC::VisitMap(HMap* map) {
   uint32_t size = map->size() << 1;
   for (uint32_t i = 0; i < size; i++) {
-    if (map->GetSlot(i) != HValue::Cast(HNil::New())) {
-      grey_items()->Push(new GCValue(map->GetSlot(i),
-                                     map->GetSlotAddress(i)));
-    }
+    if (map->IsEmptySlot(i)) continue;
+
+    grey_items()->Push(new GCValue(map->GetSlot(i),
+                                   map->GetSlotAddress(i)));
   }
 }
 

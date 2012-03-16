@@ -367,7 +367,7 @@ int64_t HArray::Length(char* obj, bool shrink) {
       slot = reinterpret_cast<char**>(RuntimeLookupProperty(NULL,
                                                             obj,
                                                             shrinkedptr,
-                                                            0));
+                                                            0) - 1);
     } while (*slot == HNil::New());
 
     // If array was shrinked - change length

@@ -380,6 +380,10 @@ void LookupPropertyStub::Generate() {
   __ Popad(rax);
 
   __ CheckGC();
+
+  // Decrement slot address (see runtime.cc)
+  __ dec(rax);
+
   GenerateEpilogue(3);
 }
 
