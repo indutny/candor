@@ -57,6 +57,10 @@ class GC {
 
   bool IsInCurrentSpace(HValue* value);
 
+  inline void push_grey(HValue* value, char** reference) {
+    grey_items()->Push(new GCValue(value, reference));
+  }
+
   inline GCList* grey_items() { return &grey_items_; }
   inline GCList* black_items() { return &black_items_; }
   inline Heap* heap() { return heap_; }

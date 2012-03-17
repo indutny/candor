@@ -66,10 +66,8 @@ void GC::ColourPersistentHandles() {
   while (item != NULL) {
     HValueReference* ref = item->value();
     if (ref->is_persistent()) {
-      grey_items()->Push(
-          new GCValue(ref->value(), reinterpret_cast<char**>(ref->reference())));
-      grey_items()->Push(
-          new GCValue(ref->value(), reinterpret_cast<char**>(ref->valueptr())));
+      push_grey(ref->value(), reinterpret_cast<char**>(ref->reference()));
+      push_grey(ref->value(), reinterpret_cast<char**>(ref->valueptr()));
       ProcessGrey();
     }
 
@@ -124,7 +122,7 @@ void GC::ColourFrames(char* current_frame) {
         continue;
       }
 
-      grey_items()->Push(new GCValue(HValue::Cast(value), frame - 2 - i));
+      push_grey(HValue::Cast(value), frame - 2 - i);
       ProcessGrey();
     }
 
@@ -236,15 +234,13 @@ void GC::VisitValue(HValue* value) {
 
 void GC::VisitContext(HContext* context) {
   if (context->has_parent()) {
-    grey_items()->Push(
-        new GCValue(HValue::Cast(context->parent()), context->parent_slot()));
+    push_grey(HValue::Cast(context->parent()), context->parent_slot());
   }
 
   for (uint32_t i = 0; i < context->slots(); i++) {
     if (!context->HasSlot(i)) continue;
 
-    HValue* value = context->GetSlot(i);
-    grey_items()->Push(new GCValue(value, context->GetSlotAddress(i)));
+    push_grey(context->GetSlot(i), context->GetSlotAddress(i));
   }
 }
 
@@ -253,22 +249,21 @@ void GC::VisitFunction(HFunction* fn) {
   // TODO: Use const here
   if (fn->parent_slot() != NULL &&
       fn->parent() != reinterpret_cast<char*>(0x0DEF0DEF)) {
-    grey_items()->Push(new GCValue(
-          HValue::Cast(fn->parent()), fn->parent_slot()));
+    push_grey(HValue::Cast(fn->parent()), fn->parent_slot());
   }
   if (fn->root_slot() != NULL) {
-    grey_items()->Push(new GCValue(HValue::Cast(fn->root()), fn->root_slot()));
+    push_grey(HValue::Cast(fn->root()), fn->root_slot());
   }
 }
 
 
 void GC::VisitObject(HObject* obj) {
-  grey_items()->Push(new GCValue(HValue::Cast(obj->map()), obj->map_slot()));
+  push_grey(HValue::Cast(obj->map()), obj->map_slot());
 }
 
 
 void GC::VisitArray(HArray* arr) {
-  grey_items()->Push(new GCValue(HValue::Cast(arr->map()), arr->map_slot()));
+  push_grey(HValue::Cast(arr->map()), arr->map_slot());
 }
 
 
@@ -277,8 +272,7 @@ void GC::VisitMap(HMap* map) {
   for (uint32_t i = 0; i < size; i++) {
     if (map->IsEmptySlot(i)) continue;
 
-    grey_items()->Push(new GCValue(map->GetSlot(i),
-                                   map->GetSlotAddress(i)));
+    push_grey(map->GetSlot(i), map->GetSlotAddress(i));
   }
 }
 
