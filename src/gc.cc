@@ -246,9 +246,8 @@ void GC::VisitContext(HContext* context) {
 
 
 void GC::VisitFunction(HFunction* fn) {
-  // TODO: Use const here
   if (fn->parent_slot() != NULL &&
-      fn->parent() != reinterpret_cast<char*>(0x0DEF0DEF)) {
+      fn->parent() != reinterpret_cast<char*>(Heap::kBindingContextTag)) {
     push_grey(HValue::Cast(fn->parent()), fn->parent_slot());
   }
   if (fn->root_slot() != NULL) {

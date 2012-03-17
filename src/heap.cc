@@ -406,8 +406,10 @@ char* HFunction::New(Heap* heap, char* parent, char* addr, char* root) {
 
 
 char* HFunction::NewBinding(Heap* heap, char* addr, char* root) {
-  // TODO: Use const here
-  return New(heap, reinterpret_cast<char*>(0x0DEF0DEF), addr, root);
+  return New(heap,
+             reinterpret_cast<char*>(Heap::kBindingContextTag),
+             addr,
+             root);
 }
 
 

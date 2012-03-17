@@ -153,6 +153,7 @@ class Heap {
 
   // Tenure configuration (GC)
   static const int8_t kMinOldSpaceGeneration = 5;
+  static const uint32_t kBindingContextTag = 0x0DEC0DEC;
 
   Heap(uint32_t page_size) : new_space_(this, page_size),
                              old_space_(this, page_size),
