@@ -352,7 +352,7 @@ void Masm::EnterFramePrologue() {
 
   movq(scratch, last_stack);
   push(scratch_op);
-  push(Immediate(0xFEEDBEEF));
+  push(Immediate(Heap::kEnterFrameTag));
 }
 
 

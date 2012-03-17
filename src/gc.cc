@@ -104,11 +104,11 @@ void GC::ColourFrames(char* current_frame) {
     // Frame layout
     // ... [previous frame] [on-stack vars (and spills) count] [...vars...]
     // or
-    // [previous frame] [xFEEDBEEF] [return addr] [rbp] ....
+    // [previous frame] [kEnterFrameTag] [return addr] [rbp] ....
     //
     char** next = frame;
     while (next != NULL &&
-           *reinterpret_cast<uint32_t*>(next + 2) == 0xFEEDBEEF) {
+           *reinterpret_cast<uint32_t*>(next + 2) == Heap::kEnterFrameTag) {
       next = *reinterpret_cast<char***>(next + 3);
     }
 
