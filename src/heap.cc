@@ -187,7 +187,7 @@ HValue* HValue::CopyTo(Space* old_space, Space* new_space) {
     break;
    case Heap::kTagMap:
     // size + space ( keys + values )
-    size += 9 + (As<HMap>()->size() << 4);
+    size += 8 + (As<HMap>()->size() << 4);
     break;
    case Heap::kTagCData:
     // size + data
