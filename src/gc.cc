@@ -164,6 +164,7 @@ void GC::ProcessGrey() {
         }
         continue;
       }
+      assert(!value->value()->IsSoftGCMarked());
 
       HValue* hvalue;
 

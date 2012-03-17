@@ -63,6 +63,9 @@ off_t RuntimeLookupProperty(Heap* heap,
                             char* obj,
                             char* key,
                             off_t insert) {
+  assert(!HValue::Cast(obj)->IsGCMarked());
+  assert(!HValue::Cast(obj)->IsSoftGCMarked());
+
   char* map = HObject::Map(obj);
   char* space = HValue::As<HMap>(map)->space();
   uint32_t mask = HObject::Mask(obj);
