@@ -3,6 +3,7 @@
 * Escape characters in strings
 * Break statement
 * On-stack replacement and profile-based optimizations
+* Sliding (Lisp2 or other) GC
 * Incremental GC
 * Usage in multiple-threads (aka isolates)
 * Inline caching
