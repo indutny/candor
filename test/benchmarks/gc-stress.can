@@ -1,0 +1,13 @@
+a = 0
+y = 3
+
+// a persistent value
+z = 1.0
+
+while(--y) {
+  a = 0
+  x = 20000000
+  while(--x) {
+    a = { x: a }
+  }
+}
