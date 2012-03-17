@@ -16,8 +16,8 @@ typedef char* (*RuntimeAllocateCallback)(Heap* heap,
                                          uint32_t bytes);
 char* RuntimeAllocate(Heap* heap, uint32_t bytes);
 
-typedef void (*RuntimeCollectGarbageCallback)(Heap* heap, char* current_frame);
-void RuntimeCollectGarbage(Heap* heap, char* current_frame);
+typedef void (*RuntimeCollectGarbageCallback)(Heap* heap, char* stack_top);
+void RuntimeCollectGarbage(Heap* heap, char* stack_top);
 
 // Performs lookup into a hashmap
 // if insert=1 - inserts key into map space

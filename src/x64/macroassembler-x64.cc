@@ -101,15 +101,13 @@ void Masm::Spill::Unspill() {
 
 
 void Masm::AllocateSpills(uint32_t stack_slots) {
-  spill_offset_ = 8 + RoundUp((stack_slots + 1) * 8, 16);
+  spill_offset_ = RoundUp((stack_slots + 1) * 8, 16);
   spills_ = 0;
   spill_index_ = 0;
-  movq(scratch, Immediate(0));
+  subq(rsp, Immediate(0));
   spill_reloc_ = new RelocationInfo(RelocationInfo::kValue,
-                                    RelocationInfo::kQuad,
-                                    offset() - 8);
-  push(scratch);
-  subq(rsp, scratch);
+                                    RelocationInfo::kLong,
+                                    offset() - 4);
 
   relocation_info_.Push(spill_reloc_);
 }
@@ -295,6 +293,7 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
   shl(size, Immediate(4));
   addq(result, Immediate(16));
   addq(size, result);
+  subq(size, Immediate(8));
   Fill(result, size, Immediate(Heap::kTagNil));
 
   result_s.Unspill();
@@ -328,7 +327,7 @@ void Masm::Fill(Register start, Register end, Immediate value) {
 
   // And loop
   cmpq(start, end);
-  jmp(kLt, &loop);
+  jmp(kLe, &loop);
 
   Pop(start);
   xorq(scratch, scratch);
@@ -368,7 +367,7 @@ void Masm::ExitFramePrologue() {
   movq(scratch, last_stack);
   push(scratch_op);
   push(Immediate(Heap::kTagNil));
-  movq(scratch_op, rbp);
+  movq(scratch_op, rsp);
   xorq(scratch, scratch);
 }
 

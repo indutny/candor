@@ -16,14 +16,9 @@ BaseStub::BaseStub(CodeSpace* space, StubType type) : space_(space),
 }
 
 
-void BaseStub::GeneratePrologue(int stack_slots) {
+void BaseStub::GeneratePrologue() {
   __ push(rbp);
   __ movq(rbp, rsp);
-  if (stack_slots != -1) {
-    // Stack slots + padding zero
-    __ push(Immediate((stack_slots + 1) << 3));
-    __ push(Immediate(0));
-  }
 }
 
 
@@ -141,7 +136,7 @@ void EntryStub::Generate() {
 
 
 void AllocateStub::Generate() {
-  GeneratePrologue(2);
+  GeneratePrologue();
   // Align stack
   __ push(Immediate(0));
   __ push(rbx);
@@ -228,7 +223,7 @@ void AllocateStub::Generate() {
 
 
 void CallBindingStub::Generate() {
-  GeneratePrologue(0);
+  GeneratePrologue();
 
   Operand argc(rbp, 24);
   Operand fn(rbp, 16);
@@ -267,7 +262,7 @@ void CallBindingStub::Generate() {
 
 
 void CollectGarbageStub::Generate() {
-  GeneratePrologue(10);
+  GeneratePrologue();
 
   RuntimeCollectGarbageCallback gc = &RuntimeCollectGarbage;
   __ Pushad();
@@ -275,9 +270,9 @@ void CollectGarbageStub::Generate() {
   {
     Masm::Align a(masm());
 
-    // RuntimeCollectGarbage(heap, current_frame)
+    // RuntimeCollectGarbage(heap, stack_top)
     __ movq(rdi, Immediate(reinterpret_cast<uint64_t>(masm()->heap())));
-    __ movq(rsi, rbp);
+    __ movq(rsi, rsp);
     __ movq(rax, Immediate(*reinterpret_cast<uint64_t*>(&gc)));
     __ Call(rax);
   }
@@ -289,7 +284,7 @@ void CollectGarbageStub::Generate() {
 
 
 void TypeofStub::Generate() {
-  GeneratePrologue(0);
+  GeneratePrologue();
 
   Label not_nil(masm()), not_unboxed(masm()), done(masm());
 
@@ -324,7 +319,7 @@ void TypeofStub::Generate() {
 
 
 void SizeofStub::Generate() {
-  GeneratePrologue(0);
+  GeneratePrologue();
   RuntimeSizeofCallback sizeofc = &RuntimeSizeof;
 
   __ Pushad();
@@ -342,7 +337,7 @@ void SizeofStub::Generate() {
 
 
 void KeysofStub::Generate() {
-  GeneratePrologue(0);
+  GeneratePrologue();
   RuntimeKeysofCallback keysofc = &RuntimeKeysof;
 
   __ Pushad();
@@ -360,7 +355,7 @@ void KeysofStub::Generate() {
 
 
 void LookupPropertyStub::Generate() {
-  GeneratePrologue(0);
+  GeneratePrologue();
   RuntimeLookupPropertyCallback lookup = &RuntimeLookupProperty;
 
   // Arguments
@@ -388,7 +383,7 @@ void LookupPropertyStub::Generate() {
 
 
 void CoerceToBooleanStub::Generate() {
-  GeneratePrologue(0);
+  GeneratePrologue();
   RuntimeCoerceCallback to_boolean = &RuntimeToBoolean;
 
   // Arguments
@@ -434,7 +429,7 @@ void CoerceToBooleanStub::Generate() {
     V(LAnd)
 
 void BinaryOpStub::Generate() {
-  GeneratePrologue(-1);
+  GeneratePrologue();
 
   // Allocate space for spill slots
   __ AllocateSpills(0);

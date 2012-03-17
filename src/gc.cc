@@ -17,7 +17,7 @@ void GC::GCValue::Relocate(char* address) {
 }
 
 
-void GC::CollectGarbage(char* current_frame) {
+void GC::CollectGarbage(char* stack_top) {
   assert(grey_items()->length() == 0);
   assert(black_items()->length() == 0);
 
@@ -39,7 +39,7 @@ void GC::CollectGarbage(char* current_frame) {
   ColourPersistentHandles();
 
   // Colour on-stack registers
-  ColourFrames(current_frame);
+  ColourFrames(stack_top);
 
   // Reset marks for items from external space
   while (black_items()->length() != 0) {
@@ -94,41 +94,26 @@ void GC::RelocateNormalHandles() {
 }
 
 
-void GC::ColourFrames(char* current_frame) {
+void GC::ColourFrames(char* stack_top) {
   // Go through the frames
-  char** frame = reinterpret_cast<char**>(current_frame);
-  while (true) {
-    uint32_t slots = (*reinterpret_cast<uint32_t*>(frame - 1)) >> 3;
-
-    //
-    // Frame layout
-    // ... [previous frame] [on-stack vars (and spills) count] [...vars...]
-    // or
-    // [previous frame] [kEnterFrameTag] [return addr] [rbp] ....
-    //
-    char** next = frame;
-    while (next != NULL &&
-           *reinterpret_cast<uint32_t*>(next + 2) == Heap::kEnterFrameTag) {
-      next = *reinterpret_cast<char***>(next + 3);
+  char** frame = reinterpret_cast<char**>(stack_top);
+  while (frame != NULL) {
+    // Skip C++ frames
+    while (frame != NULL &&
+           static_cast<uint32_t>(reinterpret_cast<off_t>(*frame)) ==
+           Heap::kEnterFrameTag) {
+      frame = reinterpret_cast<char**>(*(frame + 1));
     }
+    if (frame == NULL) break;
 
-    if (next == frame) next = reinterpret_cast<char**>(*next);
-
-    for (uint32_t i = 0; i < slots; i++) {
-      char* value = *(frame - 2 - i);
-
-      // Skip nil, non-pointer values and rbp pushes
-      if (value == HNil::New() || HValue::IsUnboxed(value)) {
-        continue;
-      }
-
-      push_grey(HValue::Cast(value), frame - 2 - i);
+    char* value = *frame;
+    // Skip nil, non-pointer values and rbp pushes
+    if (value != HNil::New() && !HValue::IsUnboxed(value)) {
+      push_grey(HValue::Cast(value), frame);
       ProcessGrey();
     }
 
-    if (next == NULL) break;
-
-    frame = next;
+    frame++;
   }
 }
 

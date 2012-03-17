@@ -53,9 +53,9 @@ char* RuntimeAllocate(Heap* heap,
 }
 
 
-void RuntimeCollectGarbage(Heap* heap, char* current_frame) {
+void RuntimeCollectGarbage(Heap* heap, char* stack_top) {
   Zone gc_zone;
-  heap->gc()->CollectGarbage(current_frame);
+  heap->gc()->CollectGarbage(stack_top);
 }
 
 

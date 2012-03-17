@@ -49,7 +49,6 @@ Fullgen::Fullgen(CodeSpace* space) : Masm(space),
   root_context()->Push(HObject::NewEmpty(heap()));
 
   // Place some root values
-  root_context()->Push(HNil::New());
   root_context()->Push(HBoolean::New(heap(), Heap::kTenureOld, true));
   root_context()->Push(HBoolean::New(heap(), Heap::kTenureOld, false));
 
@@ -311,6 +310,8 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
 
 
 AstNode* Fullgen::VisitAssign(AstNode* stmt) {
+  Label done(this);
+
   // Get value of right-hand side expression in rbx
   VisitForValue(stmt->rhs());
   Spill rax_s(this, rax);
@@ -320,10 +321,14 @@ AstNode* Fullgen::VisitAssign(AstNode* stmt) {
 
   rax_s.Unspill(scratch);
 
+  // If slot's base is nil - just return value
+  IsNil(slot().base(), NULL, &done);
+
   // Put value into slot
   movq(slot(), scratch);
 
   // Propagate result of assign operation
+  bind(&done);
   movq(rax, scratch);
 
   return stmt;
@@ -357,7 +362,7 @@ AstNode* Fullgen::VisitValue(AstNode* node) {
   if (value->slot()->is_stack()) {
     // On stack variables
     slot().base(rbp);
-    slot().disp(-8 * (value->slot()->index() + 2));
+    slot().disp(-8 * (value->slot()->index() + 1));
   } else {
     int32_t depth = value->slot()->depth();
 
@@ -415,12 +420,13 @@ AstNode* Fullgen::VisitMember(AstNode* node) {
   bind(&is_object);
   Spill rax_s(this, rax);
 
+  VisitForValue(node->rhs());
+
   {
     // Stub(change, property, object)
     ChangeAlign(3);
     Align a(this);
 
-    VisitForValue(node->rhs());
     rax_s.Unspill(scratch);
 
     push(scratch);
@@ -451,12 +457,7 @@ AstNode* Fullgen::VisitMember(AstNode* node) {
   bind(&non_object_error);
 
   // Non object lookups will return nil
-  if (visiting_for_value()) {
-    movq(rax, Immediate(Heap::kTagNil));
-  } else {
-    movq(rax, root_reg);
-    addq(rax, HContext::GetIndexDisp(Heap::kRootNilIndex));
-  }
+  movq(rax, Immediate(Heap::kTagNil));
 
   bind(&done);
 
@@ -820,6 +821,11 @@ AstNode* Fullgen::VisitUnOp(AstNode* node) {
     // a++ => $scratch = a; a = $scratch + 1; $scratch
     VisitForSlot(op->lhs());
 
+    Label done(this), nil_result(this);
+
+    // If slot's base is nil - just return value
+    IsNil(slot().base(), NULL, &nil_result);
+
     // Get value
     movq(scratch, slot());
     Spill scratch_s(this, scratch);
@@ -834,6 +840,14 @@ AstNode* Fullgen::VisitUnOp(AstNode* node) {
     VisitForValue(assign);
 
     scratch_s.Unspill(rax);
+
+    jmp(&done);
+
+    bind(&nil_result);
+    movq(rax, slot().base());
+
+    bind(&done);
+
   } else if (op->subtype() == UnOp::kPlus || op->subtype() == UnOp::kMinus) {
     // +a = 0 + a
     // -a = 0 - a

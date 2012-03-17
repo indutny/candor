@@ -38,12 +38,12 @@ class GC {
   GC(Heap* heap) : heap_(heap) {
   }
 
-  void CollectGarbage(char* current_frame);
+  void CollectGarbage(char* stack_top);
 
   void ColourPersistentHandles();
   void RelocateNormalHandles();
 
-  void ColourFrames(char* current_frame);
+  void ColourFrames(char* stack_top);
   void HandleWeakReferences();
 
   void ProcessGrey();

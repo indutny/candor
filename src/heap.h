@@ -133,17 +133,16 @@ class Heap {
   // NOTE: order of type strings should be the same as in HeapTag enum
   enum RootPositions {
     kRootGlobalIndex = 0,
-    kRootNilIndex = 1,
-    kRootTrueIndex = 2,
-    kRootFalseIndex = 3,
-    kRootNilTypeIndex = 4,
-    kRootBooleanTypeIndex = 5,
-    kRootNumberTypeIndex = 6,
-    kRootStringTypeIndex = 7,
-    kRootObjectTypeIndex = 8,
-    kRootArrayTypeIndex = 9,
-    kRootFunctionTypeIndex = 10,
-    kRootCDataTypeIndex = 11
+    kRootTrueIndex = 1,
+    kRootFalseIndex = 2,
+    kRootNilTypeIndex = 3,
+    kRootBooleanTypeIndex = 4,
+    kRootNumberTypeIndex = 5,
+    kRootStringTypeIndex = 6,
+    kRootObjectTypeIndex = 7,
+    kRootArrayTypeIndex = 8,
+    kRootFunctionTypeIndex = 9,
+    kRootCDataTypeIndex = 10
   };
 
   enum ReferenceType {
