@@ -33,9 +33,15 @@ class GC {
     char** slot_;
   };
 
+  enum GCType {
+    kNone,
+    kOldSpace,
+    kNewSpace
+  };
+
   typedef List<GCValue*, ZoneObject> GCList;
 
-  GC(Heap* heap) : heap_(heap) {
+  GC(Heap* heap) : heap_(heap), gc_type_(kNone) {
   }
 
   void CollectGarbage(char* stack_top);
@@ -67,11 +73,16 @@ class GC {
   inline void tmp_space(Space* space) { tmp_space_ = space; }
   inline Space* tmp_space() { return tmp_space_; }
 
+  inline GCType gc_type() { return gc_type_; }
+  inline void gc_type(GCType value) { gc_type_ = value; }
+
  protected:
   GCList grey_items_;
   GCList black_items_;
   Heap* heap_;
   Space* tmp_space_;
+
+  GCType gc_type_;
 };
 
 } // namespace internal

@@ -198,10 +198,10 @@ class Heap {
   inline char** last_stack() { return &last_stack_; }
   inline char** pending_exception() { return &pending_exception_; }
 
-  inline GCType needs_gc() { return static_cast<GCType>(needs_gc_); }
   inline GCType* needs_gc_addr() {
     return reinterpret_cast<GCType*>(&needs_gc_);
   }
+  inline GCType needs_gc() { return static_cast<GCType>(needs_gc_); }
   inline void needs_gc(GCType value) { needs_gc_ = value; }
   inline HValueRefList* references() { return &references_; }
   inline HValueRefList* reloc_references() { return &reloc_references_; }

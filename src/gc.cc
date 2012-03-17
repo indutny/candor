@@ -26,8 +26,16 @@ void GC::CollectGarbage(char* stack_top) {
     heap()->needs_gc(Heap::kGCNewSpace);
   }
 
+  switch (heap()->needs_gc()) {
+   case Heap::kGCNewSpace: gc_type(kNewSpace); break;
+   case Heap::kGCOldSpace: gc_type(kOldSpace); break;
+   default:
+    UNEXPECTED
+    break;
+  }
+
   // Select space to GC
-  Space* space = heap()->needs_gc() == Heap::kGCNewSpace ?
+  Space* space = gc_type() == kNewSpace ?
       heap()->new_space()
       :
       heap()->old_space();
@@ -56,8 +64,13 @@ void GC::CollectGarbage(char* stack_top) {
   space->Swap(tmp_space());
   delete tmp_space();
 
-  // Reset GC flag
-  heap()->needs_gc(Heap::kGCNone);
+  if (gc_type() != kNewSpace || heap()->needs_gc() == Heap::kGCNewSpace) {
+    // Reset GC flag
+    heap()->needs_gc(Heap::kGCNone);
+  } else {
+    // Or call gc for old_space space
+    CollectGarbage(stack_top);
+  }
 }
 
 
@@ -168,7 +181,7 @@ void GC::ProcessGrey() {
 
       HValue* hvalue;
 
-      if (heap()->needs_gc() == Heap::kGCNewSpace) {
+      if (gc_type() == kNewSpace) {
         // New space GC
         hvalue = value->value()->CopyTo(heap()->old_space(), tmp_space());
       } else {
@@ -186,9 +199,9 @@ void GC::ProcessGrey() {
 
 
 bool GC::IsInCurrentSpace(HValue* value) {
-  return (heap()->needs_gc() == Heap::kGCOldSpace &&
+  return (gc_type() == kOldSpace &&
          value->Generation() >= Heap::kMinOldSpaceGeneration) ||
-         (heap()->needs_gc() == Heap::kGCNewSpace &&
+         (gc_type() == kNewSpace &&
          value->Generation() < Heap::kMinOldSpaceGeneration);
 }
 
