@@ -420,11 +420,11 @@ AstNode* Fullgen::VisitMember(AstNode* node) {
     ChangeAlign(3);
     Align a(this);
 
-    push(rax);
-
     VisitForValue(node->rhs());
-    push(rax);
+    rax_s.Unspill(scratch);
 
+    push(scratch);
+    push(rax);
     push(Immediate(visiting_for_slot()));
 
     Call(stubs()->GetLookupPropertyStub());
