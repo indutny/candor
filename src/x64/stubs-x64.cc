@@ -93,8 +93,10 @@ void EntryStub::Generate() {
   // Set context
   __ movq(rdi, r8);
 
-  // Nullify all registers to help GC distinguish on-stack values
+  // Nullify rbp to help GC iterating frames
   __ xorq(rbp, rbp);
+
+  // Nullify all registers to help GC distinguish on-stack values
   __ xorq(rax, rax);
   __ xorq(rbx, rbx);
   __ xorq(rcx, rcx);

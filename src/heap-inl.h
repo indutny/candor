@@ -32,6 +32,8 @@ inline char* HValue::GetGCMark() {
 
 
 inline void HValue::SetGCMark(char* new_addr) {
+  assert(!IsGCMarked());
+
   *reinterpret_cast<uint8_t*>(addr() + 7) |= 0x80;
   *reinterpret_cast<char**>(addr() + 8) = new_addr;
 }

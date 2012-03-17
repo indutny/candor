@@ -102,6 +102,20 @@ void GC::ColourFrames(char* current_frame) {
   while (true) {
     uint32_t slots = (*reinterpret_cast<uint32_t*>(frame - 1)) >> 3;
 
+    //
+    // Frame layout
+    // ... [previous frame] [on-stack vars (and spills) count] [...vars...]
+    // or
+    // [previous frame] [xFEEDBEEF] [return addr] [rbp] ....
+    //
+    char** next = frame;
+    while (next != NULL &&
+           *reinterpret_cast<uint32_t*>(next + 2) == 0xFEEDBEEF) {
+      next = *reinterpret_cast<char***>(next + 3);
+    }
+
+    if (next == frame) next = reinterpret_cast<char**>(*next);
+
     for (uint32_t i = 0; i < slots; i++) {
       char* value = *(frame - 2 - i);
 
@@ -114,20 +128,9 @@ void GC::ColourFrames(char* current_frame) {
       ProcessGrey();
     }
 
-    //
-    // Frame layout
-    // ... [previous frame] [on-stack vars (and spills) count] [...vars...]
-    // or
-    // [previous frame] [xFEEDBEEF] [return addr] [rbp] ....
-    //
-    while (frame != NULL &&
-           *reinterpret_cast<uint32_t*>(frame + 2) == 0xFEEDBEEF) {
-      frame = *reinterpret_cast<char***>(frame + 3);
-    }
-    if (frame == NULL) break;
+    if (next == NULL) break;
 
-    frame = reinterpret_cast<char**>(*frame);
-    if (frame == NULL) break;
+    frame = next;
   }
 }
 
