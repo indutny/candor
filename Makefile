@@ -85,6 +85,7 @@ test: candor.a cand $(TESTS)
 	@test/test-gc
 	@./cand test/functional/basics.can
 	@./cand test/functional/arrays.can
+	@./cand test/functional/objects.can
 	@./cand test/functional/binary.can
 	@./cand test/functional/while.can
 

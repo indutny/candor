@@ -1,0 +1,22 @@
+print = global.print
+assert = global.assert
+
+print('-- can: while --')
+
+i = 100
+j = 0
+while (i--) {
+  if (i % 2) continue
+  j++
+}
+
+assert(j == 50, "continue")
+
+i = 100
+j = 0
+while (i--) {
+  if (i < 50) break
+  j++
+}
+
+assert(j == 50, "break")

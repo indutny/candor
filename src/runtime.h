@@ -19,6 +19,9 @@ char* RuntimeAllocate(Heap* heap, uint32_t bytes);
 typedef void (*RuntimeCollectGarbageCallback)(Heap* heap, char* stack_top);
 void RuntimeCollectGarbage(Heap* heap, char* stack_top);
 
+typedef off_t (*RuntimeGetHashCallback)(Heap* heap, char* value);
+off_t RuntimeGetHash(Heap* heap, char* value);
+
 // Performs lookup into a hashmap
 // if insert=1 - inserts key into map space
 typedef off_t (*RuntimeLookupPropertyCallback)(Heap* heap,
@@ -38,7 +41,8 @@ char* RuntimeToString(Heap* heap, char* value);
 char* RuntimeToNumber(Heap* heap, char* value);
 char* RuntimeToBoolean(Heap* heap, char* value);
 
-typedef size_t (*RuntimeStringCompareCallback)(char* lhs, char* rhs);
+typedef size_t (*RuntimeCompareCallback)(char* lhs, char* rhs);
+size_t RuntimeStrictCompare(char* lhs, char* rhs);
 size_t RuntimeStringCompare(char* lhs, char* rhs);
 
 char* RuntimeConcatenateStrings(Heap* heap, char* lhs, char* rhs);

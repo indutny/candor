@@ -485,7 +485,7 @@ AstNode* Parser::ParseObjectLiteral() {
       key = new AstNode(AstNode::kProperty, Peek());
       Skip();
     } else if (Peek()->is(kNumber)) {
-      key = new AstNode(AstNode::kProperty, Peek());
+      key = new AstNode(AstNode::kNumber, Peek());
       Skip();
     } else {
       SetError("Expected string or number as object literal's key");

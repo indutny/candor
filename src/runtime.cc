@@ -59,6 +59,46 @@ void RuntimeCollectGarbage(Heap* heap, char* stack_top) {
 }
 
 
+off_t RuntimeGetHash(Heap* heap, char* value) {
+  Heap::HeapTag tag = HValue::GetTag(value);
+
+  switch (tag) {
+   case Heap::kTagString:
+    return HString::Hash(value);
+   case Heap::kTagFunction:
+   case Heap::kTagObject:
+   case Heap::kTagArray:
+   case Heap::kTagCData:
+    return reinterpret_cast<off_t>(value);
+   case Heap::kTagNil:
+    return 0;
+   case Heap::kTagBoolean:
+    if (HBoolean::Value(value)) {
+      return 1;
+    } else {
+      return 0;
+    }
+   case Heap::kTagNumber:
+    {
+      int64_t intval;
+
+      if (HValue::IsUnboxed(value)) {
+        intval = HNumber::IntegralValue(value);
+      } else {
+        intval = HNumber::DoubleValue(value);
+      }
+
+      // And create new string
+      return ComputeHash(intval);
+    }
+   default:
+    UNEXPECTED
+  }
+
+  return 0;
+}
+
+
 off_t RuntimeLookupProperty(Heap* heap,
                             char* obj,
                             char* key,
@@ -72,13 +112,13 @@ off_t RuntimeLookupProperty(Heap* heap,
 
   bool is_array = HValue::GetTag(obj) == Heap::kTagArray;
 
-  char* strkey;
+  char* keyptr;
   int64_t numkey;
   uint32_t hash;
 
   if (is_array) {
     numkey = HNumber::IntegralValue(RuntimeToNumber(heap, key));
-    strkey = reinterpret_cast<char*>(HNumber::Tag(numkey));
+    keyptr = reinterpret_cast<char*>(HNumber::Tag(numkey));
     hash = ComputeHash(numkey);
 
     // Update array's length on insertion (if increased)
@@ -86,8 +126,8 @@ off_t RuntimeLookupProperty(Heap* heap,
       HArray::SetLength(obj, numkey + 1);
     }
   } else {
-    strkey = RuntimeToString(heap, key);
-    hash = HString::Hash(strkey);
+    keyptr = key;
+    hash = RuntimeGetHash(heap, key);
   }
 
   // Dive into space and walk it in circular manner
@@ -100,9 +140,9 @@ off_t RuntimeLookupProperty(Heap* heap,
     key_slot = *reinterpret_cast<char**>(space + index);
     if (key_slot == HNil::New()) break;
     if (is_array) {
-      if (key_slot == strkey) break;
+      if (key_slot == keyptr) break;
     } else {
-      if (RuntimeStringCompare(key_slot, strkey) == 0) break;
+      if (RuntimeStrictCompare(key_slot, key) == 0) break;
     }
 
     index += 8;
@@ -114,11 +154,11 @@ off_t RuntimeLookupProperty(Heap* heap,
     assert(insert);
     RuntimeGrowObject(heap, obj);
 
-    return RuntimeLookupProperty(heap, obj, strkey, insert);
+    return RuntimeLookupProperty(heap, obj, keyptr, insert);
   }
 
   if (insert) {
-    *reinterpret_cast<char**>(space + index) = strkey;
+    *reinterpret_cast<char**>(space + index) = keyptr;
   }
 
   return HMap::space_offset + index + (mask + 8);
@@ -274,6 +314,34 @@ char* RuntimeToBoolean(Heap* heap, char* value) {
   }
 
   return HNil::New();
+}
+
+
+size_t RuntimeStrictCompare(char* lhs, char* rhs) {
+  Heap::HeapTag tag = HValue::GetTag(lhs);
+  Heap::HeapTag rtag = HValue::GetTag(rhs);
+
+  // We can only compare objects with equal type
+  if (rtag != tag) return -1;
+
+  switch (tag) {
+   case Heap::kTagString:
+    return RuntimeStringCompare(lhs, rhs);
+   case Heap::kTagFunction:
+   case Heap::kTagObject:
+   case Heap::kTagArray:
+   case Heap::kTagCData:
+   case Heap::kTagNil:
+    return lhs == rhs ? 0 : -1;
+   case Heap::kTagBoolean:
+    return HBoolean::Value(lhs) == HBoolean::Value(rhs) ? 0 : -1;
+   case Heap::kTagNumber:
+    return HNumber::DoubleValue(lhs) == HNumber::DoubleValue(rhs) ? 0 : -1;
+   default:
+    UNEXPECTED
+  }
+
+  return 0;
 }
 
 

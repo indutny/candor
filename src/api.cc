@@ -340,7 +340,7 @@ Object* Object::New() {
 }
 
 
-void Object::Set(String* key, Value* value) {
+void Object::Set(Value* key, Value* value) {
   char** slot = HObject::LookupProperty(Isolate::GetCurrent()->heap,
                                         addr(),
                                         key->addr(),
@@ -349,7 +349,7 @@ void Object::Set(String* key, Value* value) {
 }
 
 
-Value* Object::Get(String* key) {
+Value* Object::Get(Value* key) {
   return Value::New(*HObject::LookupProperty(Isolate::GetCurrent()->heap,
                                              addr(),
                                              key->addr(),

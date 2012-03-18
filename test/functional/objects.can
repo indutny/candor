@@ -1,0 +1,15 @@
+print = global.print
+assert = global.assert
+
+print('-- can: objects --')
+
+a = { i_am_key: true }
+
+obj = {}
+obj[a] = 1;
+
+assert(obj[a] == 1, "non-string and non-number key")
+
+keys = keysof obj
+assert(sizeof keys == 1, "keysof should work")
+assert(keys[0] === a, "key should be the object")

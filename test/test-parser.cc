@@ -114,7 +114,7 @@ TEST_START("parser test")
               "[kProperty x]:[1] [kProperty y]:[2]]]")
   PARSER_TEST("a = { 1 : 1, 2 : 2 }",
               "[kAssign [a] [kObjectLiteral "
-              "[kProperty 1]:[1] [kProperty 2]:[2]]]")
+              "[1]:[1] [2]:[2]]]")
   PARSER_TEST("key() {\nreturn 'key'\n}\na = { key: 2 }\nreturn a.key",
               "[kFunction [key] @[] [return [kString key]]] "
               "[kAssign [a] [kObjectLiteral [kProperty key]:[2]]] "

@@ -213,13 +213,14 @@ TEST_START("functional test")
   })
 
   // Numeric keys
-  FUN_TEST("a = { 1: 2, 2: 3}\nreturn a[1] + a[2] + a['1'] + a['2']", {
-    assert(result->As<Number>()->Value() == 10);
+  FUN_TEST("a = { 1: 2, 2: 3, '1': 2, '2': 3}\n"
+           "return a[1] + a[2] + a['1'] + a['2'] + a[1.0] + a[2.0]", {
+    assert(result->As<Number>()->Value() == 15);
   });
 
   FUN_TEST("a = { 1.1: 2, 2.2: 3}\n"
-           "return a[1.1] + a[2.2] + a['1.1'] + a['2.2']", {
-    assert(result->As<Number>()->Value() == 10);
+           "return a[1.1] + a[2.2]", {
+    assert(result->As<Number>()->Value() == 5);
   });
 
   // Arrays

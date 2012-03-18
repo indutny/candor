@@ -169,9 +169,9 @@ class Object : public Value {
  public:
   static Object* New();
 
-  void Set(String* key, Value* value);
+  void Set(Value* key, Value* value);
   void Set(const char* key, Value* value);
-  Value* Get(String* key);
+  Value* Get(Value* key);
   Value* Get(const char* key);
 
   Array* Keys();
