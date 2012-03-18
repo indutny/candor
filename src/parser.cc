@@ -14,7 +14,11 @@ AstNode* Parser::Execute() {
 
   // If parsing was successful - reset any errors
   if (Peek()->is(kEnd)) {
-    SetError(NULL);
+    if (offset_ != length_) {
+      SetError("Unexpected symbol");
+    } else {
+      SetError(NULL);
+    }
   }
 
   return ast();
