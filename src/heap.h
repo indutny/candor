@@ -126,7 +126,8 @@ class Heap {
   enum Error {
     kErrorNone,
     kErrorIncorrectLhs,
-    kErrorCallWithoutVariable
+    kErrorCallWithoutVariable,
+    kErrorExpectedLoop
   };
 
   // Positions in root register

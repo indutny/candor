@@ -92,6 +92,27 @@ class Fullgen : public Masm, public Visitor {
     FunctionLiteral* fn_;
   };
 
+  class LoopVisitor {
+   public:
+    LoopVisitor(Fullgen* fullgen, Label* start, Label* end) :
+        fullgen_(fullgen) {
+      prev_start_ = fullgen->loop_start();
+      prev_end_ = fullgen->loop_end();
+      fullgen->loop_start(start);
+      fullgen->loop_end(end);
+    }
+
+    ~LoopVisitor() {
+      fullgen_->loop_start(prev_start_);
+      fullgen_->loop_end(prev_end_);
+    }
+
+   private:
+    Fullgen* fullgen_;
+    Label* prev_start_;
+    Label* prev_end_;
+  };
+
   enum VisitorType {
     kValue,
     kSlot
@@ -135,6 +156,8 @@ class Fullgen : public Masm, public Visitor {
   AstNode* VisitArrayLiteral(AstNode* node);
 
   AstNode* VisitReturn(AstNode* node);
+  AstNode* VisitBreak(AstNode* node);
+  AstNode* VisitContinue(AstNode* node);
 
   AstNode* VisitTypeof(AstNode* node);
   AstNode* VisitSizeof(AstNode* node);
@@ -145,6 +168,11 @@ class Fullgen : public Masm, public Visitor {
 
   AstNode* VisitForValue(AstNode* node);
   AstNode* VisitForSlot(AstNode* node);
+
+  inline Label* loop_start() { return loop_start_; }
+  inline void loop_start(Label* loop_start) { loop_start_ = loop_start; }
+  inline Label* loop_end() { return loop_end_; }
+  inline void loop_end(Label* loop_end) { loop_end_ = loop_end; }
 
   inline void SetError(const char* message, uint32_t offset) {
     if (error_msg_ != NULL) return;
@@ -172,6 +200,8 @@ class Fullgen : public Masm, public Visitor {
   List<FFunction*, ZoneObject> fns_;
   CandorFunction* current_function_;
   List<char*, ZoneObject> root_context_;
+  Label* loop_start_;
+  Label* loop_end_;
 
   const char* error_msg_;
   uint32_t error_pos_;

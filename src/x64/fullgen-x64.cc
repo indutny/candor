@@ -43,6 +43,8 @@ Fullgen::Fullgen(CodeSpace* space) : Masm(space),
                                      space_(space),
                                      visitor_type_(kValue),
                                      current_function_(NULL),
+                                     loop_start_(NULL),
+                                     loop_end_(NULL),
                                      error_msg_(NULL),
                                      error_pos_(0) {
   // Create a `global` object
@@ -81,7 +83,6 @@ void Fullgen::CandorFunction::Generate() {
 void Fullgen::Throw(Heap::Error err) {
   assert(current_node() != NULL);
   SetError(Heap::ErrorToString(err), current_node()->offset());
-  // TODO: set error flag
   emitb(0xcc);
 }
 
@@ -584,6 +585,8 @@ AstNode* Fullgen::VisitWhile(AstNode* node) {
   AstNode* expr = node->lhs();
   AstNode* body = node->rhs();
 
+  LoopVisitor visitor(this, &loop_start, &loop_end);
+
   bind(&loop_start);
 
   VisitForValue(expr);
@@ -730,6 +733,30 @@ AstNode* Fullgen::VisitReturn(AstNode* node) {
   }
 
   GenerateEpilogue(current_function()->fn());
+
+  return node;
+}
+
+
+AstNode* Fullgen::VisitBreak(AstNode* node) {
+  if (loop_end() == NULL) {
+    Throw(Heap::kErrorExpectedLoop);
+    return node;
+  }
+
+  jmp(loop_end());
+
+  return node;
+}
+
+
+AstNode* Fullgen::VisitContinue(AstNode* node) {
+  if (loop_start() == NULL) {
+    Throw(Heap::kErrorExpectedLoop);
+    return node;
+  }
+
+  jmp(loop_start());
 
   return node;
 }

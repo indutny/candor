@@ -105,6 +105,8 @@ const char* Heap::ErrorToString(Error err) {
     return "Incorrect left-hand side";
    case kErrorCallWithoutVariable:
     return "Call without variable";
+   case kErrorExpectedLoop:
+    return "Expected loop";
   }
 
   return NULL;

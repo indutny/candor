@@ -37,6 +37,8 @@ class Visitor {
   virtual AstNode* VisitTrue(AstNode* node);
   virtual AstNode* VisitFalse(AstNode* node);
   virtual AstNode* VisitReturn(AstNode* node);
+  virtual AstNode* VisitBreak(AstNode* node);
+  virtual AstNode* VisitContinue(AstNode* node);
   virtual AstNode* VisitProperty(AstNode* node);
   virtual AstNode* VisitString(AstNode* node);
 

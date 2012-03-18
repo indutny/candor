@@ -17,6 +17,8 @@ namespace internal {
     V(ObjectLiteral)\
     V(ArrayLiteral)\
     V(Return)\
+    V(Break)\
+    V(Continue)\
     V(Typeof)\
     V(Sizeof)\
     V(Keysof)\

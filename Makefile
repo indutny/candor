@@ -86,6 +86,7 @@ test: candor.a cand $(TESTS)
 	@./cand test/functional/basics.can
 	@./cand test/functional/arrays.can
 	@./cand test/functional/binary.can
+	@./cand test/functional/while.can
 
 test/%: test/%.cc candor.a
 	$(CXX) $(CPPFLAGS) -Isrc $< -o $@ candor.a
