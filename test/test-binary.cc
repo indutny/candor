@@ -112,7 +112,7 @@ TEST_START("binary operations test")
 
   // Math
 
-  FUN_TEST("return 1 + '1'", {
+  FUN_TEST("return 3 - '1'", {
     assert(result->As<Number>()->Value() == 2);
   })
 

@@ -454,8 +454,8 @@ char* RuntimeBinOp(Heap* heap, char* lhs, char* rhs) {
 
     return HBoolean::New(heap, Heap::kTenureNew, result);
   } else if (type == BinOp::kAdd &&
-             HValue::GetTag(lhs) != Heap::kTagNumber &&
-             HValue::GetTag(lhs) != Heap::kTagNil) {
+             (HValue::GetTag(lhs) == Heap::kTagString ||
+              HValue::GetTag(rhs) == Heap::kTagString)) {
     // String concatenation
     lhs = RuntimeToString(heap, lhs);
     rhs = RuntimeToString(heap, rhs);

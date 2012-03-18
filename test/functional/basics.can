@@ -29,3 +29,5 @@ assert(a.z === nil, "unexisting key lookup")
 
 a.z = 2
 assert(a.z == 2, "key lookup#3")
+
+assert(1 + ":" + 0 == "1:0", "concat")
