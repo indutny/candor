@@ -174,6 +174,8 @@ class Object : public Value {
   Value* Get(String* key);
   Value* Get(const char* key);
 
+  Array* Keys();
+
   static const ValueType tag = kObject;
 };
 

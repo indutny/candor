@@ -367,6 +367,11 @@ Value* Object::Get(const char* key) {
 }
 
 
+Array* Object::Keys() {
+  return Cast<Array>(RuntimeKeysof(Isolate::GetCurrent()->heap, addr()));
+}
+
+
 Array* Array::New() {
   return Cast<Array>(HArray::NewEmpty(Isolate::GetCurrent()->heap));
 }

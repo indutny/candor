@@ -175,6 +175,12 @@ TEST_START("API test")
     assert(result->As<Number>()->Value() == 1234);
   })
 
+  FUN_TEST("return { a: 1, b: 2 }", {
+    Array* keys = result->As<Object>()->Keys();
+
+    assert(keys->Length() == 2);
+  })
+
   FUN_TEST("return () { return global.g }", {
     Value* argv[0];
 
