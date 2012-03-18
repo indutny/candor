@@ -1,4 +1,3 @@
-* Escape characters in strings
 * non-strings as object's keys
 * Optimize `while` benchmark (for non-optimized code)
 * On-stack replacement and profile-based optimizations

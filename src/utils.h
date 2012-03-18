@@ -337,13 +337,56 @@ inline uint32_t StringGetNumSign(const char* value, uint32_t length, bool* s) {
 }
 
 
+inline bool is_num(const char c) {
+  unsigned char uc = c;
+
+  return uc >= '0' && uc <= '9';
+}
+
+
+inline bool is_hex(const char c) {
+  unsigned char uc = c;
+
+  return is_num(c) || (uc >= 'a' && uc <= 'f') || (uc >= 'A' && uc <= 'F');
+}
+
+
+inline int hex_to_num(const char c) {
+  switch (c) {
+   case '0': return 0;
+   case '1': return 1;
+   case '2': return 2;
+   case '3': return 3;
+   case '4': return 4;
+   case '5': return 5;
+   case '6': return 6;
+   case '7': return 7;
+   case '8': return 8;
+   case '9': return 9;
+   case 'a': return 10;
+   case 'b': return 11;
+   case 'c': return 12;
+   case 'd': return 13;
+   case 'e': return 14;
+   case 'f': return 15;
+   case 'A': return 10;
+   case 'B': return 11;
+   case 'C': return 12;
+   case 'D': return 13;
+   case 'E': return 14;
+   case 'F': return 15;
+  }
+  return 0;
+}
+
+
 inline int64_t StringToInt(const char* value, uint32_t length) {
   int64_t result = 0;
   bool sign = false;
 
   uint32_t index = StringGetNumSign(value, length, &sign);
   for (; index < length; index++) {
-    if (value[index] < '0' || value[index] > '9') break;
+    if (!is_num(value[index])) break;
     result *= 10;
     result += value[index] - '0';
   }
@@ -360,14 +403,14 @@ inline double StringToDouble(const char* value, uint32_t length) {
   uint32_t index = StringGetNumSign(value, length, &sign);
   for (; index < length; index++) {
     if (value[index] == '.') break;
-    if (value[index] < '0' || value[index] > '9') break;
+    if (!is_num(value[index])) break;
     integral *= 10;
     integral += value[index] - '0';
   }
 
   if (index < length && value[index] == '.') {
     for (uint32_t i = length - 1; i > index; i--) {
-      if (value[i] < '0' || value[i] > '9') break;
+      if (!is_num(value[i])) break;
       floating += value[i] - '0';
       floating /= 10;
     }
@@ -396,6 +439,52 @@ inline int GetSourceLineByOffset(const char* source,
 
   *pos = offset - line_start;
 
+  return result;
+}
+
+
+inline const char* Unescape(const char* value, uint32_t length, uint32_t* res) {
+  char* result = new char[length];
+  uint32_t offset = 0;
+  for (uint32_t i = 0; i < length; i++) {
+    if (value[i] == '\\') {
+      i++;
+      switch (value[i]) {
+       case 'b': result[offset] = '\b'; break;
+       case 'r': result[offset] = '\r'; break;
+       case 'n': result[offset] = '\n'; break;
+       case 't': result[offset] = '\t'; break;
+       case 'v': result[offset] = '\v'; break;
+       case '0': result[offset] = '\0'; break;
+       case 'u':
+        if (i + 4 < length && is_hex(value[i + 1]) && is_hex(value[i + 2]) &&
+            is_hex(value[i + 3]) && is_hex(value[i + 4])) {
+          result[offset] = (hex_to_num(value[i + 1]) << 4) +
+                           hex_to_num(value[i + 2]);
+          offset++;
+          result[offset] = (hex_to_num(value[i + 3]) << 4) +
+                           hex_to_num(value[i + 4]);
+          i += 4;
+        } else {
+          result[offset] = value[i];
+        }
+        break;
+       case 'x':
+        if (i + 2 < length && is_hex(value[i + 1]) && is_hex(value[i + 2])) {
+          result[offset] = (hex_to_num(value[i + 1]) << 4) +
+                           hex_to_num(value[i + 2]);
+          i += 2;
+          break;
+        }
+       default: result[offset] = value[i]; break;
+      }
+    } else {
+      result[offset] = value[i];
+    }
+    offset++;
+  }
+
+  *res = offset;
   return result;
 }
 

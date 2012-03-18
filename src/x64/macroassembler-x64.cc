@@ -211,37 +211,6 @@ void Masm::AllocateNumber(DoubleRegister value, Register result) {
 }
 
 
-void Masm::AllocateString(const char* value,
-                          uint32_t length,
-                          Register result) {
-  // hash(8) + length(8)
-  Allocate(Heap::kTagString, reg_nil, 16 + length, result);
-
-  Operand qhash(result, 8);
-  Operand qlength(result, 16);
-
-  movq(qhash, Immediate(ComputeHash(value, length)));
-  movq(qlength, Immediate(length));
-
-  // Copy the value into (inlined)
-
-  // By words first
-  uint32_t i;
-  for (i = 0; i < length - (length % 4); i += 4) {
-    Operand lpos(result, 24 + i);
-    movl(lpos, Immediate(*reinterpret_cast<const uint32_t*>(value + i)));
-  }
-
-  // And by bytes for last chars
-  for (; i < length; i++) {
-    Operand bpos(result, 24 + i);
-    movb(bpos, Immediate(value[i]));
-  }
-
-  CheckGC();
-}
-
-
 void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
                                  Register size,
                                  Register result) {

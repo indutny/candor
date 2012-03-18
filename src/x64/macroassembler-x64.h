@@ -73,9 +73,6 @@ class Masm : public Assembler {
   // Allocate heap numbers
   void AllocateNumber(DoubleRegister value, Register result);
 
-  // Allocate heap string (symbol)
-  void AllocateString(const char* value, uint32_t length, Register result);
-
   // Allocate object&map
   void AllocateObjectLiteral(Heap::HeapTag tag, Register size, Register result);
 

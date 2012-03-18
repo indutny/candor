@@ -493,10 +493,13 @@ AstNode* Fullgen::VisitString(AstNode* node) {
     return node;
   }
 
-  PlaceInRoot(HString::New(heap(),
-                           Heap::kTenureOld,
-                           node->value(),
-                           node->length()));
+  // Unescape string
+  uint32_t length;
+  const char* unescaped = Unescape(node->value(), node->length(), &length);
+
+  PlaceInRoot(HString::New(heap(), Heap::kTenureOld, unescaped, length));
+
+  delete unescaped;
 
   return node;
 }
