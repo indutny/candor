@@ -18,6 +18,11 @@ class Parser : public Lexer {
     kNegated
   };
 
+  enum ParseStatementType {
+    kSkipTrailingCr,
+    kLeaveTrailingCr
+  };
+
   Parser(const char* source, uint32_t length) : Lexer(source, length) {
     error_pos_ = 0;
     error_msg_ = NULL;
@@ -121,7 +126,7 @@ class Parser : public Lexer {
   void Print(char* buffer, uint32_t size);
 
   AstNode* Execute();
-  AstNode* ParseStatement();
+  AstNode* ParseStatement(ParseStatementType type);
   AstNode* ParseExpression(int priority = 0);
   AstNode* ParsePrefixUnOp(TokenType type);
   AstNode* ParseBinOp(TokenType type, AstNode* lhs, int priority = 0);

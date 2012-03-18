@@ -35,7 +35,10 @@ using namespace internal;
       char out[1024];\
       Parser p(code, strlen(code));\
       AstNode* ast = p.Execute();\
-      assert(!p.has_error());\
+      if (p.has_error()) {\
+        fprintf(stdout, "%d:%s\n", p.error_pos(), p.error_msg());\
+        assert(!p.has_error());\
+      }\
       p.Print(out, 1000);\
       assert(ast != NULL);\
       assert(strcmp(expected, out) == 0);\

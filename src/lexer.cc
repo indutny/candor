@@ -226,6 +226,7 @@ Lexer::Token* Lexer::Consume() {
     CHECK_KEYWORD(value, len, 6, "typeof", kTypeof)
     CHECK_KEYWORD(value, len, 6, "sizeof", kSizeof)
     CHECK_KEYWORD(value, len, 6, "keysof", kKeysof)
+    CHECK_KEYWORD(value, len, 8, "continue", kContinue)
 
     if (len == 0) return new Token(kEnd, offset_);
 

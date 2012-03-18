@@ -9,6 +9,7 @@ TEST_START("parser test")
   PARSER_TEST("1.23", "[1.23]")
   PARSER_TEST("-1.23", "[kMinus [1.23]]")
   PARSER_TEST("1 -1.23", "[kSub [1] [1.23]]")
+  PARSER_TEST("continue", "[continue]")
 
   // Comments
   PARSER_TEST("1// comment", "[1]")
@@ -97,9 +98,9 @@ TEST_START("parser test")
               "[if [true] [kBlock [x]] [kBlock [y]]]")
 
   // Complex
-  PARSER_TEST("p = 0\r\nwhile (true) {\r\nif (p++ > 10) break\n}",
+  PARSER_TEST("p = 0\r\nwhile (true) {\r\nif (p++ > 10) break\ncontinue\n}",
               "[kAssign [p] [0]] [kWhile [true] "
-              "[kBlock [if [kGt [kPostInc [p]] [10]] [break]]]]")
+              "[kBlock [if [kGt [kPostInc [p]] [10]] [break]] [continue]]]")
 
   // Object literal
   PARSER_TEST("a({})", "[kCall [a] @[[kObjectLiteral ]] ]")

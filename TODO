@@ -1,5 +1,5 @@
 * Escape characters in strings
-* Break statement
+* Break, continue statements
 * Sliding (Lisp2 or other) GC
 * Optimize `while` benchmark (for non-optimized code)
 * On-stack replacement and profile-based optimizations

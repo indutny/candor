@@ -8,7 +8,7 @@ namespace internal {
 
 AstNode* Parser::Execute() {
   AstNode* stmt;
-  while ((stmt = ParseStatement()) != NULL) {
+  while ((stmt = ParseStatement(kSkipTrailingCr)) != NULL) {
     ast()->children()->Push(stmt);
   }
 
@@ -21,7 +21,7 @@ AstNode* Parser::Execute() {
 }
 
 
-AstNode* Parser::ParseStatement() {
+AstNode* Parser::ParseStatement(ParseStatementType type) {
   Position pos(this);
   AstNode* result = NULL;
 
@@ -43,8 +43,9 @@ AstNode* Parser::ParseStatement() {
       result->children()->Push(value);
     }
     break;
+   case kContinue:
    case kBreak:
-    result = new AstNode(AstNode::kBreak, Peek());
+    result = new AstNode(AstNode::ConvertType(Peek()->type()), Peek());
     Skip();
     break;
    case kIf:
@@ -74,7 +75,7 @@ AstNode* Parser::ParseStatement() {
       AstNode* elseBody = NULL;
 
       if (body == NULL) {
-        body = ParseStatement();
+        body = ParseStatement(kLeaveTrailingCr);
       } else {
         if (Peek()->is(kElse)) {
           Skip();
@@ -136,7 +137,7 @@ AstNode* Parser::ParseStatement() {
     SetError("Expected CR, EOF, or '}' after statement");
     return NULL;
   }
-  SkipCr();
+  if (type == kSkipTrailingCr) SkipCr();
 
   return pos.Commit(result);
 }
@@ -587,7 +588,7 @@ AstNode* Parser::ParseBlock(AstNode* block) {
   Skip();
 
   while (!Peek()->is(kEnd) && !Peek()->is(kBraceClose)) {
-    AstNode* stmt = ParseStatement();
+    AstNode* stmt = ParseStatement(kSkipTrailingCr);
     if (stmt == NULL) {
       SetError("Expected statement after '{'");
       break;

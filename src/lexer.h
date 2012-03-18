@@ -76,6 +76,7 @@ class Lexer {
     kElse,
     kWhile,
     kBreak,
+    kContinue,
     kReturn,
     kNew,
     kTypeof,

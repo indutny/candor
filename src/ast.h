@@ -30,7 +30,6 @@ typedef List<AstNode*, ZoneObject> AstList;
     V(kAssign)\
     V(kIf)\
     V(kWhile)\
-    V(kBreak)\
     V(kReturn)\
     V(kFunction)\
     V(kCall)\
@@ -43,6 +42,8 @@ typedef List<AstNode*, ZoneObject> AstList;
     V(kString)\
     V(kTrue)\
     V(kFalse)\
+    V(kBreak)\
+    V(kContinue)\
     V(kTypeof)\
     V(kSizeof)\
     V(kKeysof)\
@@ -151,7 +152,7 @@ class AstNode : public ZoneObject {
 
     return (is(kName) || is(kTrue) || is(kFalse) ||
             is(kNumber) || is(kNil) || is(kBreak) ||
-            is(kReturn) || is(kIf) ?
+            is(kContinue) || is(kReturn) || is(kIf) ?
                p->Print("[")
                :
                p->Print("[%s ", strtype)
