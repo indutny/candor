@@ -201,6 +201,8 @@ Things that are implemented currently:
 * Arrays
 * Typeof, Sizeof, Keysof
 * String concatenation
+* Parser/lexer/compiler errors
+* Break/Continue statements
 * C++/C bindings support for candor
 
 Things to come:
@@ -210,8 +212,6 @@ Things to come:
 * Incremental GC
 * Usage in multiple-threads (aka isolates)
 * Inline caching
-* Break statement
-* Better parser/lexer errors
 * See [TODO](https://github.com/indutny/candor/blob/master/TODO) for more
   up-to-date tasks
 
