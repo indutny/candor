@@ -6,7 +6,7 @@ print('-- can: objects --')
 a = { i_am_key: true }
 
 obj = {}
-obj[a] = 1;
+obj[a] = 1
 
 assert(obj[a] == 1, "non-string and non-number key")
 

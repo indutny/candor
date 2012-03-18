@@ -460,7 +460,11 @@ char* RuntimeBinOp(Heap* heap, char* lhs, char* rhs) {
      case Heap::kTagArray:
      case Heap::kTagCData:
       // object (+) object = false
-      result = false;
+      if (BinOp::is_strict_eq(type)) {
+        result = lhs == rhs;
+      } else {
+        result = false;
+      }
       break;
      case Heap::kTagFunction:
       if (BinOp::is_equality(type)) {
