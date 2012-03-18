@@ -227,9 +227,6 @@ Function* Function::New(const char* source, uint32_t length) {
   char* obj = HFunction::New(Isolate::GetCurrent()->heap, NULL, code, root);
 
   Function* fn = Cast<Function>(obj);
-  Isolate::GetCurrent()->heap->Reference(Heap::kRefPersistent,
-                                         NULL,
-                                         reinterpret_cast<HValue*>(fn));
 
   return fn;
 }
@@ -241,9 +238,6 @@ Function* Function::New(BindingCallback callback) {
                                     NULL);
 
   Function* fn = Cast<Function>(obj);
-  Isolate::GetCurrent()->heap->Reference(Heap::kRefPersistent,
-                                         NULL,
-                                         reinterpret_cast<HValue*>(fn));
 
   return fn;
 }
