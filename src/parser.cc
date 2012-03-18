@@ -27,7 +27,7 @@ AstNode* Parser::ParseStatement() {
 
   // Skip cr's before statement
   // needed for {\n blocks \n}
-  while (Peek()->is(kCr)) Skip();
+  SkipCr();
 
   switch (Peek()->type()) {
    case kReturn:
@@ -136,7 +136,7 @@ AstNode* Parser::ParseStatement() {
     SetError("Expected CR, EOF, or '}' after statement");
     return NULL;
   }
-  if (Peek()->is(kCr)) Skip();
+  SkipCr();
 
   return pos.Commit(result);
 }
@@ -335,6 +335,8 @@ AstNode* Parser::ParseBinOp(TokenType type, AstNode* lhs, int priority) {
 
   // Consume binop token
   Skip();
+
+  SkipCr();
 
   AstNode* rhs;
   {

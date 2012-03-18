@@ -117,6 +117,7 @@ class Lexer {
 
   Token* Peek();
   void Skip();
+  void SkipCr();
   bool SkipWhitespace();
   Token* Consume();
 

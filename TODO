@@ -1,4 +1,3 @@
-* Support : "1 +\n 1" in parser
 * Escape characters in strings
 * Break statement
 * Sliding (Lisp2 or other) GC

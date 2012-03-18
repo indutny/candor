@@ -48,6 +48,11 @@ void Lexer::Skip() {
 }
 
 
+void Lexer::SkipCr() {
+  while (Peek()->is(kCr)) Skip();
+}
+
+
 bool Lexer::SkipWhitespace() {
   bool cr = false;
   while (has(1) && (get(0) == ' ' || get(0) == '\r' || get(0) == '\n')) {
