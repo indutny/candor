@@ -243,10 +243,11 @@ Things that are implemented currently:
 Things to come:
 
 * C++/C bindings documentation
+* Dense arrays
+* Cons strings
 * On-stack replacement and profile-based optimizations
 * Incremental GC
 * Usage in multiple-threads (aka isolates)
-* Inline caching
 * See [TODO](https://github.com/indutny/candor/blob/master/TODO) for more
   up-to-date tasks
 
