@@ -868,13 +868,34 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
     return node;
   }
 
-  {
-    VisitForValue(op->lhs());
-    Spill rax_s(this, rax);
+  VisitForValue(op->lhs());
+  Spill rax_s(this, rax);
 
-    VisitForValue(op->rhs());
-    movq(rbx, rax);
-    rax_s.Unspill(rax);
+  Label call_stub(this), done(this);
+
+  AstNode* rhs = op->rhs();
+
+  // Fast case : unboxed +/- const
+  if (rhs->is(AstNode::kNumber) &&
+      !StringIsDouble(rhs->value(), rhs->length()) &&
+      (op->subtype() == BinOp::kAdd || op->subtype() == BinOp::kSub)) {
+
+    IsUnboxed(rax, &call_stub, NULL);
+
+    int64_t num = TagNumber(StringToInt(rhs->value(), rhs->length()));
+
+    // addq and subq supports only long immediate (not quad)
+    if (num >= -0x7fffffff && num <= 0x7fffffff) {
+      switch (op->subtype()) {
+       case BinOp::kAdd: addq(rax, Immediate(num)); break;
+       case BinOp::kSub: subq(rax, Immediate(num)); break;
+       default:
+        UNEXPECTED
+        break;
+      }
+
+      jmp(kNoOverflow, &done);
+    }
   }
 
   char* stub = NULL;
@@ -915,7 +936,15 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
 
   assert(stub != NULL);
 
+  bind(&call_stub);
+
+  VisitForValue(op->rhs());
+  movq(rbx, rax);
+  rax_s.Unspill(rax);
+
   Call(stub);
+
+  bind(&done);
 
   return node;
 }
