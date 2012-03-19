@@ -44,6 +44,7 @@ typedef List<AstNode*, ZoneObject> AstList;
     V(kFalse)\
     V(kBreak)\
     V(kContinue)\
+    V(kNew)\
     V(kTypeof)\
     V(kSizeof)\
     V(kKeysof)\

@@ -217,6 +217,7 @@ AstNode* Parser::ParseExpression(int priority) {
    case kTypeof:
    case kSizeof:
    case kKeysof:
+   case kNew:
     {
       Position pos(this);
 
@@ -360,7 +361,7 @@ AstNode* Parser::ParseBinOp(TokenType type, AstNode* lhs, int priority) {
 }
 
 
-AstNode* Parser::ParsePrimary() {
+AstNode* Parser::ParsePrimary(PrimaryRestriction rest) {
   Position pos(this);
   Lexer::Token* token = Peek();
   AstNode* result = NULL;
@@ -391,6 +392,18 @@ AstNode* Parser::ParsePrimary() {
       return NULL;
     }
     break;
+   case kReturn:
+   case kBreak:
+   case kContinue:
+   case kNew:
+   case kTypeof:
+   case kSizeof:
+   case kKeysof:
+    if (rest != kNoKeywords) {
+      result = new AstNode(AstNode::ConvertType(token->type()), token);
+      Skip();
+      break;
+    }
    default:
     result = NULL;
     break;
@@ -402,7 +415,7 @@ AstNode* Parser::ParsePrimary() {
 
 AstNode* Parser::ParseMember() {
   Position pos(this);
-  AstNode* result = ParsePrimary();
+  AstNode* result = ParsePrimary(kNoKeywords);
 
   while (!Peek()->is(kEnd) && !Peek()->is(kCr)) {
     if (Peek()->is(kParenOpen)) {
@@ -444,8 +457,8 @@ AstNode* Parser::ParseMember() {
       if (Peek()->is(kDot)) {
         // a.b
         Skip();
-        next = ParsePrimary();
-        if (next != NULL && next->is(AstNode::kName)) {
+        next = ParsePrimary(kAny);
+        if (next != NULL && !next->is(AstNode::kNumber)) {
           next->type(AstNode::kProperty);
         }
       } else if (Peek()->is(kArrayOpen)) {

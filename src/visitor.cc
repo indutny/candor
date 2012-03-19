@@ -16,6 +16,7 @@ namespace internal {
     V(Member)\
     V(ObjectLiteral)\
     V(ArrayLiteral)\
+    V(New)\
     V(Return)\
     V(Break)\
     V(Continue)\

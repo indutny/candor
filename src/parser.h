@@ -23,6 +23,11 @@ class Parser : public Lexer {
     kLeaveTrailingCr
   };
 
+  enum PrimaryRestriction {
+    kNoKeywords,
+    kAny
+  };
+
   Parser(const char* source, uint32_t length) : Lexer(source, length) {
     error_pos_ = 0;
     error_msg_ = NULL;
@@ -130,7 +135,7 @@ class Parser : public Lexer {
   AstNode* ParseExpression(int priority = 0);
   AstNode* ParsePrefixUnOp(TokenType type);
   AstNode* ParseBinOp(TokenType type, AstNode* lhs, int priority = 0);
-  AstNode* ParsePrimary();
+  AstNode* ParsePrimary(PrimaryRestriction rest);
   AstNode* ParseMember();
   AstNode* ParseObjectLiteral();
   AstNode* ParseArrayLiteral();
