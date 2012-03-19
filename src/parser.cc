@@ -599,7 +599,10 @@ AstNode* Parser::ParseBlock(AstNode* block) {
     }
     result->children()->Push(stmt);
   }
-  if (!Peek()->is(kBraceClose)) return NULL;
+  if (!Peek()->is(kBraceClose)) {
+    SetError("Expected '}'");
+    return NULL;
+  }
   Skip();
 
   // Block should not be empty
