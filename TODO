@@ -1,5 +1,4 @@
 * Inline caching
-* Optimize `while` benchmark (for non-optimized code)
 * On-stack replacement and profile-based optimizations (register allocation too)
 * Incremental GC
 * Usage in multiple-threads (aka isolates)
