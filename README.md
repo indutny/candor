@@ -10,7 +10,9 @@ that can be easily optimized by compiler.
 ## Description
 
 Experimental implementation of Candor language VM. Join #candor channel on
-irc.freenode.net to discuss language features.
+irc.freenode.net and
+[official google group](https://groups.google.com/forum/?fromgroups&hl=en#!forum/candorlang)
+to discuss language features.
 
 **Danger! This whole project is not stable at all, many things are broken and
 may/will change in future**
