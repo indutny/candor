@@ -55,7 +55,9 @@ void Lexer::SkipCr() {
 
 bool Lexer::SkipWhitespace() {
   bool cr = false;
-  while (has(1) && (get(0) == ' ' || get(0) == '\r' || get(0) == '\n')) {
+  while (has(1) &&
+         (get(0) == ' ' || get(0) == '\t' ||
+          get(0) == '\r' || get(0) == '\n')) {
     if (get(0) == '\r' || get(0) == '\n') cr = true;
     offset_++;
   }
