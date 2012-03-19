@@ -75,7 +75,7 @@ TESTS += test/test-numbers
 TESTS += test/test-api
 TESTS += test/test-gc
 
-test: candor.a cand $(TESTS)
+test: candor.a can $(TESTS)
 	@test/test-parser
 	@test/test-scope
 	@test/test-functional
@@ -83,17 +83,17 @@ test: candor.a cand $(TESTS)
 	@test/test-numbers
 	@test/test-api
 	@test/test-gc
-	@./cand test/functional/basics.can
-	@./cand test/functional/arrays.can
-	@./cand test/functional/objects.can
-	@./cand test/functional/binary.can
-	@./cand test/functional/while.can
-	@./cand test/functional/new.can
+	@./can test/functional/basics.can
+	@./can test/functional/arrays.can
+	@./can test/functional/objects.can
+	@./can test/functional/binary.can
+	@./can test/functional/while.can
+	@./can test/functional/new.can
 
 test/%: test/%.cc candor.a
 	$(CXX) $(CPPFLAGS) -Isrc $< -o $@ candor.a
 
-cand: src/cand.cc candor.a
+can: src/can.cc candor.a
 	$(CXX) $(CPPFLAGS) -Isrc $< -o $@ candor.a
 
 
