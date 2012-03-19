@@ -40,7 +40,6 @@ using namespace internal;
         assert(!p.has_error());\
       }\
       p.Print(out, 1000);\
-      fprintf(stdout, "%s\n", out);\
       assert(ast != NULL);\
       assert(strcmp(expected, out) == 0);\
       ast = NULL;\
