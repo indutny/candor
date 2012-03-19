@@ -1,5 +1,5 @@
-* Inline caching
 * On-stack replacement and profile-based optimizations (register allocation too)
+* Cons strings
 * Incremental GC
 * Usage in multiple-threads (aka isolates)
 * gdbjit
