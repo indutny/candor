@@ -356,21 +356,35 @@ void KeysofStub::Generate() {
 
 void LookupPropertyStub::Generate() {
   GeneratePrologue();
-  RuntimeLookupPropertyCallback lookup = &RuntimeLookupProperty;
+  __ AllocateSpills(0);
 
-  // Arguments
-  Operand object(rbp, 32);
-  Operand property(rbp, 24);
-  Operand change(rbp, 16);
+  Label is_object(masm()), non_object_error(masm()), done(masm());
 
+  // rax <- object
+  // rbx <- property
+  // rcx <- change flag
+  Masm::Spill object_s(masm(), rax);
+  Masm::Spill change_s(masm(), rcx);
+
+  // Return nil on non-object's property access
+  __ IsNil(rax, NULL, &non_object_error);
+  __ IsUnboxed(rax, NULL, &non_object_error);
+
+  // Or into non-object
+  __ IsHeapObject(Heap::kTagObject, rax, NULL, &is_object);
+  __ IsHeapObject(Heap::kTagArray, rax, &non_object_error, NULL);
+
+  __ bind(&is_object);
   __ Pushad();
+
+  RuntimeLookupPropertyCallback lookup = &RuntimeLookupProperty;
 
   // RuntimeLookupProperty(heap, obj, key, change)
   // (returns addr of slot)
   __ movq(rdi, Immediate(reinterpret_cast<uint64_t>(masm()->heap())));
-  __ movq(rsi, object);
-  __ movq(rdx, property);
-  __ movq(rcx, change);
+  __ movq(rsi, rax);
+  __ movq(rdx, rbx);
+  // rcx already contains change flag
   __ movq(rax, Immediate(*reinterpret_cast<uint64_t*>(&lookup)));
   __ callq(rax);
 
@@ -378,7 +392,17 @@ void LookupPropertyStub::Generate() {
 
   __ CheckGC();
 
-  GenerateEpilogue(3);
+  __ jmp(&done);
+
+  __ bind(&non_object_error);
+
+  // Non object lookups return nil
+  __ movq(rax, Immediate(Heap::kTagNil));
+
+  __ bind(&done);
+
+  __ FinalizeSpills();
+  GenerateEpilogue(0);
 }
 
 

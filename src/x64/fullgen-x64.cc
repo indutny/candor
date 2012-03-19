@@ -408,38 +408,19 @@ AstNode* Fullgen::VisitValue(AstNode* node) {
 
 
 AstNode* Fullgen::VisitMember(AstNode* node) {
-  Label is_object(this), non_object_error(this), done(this);
-
   VisitForValue(node->lhs());
-
-  // Return nil on non-object's property access
-  IsNil(rax, NULL, &non_object_error);
-  IsUnboxed(rax, NULL, &non_object_error);
-
-  // Or into non-object
-  IsHeapObject(Heap::kTagObject, rax, NULL, &is_object);
-  IsHeapObject(Heap::kTagArray, rax, &non_object_error, NULL);
-
-  bind(&is_object);
   Spill rax_s(this, rax);
 
   VisitForValue(node->rhs());
+  movq(rbx, rax);
+  rax_s.Unspill(rax);
 
-  {
-    // Stub(change, property, object)
-    ChangeAlign(3);
-    Align a(this);
+  movq(rcx, Immediate(visiting_for_slot()));
+  Call(stubs()->GetLookupPropertyStub());
 
-    rax_s.Unspill(scratch);
+  Label done(this);
 
-    push(scratch);
-    push(rax);
-    push(Immediate(visiting_for_slot()));
-
-    Call(stubs()->GetLookupPropertyStub());
-    // Stub will unwind stack automatically
-    ChangeAlign(-3);
-  }
+  IsNil(rax, NULL, &done);
 
   rax_s.Unspill(rbx);
 
@@ -455,14 +436,10 @@ AstNode* Fullgen::VisitMember(AstNode* node) {
     movq(rax, slot());
   }
 
-  jmp(&done);
-
-  bind(&non_object_error);
-
-  // Non object lookups will return nil
-  movq(rax, Immediate(Heap::kTagNil));
-
   bind(&done);
+
+  slot().base(rax);
+  slot().disp(0);
 
   return node;
 }
