@@ -384,23 +384,50 @@ void LookupPropertyStub::Generate() {
 
 void CoerceToBooleanStub::Generate() {
   GeneratePrologue();
-  RuntimeCoerceCallback to_boolean = &RuntimeToBoolean;
 
-  // Arguments
-  Operand object(rbp, 16);
+  Label unboxed(masm()), truel(masm()), not_bool(masm()), coerced_type(masm());
+
+  // Check type and coerce if not boolean
+  __ IsNil(rax, NULL, &not_bool);
+  __ IsUnboxed(rax, NULL, &unboxed);
+  __ IsHeapObject(Heap::kTagBoolean, rax, &not_bool, NULL);
+
+  __ jmp(&coerced_type);
+
+  __ bind(&unboxed);
+
+  Operand truev(root_reg, HContext::GetIndexDisp(Heap::kRootTrueIndex));
+  Operand falsev(root_reg, HContext::GetIndexDisp(Heap::kRootFalseIndex));
+
+  __ cmpq(rax, Immediate(masm()->TagNumber(0)));
+  __ jmp(kNe, &truel);
+
+  __ movq(rax, falsev);
+
+  __ jmp(&coerced_type);
+  __ bind(&truel);
+
+  __ movq(rax, truev);
+
+  __ jmp(&coerced_type);
+  __ bind(&not_bool);
 
   __ Pushad();
 
+  RuntimeCoerceCallback to_boolean = &RuntimeToBoolean;
+
   __ movq(rdi, Immediate(reinterpret_cast<uint64_t>(masm()->heap())));
-  __ movq(rsi, object);
+  __ movq(rsi, rax);
   __ movq(rax, Immediate(*reinterpret_cast<uint64_t*>(&to_boolean)));
   __ callq(rax);
 
   __ Popad(rax);
 
+  __ bind(&coerced_type);
+
   __ CheckGC();
 
-  GenerateEpilogue(1);
+  GenerateEpilogue(0);
 }
 
 

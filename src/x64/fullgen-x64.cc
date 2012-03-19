@@ -323,7 +323,9 @@ AstNode* Fullgen::VisitAssign(AstNode* stmt) {
   rax_s.Unspill(scratch);
 
   // If slot's base is nil - just return value
-  IsNil(slot().base(), NULL, &done);
+  if (!slot().base().is(rbp)) {
+    IsNil(slot().base(), NULL, &done);
+  }
 
   // Put value into slot
   movq(slot(), scratch);
@@ -511,49 +513,6 @@ AstNode* Fullgen::VisitProperty(AstNode* node) {
 }
 
 
-void Fullgen::ConvertToBoolean() {
-  Label unboxed(this), truel(this), not_bool(this), coerced_type(this);
-
-  // Check type and coerce if not boolean
-  IsNil(rax, NULL, &not_bool);
-  IsUnboxed(rax, NULL, &unboxed);
-  IsHeapObject(Heap::kTagBoolean, rax, &not_bool, NULL);
-
-  jmp(&coerced_type);
-
-  bind(&unboxed);
-
-  Operand truev(root_reg, HContext::GetIndexDisp(Heap::kRootTrueIndex));
-  Operand falsev(root_reg, HContext::GetIndexDisp(Heap::kRootFalseIndex));
-
-  cmpq(rax, Immediate(TagNumber(0)));
-  jmp(kNe, &truel);
-
-  movq(rax, falsev);
-
-  jmp(&coerced_type);
-  bind(&truel);
-
-  movq(rax, truev);
-
-  jmp(&coerced_type);
-  bind(&not_bool);
-
-  {
-    // Stub(value)
-    ChangeAlign(1);
-    Align a(this);
-
-    push(rax);
-    Call(stubs()->GetCoerceToBooleanStub());
-    // Stub will unwind stack automatically
-    ChangeAlign(-1);
-  }
-
-  bind(&coerced_type);
-}
-
-
 AstNode* Fullgen::VisitIf(AstNode* node) {
   Label fail_body(this), done(this);
 
@@ -565,7 +524,7 @@ AstNode* Fullgen::VisitIf(AstNode* node) {
 
   VisitForValue(expr);
 
-  ConvertToBoolean();
+  Call(stubs()->GetCoerceToBooleanStub());
 
   IsTrue(rax, &fail_body, NULL);
 
@@ -594,7 +553,7 @@ AstNode* Fullgen::VisitWhile(AstNode* node) {
 
   VisitForValue(expr);
 
-  ConvertToBoolean();
+  Call(stubs()->GetCoerceToBooleanStub());
 
   IsTrue(rax, &loop_end, NULL);
 
@@ -897,7 +856,7 @@ AstNode* Fullgen::VisitUnOp(AstNode* node) {
   } else if (op->subtype() == UnOp::kNot) {
     // Get value and convert it to boolean
     VisitForValue(op->lhs());
-    ConvertToBoolean();
+    Call(stubs()->GetCoerceToBooleanStub());
 
     Label done(this), ret_false(this);
 
