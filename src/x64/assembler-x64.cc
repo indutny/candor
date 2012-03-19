@@ -191,6 +191,7 @@ void Assembler::jmp(Condition cond, Label* label) {
    case kAe: emitb(0x83); break;
    case kCarry: emitb(0x82); break;
    case kOverflow: emitb(0x80); break;
+   case kNoOverflow: emitb(0x81); break;
    default:
     UNEXPECTED
   }

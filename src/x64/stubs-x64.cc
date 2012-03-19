@@ -466,7 +466,6 @@ void CoerceToBooleanStub::Generate() {
     V(BXor)\
     V(Shl)\
     V(Shr)\
-    V(UShl)\
     V(UShr)\
     V(Eq)\
     V(StrictEq)\
@@ -515,19 +514,7 @@ void BinOpStub::Generate() {
       }
 
       // Call stub on overflow
-      __ jmp(kOverflow, &restore);
-
-      // Check if we overflowed into sign bit
-      __ andq(scratch, rcx);
-
-      // Scratch contains sign mask in the highest bit
-      // check it and call stub if needed
-      __ xorq(scratch, rax);
-      __ shl(scratch, Immediate(1));
-      __ jmp(kCarry, &restore);
-
-      __ jmp(&done);
-      __ bind(&restore);
+      __ jmp(kNoOverflow, &done);
 
       // Restore numbers
       lvalue.Unspill();
@@ -535,9 +522,6 @@ void BinOpStub::Generate() {
 
       __ jmp(&not_unboxed);
     } else if (BinOp::is_binary(type())) {
-      __ Untag(rax);
-      __ Untag(rbx);
-
       switch (type()) {
        case BinOp::kBAnd: __ andq(rax, rbx); break;
        case BinOp::kBOr: __ orq(rax, rbx); break;
@@ -549,23 +533,25 @@ void BinOpStub::Generate() {
         break;
        case BinOp::kShl:
        case BinOp::kShr:
-       case BinOp::kUShl:
        case BinOp::kUShr:
         __ movq(rcx, rbx);
+        __ shr(rcx, Immediate(1));
 
         switch (type()) {
-         case BinOp::kShl: __ shl(rax); break;
-         case BinOp::kShr: __ shr(rax); break;
-         case BinOp::kUShl: __ sal(rax); break;
-         case BinOp::kUShr: __ sar(rax); break;
+         case BinOp::kShl: __ sal(rax); break;
+         case BinOp::kShr: __ sar(rax); break;
+         case BinOp::kUShr: __ shr(rax); break;
          default: __ emitb(0xcc); break;
         }
+
+        // Cleanup last bit
+        __ shr(rax, Immediate(1));
+        __ shl(rax, Immediate(1));
+
         break;
 
        default: __ emitb(0xcc); break;
       }
-
-      __ TagNumber(rax);
     } else if (BinOp::is_logic(type())) {
       Condition cond = masm()->BinOpToCondition(type(), Masm::kIntegral);
       // Note: rax and rbx are boxed here
@@ -670,19 +656,13 @@ void BinOpStub::Generate() {
       break;
      case BinOp::kShl:
      case BinOp::kShr:
-     case BinOp::kUShl:
      case BinOp::kUShr:
       __ movq(rcx, rbx);
 
       switch (type()) {
-       case BinOp::kUShl:
        case BinOp::kUShr:
          __ shl(rax, Immediate(1));
-         if (type() == BinOp::kShl) {
-           __ shl(rax);
-         } else {
-           __ shr(rax);
-         }
+         __ shr(rax);
          __ shr(rax, Immediate(1));
          break;
        case BinOp::kShl: __ shl(rax); break;

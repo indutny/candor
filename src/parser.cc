@@ -169,7 +169,6 @@ AstNode* Parser::ParseStatement(ParseStatementType type) {
     case kMod:\
     case kShl:\
     case kShr:\
-    case kUShl:\
     case kUShr:
 
 #define BINOP_PRI5\

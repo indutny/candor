@@ -210,7 +210,8 @@ enum Condition {
   kAe,
   kBe,
   kCarry,
-  kOverflow
+  kOverflow,
+  kNoOverflow
 };
 
 enum RoundMode {

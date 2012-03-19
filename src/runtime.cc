@@ -24,7 +24,6 @@ namespace internal {
     V(BXor)\
     V(Shl)\
     V(Shr)\
-    V(UShl)\
     V(UShr)\
     V(Eq)\
     V(StrictEq)\
@@ -565,12 +564,11 @@ char* RuntimeBinOp(Heap* heap, char* lhs, char* rhs) {
        case BinOp::kMod: result = lval % rval; break;
        case BinOp::kShl: result = lval << rval; break;
        case BinOp::kShr: result = lval >> rval; break;
-       case BinOp::kUShl:
        case BinOp::kUShr:
         {
           uint64_t ulval = lval;
           uint64_t urval = rval;
-          result = type == BinOp::kShl ? ulval << urval : ulval >> urval;
+          result = type == ulval >> urval;
         }
         break;
        default: UNEXPECTED
