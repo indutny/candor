@@ -1,0 +1,10 @@
+print = global.print
+assert = global.assert
+
+print('-- can: new --')
+
+a = { x: 1, y: 2 }
+b = new a
+
+assert(b.x === 1)
+assert(b.y === 2)

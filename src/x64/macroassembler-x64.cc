@@ -254,7 +254,7 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
   movq(result, scratch);
 
   // Save map size for GC
-  Operand qmapsize(result, 8);
+  Operand qmapsize(result, HMap::size_offset);
   Untag(size);
   movq(qmapsize, size);
 

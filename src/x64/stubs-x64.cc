@@ -529,6 +529,78 @@ void CoerceToBooleanStub::Generate() {
 }
 
 
+void CloneObjectStub::Generate() {
+  GeneratePrologue();
+
+  __ AllocateSpills(0);
+
+  Label non_object(masm()), done(masm());
+
+  // rax <- object
+  __ IsNil(rax, NULL, &non_object);
+  __ IsUnboxed(rax, NULL, &non_object);
+  __ IsHeapObject(Heap::kTagObject, rax, &non_object, NULL);
+
+  // Get map
+  Operand qmap(rax, HObject::map_offset);
+  __ movq(rax, qmap);
+
+  // Get size
+  Operand qsize(rax, HMap::size_offset);
+  __ movq(rcx, qsize);
+
+  __ TagNumber(rcx);
+
+  // Allocate new object
+  __ AllocateObjectLiteral(Heap::kTagObject, rcx, rdx);
+
+  __ movq(rbx, rdx);
+
+  // Get new object's map
+  qmap.base(rbx);
+  __ movq(rbx, qmap);
+
+  // Skip headers
+  __ addq(rax, Immediate(HMap::space_offset));
+  __ addq(rbx, Immediate(HMap::space_offset));
+
+  // NOTE: rcx is tagged here
+
+  // Copy all fields from it
+  Label loop_start(masm()), loop_cond(masm());
+  __ jmp(&loop_cond);
+  __ bind(&loop_start);
+
+  Operand from(rax, 0), to(rbx, 0);
+  __ movq(scratch, from);
+  __ movq(to, scratch);
+
+  __ addq(rax, Immediate(8));
+  __ addq(rbx, Immediate(8));
+
+  __ dec(rcx);
+
+  // Loop
+  __ bind(&loop_cond);
+  __ cmpq(rcx, Immediate(0));
+  __ jmp(kNe, &loop_start);
+
+  __ movq(rax, rdx);
+
+  __ jmp(&done);
+  __ bind(&non_object);
+
+  // Non-object cloning - nil result
+  __ movq(rax, Immediate(Heap::kTagNil));
+
+  __ bind(&done);
+
+  __ FinalizeSpills();
+
+  GenerateEpilogue(0);
+}
+
+
 #define BINARY_SUB_TYPES(V)\
     V(Add)\
     V(Sub)\
@@ -658,6 +730,9 @@ void BinOpStub::Generate() {
 
   Label box_rhs(masm()), both_boxed(masm());
   Label call_runtime(masm()), nil_result(masm());
+
+  __ IsNil(rax, NULL, &call_runtime);
+  __ IsNil(rbx, NULL, &call_runtime);
 
   // Convert lhs to heap number if needed
   __ IsUnboxed(rax, &box_rhs, NULL);

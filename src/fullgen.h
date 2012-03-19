@@ -154,6 +154,7 @@ class Fullgen : public Masm, public Visitor {
   AstNode* VisitArrayLiteral(AstNode* node);
 
   AstNode* VisitReturn(AstNode* node);
+  AstNode* VisitNew(AstNode* node);
   AstNode* VisitBreak(AstNode* node);
   AstNode* VisitContinue(AstNode* node);
 

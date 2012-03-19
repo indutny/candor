@@ -23,6 +23,7 @@ namespace internal {
     V(Keysof)\
     V(LookupProperty)\
     V(CoerceToBoolean)\
+    V(CloneObject)\
 
 #define BINARY_STUBS_LIST(V)\
     V(Add)\

@@ -677,6 +677,14 @@ AstNode* Fullgen::VisitReturn(AstNode* node) {
 }
 
 
+AstNode* Fullgen::VisitNew(AstNode* node) {
+  VisitForValue(node->lhs());
+  Call(stubs()->GetCloneObjectStub());
+
+  return node;
+}
+
+
 AstNode* Fullgen::VisitBreak(AstNode* node) {
   if (loop_end() == NULL) {
     Throw(Heap::kErrorExpectedLoop);

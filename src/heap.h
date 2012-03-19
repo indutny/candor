@@ -447,9 +447,12 @@ class HMap : public HValue {
   inline HValue* GetSlot(uint32_t index);
   inline char** GetSlotAddress(uint32_t index);
 
-  inline uint32_t size() { return *reinterpret_cast<uint32_t*>(addr() + 8); }
+  inline uint32_t size() {
+    return *reinterpret_cast<uint32_t*>(addr() + size_offset);
+  }
   inline char* space() { return addr() + space_offset; }
 
+  static const int size_offset = 8;
   static const int space_offset = 16;
 
   static const Heap::HeapTag class_tag = Heap::kTagMap;

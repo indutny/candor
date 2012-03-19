@@ -468,6 +468,7 @@ char* RuntimeBinOp(Heap* heap, char* lhs, char* rhs) {
         result = false;
       }
       break;
+     case Heap::kTagNil:
      case Heap::kTagFunction:
       if (BinOp::is_equality(type)) {
         result = lhs == rhs;
