@@ -428,14 +428,128 @@ void CoerceToBooleanStub::Generate() {
     V(LOr)\
     V(LAnd)
 
-void BinaryOpStub::Generate() {
+void BinOpStub::Generate() {
   GeneratePrologue();
+
+  // rax <- lhs
+  // rbx <- rhs
 
   // Allocate space for spill slots
   __ AllocateSpills(0);
 
+  Label not_unboxed(masm()), done(masm());
+  Label lhs_to_heap(masm()), rhs_to_heap(masm());
+
+  if (type() != BinOp::kDiv) {
+    // Try working with unboxed numbers
+
+    __ IsNil(rax, NULL, &not_unboxed);
+    __ IsNil(rbx, NULL, &not_unboxed);
+
+    __ IsUnboxed(rax, &not_unboxed, NULL);
+    __ IsUnboxed(rbx, &not_unboxed, NULL);
+
+    // Number (+) Number
+    if (BinOp::is_math(type())) {
+      Label restore(masm());
+      Masm::Spill lvalue(masm(), rax);
+      Masm::Spill rvalue(masm(), rbx);
+
+      __ movq(scratch, rax);
+      __ movq(rcx, rbx);
+
+      switch (type()) {
+       case BinOp::kAdd: __ addq(rax, rbx); break;
+       case BinOp::kSub: __ subq(rax, rbx); break;
+       case BinOp::kMul: __ Untag(rbx); __ imulq(rbx); break;
+
+       default: __ emitb(0xcc); break;
+      }
+
+      // Call stub on overflow
+      __ jmp(kOverflow, &restore);
+
+      // Check if we overflowed into sign bit
+      __ andq(scratch, rcx);
+
+      // Scratch contains sign mask in the highest bit
+      // check it and call stub if needed
+      __ xorq(scratch, rax);
+      __ shl(scratch, Immediate(1));
+      __ jmp(kCarry, &restore);
+
+      __ jmp(&done);
+      __ bind(&restore);
+
+      // Restore numbers
+      lvalue.Unspill();
+      rvalue.Unspill();
+
+      __ jmp(&not_unboxed);
+    } else if (BinOp::is_binary(type())) {
+      __ Untag(rax);
+      __ Untag(rbx);
+
+      switch (type()) {
+       case BinOp::kBAnd: __ andq(rax, rbx); break;
+       case BinOp::kBOr: __ orq(rax, rbx); break;
+       case BinOp::kBXor: __ xorq(rax, rbx); break;
+       case BinOp::kMod:
+        __ xorq(rdx, rdx);
+        __ idivq(rbx);
+        __ movq(rax, rdx);
+        break;
+       case BinOp::kShl:
+       case BinOp::kShr:
+       case BinOp::kUShl:
+       case BinOp::kUShr:
+        __ movq(rcx, rbx);
+
+        switch (type()) {
+         case BinOp::kShl: __ shl(rax); break;
+         case BinOp::kShr: __ shr(rax); break;
+         case BinOp::kUShl: __ sal(rax); break;
+         case BinOp::kUShr: __ sar(rax); break;
+         default: __ emitb(0xcc); break;
+        }
+        break;
+
+       default: __ emitb(0xcc); break;
+      }
+
+      __ TagNumber(rax);
+    } else if (BinOp::is_logic(type())) {
+      Condition cond = masm()->BinOpToCondition(type(), Masm::kIntegral);
+      // Note: rax and rbx are boxed here
+      // Otherwise cmp won't work for negative numbers
+      __ cmpq(rax, rbx);
+
+      Label true_(masm()), cond_end(masm());
+
+      Operand truev(root_reg, HContext::GetIndexDisp(Heap::kRootTrueIndex));
+      Operand falsev(root_reg, HContext::GetIndexDisp(Heap::kRootFalseIndex));
+
+      __ jmp(cond, &true_);
+
+      __ movq(rax, falsev);
+      __ jmp(&cond_end);
+
+      __ bind(&true_);
+
+      __ movq(rax, truev);
+      __ bind(&cond_end);
+    } else {
+      // Call runtime for all other binary ops (boolean logic)
+      __ jmp(&not_unboxed);
+    }
+
+    __ jmp(&done);
+  }
+
+  __ bind(&not_unboxed);
+
   Label box_rhs(masm()), both_boxed(masm());
-  Label call_runtime(masm()), nil_result(masm()), done(masm());
+  Label call_runtime(masm()), nil_result(masm());
 
   // Convert lhs to heap number if needed
   __ IsUnboxed(rax, &box_rhs, NULL);

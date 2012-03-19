@@ -88,10 +88,10 @@ class BaseStub {
 STUBS_LIST(STUB_CLASS_DECL)
 #undef STUB_CLASS_DECL
 
-class BinaryOpStub : public BaseStub {
+class BinOpStub : public BaseStub {
  public:
   // TODO: Use some type instead of kNone
-  BinaryOpStub(CodeSpace* space, BinOp::BinOpType type) :
+  BinOpStub(CodeSpace* space, BinOp::BinOpType type) :
       BaseStub(space, kNone), type_(type) {
   }
 
@@ -104,9 +104,9 @@ class BinaryOpStub : public BaseStub {
 };
 
 #define BINARY_STUB_CLASS_DECL(V)\
-    class Binary##V##Stub : public BinaryOpStub {\
+    class Binary##V##Stub : public BinOpStub {\
      public:\
-      Binary##V##Stub(CodeSpace* space) : BinaryOpStub(space, BinOp::k##V) {}\
+      Binary##V##Stub(CodeSpace* space) : BinOpStub(space, BinOp::k##V) {}\
     };
 BINARY_STUBS_LIST(BINARY_STUB_CLASS_DECL)
 #undef BINARY_STUB_CLASS_DECL
