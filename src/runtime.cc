@@ -317,6 +317,9 @@ char* RuntimeToBoolean(Heap* heap, char* value) {
 
 
 size_t RuntimeStrictCompare(char* lhs, char* rhs) {
+  // Fast case - pointers are equal
+  if (lhs == rhs) return 0;
+
   Heap::HeapTag tag = HValue::GetTag(lhs);
   Heap::HeapTag rtag = HValue::GetTag(rhs);
 
@@ -331,7 +334,7 @@ size_t RuntimeStrictCompare(char* lhs, char* rhs) {
    case Heap::kTagArray:
    case Heap::kTagCData:
    case Heap::kTagNil:
-    return lhs == rhs ? 0 : -1;
+    return -1;
    case Heap::kTagBoolean:
     return HBoolean::Value(lhs) == HBoolean::Value(rhs) ? 0 : -1;
    case Heap::kTagNumber:

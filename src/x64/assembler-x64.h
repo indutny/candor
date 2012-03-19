@@ -273,6 +273,7 @@ class Assembler {
   void xchg(Register dst, Register src);
 
   void addq(Register dst, Register src);
+  void addl(Register dst, Register src);
   void addq(Register dst, Operand& src);
   void addq(Register dst, Immediate src);
   void subq(Register dst, Register src);
@@ -284,11 +285,14 @@ class Assembler {
   void orq(Register dst, Register src);
   void orqb(Register dst, Immediate src);
   void xorq(Register dst, Register src);
+  void xorl(Register dst, Register src);
 
   void inc(Register dst);
   void dec(Register dst);
   void shl(Register dst, Immediate src);
   void shr(Register dst, Immediate src);
+  void shll(Register dst, Immediate src);
+  void shrl(Register dst, Immediate src);
   void shl(Register dst);
   void shr(Register dst);
   void sal(Register dst, Immediate src);

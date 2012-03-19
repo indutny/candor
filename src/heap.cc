@@ -262,9 +262,9 @@ char* HString::New(Heap* heap,
   char* result = heap->AllocateTagged(Heap::kTagString, tenure, length + 24);
 
   // Zero hash
-  *reinterpret_cast<uint64_t*>(result + 8) = 0;
+  *reinterpret_cast<uint64_t*>(result + hash_offset) = 0;
   // Set length
-  *reinterpret_cast<uint64_t*>(result + 16) = length;
+  *reinterpret_cast<uint64_t*>(result + length_offset) = length;
 
   return result;
 }
@@ -277,14 +277,14 @@ char* HString::New(Heap* heap,
   char* result = New(heap, tenure, length);
 
   // Copy value
-  memcpy(result + 24, value, length);
+  memcpy(result + value_offset, value, length);
 
   return result;
 }
 
 
 uint32_t HString::Hash(char* addr) {
-  uint32_t* hash_addr = reinterpret_cast<uint32_t*>(addr + 8);
+  uint32_t* hash_addr = reinterpret_cast<uint32_t*>(addr + hash_offset);
   uint32_t hash = *hash_addr;
   if (hash == 0) {
     hash = ComputeHash(Value(addr), Length(addr));

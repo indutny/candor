@@ -288,6 +288,12 @@ void Assembler::addq(Register dst, Register src) {
 }
 
 
+void Assembler::addl(Register dst, Register src) {
+  emitb(0x03);
+  emit_modrm(dst, src);
+}
+
+
 void Assembler::addq(Register dst, Operand& src) {
   emit_rexw(dst, src);
   emitb(0x03);
@@ -361,6 +367,12 @@ void Assembler::xorq(Register dst, Register src) {
 }
 
 
+void Assembler::xorl(Register dst, Register src) {
+  emitb(0x33);
+  emit_modrm(dst, src);
+}
+
+
 void Assembler::inc(Register dst) {
   emit_rexw(rax, dst);
   emitb(0xFF);
@@ -385,6 +397,20 @@ void Assembler::shl(Register dst, Immediate src) {
 
 void Assembler::shr(Register dst, Immediate src) {
   emit_rexw(rax, dst);
+  emitb(0xC1);
+  emit_modrm(dst, 0x05);
+  emitb(src.value());
+}
+
+
+void Assembler::shll(Register dst, Immediate src) {
+  emitb(0xC1);
+  emit_modrm(dst, 0x04);
+  emitb(src.value());
+}
+
+
+void Assembler::shrl(Register dst, Immediate src) {
   emitb(0xC1);
   emit_modrm(dst, 0x05);
   emitb(src.value());

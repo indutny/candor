@@ -88,6 +88,9 @@ class Masm : public Assembler {
   void ExitFramePrologue();
   void ExitFrameEpilogue();
 
+  // Compute string's hash
+  void StringHash(Register str, Register result);
+
   // Perform garbage collection if needed (heap flag is set)
   void CheckGC();
 

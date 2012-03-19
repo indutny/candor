@@ -359,6 +359,95 @@ void Masm::ExitFrameEpilogue() {
 }
 
 
+void Masm::StringHash(Register str, Register result) {
+  Operand hash_field(str, HString::hash_offset);
+
+  Label done(this);
+
+  // Check if hash was already calculated
+  movq(result, hash_field);
+  cmpq(result, Immediate(0));
+  jmp(kNe, &done);
+
+  // Compute new hash
+  assert(!str.is(rcx));
+  if (!result.is(rcx)) push(rcx);
+  push(str);
+  push(rsi);
+
+  Register scratch = rsi;
+
+  // hash = 0
+  xorq(result, result);
+
+  // rcx = length
+  Operand length_field(str, HString::length_offset);
+  movq(rcx, length_field);
+
+  // str += value_offset
+  addq(str, Immediate(HString::value_offset));
+
+  // while (rcx != 0)
+  Label loop_start(this), loop_cond(this), loop_end(this);
+
+  jmp(&loop_cond);
+  bind(&loop_start);
+
+  Operand ch(str, 0);
+
+  // result += str[0]
+  movzxb(scratch, ch);
+  addl(result, scratch);
+
+  // result += result << 10
+  movq(scratch, result);
+  shll(result, Immediate(10));
+  addl(result, scratch);
+
+  // result ^= result >> 6
+  movq(scratch, result);
+  shrl(result, Immediate(6));
+  xorl(result, scratch);
+
+  // rcx--; str++
+  dec(rcx);
+  inc(str);
+
+  bind(&loop_cond);
+
+  // check condition (rcx != 0)
+  cmpq(rcx, Immediate(0));
+  jmp(kNe, &loop_start);
+
+  bind(&loop_end);
+
+  // Mixup
+  // result += (result << 3);
+  movq(scratch, result);
+  shll(result, Immediate(3));
+  addl(result, scratch);
+
+  // result ^= (result >> 11);
+  movq(scratch, result);
+  shrl(result, Immediate(11));
+  xorl(result, scratch);
+
+  // result += (result << 15);
+  movq(scratch, result);
+  shll(result, Immediate(15));
+  addl(result, scratch);
+
+  pop(rsi);
+  pop(str);
+  if (!result.is(rcx)) pop(rcx);
+
+  // Store hash into a string
+  movq(hash_field, result);
+
+  bind(&done);
+}
+
+
 void Masm::CheckGC() {
   Immediate gc_flag(reinterpret_cast<uint64_t>(heap()->needs_gc_addr()));
   Operand scratch_op(scratch, 0);

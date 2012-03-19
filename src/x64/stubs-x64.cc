@@ -358,7 +358,8 @@ void LookupPropertyStub::Generate() {
   GeneratePrologue();
   __ AllocateSpills(0);
 
-  Label is_object(masm()), non_object_error(masm()), done(masm());
+  Label is_object(masm()), is_array(masm()), cleanup(masm());
+  Label non_object_error(masm()), done(masm());
 
   // rax <- object
   // rbx <- property
@@ -372,9 +373,82 @@ void LookupPropertyStub::Generate() {
 
   // Or into non-object
   __ IsHeapObject(Heap::kTagObject, rax, NULL, &is_object);
-  __ IsHeapObject(Heap::kTagArray, rax, &non_object_error, NULL);
+  __ IsHeapObject(Heap::kTagArray, rax, &non_object_error, &is_array);
 
   __ bind(&is_object);
+
+  // Fast case object and a string key
+  {
+    __ IsNil(rbx, NULL, &is_array);
+    __ IsUnboxed(rbx, NULL, &is_array);
+    __ IsHeapObject(Heap::kTagString, rbx, &is_array, NULL);
+
+    __ StringHash(rbx, rdx);
+
+    Operand qmask(rax, HObject::mask_offset);
+    __ movq(r15, qmask);
+
+    // offset = hash & mask + space_offset
+    __ andq(rdx, r15);
+    __ addq(rdx, Immediate(HMap::space_offset));
+
+    Operand qmap(rax, HObject::map_offset);
+    __ movq(scratch, qmap);
+    __ addq(scratch, rdx);
+
+    Label match(masm());
+
+    // rdx now contains pointer to the key slot in map's space
+    // compare key's addresses
+    Operand slot(scratch, 0);
+    __ movq(scratch, slot);
+
+    // Slot should contain either key
+    __ cmpq(scratch, rbx);
+    __ jmp(kEq, &match);
+
+    // or nil
+    __ cmpq(scratch, Immediate(Heap::kTagNil));
+    __ jmp(kNe, &cleanup);
+
+    __ bind(&match);
+
+    Label fast_case_end(masm());
+
+    // Insert key if was asked
+    __ cmpq(rcx, Immediate(0));
+    __ jmp(kEq, &fast_case_end);
+
+    // Restore map's interior pointer
+    __ movq(scratch, qmap);
+    __ addq(scratch, rdx);
+
+    // Put the key into slot
+    __ movq(slot, rbx);
+
+    __ bind(&fast_case_end);
+
+    // Compute value's address
+    // rax = key_offset + mask + 8
+    __ movq(rax, rdx);
+    __ addq(rax, r15);
+    __ addq(rax, Immediate(8));
+
+    // Cleanup
+    __ xorq(r15, r15);
+    __ xorq(rdx, rdx);
+
+    // Return value
+    GenerateEpilogue(0);
+  }
+
+  __ bind(&cleanup);
+
+  __ xorq(r15, r15);
+  __ xorq(rdx, rdx);
+
+  __ bind(&is_array);
+
   __ Pushad();
 
   RuntimeLookupPropertyCallback lookup = &RuntimeLookupProperty;

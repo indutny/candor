@@ -386,11 +386,15 @@ class HString : public HValue {
   inline uint32_t hash() { return Hash(addr()); }
 
   static uint32_t Hash(char* addr);
-  static inline char* Value(char* addr) { return addr + 24; }
+  static inline char* Value(char* addr) { return addr + value_offset; }
 
   static inline uint32_t Length(char* addr) {
-    return *reinterpret_cast<uint32_t*>(addr + 16);
+    return *reinterpret_cast<uint32_t*>(addr + length_offset);
   }
+
+  static const int hash_offset = 8;
+  static const int length_offset = 16;
+  static const int value_offset = 24;
 
   static const Heap::HeapTag class_tag = Heap::kTagString;
 };
@@ -410,13 +414,14 @@ class HObject : public HValue {
   }
   static inline char* Map(char* addr) { return *MapSlot(addr); }
   static inline uint32_t* MaskSlot(char* addr) {
-    return reinterpret_cast<uint32_t*>(addr + 8);
+    return reinterpret_cast<uint32_t*>(addr + mask_offset);
   }
   static inline uint32_t Mask(char* addr) { return *MaskSlot(addr); }
 
   static char** LookupProperty(Heap* heap, char* addr, char* key, int insert);
 
   static const int map_offset = 16;
+  static const int mask_offset = 8;
 
   static const Heap::HeapTag class_tag = Heap::kTagObject;
 };
