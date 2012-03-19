@@ -417,12 +417,24 @@ AstNode* Parser::ParseMember() {
   Position pos(this);
   AstNode* result = ParsePrimary(kNoKeywords);
 
+  bool colon_call = false;
+  AstNode* colon_receiver = NULL;
   while (!Peek()->is(kEnd) && !Peek()->is(kCr)) {
+    if (colon_call && !Peek()->is(kParenOpen)) {
+      SetError("Expected '(' after colon call");
+      return NULL;
+    }
+
     if (Peek()->is(kParenOpen)) {
       // Calls and function declarations
       FunctionLiteral* fn = new FunctionLiteral(result);
       result = NULL;
       Skip();
+
+      if (colon_call) {
+        fn->args()->Push(colon_receiver);
+        colon_call = false;
+      }
 
       while (!Peek()->is(kParenClose) && !Peek()->is(kEnd)) {
         AstNode* expr = ParseExpression();
@@ -454,14 +466,23 @@ AstNode* Parser::ParseMember() {
       }
 
       AstNode* next = NULL;
-      if (Peek()->is(kDot)) {
-        // a.b
+      switch (Peek()->type()) {
+       case kColon:
+        if (colon_call != false) {
+          SetError("Nested colons in method invocation are not supported");
+          return NULL;
+        }
+        colon_call = true;
+        colon_receiver = result;
+       case kDot:
+        // a.b || a:b(args)
         Skip();
         next = ParsePrimary(kAny);
         if (next != NULL && !next->is(AstNode::kNumber)) {
           next->type(AstNode::kProperty);
         }
-      } else if (Peek()->is(kArrayOpen)) {
+        break;
+       case kArrayOpen:
         // a["prop-expr"]
         Skip();
         next = ParseExpression();
@@ -470,6 +491,9 @@ AstNode* Parser::ParseMember() {
         } else {
           next = NULL;
         }
+        break;
+       default:
+        break;
       }
 
       if (next == NULL) break;
@@ -477,6 +501,11 @@ AstNode* Parser::ParseMember() {
       result = Wrap(AstNode::kMember, result);
       result->children()->Push(next);
     }
+  }
+
+  if (colon_call) {
+    SetError("Expected '(' after colon call");
+    return NULL;
   }
 
   return pos.Commit(result);
