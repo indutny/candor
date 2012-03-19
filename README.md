@@ -178,6 +178,39 @@ while (i < 10) {
 // break and continue. `while` loop can have `break` and `continue`
 // break exits a loop immediately, continue, skips to the next iteration
 
+// Object Oriented Programming
+
+// There are no dynamic prototypes in candor, but there is a fast-clone
+// operation and special method calling syntax to make OOP style programming
+// possible if you prefer that style.
+
+// Create a prototype object
+Rectangle = {
+  getArea: (self) {
+    return self.w * self.h
+  },
+  initialize: (self, w, h) {
+    self.w = w
+    self.h = h
+  }
+}
+
+// First create a fast shallow clone of the Rectangle prototype
+rect = new Rectangle
+
+// Then initialize it using a one of the functions
+rect.initialize(rect, 3, 5)
+
+// Now we can use this object
+rect.getArea(rect) // -> 15
+
+// To make calling methods easier, there is special syntax sugar using `:`
+// instead of `.` for function calls. It means to call the function with
+// whatever is left of the `:` as the first argument.
+
+// The previous two calls can be written as:
+rect:initialize(3, 5)
+rect:getArea() // -> 15
 ```
 
 ## Building
