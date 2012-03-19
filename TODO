@@ -1,4 +1,5 @@
 * Dense arrays
+* Stack trace support
 * Cons strings
 * On-stack replacement and profile-based optimizations (register allocation too)
 * Incremental GC
