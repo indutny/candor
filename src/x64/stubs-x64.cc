@@ -494,9 +494,6 @@ void BinOpStub::Generate() {
   if (type() != BinOp::kDiv) {
     // Try working with unboxed numbers
 
-    __ IsNil(rax, NULL, &not_unboxed);
-    __ IsNil(rbx, NULL, &not_unboxed);
-
     __ IsUnboxed(rax, &not_unboxed, NULL);
     __ IsUnboxed(rbx, &not_unboxed, NULL);
 
