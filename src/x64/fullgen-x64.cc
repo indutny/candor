@@ -869,7 +869,6 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
   }
 
   VisitForValue(op->lhs());
-  Spill rax_s(this, rax);
 
   Label call_stub(this), done(this);
 
@@ -895,6 +894,15 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
       }
 
       jmp(kNoOverflow, &done);
+
+      // Restore on overflow
+      switch (op->subtype()) {
+       case BinOp::kAdd: subq(rax, Immediate(num)); break;
+       case BinOp::kSub: addq(rax, Immediate(num)); break;
+       default:
+        UNEXPECTED
+        break;
+      }
     }
   }
 
@@ -938,6 +946,7 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
 
   bind(&call_stub);
 
+  Spill rax_s(this, rax);
   VisitForValue(op->rhs());
   movq(rbx, rax);
   rax_s.Unspill(rax);
