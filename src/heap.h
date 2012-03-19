@@ -386,15 +386,15 @@ class HString : public HValue {
   inline uint32_t hash() { return Hash(addr()); }
 
   static uint32_t Hash(char* addr);
-  static inline char* Value(char* addr) { return addr + value_offset; }
+  static inline char* Value(char* addr) { return addr + kValueOffset; }
 
   static inline uint32_t Length(char* addr) {
-    return *reinterpret_cast<uint32_t*>(addr + length_offset);
+    return *reinterpret_cast<uint32_t*>(addr + kLengthOffset);
   }
 
-  static const int hash_offset = 8;
-  static const int length_offset = 16;
-  static const int value_offset = 24;
+  static const int kHashOffset = 8;
+  static const int kLengthOffset = 16;
+  static const int kValueOffset = 24;
 
   static const Heap::HeapTag class_tag = Heap::kTagString;
 };
@@ -410,18 +410,18 @@ class HObject : public HValue {
   inline uint32_t* mask_slot() { return MaskSlot(addr()); }
 
   static inline char** MapSlot(char* addr) {
-    return reinterpret_cast<char**>(addr + map_offset);
+    return reinterpret_cast<char**>(addr + kMapOffset);
   }
   static inline char* Map(char* addr) { return *MapSlot(addr); }
   static inline uint32_t* MaskSlot(char* addr) {
-    return reinterpret_cast<uint32_t*>(addr + mask_offset);
+    return reinterpret_cast<uint32_t*>(addr + kMaskOffset);
   }
   static inline uint32_t Mask(char* addr) { return *MaskSlot(addr); }
 
   static char** LookupProperty(Heap* heap, char* addr, char* key, int insert);
 
-  static const int map_offset = 16;
-  static const int mask_offset = 8;
+  static const int kMaskOffset = 8;
+  static const int kMapOffset = 16;
 
   static const Heap::HeapTag class_tag = Heap::kTagObject;
 };
@@ -434,8 +434,10 @@ class HArray : public HObject {
   static int64_t Length(char* obj, bool shrink);
 
   static inline void SetLength(char* obj, int64_t length) {
-    *reinterpret_cast<int64_t*>(obj + 24) = length;
+    *reinterpret_cast<int64_t*>(obj + kLengthOffset) = length;
   }
+
+  static const int kLengthOffset = 24;
 
   static const Heap::HeapTag class_tag = Heap::kTagArray;
 };
@@ -448,12 +450,12 @@ class HMap : public HValue {
   inline char** GetSlotAddress(uint32_t index);
 
   inline uint32_t size() {
-    return *reinterpret_cast<uint32_t*>(addr() + size_offset);
+    return *reinterpret_cast<uint32_t*>(addr() + kSizeOffset);
   }
-  inline char* space() { return addr() + space_offset; }
+  inline char* space() { return addr() + kSpaceOffset; }
 
-  static const int size_offset = 8;
-  static const int space_offset = 16;
+  static const int kSizeOffset = 8;
+  static const int kSpaceOffset = 16;
 
   static const Heap::HeapTag class_tag = Heap::kTagMap;
 };

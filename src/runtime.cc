@@ -160,7 +160,7 @@ off_t RuntimeLookupProperty(Heap* heap,
     *reinterpret_cast<char**>(space + index) = keyptr;
   }
 
-  return HMap::space_offset + index + (mask + 8);
+  return HMap::kSpaceOffset + index + (mask + 8);
 }
 
 

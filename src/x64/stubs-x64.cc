@@ -385,14 +385,14 @@ void LookupPropertyStub::Generate() {
 
     __ StringHash(rbx, rdx);
 
-    Operand qmask(rax, HObject::mask_offset);
+    Operand qmask(rax, HObject::kMaskOffset);
     __ movq(r15, qmask);
 
-    // offset = hash & mask + space_offset
+    // offset = hash & mask + kSpaceOffset
     __ andq(rdx, r15);
-    __ addq(rdx, Immediate(HMap::space_offset));
+    __ addq(rdx, Immediate(HMap::kSpaceOffset));
 
-    Operand qmap(rax, HObject::map_offset);
+    Operand qmap(rax, HObject::kMapOffset);
     __ movq(scratch, qmap);
     __ addq(scratch, rdx);
 
@@ -542,11 +542,11 @@ void CloneObjectStub::Generate() {
   __ IsHeapObject(Heap::kTagObject, rax, &non_object, NULL);
 
   // Get map
-  Operand qmap(rax, HObject::map_offset);
+  Operand qmap(rax, HObject::kMapOffset);
   __ movq(rax, qmap);
 
   // Get size
-  Operand qsize(rax, HMap::size_offset);
+  Operand qsize(rax, HMap::kSizeOffset);
   __ movq(rcx, qsize);
 
   __ TagNumber(rcx);
@@ -561,8 +561,8 @@ void CloneObjectStub::Generate() {
   __ movq(rbx, qmap);
 
   // Skip headers
-  __ addq(rax, Immediate(HMap::space_offset));
-  __ addq(rbx, Immediate(HMap::space_offset));
+  __ addq(rax, Immediate(HMap::kSpaceOffset));
+  __ addq(rbx, Immediate(HMap::kSpaceOffset));
 
   // NOTE: rcx is tagged here
 

@@ -262,9 +262,9 @@ char* HString::New(Heap* heap,
   char* result = heap->AllocateTagged(Heap::kTagString, tenure, length + 24);
 
   // Zero hash
-  *reinterpret_cast<uint64_t*>(result + hash_offset) = 0;
+  *reinterpret_cast<uint64_t*>(result + kHashOffset) = 0;
   // Set length
-  *reinterpret_cast<uint64_t*>(result + length_offset) = length;
+  *reinterpret_cast<uint64_t*>(result + kLengthOffset) = length;
 
   return result;
 }
@@ -277,14 +277,14 @@ char* HString::New(Heap* heap,
   char* result = New(heap, tenure, length);
 
   // Copy value
-  memcpy(result + value_offset, value, length);
+  memcpy(result + kValueOffset, value, length);
 
   return result;
 }
 
 
 uint32_t HString::Hash(char* addr) {
-  uint32_t* hash_addr = reinterpret_cast<uint32_t*>(addr + hash_offset);
+  uint32_t* hash_addr = reinterpret_cast<uint32_t*>(addr + kHashOffset);
   uint32_t hash = *hash_addr;
   if (hash == 0) {
     hash = ComputeHash(Value(addr), Length(addr));
@@ -303,16 +303,16 @@ char* HObject::NewEmpty(Heap* heap) {
                                    (size << 4) + 8);
 
   // Set mask
-  *reinterpret_cast<uint64_t*>(obj + 8) = (size - 1) << 3;
+  *reinterpret_cast<uint64_t*>(obj + kMaskOffset) = (size - 1) << 3;
   // Set map
-  *reinterpret_cast<char**>(obj + 16) = map;
+  *reinterpret_cast<char**>(obj + kMapOffset) = map;
 
   // Set map's size
-  *reinterpret_cast<uint64_t*>(map + 8) = size;
+  *reinterpret_cast<uint64_t*>(map + HMap::kSizeOffset) = size;
 
   // Nullify all map's slots (both keys and values)
   size = size << 4;
-  memset(map + 16, 0x00, size);
+  memset(map + HMap::kSpaceOffset, 0x00, size);
   for (uint32_t i = 0; i < size; i += 8) {
     map[i + 16] = Heap::kTagNil;
   }
@@ -341,19 +341,19 @@ char* HArray::NewEmpty(Heap* heap) {
                                    (size << 4) + 8);
 
   // Set mask
-  *reinterpret_cast<uint64_t*>(obj + 8) = (size - 1) << 3;
+  *reinterpret_cast<uint64_t*>(obj + kMaskOffset) = (size - 1) << 3;
   // Set map
-  *reinterpret_cast<char**>(obj + 16) = map;
+  *reinterpret_cast<char**>(obj + kMapOffset) = map;
 
   // Set length
   SetLength(obj, 0);
 
   // Set map's size
-  *reinterpret_cast<uint64_t*>(map + 8) = size;
+  *reinterpret_cast<uint64_t*>(map + HMap::kSizeOffset) = size;
 
   // Nullify all map's slots (both keys and values)
   size = size << 4;
-  memset(map + 16, 0x00, size);
+  memset(map + HMap::kSpaceOffset, 0x00, size);
   for (uint32_t i = 0; i < size; i += 8) {
     map[i + 16] = Heap::kTagNil;
   }
@@ -362,7 +362,7 @@ char* HArray::NewEmpty(Heap* heap) {
 }
 
 int64_t HArray::Length(char* obj, bool shrink) {
-  int64_t result = *reinterpret_cast<int64_t*>(obj + 24);
+  int64_t result = *reinterpret_cast<int64_t*>(obj + kLengthOffset);
 
   if (shrink) {
     // Lookup property at [length - 1]

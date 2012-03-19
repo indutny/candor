@@ -221,7 +221,7 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
            result);
 
   Operand qmask(result, 8);
-  Operand qmap(result, HObject::map_offset);
+  Operand qmap(result, HObject::kMapOffset);
 
   // Array only field
   Operand qlength(result, 24);
@@ -254,7 +254,7 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
   movq(result, scratch);
 
   // Save map size for GC
-  Operand qmapsize(result, HMap::size_offset);
+  Operand qmapsize(result, HMap::kSizeOffset);
   Untag(size);
   movq(qmapsize, size);
 
@@ -360,7 +360,7 @@ void Masm::ExitFrameEpilogue() {
 
 
 void Masm::StringHash(Register str, Register result) {
-  Operand hash_field(str, HString::hash_offset);
+  Operand hash_field(str, HString::kHashOffset);
 
   Label done(this);
 
@@ -381,11 +381,11 @@ void Masm::StringHash(Register str, Register result) {
   xorq(result, result);
 
   // rcx = length
-  Operand length_field(str, HString::length_offset);
+  Operand length_field(str, HString::kLengthOffset);
   movq(rcx, length_field);
 
-  // str += value_offset
-  addq(str, Immediate(HString::value_offset));
+  // str += kValueOffset
+  addq(str, Immediate(HString::kValueOffset));
 
   // while (rcx != 0)
   Label loop_start(this), loop_cond(this), loop_end(this);

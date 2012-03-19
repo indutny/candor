@@ -424,7 +424,7 @@ AstNode* Fullgen::VisitMember(AstNode* node) {
 
   rax_s.Unspill(rbx);
 
-  Operand qmap(rbx, HObject::map_offset);
+  Operand qmap(rbx, HObject::kMapOffset);
   movq(rbx, qmap);
   addq(rax, rbx);
 
