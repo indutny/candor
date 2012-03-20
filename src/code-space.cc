@@ -116,7 +116,9 @@ char* CodeSpace::Insert(char* code, uint32_t length) {
 
 
 Value* CodeSpace::Run(char* fn, uint32_t argc, Value* argv[]) {
-  if (fn == NULL) return NULL;
+  if (fn == HNil::New() || HValue::IsUnboxed(fn)) {
+    return reinterpret_cast<Value*>(HNil::New());
+  }
 
   return reinterpret_cast<Code>(entry_)(fn,
                                         HNumber::Tag(argc),
