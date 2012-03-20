@@ -78,7 +78,7 @@ Lexer::Token* Lexer::Consume() {
   // Multi-line comment
   if (has(2) && get(0) == '/' && get(1) == '*') {
     offset_ += 2;
-    while (has(2) && get(0) != '*' && get(1) != '/') {
+    while (has(2) && (get(0) != '*' || get(1) != '/')) {
       // Skip escaped chars
       if (has(2) && get(0) == '\\') {
         offset_ += 2;

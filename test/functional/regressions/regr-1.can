@@ -1,0 +1,116 @@
+print = global.print
+
+print("-- can: lexer regr#1 --")
+
+return
+
+// Simple pretty printer
+dump(value) {
+  type = typeof value
+  if (type == "nil") {
+    return "nil"
+  }
+  if (type == "boolean" || type == "number") {
+    return "" + value
+  }
+  if (type == "string") {
+    return '"' + value + '"'
+  }
+  if (type == "object") {
+    keys = keysof value
+    length = sizeof keys
+    i = 0
+    escaped = "{ "
+    while (i < length) {
+      key = keys[i]
+      part = dump(value[key])
+      escaped = escaped + key + ": " + part
+      if (i < length - 1) {
+        escaped = escaped + ", "
+      }
+      i++
+    }
+    return escaped + " }"
+  }
+  if (type == "array") {
+    length = sizeof value
+    i = 0
+    escaped = "[ "
+    while (i < length) {
+      escaped = escaped + dump(value[i])
+      print(escaped)
+      if (i < length - 1) {
+        escaped = escaped + ", "
+      }
+      i++
+    }
+    return escaped + " ]"
+  }
+  return "[" + type + "]"
+}
+
+// Quick and dirty pretty printer
+p(label, value) {
+  print(label, dump(value))
+}
+
+// Used to emit on errors when libuv badness happens
+check(status) {
+  if (status) {
+    err = global.uv.lastError()
+    print(err.name + ": " + err.error)
+    global.exit()
+  }
+  _$gc()
+}
+
+Tcp = global.uv.Tcp
+
+p("Tcp", Tcp)
+server = Tcp.create()
+check(Tcp.bind(server, "0.0.0.0", 8080))
+if (err) print(err)
+check(Tcp.listen(server, 128, () {
+  client = Tcp.create()
+  check(Tcp.accept(server, client))
+  print("on connection")
+
+  /*
+   * `nread` is > 0 if there is data available, 0 if libuv is done reading for now
+   * or -1 on error.
+   *
+   * Error details can be obtained by calling uv_last_error(). UV_EOF indicates
+   * that the stream has been closed.
+   *
+   * The callee is responsible for closing the stream when an error happens.
+   * Trying to read from the stream again is undefined.
+   *
+   * The callee is responsible for freeing the buffer, libuv does not reuse it.
+   */
+  check(Tcp.readStart(client, (nread, chunk) {
+
+    if (nread == -1) {
+      err = uv.lastErr()
+      p("err", err)
+    }
+    if (nread == 0) {
+
+    } else {
+
+      // *candor bug*
+      // for some reason `Tcp` is nil the first time this callback is called.
+      p("Tcp", Tcp)
+
+      p("chunk", chunk)
+
+      // *candor bug workaround*
+      Tcp = global.uv.Tcp
+
+      Tcp.write(client, chunk)
+
+    }
+
+  }))
+  p("sockname", Tcp.getsockname(client))
+  p("peername", Tcp.getpeername(client))
+}))
