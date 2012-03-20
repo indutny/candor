@@ -21,7 +21,7 @@ class CodePage;
 
 class CodeSpace {
  public:
-  typedef Value* (*Code)(char*, uint32_t, Value* [], char*, char*);
+  typedef Value* (*Code)(char*, uint32_t, Value* []);
 
   CodeSpace(Heap* heap);
   ~CodeSpace();

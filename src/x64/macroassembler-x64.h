@@ -109,6 +109,7 @@ class Masm : public Assembler {
   void Call(Operand& addr);
   void Call(Register fn, uint32_t args);
   void Call(char* stub);
+  void CallFunction(Register fn);
 
   enum BinOpUsage {
     kIntegral,

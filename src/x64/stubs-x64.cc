@@ -32,11 +32,9 @@ void BaseStub::GenerateEpilogue(int args) {
 
 
 void EntryStub::Generate() {
-  // rdi <- root context
+  // rdi <- function addr
   // rsi <- unboxed arguments count (tagged)
   // rdx <- pointer to arguments array
-  // rcx <- address of code chunk to call
-  // r8 <- parent context
 
   // Store address of root context
   __ movq(root_reg, rdi);
@@ -82,12 +80,6 @@ void EntryStub::Generate() {
   __ cmpq(scratch, Immediate(0));
   __ jmp(kNe, &args);
 
-  // Save code address
-  __ movq(scratch, rcx);
-
-  // Set context
-  __ movq(rdi, r8);
-
   // Nullify rbp to help GC iterating frames
   __ xorq(rbp, rbp);
 
@@ -106,7 +98,8 @@ void EntryStub::Generate() {
   __ xorq(r15, r15);
 
   // Call code
-  __ Call(scratch);
+  __ movq(scratch, rdi);
+  __ CallFunction(scratch);
 
   // Unwind arguments
   __ Untag(rsi);

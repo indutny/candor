@@ -259,7 +259,7 @@ char* RuntimeToNumber(Heap* heap, char* value) {
   switch (tag) {
    case Heap::kTagString:
     {
-      char* str = value + 24;
+      char* str = HString::Value(value);
       uint32_t length = HString::Length(value);
 
       return HNumber::New(heap, Heap::kTenureNew, StringToDouble(str, length));

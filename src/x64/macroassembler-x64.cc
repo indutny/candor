@@ -519,14 +519,26 @@ void Masm::Call(Operand& addr) {
 
 
 void Masm::Call(Register fn, uint32_t args) {
+  movq(rsi, Immediate(TagNumber(args)));
+
+  CallFunction(fn);
+}
+
+
+void Masm::Call(char* stub) {
+  movq(scratch, reinterpret_cast<uint64_t>(stub));
+
+  Call(scratch);
+}
+
+
+void Masm::CallFunction(Register fn) {
   Operand context_slot(fn, 8);
   Operand code_slot(fn, 16);
   Operand root_slot(fn, 24);
 
   Label binding(this), done(this);
-
   movq(rdi, context_slot);
-  movq(rsi, Immediate(TagNumber(args)));
   movq(root_reg, root_slot);
 
   cmpq(rdi, Immediate(Heap::kBindingContextTag));
@@ -542,13 +554,6 @@ void Masm::Call(Register fn, uint32_t args) {
   Call(stubs()->GetCallBindingStub());
 
   bind(&done);
-}
-
-
-void Masm::Call(char* stub) {
-  movq(scratch, reinterpret_cast<uint64_t>(stub));
-
-  Call(scratch);
 }
 
 } // namespace internal

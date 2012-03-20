@@ -118,15 +118,9 @@ char* CodeSpace::Insert(char* code, uint32_t length) {
 Value* CodeSpace::Run(char* fn, uint32_t argc, Value* argv[]) {
   if (fn == NULL) return NULL;
 
-  char* code = HFunction::Code(fn);
-  char* parent = HFunction::Parent(fn);
-  char* root = HFunction::Root(fn);
-
-  return reinterpret_cast<Code>(entry_)(root,
+  return reinterpret_cast<Code>(entry_)(fn,
                                         HNumber::Tag(argc),
-                                        argv,
-                                        code,
-                                        parent);
+                                        argv);
 }
 
 
