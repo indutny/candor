@@ -161,39 +161,39 @@ void Heap::RemoveWeak(HValue* value) {
 HValue* HValue::CopyTo(Space* old_space, Space* new_space) {
   assert(!IsUnboxed(addr()));
 
-  uint32_t size = 8;
+  uint32_t size = kPointerSize;
   switch (tag()) {
    case Heap::kTagContext:
     // parent + slots
-    size += 16 + As<HContext>()->slots() * 8;
+    size += (2 + As<HContext>()->slots()) * kPointerSize;
     break;
    case Heap::kTagFunction:
     // parent + body
-    size += 24;
+    size += 3 * kPointerSize;
     break;
    case Heap::kTagNumber:
    case Heap::kTagBoolean:
-    size += 8;
+    size += kPointerSize;
     break;
    case Heap::kTagString:
     // hash + length + bytes
-    size += 16 + As<HString>()->length();
+    size += 2 * kPointerSize + As<HString>()->length();
     break;
    case Heap::kTagObject:
     // mask + map
-    size += 16;
+    size += 2 * kPointerSize;
     break;
    case Heap::kTagArray:
     // mask + map + length
-    size += 24;
+    size += 3 * kPointerSize;
     break;
    case Heap::kTagMap:
     // size + space ( keys + values )
-    size += 8 + (As<HMap>()->size() << 4);
+    size += (1 + (As<HMap>()->size() << 1)) * kPointerSize;
     break;
    case Heap::kTagCData:
     // size + data
-    size += 8 + As<HCData>()->size();
+    size += kPointerSize + As<HCData>()->size();
     break;
    default:
     UNEXPECTED
@@ -207,7 +207,7 @@ HValue* HValue::CopyTo(Space* old_space, Space* new_space) {
     result = new_space->Allocate(size);
   }
 
-  memcpy(result, addr(), size);
+  memcpy(result, addr() + interior_offset(0), size);
 
   return HValue::Cast(result);
 }

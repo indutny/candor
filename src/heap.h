@@ -231,6 +231,9 @@ class Heap {
 };
 
 
+#define HINTERIOR_OFFSET(X) X * HValue::kPointerSize
+
+
 class HValue {
  public:
   HValue() { UNEXPECTED }
@@ -262,6 +265,16 @@ class HValue {
 
   inline void IncrementGeneration();
   inline uint8_t Generation();
+
+  static const int kPointerSize = 8;
+  static const int kTagOffset = HINTERIOR_OFFSET(0);
+  static const int kGCMarkOffset = HINTERIOR_OFFSET(1) - 1;
+  static const int kGCForwardOffset = HINTERIOR_OFFSET(1);
+  static const int kGenerationOffset = HINTERIOR_OFFSET(0) + 1;
+
+  static inline int interior_offset(int offset) {
+    return offset * kPointerSize;
+  }
 
   static inline Heap::HeapTag GetTag(char* addr);
   static inline bool IsUnboxed(char* addr);
@@ -331,8 +344,15 @@ class HContext : public HValue {
   inline char* parent() { return *parent_slot(); }
   inline bool has_parent() { return parent() != NULL; }
 
-  inline char** parent_slot() { return reinterpret_cast<char**>(addr() + 8); }
-  inline uint32_t slots() { return *reinterpret_cast<uint64_t*>(addr() + 16); }
+  inline char** parent_slot() {
+    return reinterpret_cast<char**>(addr() + kParentOffset);
+  }
+  inline uint32_t slots() {
+    return *reinterpret_cast<uint64_t*>(addr() + kSlotsOffset);
+  }
+
+  static const int kParentOffset = HINTERIOR_OFFSET(1);
+  static const int kSlotsOffset = HINTERIOR_OFFSET(2);
 
   static const Heap::HeapTag class_tag = Heap::kTagContext;
 };
@@ -352,6 +372,8 @@ class HNumber : public HValue {
 
   static inline bool IsIntegral(char* addr);
 
+  static const int kValueOffset = HINTERIOR_OFFSET(1);
+
   static const Heap::HeapTag class_tag = Heap::kTagNumber;
 };
 
@@ -364,8 +386,10 @@ class HBoolean : public HValue {
   inline bool is_false() { return !is_true(); }
 
   static inline bool Value(char* addr) {
-    return *reinterpret_cast<uint8_t*>(addr + 8) != 0;
+    return *reinterpret_cast<uint8_t*>(addr + kValueOffset) != 0;
   }
+
+  static const int kValueOffset = HINTERIOR_OFFSET(1);
 
   static const Heap::HeapTag class_tag = Heap::kTagBoolean;
 };
@@ -505,6 +529,8 @@ class HCData : public HValue {
 
   static const Heap::HeapTag class_tag = Heap::kTagCData;
 };
+
+#undef HINTERIOR_OFFSET
 
 } // namespace internal
 } // namespace candor
