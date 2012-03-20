@@ -2,6 +2,8 @@ print = global.print
 
 print("-- can: lexer regr#1 --")
 
+
+
 return
 
 // Simple pretty printer
@@ -95,7 +97,7 @@ check(Tcp.listen(server, 128, () {
     }
     if (nread == 0) {
 
-    } else {
+    } else if (true) {
 
       // *candor bug*
       // for some reason `Tcp` is nil the first time this callback is called.

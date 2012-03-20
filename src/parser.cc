@@ -84,6 +84,9 @@ AstNode* Parser::ParseStatement(ParseStatementType type) {
         if (Peek()->is(kElse)) {
           Skip();
           elseBody = ParseBlock(NULL);
+          if (elseBody == NULL) {
+            elseBody = ParseStatement(kLeaveTrailingCr);
+          }
         }
       }
 
