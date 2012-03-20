@@ -1,0 +1,15 @@
+print = global.print
+assert = global.assert
+
+print("-- can: scope regr#2 --")
+
+((a) {
+  a((b) {
+    b()
+  })
+})((fn) {
+  assert(typeof print === 'function')
+  fn(() {
+    assert(typeof print === 'function')
+  })
+})
