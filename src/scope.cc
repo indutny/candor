@@ -67,7 +67,7 @@ ScopeSlot* Scope::GetSlot(const char* name,
   while (scope != NULL) {
     slot = scope->Get(name, length);
 
-    if (slot != NULL) {
+    if (slot != NULL && slot->depth() <= 0) {
       if (slot->is_stack()) {
         slot->type(ScopeSlot::kContext);
 
