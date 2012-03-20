@@ -1,0 +1,439 @@
+print = global.print
+assert = global.assert
+
+print('-- can: return --')
+
+// Basics: return + assign
+returnNil() {
+  return
+}
+assert(returnNil() === nil, "return Nil")
+
+one() {
+  return 1
+}
+assert(one() === 1, "return 1")
+
+assignOnce() {
+  a = 32
+  return a
+}
+assert(assignOnce() === 32, "assign to a and return a")
+
+doubleAssign() {
+  a = b = 32
+  return a
+}
+assert(doubleAssign() === 32, "assign a=b=32 and return a")
+
+assignVarToVar() {
+  a = 32
+  b = a
+  return b
+}
+assert(assignVarToVar() === 32, "assign a=32, b=a and return b")
+
+assignNil() {
+  a = nil
+  return a
+}
+assert(assignNil() === nil, "assign a=nil and return a")
+
+stringDoubleQuotes() {
+  return "abcdef"
+}
+assert(stringDoubleQuotes() === "abcdef", "string in double quotes")
+
+stringSingleQuotes() {
+  return 'abcdef'
+}
+assert(stringDoubleQuotes() === 'abcdef', "string in single quotes")
+
+// Prefix
+typeOfNil() {
+  return typeof nil
+}
+assert(typeOfNil() === "nil", "typeof nil")
+
+typeOfOne() {
+  return typeof 1
+}
+assert(typeOfOne() === "number", "typeof 1")
+
+returnTypeOfStrOneTwoThree() {
+  return typeof '123'
+}
+assert(returnTypeOfStrOneTwoThree() === "string", "return typeof '123'")
+
+returnSizeOfStrOneTwoThree() {
+  return sizeof '123'
+}
+assert(returnSizeOfStrOneTwoThree() === 3, "return sizeof '123'")
+
+returnKeysOfDict() {
+  return keysof { a: 1, b: 2}
+}
+keys = returnKeysOfDict()
+assert(keys[0] === 'a' && keys[1] === 'b', "return keys of a dict")
+
+// Boolean
+returnTrue() {
+  return true
+}
+assert(returnTrue() === true, "true")
+
+returnFalse() {
+  return false
+}
+assert(returnFalse() === false, "false")
+
+// Functions
+function() {
+  a() { }
+  return a
+}
+assert(typeof function() === "function", "function")
+
+functionReturningOne() {
+  a() { return 1 }
+  return a()
+}
+assert(functionReturningOne() === 1, "function returning one")
+
+// Regression
+withDictAsArg() {
+  a() { return 1 }
+  return a({})
+}
+assert(withDictAsArg() === 1, "function called with dict as arg")
+
+argWithConcatReturnsInt() {
+  a() { return 1 }
+  return a('' + 1)
+}
+assert(argWithConcatReturnsInt() === 1, "pass ''+int as arg")
+
+argWithConcatReturnsArg() {
+  a(x) { return x }
+  return a('' + 1)
+}
+assert(argWithConcatReturnsArg() === '1', "pass ''+int as arg, return argument")
+
+multipleArgsHavingConcat() {
+  a() { return 1 }
+  return a('' + 1, '' + 1, '' + 1, ''+ 1)
+}
+assert(multipleArgsHavingConcat() === 1, "pass multiple args which are concat")
+
+addResOfTwoCalls() {
+  a(b) { return b }
+  return a(3) + a(4)
+}
+assert(addResOfTwoCalls() === 7, "add result of two calls")
+
+NilWhenNoArg() {
+  a(b) { return b }
+  return a()
+}
+assert(NilWhenNoArg() === nil, "nil returned when argument is not given")
+
+mulAndAdd() {
+  a(b, c) { return b + 2 * c }
+  return a(1, 2)
+}
+assert(mulAndAdd() === 5, "multiply then add")
+
+nestedCalls() {
+  a(b, c) { return b + 2 * c }
+  return a(a(3, 4), 2)
+}
+assert(nestedCalls() === 15, "nested calling")
+
+passOneFuncToAnother() {
+  b() {
+      return 1
+  }
+  a(c) {
+      return c()
+  }
+  return a(b)
+}
+assert(passOneFuncToAnother() === 1, "one function as arg to another")
+
+anonymousFunction() {
+  a(c) {
+      return c()
+  }
+  return a(() {
+      return 1
+  })
+}
+assert(anonymousFunction() === 1, "anonymous function as arg")
+
+// Context slots
+
+contextSlot1() {
+  b = 13589
+  () { b }
+  return b
+}
+assert(contextSlot1() === 13589, "context slot 1")
+
+contextSlot2() {
+  a() {
+    a
+    b = 1234
+  }
+  b = 13589
+  a()
+  return b
+}
+assert(contextSlot2() === 1234, "context slot 2")
+
+contextSlot3() {
+  a(x) {
+    return b() {
+      return x
+    }
+  }
+  return a(1)()
+}
+assert(contextSlot3() === 1, "context slot 3")
+
+contextSlot4() {
+  return ((x) {
+    y = x
+    return b() {
+      x
+      return y(2)
+    }
+  })((x) { return 2 * x })()
+}
+assert(contextSlot4() === 4, "context slot 4")
+
+// Unary ops
+
+preIncrA() {
+  a = 1
+  return ++a
+}
+assert(preIncrA() === 2, "++a")
+
+postIncrAndAdd() {
+  a = 1
+  return a++ + a
+}
+assert(postIncrAndAdd() === 3, "post incr a and to add to a")
+
+notTrue() {
+  return !true
+}
+assert(notTrue() === false, "not true is false")
+
+notFalse() {
+  return !false
+}
+assert(notFalse() === true, "not false is true")
+
+notZero() {
+  return !0
+}
+assert(notZero() === true, "not zero is true")
+
+notNil() {
+  return !nil
+}
+assert(notNil() === true, "not nil is true")
+
+notOne() {
+  return !1
+}
+assert(notOne() === false, "not one is false")
+
+
+// Objects
+
+emptyDict() {
+  return {}
+}
+assert(typeof emptyDict() === "object", "empty dict is an object")
+
+nonEmptyDict() {
+  return { a : 1 }
+}
+assert(typeof nonEmptyDict() === "object", "empty dict is an object")
+
+addingValuesInDict() {
+  a = {a:1, b:2, c:3, d:4, e:5, f:6, g:7}
+  return a.a + a.b + a.c + a.d + a.e + a.f + a.g
+}
+assert(addingValuesInDict() === 28, "adding values in a dict")
+
+// Nil slot lookup
+
+resultIsNil() {
+  a.x = 1
+}
+assert(resultIsNil() === nil, "result is nil")
+
+nestedDictLookup() {
+  a = { a : { b : 1 } }
+  a = { x: { y: a } }
+  return a.x.y.a.b
+}
+assert(nestedDictLookup() === 1, "nested look up in a dict")
+
+// Rehash and growing
+
+rehash() {
+  a = {}
+  a.a = a.b = a.c = a.d = a.e = a.f = a.g = a.h = 1
+  return a.a + a.b + a.c + a.d + a.e + a.f + a.g + a.h
+}
+assert(rehash() === 8, "rehash")
+
+nonExistingKey() {
+  a = { a: 1, b: 2 }
+  return a.c
+}
+assert(nonExistingKey() === nil, "return non-existing key")
+
+assignToKeyAndReturn() {
+  a = { a: 1, b: 2 }
+  return a.c = (2 + a.a) + a.b
+}
+assert(assignToKeyAndReturn() === 5, "assign to key and return")
+
+dictAndKeyHavingSameName() {
+  a = { a: { b: 2 } }
+  return a.a.b
+}
+assert(dictAndKeyHavingSameName() === 2, "when dict and its key have the same name")
+
+accessDictByInvokingAFunction() {
+  key() {
+    return 'key'
+  }
+  a = { key: 2 }
+  return a[key()]
+}
+assert(accessDictByInvokingAFunction() === 2, "return value of a function as key of dict")
+
+// Numeric keys
+
+integerKeys() {
+  a = { 1: 2, 2: 3, '1': 2, '2': 3}
+  return a[1] + a[2] + a['1'] + a['2'] + a[1.0] + a[2.0]
+}
+assert(integerKeys() === 15, "integers as keys")
+
+floatKeys() {
+  a = { 1.1: 2, 2.2: 3}
+  return a[1.1] + a[2.2]
+}
+assert(floatKeys() === 5, "float as keys")
+
+// Arrays
+
+addElementsOfArray() {
+  a = [ 1, 2, 3, 4 ]
+  return a[0] + a[1] + a[2] + a[3]
+}
+assert(addElementsOfArray() === 10, "adding elements of an array")
+
+sizeOfArray() {
+  a = [ 1, 2, 3, 4 ]
+  return sizeof a
+}
+assert(sizeOfArray() === 4, "size of an array")
+
+typeOfArray() {
+  a = [ 1, 2, 3, 4 ]
+  return typeof a
+}
+assert(typeOfArray() === "array", "type of an array")
+
+// Global lookup
+
+globalLookup() {
+  global.a = 1
+  return global.a
+}
+assert(globalLookup() === 1, "look up global value")
+
+// If
+
+ifWithTrue() {
+  if (true) {
+    return 1
+  } else {
+    return 2
+  }
+}
+assert(ifWithTrue() === 1, "if true -> 1, else -> 2")
+
+ifWithFalse() {
+  if (false) {
+    return 1
+  } else {
+    return 2
+  }
+}
+assert(ifWithFalse() === 2, "if false -> 1, else -> 2")
+
+ifWithOne() {
+  if (1) {
+    return 1
+  } else {
+    return 2
+  }
+}
+assert(ifWithOne() === 1, "if 1 -> 1, else -> 2")
+
+ifWithZero() {
+  if (0) {
+    return 1
+  } else {
+    return 2
+  }
+}
+assert(ifWithZero() === 2, "if 0 -> 1, else -> 2")
+
+ifWithOneTwoThree() {
+  if (123) {
+    return 1
+  } else {
+    return 2
+  }
+}
+assert(ifWithOneTwoThree() === 1, "if 123 -> 1, else -> 2")
+
+ifWithEmptyString() {
+  if ('') {
+    return 1
+  } else {
+    return 2
+  }
+}
+assert(ifWithEmptyString() === 2, "if '' -> 1, else -> 2")
+
+ifWithNil() {
+  if (nil) {
+    return 1
+  } else {
+    return 2
+  }
+}
+assert(ifWithNil() === 2, "if nil -> 1, else -> 2")
+
+// While
+
+afterWhileLoop() {
+  i = 10
+  j = 0
+  while (i--) {
+    j = j + 1
+  }
+  return j
+}
+assert(afterWhileLoop() === 10, "after a while loop")
