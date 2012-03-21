@@ -131,11 +131,11 @@ void Masm::Allocate(Heap::HeapTag tag,
 
     // Add tag size
     if (size_reg.is(reg_nil)) {
-      movq(rax, Immediate(TagNumber(size + 8)));
+      movq(rax, Immediate(TagNumber(size + HValue::kPointerSize)));
     } else {
       movq(rax, size_reg);
       Untag(rax);
-      addq(rax, Immediate(8));
+      addq(rax, Immediate(HValue::kPointerSize));
       TagNumber(rax);
     }
     push(rax);
@@ -158,19 +158,19 @@ void Masm::AllocateContext(uint32_t slots) {
   Spill rax_s(this, rax);
 
   // parent + number of slots + slots
-  Allocate(Heap::kTagContext, reg_nil, 8 * (slots + 2), rax);
+  Allocate(Heap::kTagContext, reg_nil, HValue::kPointerSize * (slots + 2), rax);
 
   // Move address of current context to first slot
-  Operand qparent(rax, 8);
+  Operand qparent(rax, HContext::kParentOffset);
   movq(qparent, rdi);
 
   // Save number of slots
-  Operand qslots(rax, 16);
+  Operand qslots(rax, HContext::kSlotsOffset);
   movq(qslots, Immediate(slots));
 
   // Clear context
   for (uint32_t i = 0; i < slots; i++) {
-    Operand qslot(rax, 24 + i * 8);
+    Operand qslot(rax, HContext::GetIndexDisp(i));
     movq(qslot, Immediate(Heap::kTagNil));
   }
 
@@ -185,12 +185,12 @@ void Masm::AllocateContext(uint32_t slots) {
 
 void Masm::AllocateFunction(Register addr, Register result) {
   // context + code
-  Allocate(Heap::kTagFunction, reg_nil, 8 * 3, result);
+  Allocate(Heap::kTagFunction, reg_nil, HValue::kPointerSize * 3, result);
 
   // Move address of current context to first slot
-  Operand qparent(result, 8);
-  Operand qaddr(result, 16);
-  Operand qroot(result, 24);
+  Operand qparent(result, HFunction::kParentOffset);
+  Operand qaddr(result, HFunction::kCodeOffset);
+  Operand qroot(result, HFunction::kRootOffset);
   movq(qparent, rdi);
   movq(qaddr, addr);
   movq(qroot, root_reg);
@@ -202,9 +202,9 @@ void Masm::AllocateFunction(Register addr, Register result) {
 
 
 void Masm::AllocateNumber(DoubleRegister value, Register result) {
-  Allocate(Heap::kTagNumber, reg_nil, 8, result);
+  Allocate(Heap::kTagNumber, reg_nil, HValue::kPointerSize, result);
 
-  Operand qvalue(result, 8);
+  Operand qvalue(result, HNumber::kValueOffset);
   movqd(qvalue, value);
 
   CheckGC();
@@ -217,14 +217,14 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
   // mask + map
   Allocate(tag,
            reg_nil,
-           tag == Heap::kTagArray ? 24 : 16,
+           (tag == Heap::kTagArray ? 3 : 2) * HValue::kPointerSize,
            result);
 
-  Operand qmask(result, 8);
+  Operand qmask(result, HObject::kMaskOffset);
   Operand qmap(result, HObject::kMapOffset);
 
   // Array only field
-  Operand qlength(result, 24);
+  Operand qlength(result, HArray::kLengthOffset);
 
   // Set mask
   movq(scratch, size);
@@ -260,7 +260,7 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
 
   // Fill map with nil
   shl(size, Immediate(4));
-  addq(result, Immediate(16));
+  addq(result, Immediate(HMap::kSpaceOffset));
   addq(size, result);
   subq(size, Immediate(8));
   Fill(result, size, Immediate(Heap::kTagNil));
@@ -483,7 +483,7 @@ void Masm::IsHeapObject(Heap::HeapTag tag,
                         Register reference,
                         Label* mismatch,
                         Label* match) {
-  Operand qtag(reference, 0);
+  Operand qtag(reference, HValue::kTagOffset);
   cmpb(qtag, Immediate(tag));
   if (mismatch != NULL) jmp(kNe, mismatch);
   if (match != NULL) jmp(kEq, match);
@@ -493,7 +493,7 @@ void Masm::IsHeapObject(Heap::HeapTag tag,
 void Masm::IsTrue(Register reference, Label* is_false, Label* is_true) {
   // reference is definitely a boolean value
   // so no need to check it's type here
-  Operand bvalue(reference, 8);
+  Operand bvalue(reference, HBoolean::kValueOffset);
   cmpb(bvalue, Immediate(0));
   if (is_false != NULL) jmp(kEq, is_false);
   if (is_true != NULL) jmp(kNe, is_true);
@@ -533,9 +533,9 @@ void Masm::Call(char* stub) {
 
 
 void Masm::CallFunction(Register fn) {
-  Operand context_slot(fn, 8);
-  Operand code_slot(fn, 16);
-  Operand root_slot(fn, 24);
+  Operand context_slot(fn, HFunction::kParentOffset);
+  Operand code_slot(fn, HFunction::kCodeOffset);
+  Operand root_slot(fn, HFunction::kRootOffset);
 
   Label binding(this), done(this);
   movq(rdi, context_slot);
