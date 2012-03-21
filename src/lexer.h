@@ -78,6 +78,7 @@ class Lexer {
     kContinue,
     kReturn,
     kNew,
+    kDelete,
     kTypeof,
     kSizeof,
     kKeysof,

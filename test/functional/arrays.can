@@ -15,3 +15,7 @@ assert(sizeof a == 5, "growing")
 // Shrinking
 a[4] = nil
 assert(sizeof a == 4, "shrinking")
+
+// Delete
+delete a[3]
+assert(sizeof a == 3, "delete")

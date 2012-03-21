@@ -24,6 +24,7 @@ namespace internal {
     V(LookupProperty)\
     V(CoerceToBoolean)\
     V(CloneObject)\
+    V(DeleteProperty)
 
 #define BINARY_STUBS_LIST(V)\
     V(Add)\

@@ -360,6 +360,11 @@ Value* Object::Get(Value* key) {
 }
 
 
+void Object::Delete(Value* key) {
+  RuntimeDeleteProperty(Isolate::GetCurrent()->heap, addr(), key->addr());
+}
+
+
 void Object::Set(const char* key, Value* value) {
   return Set(String::New(key), value);
 }
@@ -367,6 +372,11 @@ void Object::Set(const char* key, Value* value) {
 
 Value* Object::Get(const char* key) {
   return Get(String::New(key));
+}
+
+
+void Object::Delete(const char* key) {
+  return Delete(String::New(key));
 }
 
 

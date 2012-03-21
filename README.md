@@ -95,6 +95,8 @@ a.b = "abc"
 a.b.c = a
 a[b()][c] = x
 
+delete a[b] // removes key and value from object
+
 // While object literals are restricted to declaring strings as keys, any value
 // can be used as a key. This allows for all kinds of interesting data
 // structures like efficient sets and unique unguessable keys.

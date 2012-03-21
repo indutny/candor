@@ -174,6 +174,8 @@ class Object : public Value {
   void Set(const char* key, Value* value);
   Value* Get(Value* key);
   Value* Get(const char* key);
+  void Delete(Value* key);
+  void Delete(const char* key);
 
   Array* Keys();
   Object* Clone();

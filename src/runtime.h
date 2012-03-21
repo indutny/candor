@@ -64,6 +64,11 @@ char* RuntimeKeysof(Heap* heap, char* value);
 
 char* RuntimeCloneObject(Heap* heap, char* obj);
 
+typedef void (*RuntimeDeletePropertyCallback)(Heap* heap,
+                                              char* obj,
+                                              char* property);
+void RuntimeDeleteProperty(Heap* heap, char* obj, char* property);
+
 } // namespace internal
 } // namespace candor
 

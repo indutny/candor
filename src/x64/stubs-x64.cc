@@ -595,6 +595,32 @@ void CloneObjectStub::Generate() {
 }
 
 
+void DeletePropertyStub::Generate() {
+  GeneratePrologue();
+
+  // rax <- receiver
+  // rbx <- property
+  //
+  RuntimeDeletePropertyCallback delp = &RuntimeDeleteProperty;
+
+  __ Pushad();
+
+  // RuntimeDeleteProperty(heap, obj, property)
+  __ movq(rdi, Immediate(reinterpret_cast<uint64_t>(masm()->heap())));
+  __ movq(rsi, rax);
+  __ movq(rdx, rbx);
+  __ movq(rax, Immediate(*reinterpret_cast<uint64_t*>(&delp)));
+  __ callq(rax);
+
+  __ Popad(reg_nil);
+
+  // Delete property returns nil
+  __ movq(rax, Immediate(Heap::kTagNil));
+
+  GenerateEpilogue(0);
+}
+
+
 #define BINARY_SUB_TYPES(V)\
     V(Add)\
     V(Sub)\

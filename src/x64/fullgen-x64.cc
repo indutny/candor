@@ -685,6 +685,27 @@ AstNode* Fullgen::VisitNew(AstNode* node) {
 }
 
 
+AstNode* Fullgen::VisitDelete(AstNode* node) {
+  if (!node->lhs()->is(AstNode::kMember)) {
+    Throw(Heap::kErrorIncorrectLhs);
+    return node;
+  }
+
+  AstNode* receiver = node->lhs()->lhs();
+  AstNode* property = node->lhs()->rhs();
+
+  VisitForValue(property);
+  Spill rax_s(this, rax);
+
+  VisitForValue(receiver);
+  rax_s.Unspill(rbx);
+
+  Call(stubs()->GetDeletePropertyStub());
+
+  return node;
+}
+
+
 AstNode* Fullgen::VisitBreak(AstNode* node) {
   if (loop_end() == NULL) {
     Throw(Heap::kErrorExpectedLoop);

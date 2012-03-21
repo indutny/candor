@@ -676,5 +676,17 @@ char* RuntimeCloneObject(Heap* heap, char* obj) {
   return result;
 }
 
+
+void RuntimeDeleteProperty(Heap* heap, char* obj, char* property) {
+  off_t offset = RuntimeLookupProperty(heap, obj, property, 0);
+
+  // Nil value
+  *reinterpret_cast<uint64_t*>(HObject::Map(obj) + offset) = Heap::kTagNil;
+
+  // Nil property
+  off_t keyoffset = offset - HObject::Mask(obj) - HValue::kPointerSize;
+  *reinterpret_cast<uint64_t*>(HObject::Map(obj) + keyoffset) = Heap::kTagNil;
+}
+
 } // namespace internal
 } // namespace candor

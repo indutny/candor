@@ -13,3 +13,6 @@ assert(obj[a] == 1, "non-string and non-number key")
 keys = keysof obj
 assert(sizeof keys == 1, "keysof should work")
 assert(keys[0] === a, "key should be the object")
+
+delete obj[a]
+assert(obj[a] === nil, "lookup after delete")

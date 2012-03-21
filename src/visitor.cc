@@ -17,6 +17,7 @@ namespace internal {
     V(ObjectLiteral)\
     V(ArrayLiteral)\
     V(New)\
+    V(Delete)\
     V(Return)\
     V(Break)\
     V(Continue)\

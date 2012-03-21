@@ -221,6 +221,7 @@ AstNode* Parser::ParseExpression(int priority) {
    case kSizeof:
    case kKeysof:
    case kNew:
+   case kDelete:
     {
       Position pos(this);
 
