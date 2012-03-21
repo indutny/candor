@@ -16,7 +16,7 @@ inline Heap::HeapTag HValue::GetTag(char* addr) {
 
 
 inline bool HValue::IsUnboxed(char* addr) {
-  return (reinterpret_cast<off_t>(addr) & 0x01) == 0;
+  return (*reinterpret_cast<uint8_t*>(&addr) & 0x01) == 0;
 }
 
 
