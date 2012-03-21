@@ -36,6 +36,7 @@ using namespace internal;
     template Handle<V>::~Handle();\
     template void Handle<V>::Wrap(Value* v);\
     template void Handle<V>::Unwrap();\
+    template bool Handle<V>::IsEmpty();\
     template void Handle<V>::SetWeakCallback(WeakCallback callback);\
     template void Handle<V>::ClearWeak();
 TYPES_LIST(METHODS_ENUM)
@@ -128,6 +129,12 @@ void Handle<T>::Unwrap() {
   isolate->heap->Dereference(reinterpret_cast<HValue**>(&value),
                              reinterpret_cast<HValue*>(value));
   value = NULL;
+}
+
+
+template <class T>
+bool Handle<T>::IsEmpty() {
+  return value == NULL;
 }
 
 

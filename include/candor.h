@@ -220,6 +220,8 @@ class Handle {
   void Wrap(Value* v);
   void Unwrap();
 
+  bool IsEmpty();
+
   typedef void (*WeakCallback)(T* value);
 
   void SetWeakCallback(WeakCallback callback);
