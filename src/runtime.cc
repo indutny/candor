@@ -167,15 +167,15 @@ off_t RuntimeLookupProperty(Heap* heap,
 char* RuntimeGrowObject(Heap* heap, char* obj) {
   char** map_addr = HObject::MapSlot(obj);
   char* map = *map_addr;
-  uint32_t size = HValue::As<HMap>(map)->size();
+  uint32_t size = HValue::As<HMap>(map)->size() << 1;
 
   char* new_map = heap->AllocateTagged(
       Heap::kTagMap,
       Heap::kTenureNew,
-      (1 + (size << 2)) * HValue::kPointerSize);
+      (1 + (size << 1)) * HValue::kPointerSize);
 
   // Set map size
-  *(uint32_t*)(new_map + HMap::kSizeOffset) = size << 1;
+  *(uint32_t*)(new_map + HMap::kSizeOffset) = size;
 
   // Fill new map with zeroes
   {
@@ -191,13 +191,13 @@ char* RuntimeGrowObject(Heap* heap, char* obj) {
   *map_addr = new_map;
 
   // Change mask
-  uint32_t mask = ((size << 1) - 1) * HValue::kPointerSize;
+  uint32_t mask = (size - 1) * HValue::kPointerSize;
   *HObject::MaskSlot(obj) = mask;
 
   char* space = HValue::As<HMap>(map)->space();
 
   // And rehash properties to new map
-  uint32_t big_size = size * HValue::kPointerSize;
+  uint32_t big_size = (size >> 1) * HValue::kPointerSize;
   for (uint32_t index = 0; index < big_size; index += HValue::kPointerSize) {
     char* key = *reinterpret_cast<char**>(space + index);
     if (key == HNil::New()) continue;
