@@ -427,6 +427,7 @@ class HString : public HValue {
 class HObject : public HValue {
  public:
   static char* NewEmpty(Heap* heap);
+  static void Init(Heap* heap, char* obj);
 
   inline char* map() { return *map_slot(); }
   inline char** map_slot() { return MapSlot(addr()); }
@@ -525,7 +526,7 @@ class HCData : public HValue {
   static char* New(Heap* heap, size_t size);
 
   static inline uint32_t Size(char* addr) {
-    return *reinterpret_cast<uint32_t*>(addr + kLengthOffset);
+    return *reinterpret_cast<uint32_t*>(addr + kSizeOffset);
   }
 
   static inline void* Data(char* addr) {
@@ -535,7 +536,7 @@ class HCData : public HValue {
   inline uint32_t size() { return Size(addr()); }
   inline void* data() { return Data(addr()); }
 
-  static const int kLengthOffset = HINTERIOR_OFFSET(1);
+  static const int kSizeOffset = HINTERIOR_OFFSET(1);
   static const int kDataOffset = HINTERIOR_OFFSET(2);
 
   static const Heap::HeapTag class_tag = Heap::kTagCData;

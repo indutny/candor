@@ -297,11 +297,18 @@ uint32_t HString::Hash(char* addr) {
 
 
 char* HObject::NewEmpty(Heap* heap) {
-  uint32_t size = 16;
-
   char* obj = heap->AllocateTagged(Heap::kTagObject,
                                    Heap::kTenureNew,
                                    2 * kPointerSize);
+  HObject::Init(heap, obj);
+
+  return obj;
+}
+
+
+void HObject::Init(Heap* heap, char* obj) {
+  uint32_t size = 16;
+
   char* map = heap->AllocateTagged(Heap::kTagMap,
                                    Heap::kTenureNew,
                                    ((size << 1) + 1) * kPointerSize);
@@ -320,8 +327,6 @@ char* HObject::NewEmpty(Heap* heap) {
   for (uint32_t i = 0; i < size; i += kPointerSize) {
     map[i + HMap::kSpaceOffset] = Heap::kTagNil;
   }
-
-  return obj;
 }
 
 
@@ -334,36 +339,19 @@ char** HObject::LookupProperty(Heap* heap, char* addr, char* key, int insert) {
 }
 
 
-
-
 char* HArray::NewEmpty(Heap* heap) {
-  uint32_t size = 16;
-
-  char* obj = heap->AllocateTagged(Heap::kTagArray, Heap::kTenureNew, 24);
-  char* map = heap->AllocateTagged(Heap::kTagMap,
+  char* obj = heap->AllocateTagged(Heap::kTagArray,
                                    Heap::kTenureNew,
-                                   (size << 4) + 8);
+                                   3 * kPointerSize);
 
-  // Set mask
-  *reinterpret_cast<uint64_t*>(obj + kMaskOffset) = (size - 1) << 3;
-  // Set map
-  *reinterpret_cast<char**>(obj + kMapOffset) = map;
+  HObject::Init(heap, obj);
 
   // Set length
   SetLength(obj, 0);
 
-  // Set map's size
-  *reinterpret_cast<uint64_t*>(map + HMap::kSizeOffset) = size;
-
-  // Nullify all map's slots (both keys and values)
-  size = size << 4;
-  memset(map + HMap::kSpaceOffset, 0x00, size);
-  for (uint32_t i = 0; i < size; i += 8) {
-    map[i + 16] = Heap::kTagNil;
-  }
-
   return obj;
 }
+
 
 int64_t HArray::Length(char* obj, bool shrink) {
   int64_t result = *reinterpret_cast<int64_t*>(obj + kLengthOffset);
@@ -396,16 +384,18 @@ int64_t HArray::Length(char* obj, bool shrink) {
 
 
 char* HFunction::New(Heap* heap, char* parent, char* addr, char* root) {
-  char* fn = heap->AllocateTagged(Heap::kTagFunction, Heap::kTenureOld, 24);
+  char* fn = heap->AllocateTagged(Heap::kTagFunction,
+                                  Heap::kTenureOld,
+                                  3 * kPointerSize);
 
   // Set parent context
-  *reinterpret_cast<char**>(fn + 8) = parent;
+  *reinterpret_cast<char**>(fn + kParentOffset) = parent;
 
   // Set pointer to code
-  *reinterpret_cast<char**>(fn + 16) = addr;
+  *reinterpret_cast<char**>(fn + kCodeOffset) = addr;
 
   // Set root context
-  *reinterpret_cast<char**>(fn + 24) = root;
+  *reinterpret_cast<char**>(fn + kRootOffset) = root;
 
   return fn;
 }
@@ -420,9 +410,11 @@ char* HFunction::NewBinding(Heap* heap, char* addr, char* root) {
 
 
 char* HCData::New(Heap* heap, size_t size) {
-  char* d = heap->AllocateTagged(Heap::kTagCData, Heap::kTenureNew, 8 + size);
+  char* d = heap->AllocateTagged(Heap::kTagCData,
+                                 Heap::kTenureNew,
+                                 kPointerSize + size);
 
-  *reinterpret_cast<uint32_t*>(d + 8) = size;
+  *reinterpret_cast<uint32_t*>(d + kSizeOffset) = size;
 
   return d;
 }
