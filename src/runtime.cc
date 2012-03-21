@@ -131,7 +131,7 @@ off_t RuntimeLookupProperty(Heap* heap,
 
   // Dive into space and walk it in circular manner
   uint32_t start = hash & mask;
-  uint32_t end = start == 0 ? mask : start - 8;
+  uint32_t end = start == 0 ? mask : start - HValue::kPointerSize;
 
   uint32_t index = start;
   char* key_slot;
@@ -144,7 +144,7 @@ off_t RuntimeLookupProperty(Heap* heap,
       if (RuntimeStrictCompare(key_slot, key) == 0) break;
     }
 
-    index += 8;
+    index += HValue::kPointerSize;
     if (index > mask) index = 0;
   }
 
@@ -160,7 +160,7 @@ off_t RuntimeLookupProperty(Heap* heap,
     *reinterpret_cast<char**>(space + index) = keyptr;
   }
 
-  return HMap::kSpaceOffset + index + (mask + 8);
+  return HMap::kSpaceOffset + index + (mask + HValue::kPointerSize);
 }
 
 
@@ -169,19 +169,21 @@ char* RuntimeGrowObject(Heap* heap, char* obj) {
   char* map = *map_addr;
   uint32_t size = HValue::As<HMap>(map)->size();
 
-  char* new_map = heap->AllocateTagged(Heap::kTagMap,
-                                       Heap::kTenureNew,
-                                       9 + (size << 5));
+  char* new_map = heap->AllocateTagged(
+      Heap::kTagMap,
+      Heap::kTenureNew,
+      (1 + (size << 2)) * HValue::kPointerSize);
+
   // Set map size
-  *(uint32_t*)(new_map + 8) = size << 1;
+  *(uint32_t*)(new_map + HMap::kSizeOffset) = size << 1;
 
   // Fill new map with zeroes
   {
-    uint32_t size_f = size << 5;
-    memset(new_map + 16, 0, size_f + 1);
+    uint32_t size_f = (size << 1) * HValue::kPointerSize;
+    memset(new_map + HMap::kSpaceOffset, 0, size_f);
 
-    for (uint32_t i = 0; i < size_f; i += 8) {
-      new_map[i + 16] = Heap::kTagNil;
+    for (uint32_t i = 0; i < size_f; i += HValue::kPointerSize) {
+      new_map[i + HMap::kSpaceOffset] = Heap::kTagNil;
     }
   }
 
@@ -189,14 +191,14 @@ char* RuntimeGrowObject(Heap* heap, char* obj) {
   *map_addr = new_map;
 
   // Change mask
-  uint32_t mask = (size << 4) - 8;
+  uint32_t mask = ((size << 1) - 1) * HValue::kPointerSize;
   *HObject::MaskSlot(obj) = mask;
 
   char* space = HValue::As<HMap>(map)->space();
 
   // And rehash properties to new map
-  uint32_t big_size = size << 3;
-  for (uint32_t index = 0; index < big_size; index += 8) {
+  uint32_t big_size = size * HValue::kPointerSize;
+  for (uint32_t index = 0; index < big_size; index += HValue::kPointerSize) {
     char* key = *reinterpret_cast<char**>(space + index);
     if (key == HNil::New()) continue;
 
