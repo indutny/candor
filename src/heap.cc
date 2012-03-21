@@ -217,19 +217,19 @@ char* HContext::New(Heap* heap,
                     List<char*, ZoneObject>* values) {
   char* result = heap->AllocateTagged(Heap::kTagContext,
                                       Heap::kTenureOld,
-                                      16 + values->length() * 8);
+                                      (2 + values->length()) * kPointerSize);
 
   // Zero parent
-  *reinterpret_cast<char**>(result + 8) = HNil::New();
+  *reinterpret_cast<char**>(result + kParentOffset) = HNil::New();
 
   // Put size
-  *reinterpret_cast<uint64_t*>(result + 16) = values->length();
+  *reinterpret_cast<uint64_t*>(result + kSlotsOffset) = values->length();
 
   // Put all values
-  char* slot = result + 24;
+  char* slot = result + GetIndexDisp(0);
   while (values->length() != 0) {
     *reinterpret_cast<char**>(slot) = values->Shift();
-    slot += 8;
+    slot += kPointerSize;
   }
 
   return result;
@@ -242,15 +242,15 @@ char* HNumber::New(Heap* heap, int64_t value) {
 
 
 char* HNumber::New(Heap* heap, Heap::TenureType tenure, double value) {
-  char* result = heap->AllocateTagged(Heap::kTagNumber, tenure, 8);
-  *reinterpret_cast<double*>(result + 8) = value;
+  char* result = heap->AllocateTagged(Heap::kTagNumber, tenure, kPointerSize);
+  *reinterpret_cast<double*>(result + kValueOffset) = value;
   return result;
 }
 
 
 char* HBoolean::New(Heap* heap, Heap::TenureType tenure, bool value) {
-  char* result = heap->AllocateTagged(Heap::kTagBoolean, tenure, 8);
-  *reinterpret_cast<int8_t*>(result + 8) = value ? 1 : 0;
+  char* result = heap->AllocateTagged(Heap::kTagBoolean, tenure, kPointerSize);
+  *reinterpret_cast<int8_t*>(result + kValueOffset) = value ? 1 : 0;
 
   return result;
 }
@@ -259,7 +259,9 @@ char* HBoolean::New(Heap* heap, Heap::TenureType tenure, bool value) {
 char* HString::New(Heap* heap,
                    Heap::TenureType tenure,
                    uint32_t length) {
-  char* result = heap->AllocateTagged(Heap::kTagString, tenure, length + 24);
+  char* result = heap->AllocateTagged(Heap::kTagString,
+                                      tenure,
+                                      length + 3 * kPointerSize);
 
   // Zero hash
   *reinterpret_cast<uint64_t*>(result + kHashOffset) = 0;
@@ -297,13 +299,15 @@ uint32_t HString::Hash(char* addr) {
 char* HObject::NewEmpty(Heap* heap) {
   uint32_t size = 16;
 
-  char* obj = heap->AllocateTagged(Heap::kTagObject, Heap::kTenureNew, 16);
+  char* obj = heap->AllocateTagged(Heap::kTagObject,
+                                   Heap::kTenureNew,
+                                   2 * kPointerSize);
   char* map = heap->AllocateTagged(Heap::kTagMap,
                                    Heap::kTenureNew,
-                                   (size << 4) + 8);
+                                   ((size << 1) + 1) * kPointerSize);
 
   // Set mask
-  *reinterpret_cast<uint64_t*>(obj + kMaskOffset) = (size - 1) << 3;
+  *reinterpret_cast<uint64_t*>(obj + kMaskOffset) = (size - 1) * kPointerSize;
   // Set map
   *reinterpret_cast<char**>(obj + kMapOffset) = map;
 
@@ -311,10 +315,10 @@ char* HObject::NewEmpty(Heap* heap) {
   *reinterpret_cast<uint64_t*>(map + HMap::kSizeOffset) = size;
 
   // Nullify all map's slots (both keys and values)
-  size = size << 4;
+  size = (size << 1) * kPointerSize;
   memset(map + HMap::kSpaceOffset, 0x00, size);
-  for (uint32_t i = 0; i < size; i += 8) {
-    map[i + 16] = Heap::kTagNil;
+  for (uint32_t i = 0; i < size; i += kPointerSize) {
+    map[i + HMap::kSpaceOffset] = Heap::kTagNil;
   }
 
   return obj;

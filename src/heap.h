@@ -416,9 +416,9 @@ class HString : public HValue {
     return *reinterpret_cast<uint32_t*>(addr + kLengthOffset);
   }
 
-  static const int kHashOffset = 8;
-  static const int kLengthOffset = 16;
-  static const int kValueOffset = 24;
+  static const int kHashOffset = HINTERIOR_OFFSET(1);
+  static const int kLengthOffset = HINTERIOR_OFFSET(2);
+  static const int kValueOffset = HINTERIOR_OFFSET(3);
 
   static const Heap::HeapTag class_tag = Heap::kTagString;
 };
@@ -444,8 +444,8 @@ class HObject : public HValue {
 
   static char** LookupProperty(Heap* heap, char* addr, char* key, int insert);
 
-  static const int kMaskOffset = 8;
-  static const int kMapOffset = 16;
+  static const int kMaskOffset = HINTERIOR_OFFSET(1);
+  static const int kMapOffset = HINTERIOR_OFFSET(2);
 
   static const Heap::HeapTag class_tag = Heap::kTagObject;
 };
@@ -461,7 +461,7 @@ class HArray : public HObject {
     *reinterpret_cast<int64_t*>(obj + kLengthOffset) = length;
   }
 
-  static const int kLengthOffset = 24;
+  static const int kLengthOffset = HINTERIOR_OFFSET(3);
 
   static const Heap::HeapTag class_tag = Heap::kTagArray;
 };
@@ -478,8 +478,8 @@ class HMap : public HValue {
   }
   inline char* space() { return addr() + kSpaceOffset; }
 
-  static const int kSizeOffset = 8;
-  static const int kSpaceOffset = 16;
+  static const int kSizeOffset = HINTERIOR_OFFSET(1);
+  static const int kSpaceOffset = HINTERIOR_OFFSET(2);
 
   static const Heap::HeapTag class_tag = Heap::kTagMap;
 };
@@ -491,22 +491,30 @@ class HFunction : public HValue {
   static char* NewBinding(Heap* heap, char* addr, char* root);
 
   static inline char* Root(char* addr) {
-    return *reinterpret_cast<char**>(addr + 24);
+    return *reinterpret_cast<char**>(addr + kRootOffset);
   }
   static inline char* Code(char* addr) {
-    return *reinterpret_cast<char**>(addr + 16);
+    return *reinterpret_cast<char**>(addr + kCodeOffset);
   }
   static inline char* Parent(char* addr) {
-    return *reinterpret_cast<char**>(addr + 8);
+    return *reinterpret_cast<char**>(addr + kParentOffset);
   }
 
   static inline char* GetContext(char* addr);
   static inline void SetContext(char* addr, char* context);
 
   inline char* root() { return *root_slot(); }
-  inline char** root_slot() { return reinterpret_cast<char**>(addr() + 24); }
+  inline char** root_slot() {
+    return reinterpret_cast<char**>(addr() + kRootOffset);
+  }
   inline char* parent() { return *parent_slot(); }
-  inline char** parent_slot() { return reinterpret_cast<char**>(addr() + 8); }
+  inline char** parent_slot() {
+    return reinterpret_cast<char**>(addr() + kParentOffset);
+  }
+
+  static const int kParentOffset = HINTERIOR_OFFSET(1);
+  static const int kCodeOffset = HINTERIOR_OFFSET(2);
+  static const int kRootOffset = HINTERIOR_OFFSET(3);
 
   static const Heap::HeapTag class_tag = Heap::kTagFunction;
 };
@@ -517,15 +525,18 @@ class HCData : public HValue {
   static char* New(Heap* heap, size_t size);
 
   static inline uint32_t Size(char* addr) {
-    return *reinterpret_cast<uint32_t*>(addr + 8);
+    return *reinterpret_cast<uint32_t*>(addr + kLengthOffset);
   }
 
   static inline void* Data(char* addr) {
-    return reinterpret_cast<void*>(addr + 16);
+    return reinterpret_cast<void*>(addr + kDataOffset);
   }
 
   inline uint32_t size() { return Size(addr()); }
   inline void* data() { return Data(addr()); }
+
+  static const int kLengthOffset = HINTERIOR_OFFSET(1);
+  static const int kDataOffset = HINTERIOR_OFFSET(2);
 
   static const Heap::HeapTag class_tag = Heap::kTagCData;
 };
