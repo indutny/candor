@@ -204,7 +204,7 @@ void AllocateStub::Generate() {
   __ bind(&done);
 
   // Set tag
-  Operand qtag(rax, 0);
+  Operand qtag(rax, HValue::kTagOffset);
   __ movq(scratch, tag);
   __ Untag(scratch);
   __ movq(qtag, scratch);
@@ -239,7 +239,7 @@ void CallBindingStub::Generate() {
 
   __ ExitFramePrologue();
 
-  Operand code(scratch, 16);
+  Operand code(scratch, HFunction::kCodeOffset);
 
   __ movq(scratch, fn);
   __ Call(code);
@@ -295,7 +295,7 @@ void TypeofStub::Generate() {
   __ jmp(&done);
   __ bind(&not_unboxed);
 
-  Operand btag(rax, 0);
+  Operand btag(rax, HValue::kTagOffset);
   __ movzxb(rax, btag);
   __ shl(rax, Immediate(3));
   __ addq(rax, Immediate(HContext::GetIndexDisp(
@@ -425,7 +425,7 @@ void LookupPropertyStub::Generate() {
     // rax = key_offset + mask + 8
     __ movq(rax, rdx);
     __ addq(rax, r15);
-    __ addq(rax, Immediate(8));
+    __ addq(rax, Immediate(HValue::kPointerSize));
 
     // Cleanup
     __ xorq(r15, r15);
@@ -568,6 +568,7 @@ void CloneObjectStub::Generate() {
   __ movq(scratch, from);
   __ movq(to, scratch);
 
+  // Move forward
   __ addq(rax, Immediate(8));
   __ addq(rbx, Immediate(8));
 
@@ -765,8 +766,8 @@ void BinOpStub::Generate() {
   __ IsHeapObject(Heap::kTagNumber, rbx, &call_runtime, NULL);
 
   // We're adding two heap numbers
-  Operand lvalue(rax, 8);
-  Operand rvalue(rbx, 8);
+  Operand lvalue(rax, HNumber::kValueOffset);
+  Operand rvalue(rbx, HNumber::kValueOffset);
   __ movq(rax, lvalue);
   __ movq(rbx, rvalue);
   __ movqd(xmm1, rax);
