@@ -231,7 +231,7 @@ class Heap {
 };
 
 
-#define HINTERIOR_OFFSET(X) X * HValue::kPointerSize
+#define HINTERIOR_OFFSET(X) X * HValue::kPointerSize - 1
 
 
 class HValue {
@@ -273,7 +273,7 @@ class HValue {
   static const int kGenerationOffset = HINTERIOR_OFFSET(0) + 1;
 
   static inline int interior_offset(int offset) {
-    return offset * kPointerSize;
+    return HINTERIOR_OFFSET(offset);
   }
 
   static inline Heap::HeapTag GetTag(char* addr);

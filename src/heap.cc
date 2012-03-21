@@ -119,7 +119,7 @@ char* Heap::AllocateTagged(HeapTag tag, TenureType tenure, uint32_t bytes) {
   if (tenure == kTenureOld) {
     qtag = qtag | (kMinOldSpaceGeneration << 8);
   }
-  *reinterpret_cast<uint64_t*>(result) = qtag;
+  *reinterpret_cast<uint64_t*>(result + HValue::kTagOffset) = qtag;
 
   return result;
 }
@@ -207,7 +207,7 @@ HValue* HValue::CopyTo(Space* old_space, Space* new_space) {
     result = new_space->Allocate(size);
   }
 
-  memcpy(result, addr() + interior_offset(0), size);
+  memcpy(result + interior_offset(0), addr() + interior_offset(0), size);
 
   return HValue::Cast(result);
 }

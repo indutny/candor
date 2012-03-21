@@ -1,4 +1,3 @@
-* Remove mis-aligned memory lookups (tagged pointers)
 * Dense arrays
 * Stack trace support
 * Cons strings

@@ -157,7 +157,7 @@ void Fullgen::GenerateEpilogue(AstNode* stmt) {
 
 
 void Fullgen::PlaceInRoot(char* addr) {
-  Operand root_op(root_reg, 8 * (3 + root_context()->length()));
+  Operand root_op(root_reg, HContext::GetIndexDisp(root_context()->length()));
   movq(rax, root_op);
 
   root_context()->Push(addr);
@@ -387,14 +387,14 @@ AstNode* Fullgen::VisitValue(AstNode* node) {
 
       // Lookup context
       while (--depth >= 0) {
-        Operand parent(rax, 8);
+        Operand parent(rax, HContext::kParentOffset);
         movq(rax, parent);
       }
 
       slot().base(rax);
       slot().scale(Operand::one);
       // Skip tag, code addr and reference to parent scope
-      slot().disp(8 * (value->slot()->index() + 3));
+      slot().disp(HContext::GetIndexDisp(value->slot()->index()));
     }
   }
 
