@@ -331,11 +331,8 @@ void HObject::Init(Heap* heap, char* obj) {
 
 
 char** HObject::LookupProperty(Heap* heap, char* addr, char* key, int insert) {
-  return reinterpret_cast<char**>(HObject::Map(addr) +
-                                  RuntimeLookupProperty(heap,
-                                                        addr,
-                                                        key,
-                                                        insert));
+  off_t offset = RuntimeLookupProperty(heap, addr, key, insert);
+  return reinterpret_cast<char**>(HObject::Map(addr) + offset);
 }
 
 
