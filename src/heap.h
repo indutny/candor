@@ -470,6 +470,8 @@ class HArray : public HObject {
 
 class HMap : public HValue {
  public:
+  static char* NewEmpty(Heap* heap, uint32_t size);
+
   inline bool IsEmptySlot(uint32_t index);
   inline HValue* GetSlot(uint32_t index);
   inline char** GetSlotAddress(uint32_t index);

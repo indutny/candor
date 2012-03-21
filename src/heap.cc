@@ -307,26 +307,12 @@ char* HObject::NewEmpty(Heap* heap) {
 
 
 void HObject::Init(Heap* heap, char* obj) {
-  uint32_t size = 16;
-
-  char* map = heap->AllocateTagged(Heap::kTagMap,
-                                   Heap::kTenureNew,
-                                   ((size << 1) + 1) * kPointerSize);
+  static const uint32_t size = 16;
 
   // Set mask
   *reinterpret_cast<uint64_t*>(obj + kMaskOffset) = (size - 1) * kPointerSize;
   // Set map
-  *reinterpret_cast<char**>(obj + kMapOffset) = map;
-
-  // Set map's size
-  *reinterpret_cast<uint64_t*>(map + HMap::kSizeOffset) = size;
-
-  // Nullify all map's slots (both keys and values)
-  size = (size << 1) * kPointerSize;
-  memset(map + HMap::kSpaceOffset, 0x00, size);
-  for (uint32_t i = 0; i < size; i += kPointerSize) {
-    map[i + HMap::kSpaceOffset] = Heap::kTagNil;
-  }
+  *reinterpret_cast<char**>(obj + kMapOffset) = HMap::NewEmpty(heap, size);
 }
 
 
@@ -377,6 +363,25 @@ int64_t HArray::Length(char* obj, bool shrink) {
   }
 
   return result;
+}
+
+
+char* HMap::NewEmpty(Heap* heap, uint32_t size) {
+  char* map = heap->AllocateTagged(Heap::kTagMap,
+                                   Heap::kTenureNew,
+                                   ((size << 1) + 1) * kPointerSize);
+
+  // Set map's size
+  *reinterpret_cast<uint64_t*>(map + kSizeOffset) = size;
+
+  // Nullify all map's slots (both keys and values)
+  size = (size << 1) * kPointerSize;
+  memset(map + kSpaceOffset, 0x00, size);
+  for (uint32_t i = 0; i < size; i += kPointerSize) {
+    map[i + kSpaceOffset] = Heap::kTagNil;
+  }
+
+  return map;
 }
 
 

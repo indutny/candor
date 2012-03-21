@@ -169,28 +169,13 @@ char* RuntimeGrowObject(Heap* heap, char* obj) {
   char* map = *map_addr;
   uint32_t size = HValue::As<HMap>(map)->size() << 1;
 
-  char* new_map = heap->AllocateTagged(
-      Heap::kTagMap,
-      Heap::kTenureNew,
-      (1 + (size << 1)) * HValue::kPointerSize);
-
-  // Set map size
-  *(uint32_t*)(new_map + HMap::kSizeOffset) = size;
-
-  // Fill new map with zeroes
-  {
-    uint32_t size_f = (size << 1) * HValue::kPointerSize;
-    memset(new_map + HMap::kSpaceOffset, 0, size_f);
-
-    for (uint32_t i = 0; i < size_f; i += HValue::kPointerSize) {
-      new_map[i + HMap::kSpaceOffset] = Heap::kTagNil;
-    }
-  }
+  // Create a new map
+  char* new_map = HMap::NewEmpty(heap, size);
 
   // Replace old map with a new
   *map_addr = new_map;
 
-  // Change mask
+  // Update mask
   uint32_t mask = (size - 1) * HValue::kPointerSize;
   *HObject::MaskSlot(obj) = mask;
 
