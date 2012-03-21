@@ -120,8 +120,11 @@ off_t RuntimeLookupProperty(Heap* heap,
     keyptr = reinterpret_cast<char*>(HNumber::Tag(numkey));
     hash = ComputeHash(numkey);
 
+    // Negative lookups are prohibited
+    if (numkey < 0) return Heap::kTagNil;
+
     // Update array's length on insertion (if increased)
-    if (insert && numkey >= 0 && HArray::Length(obj, false) <= numkey) {
+    if (insert && HArray::Length(obj, false) <= numkey) {
       HArray::SetLength(obj, numkey + 1);
     }
   } else {

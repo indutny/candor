@@ -19,7 +19,7 @@ while (i < sizeof a) {
 a = [1,2,3]
 assert(a[-1] === nil, "negative index")
 a[-1] = 1
-assert(a[-1] === 1, "negative index#2")
+assert(a[-1] === nil, "negative index#2")
 
 // Objects
 a = { x: 1 , y: 1 }
