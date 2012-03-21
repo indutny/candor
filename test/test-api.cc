@@ -52,9 +52,10 @@ static Value* PrintCallback(uint32_t argc, Arguments& argv) {
 
 static int weak_called = 0;
 
-static void WeakCallback(Object* obj) {
+static void WeakCallback(Value* obj) {
   assert(obj->Is<Object>());
-  assert(obj->Get(String::New("key", 3))->As<Boolean>()->IsTrue());
+  assert(obj->As<Object>()->Get(String::New("key", 3))->
+      As<Boolean>()->IsTrue());
 
   weak_called++;
 }
@@ -66,7 +67,7 @@ static Value* GetWeak(uint32_t argc, Arguments& argv) {
 
   obj->Set(String::New("key", 3), Boolean::True());
 
-  obj.SetWeakCallback(WeakCallback);
+  obj->SetWeakCallback(WeakCallback);
 
   return *obj;
 }

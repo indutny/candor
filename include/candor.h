@@ -85,6 +85,8 @@ class Value {
     kCData
   };
 
+  typedef void (*WeakCallback)(Value* value);
+
   static Value* New(char* addr);
 
   template <class T>
@@ -102,6 +104,9 @@ class Value {
   Number* ToNumber();
   Boolean* ToBoolean();
   String* ToString();
+
+  void SetWeakCallback(WeakCallback callback);
+  void ClearWeak();
 
   inline char* addr() { return reinterpret_cast<char*>(this); }
 
@@ -222,11 +227,6 @@ class Handle {
 
   bool IsEmpty();
 
-  typedef void (*WeakCallback)(T* value);
-
-  void SetWeakCallback(WeakCallback callback);
-  void ClearWeak();
-
   inline T* operator*() { return value; }
   inline T* operator->() { return value; }
 
@@ -254,7 +254,7 @@ class CWrapper {
   void Ref();
   void Unref();
 
-  static void WeakCallback(CData* data);
+  static void WeakCallback(Value* data);
 
  protected:
   Isolate* isolate;

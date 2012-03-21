@@ -36,9 +36,7 @@ using namespace internal;
     template Handle<V>::~Handle();\
     template void Handle<V>::Wrap(Value* v);\
     template void Handle<V>::Unwrap();\
-    template bool Handle<V>::IsEmpty();\
-    template void Handle<V>::SetWeakCallback(WeakCallback callback);\
-    template void Handle<V>::ClearWeak();
+    template bool Handle<V>::IsEmpty();
 TYPES_LIST(METHODS_ENUM)
 #undef METHODS_ENUM
 
@@ -140,19 +138,6 @@ bool Handle<T>::IsEmpty() {
 }
 
 
-template <class T>
-void Handle<T>::SetWeakCallback(WeakCallback callback) {
-  ISOLATE->heap->AddWeak(reinterpret_cast<HValue*>(value),
-                         *reinterpret_cast<Heap::WeakCallback*>(&callback));
-}
-
-
-template <class T>
-void Handle<T>::ClearWeak() {
-  ISOLATE->heap->RemoveWeak(reinterpret_cast<HValue*>(value));
-}
-
-
 Value* Value::New(char* addr) {
   return reinterpret_cast<Value*>(addr);
 }
@@ -216,6 +201,18 @@ Boolean* Value::ToBoolean() {
 String* Value::ToString() {
   return Cast<String>(RuntimeToString(ISOLATE->heap, addr()));
 }
+
+
+void Value::SetWeakCallback(WeakCallback callback) {
+  ISOLATE->heap->AddWeak(reinterpret_cast<HValue*>(addr()),
+                         *reinterpret_cast<Heap::WeakCallback*>(&callback));
+}
+
+
+void Value::ClearWeak() {
+  ISOLATE->heap->RemoveWeak(reinterpret_cast<HValue*>(addr()));
+}
+
 
 
 Function* Function::New(const char* source, uint32_t length) {
@@ -452,9 +449,8 @@ CWrapper::CWrapper() : isolate(ISOLATE),
   // Save pointer of class
   *reinterpret_cast<CWrapper**>(data->GetContents()) = this;
 
-  // Mark handle as weak
-  Handle<CData> handle(data);
-  handle.SetWeakCallback(CWrapper::WeakCallback);
+  // Mark data as weak
+  data->SetWeakCallback(CWrapper::WeakCallback);
 
   // Data field should be changed on reallocation
   isolate->heap->Reference(Heap::kRefNormal,
@@ -488,8 +484,9 @@ void CWrapper::Unref() {
 }
 
 
-void CWrapper::WeakCallback(CData* data) {
-  CWrapper* wrapper = *reinterpret_cast<CWrapper**>(data->GetContents());
+void CWrapper::WeakCallback(Value* data) {
+  CWrapper* wrapper = *reinterpret_cast<CWrapper**>(
+      data->As<CData>()->GetContents());
   delete wrapper;
 }
 
