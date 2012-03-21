@@ -263,17 +263,20 @@ Nil* Nil::New() {
 }
 
 
-Boolean* Boolean::True() {
+Boolean* Boolean::New(bool value) {
   return Cast<Boolean>(HBoolean::New(Isolate::GetCurrent()->heap,
                                      Heap::kTenureNew,
-                                     true));
+                                     value));
+}
+
+
+Boolean* Boolean::True() {
+  return New(true);
 }
 
 
 Boolean* Boolean::False() {
-  return Cast<Boolean>(HBoolean::New(Isolate::GetCurrent()->heap,
-                                     Heap::kTenureNew,
-                                     false));
+  return New(false);
 }
 
 

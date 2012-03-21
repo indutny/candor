@@ -132,6 +132,7 @@ class Nil : public Value {
 
 class Boolean : public Value {
  public:
+  static Boolean* New(bool value);
   static Boolean* True();
   static Boolean* False();
 
