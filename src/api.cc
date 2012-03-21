@@ -375,6 +375,12 @@ Array* Object::Keys() {
 }
 
 
+Object* Object::Clone() {
+  return Cast<Object>(RuntimeCloneObject(
+        Isolate::GetCurrent()->heap, addr()));
+}
+
+
 Array* Array::New() {
   return Cast<Array>(HArray::NewEmpty(Isolate::GetCurrent()->heap));
 }

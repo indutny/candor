@@ -181,6 +181,13 @@ TEST_START("API test")
     assert(keys->Length() == 2);
   })
 
+  FUN_TEST("return { a: 1, b: 2 }", {
+    Object* clone = result->As<Object>()->Clone();
+
+    assert(clone->Get("a")->As<Number>()->Value() == 1);
+    assert(clone->Get("b")->As<Number>()->Value() == 2);
+  })
+
   FUN_TEST("return () { return global.g }", {
     Value* argv[0];
 

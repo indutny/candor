@@ -176,6 +176,7 @@ class Object : public Value {
   Value* Get(const char* key);
 
   Array* Keys();
+  Object* Clone();
 
   static const ValueType tag = kObject;
 };

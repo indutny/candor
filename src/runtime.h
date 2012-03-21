@@ -62,6 +62,8 @@ char* RuntimeSizeof(Heap* heap, char* value);
 typedef char* (*RuntimeKeysofCallback)(Heap* heap, char* value);
 char* RuntimeKeysof(Heap* heap, char* value);
 
+char* RuntimeCloneObject(Heap* heap, char* obj);
+
 } // namespace internal
 } // namespace candor
 

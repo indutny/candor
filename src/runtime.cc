@@ -645,5 +645,36 @@ char* RuntimeKeysof(Heap* heap, char* value) {
   return result;
 }
 
+
+char* RuntimeCloneObject(Heap* heap, char* obj) {
+  HObject* source_obj = HValue::As<HObject>(obj);
+  HMap* source_map = HValue::As<HMap>(source_obj->map());
+
+  char* result = heap->AllocateTagged(Heap::kTagObject,
+                                      Heap::kTenureNew,
+                                      2 * HValue::kPointerSize);
+
+  char* map = heap->AllocateTagged(
+      Heap::kTagMap,
+      Heap::kTenureNew,
+      ((source_map->size() << 1) + 1) * HValue::kPointerSize);
+
+  // Set mask
+  *reinterpret_cast<uint64_t*>(result + HObject::kMaskOffset) =
+      (source_map->size() - 1) * HValue::kPointerSize;
+
+  // Set map
+  *reinterpret_cast<char**>(result + HObject::kMapOffset) = map;
+
+  // Set map's size
+  *reinterpret_cast<uint64_t*>(map + HMap::kSizeOffset) = source_map->size();
+
+  // Nullify all map's slots (both keys and values)
+  uint32_t size = (source_map->size() << 1) * HValue::kPointerSize;
+  memcpy(map + HMap::kSpaceOffset, source_map->space(), size);
+
+  return result;
+}
+
 } // namespace internal
 } // namespace candor
