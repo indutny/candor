@@ -415,6 +415,12 @@ Value* Array::Get(int64_t key) {
 }
 
 
+void Array::Delete(int64_t key) {
+  char* keyptr = reinterpret_cast<char*>(HNumber::Tag(key));
+  RuntimeDeleteProperty(Isolate::GetCurrent()->heap, addr(), keyptr);
+}
+
+
 int64_t Array::Length() {
   return HArray::Length(addr(), true);
 }

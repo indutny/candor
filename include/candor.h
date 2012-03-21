@@ -189,6 +189,8 @@ class Array : public Value {
 
   void Set(int64_t key, Value* value);
   Value* Get(int64_t key);
+  void Delete(int64_t key);
+
   int64_t Length();
 
   static const ValueType tag = kArray;
