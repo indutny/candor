@@ -166,8 +166,8 @@ off_t RuntimeLookupProperty(Heap* heap,
 
 char* RuntimeGrowObject(Heap* heap, char* obj) {
   char** map_addr = HObject::MapSlot(obj);
-  char* map = *map_addr;
-  uint32_t size = HValue::As<HMap>(map)->size() << 1;
+  HMap* map = HValue::As<HMap>(*map_addr);
+  uint32_t size = map->size() << 1;
 
   // Create a new map
   char* new_map = HMap::NewEmpty(heap, size);
@@ -179,18 +179,15 @@ char* RuntimeGrowObject(Heap* heap, char* obj) {
   uint32_t mask = (size - 1) * HValue::kPointerSize;
   *HObject::MaskSlot(obj) = mask;
 
-  char* space = HValue::As<HMap>(map)->space();
-
   // And rehash properties to new map
-  uint32_t big_size = (size >> 1) * HValue::kPointerSize;
-  for (uint32_t index = 0; index < big_size; index += HValue::kPointerSize) {
-    char* key = *reinterpret_cast<char**>(space + index);
+  uint32_t original_size = map->size();
+  for (uint32_t i = 0; i < original_size; i ++) {
+    char* key = *map->GetSlotAddress(i);
     if (key == HNil::New()) continue;
 
-    char* value = *reinterpret_cast<char**>(space + index + big_size);
+    char* value = *map->GetSlotAddress(i + original_size);
 
-    char** slot = HObject::LookupProperty(heap, obj, key, 1);
-    *slot = value;
+    *HObject::LookupProperty(heap, obj, key, 1) = value;
   }
 
   return 0;
