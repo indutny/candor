@@ -120,6 +120,7 @@ class Function : public Value {
   typedef Value* (*BindingCallback)(uint32_t argc, Arguments& argv);
 
   static Function* New(const char* source, uint32_t length);
+  static Function* New(const char* source);
   static Function* New(BindingCallback callback);
 
   Object* GetContext();

@@ -253,6 +253,11 @@ Function* Function::New(const char* source, uint32_t length) {
 }
 
 
+Function* Function::New(const char* source) {
+  return New(source, strlen(source));
+}
+
+
 Function* Function::New(BindingCallback callback) {
   char* obj = HFunction::NewBinding(ISOLATE->heap,
                                     *reinterpret_cast<char**>(&callback),
