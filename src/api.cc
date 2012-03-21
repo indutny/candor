@@ -188,6 +188,21 @@ bool Value::Is() {
 }
 
 
+Value::ValueType Value::Type() {
+  switch (HValue::GetTag(addr())) {
+   case Heap::kTagNil: return kNil;
+   case Heap::kTagNumber: return kNumber;
+   case Heap::kTagBoolean: return kBoolean;
+   case Heap::kTagString: return kString;
+   case Heap::kTagFunction: return kFunction;
+   case Heap::kTagObject: return kObject;
+   case Heap::kTagArray: return kArray;
+   case Heap::kTagCData: return kCData;
+   default: return kNone;
+  }
+}
+
+
 Number* Value::ToNumber() {
   return Cast<Number>(RuntimeToNumber(ISOLATE->heap, addr()));
 }

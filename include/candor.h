@@ -101,6 +101,8 @@ class Value {
   template <class T>
   bool Is();
 
+  ValueType Type();
+
   Number* ToNumber();
   Boolean* ToBoolean();
   String* ToString();
