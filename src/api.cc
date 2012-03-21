@@ -44,6 +44,8 @@ TYPES_LIST(METHODS_ENUM)
 
 #undef TYPES_LIST
 
+#define ISOLATE Isolate::GetCurrent()
+
 static Isolate* current_isolate = NULL;
 
 Isolate::Isolate() {
@@ -61,7 +63,7 @@ Isolate::~Isolate() {
 }
 
 
-Isolate* Isolate::GetCurrent() {
+Isolate* ISOLATE {
   // TODO: Support multiple isolates
   return current_isolate;
 }
@@ -96,12 +98,12 @@ void Isolate::SetError(Error* err) {
 
 
 template <class T>
-Handle<T>::Handle() : isolate(Isolate::GetCurrent()), value(NULL) {
+Handle<T>::Handle() : value(NULL) {
 }
 
 
 template <class T>
-Handle<T>::Handle(Value* v) : isolate(Isolate::GetCurrent()), value(NULL) {
+Handle<T>::Handle(Value* v) : value(NULL) {
   Wrap(v);
 }
 
@@ -117,7 +119,7 @@ void Handle<T>::Wrap(Value* v) {
   Unwrap();
 
   value = v->As<T>();
-  isolate->heap->Reference(Heap::kRefPersistent,
+  ISOLATE->heap->Reference(Heap::kRefPersistent,
                            reinterpret_cast<HValue**>(&value),
                            reinterpret_cast<HValue*>(value));
 }
@@ -126,7 +128,7 @@ void Handle<T>::Wrap(Value* v) {
 template <class T>
 void Handle<T>::Unwrap() {
   if (value == NULL) return;
-  isolate->heap->Dereference(reinterpret_cast<HValue**>(&value),
+  ISOLATE->heap->Dereference(reinterpret_cast<HValue**>(&value),
                              reinterpret_cast<HValue*>(value));
   value = NULL;
 }
@@ -140,14 +142,14 @@ bool Handle<T>::IsEmpty() {
 
 template <class T>
 void Handle<T>::SetWeakCallback(WeakCallback callback) {
-  isolate->heap->AddWeak(reinterpret_cast<HValue*>(value),
+  ISOLATE->heap->AddWeak(reinterpret_cast<HValue*>(value),
                          *reinterpret_cast<Heap::WeakCallback*>(&callback));
 }
 
 
 template <class T>
 void Handle<T>::ClearWeak() {
-  isolate->heap->RemoveWeak(reinterpret_cast<HValue*>(value));
+  ISOLATE->heap->RemoveWeak(reinterpret_cast<HValue*>(value));
 }
 
 
@@ -202,36 +204,36 @@ bool Value::Is() {
 
 
 Number* Value::ToNumber() {
-  return Cast<Number>(RuntimeToNumber(Isolate::GetCurrent()->heap, addr()));
+  return Cast<Number>(RuntimeToNumber(ISOLATE->heap, addr()));
 }
 
 
 Boolean* Value::ToBoolean() {
-  return Cast<Boolean>(RuntimeToBoolean(Isolate::GetCurrent()->heap, addr()));
+  return Cast<Boolean>(RuntimeToBoolean(ISOLATE->heap, addr()));
 }
 
 
 String* Value::ToString() {
-  return Cast<String>(RuntimeToString(Isolate::GetCurrent()->heap, addr()));
+  return Cast<String>(RuntimeToString(ISOLATE->heap, addr()));
 }
 
 
 Function* Function::New(const char* source, uint32_t length) {
   char* root;
   Error* error;
-  char* code = Isolate::GetCurrent()->space->Compile(source,
+  char* code = ISOLATE->space->Compile(source,
                                                      length,
                                                      &root,
                                                      &error);
   // Set errors
   if (code == NULL) {
-    Isolate::GetCurrent()->SetError(error);
+    ISOLATE->SetError(error);
     return NULL;
   } else {
-    Isolate::GetCurrent()->SetError(NULL);
+    ISOLATE->SetError(NULL);
   }
 
-  char* obj = HFunction::New(Isolate::GetCurrent()->heap, NULL, code, root);
+  char* obj = HFunction::New(ISOLATE->heap, NULL, code, root);
 
   Function* fn = Cast<Function>(obj);
 
@@ -240,7 +242,7 @@ Function* Function::New(const char* source, uint32_t length) {
 
 
 Function* Function::New(BindingCallback callback) {
-  char* obj = HFunction::NewBinding(Isolate::GetCurrent()->heap,
+  char* obj = HFunction::NewBinding(ISOLATE->heap,
                                     *reinterpret_cast<char**>(&callback),
                                     NULL);
 
@@ -261,7 +263,7 @@ void Function::SetContext(Object* context) {
 
 
 Value* Function::Call(uint32_t argc, Value* argv[]) {
-  return Isolate::GetCurrent()->space->Run(addr(), argc, argv);
+  return ISOLATE->space->Run(addr(), argc, argv);
 }
 
 
@@ -271,7 +273,7 @@ Nil* Nil::New() {
 
 
 Boolean* Boolean::New(bool value) {
-  return Cast<Boolean>(HBoolean::New(Isolate::GetCurrent()->heap,
+  return Cast<Boolean>(HBoolean::New(ISOLATE->heap,
                                      Heap::kTenureNew,
                                      value));
 }
@@ -299,12 +301,12 @@ bool Boolean::IsFalse() {
 
 Number* Number::NewDouble(double value) {
   return Cast<Number>(HNumber::New(
-        Isolate::GetCurrent()->heap, Heap::kTenureNew, value));
+        ISOLATE->heap, Heap::kTenureNew, value));
 }
 
 
 Number* Number::NewIntegral(int64_t value) {
-  return Cast<Number>(HNumber::New(Isolate::GetCurrent()->heap, value));
+  return Cast<Number>(HNumber::New(ISOLATE->heap, value));
 }
 
 
@@ -325,13 +327,13 @@ bool Number::IsIntegral() {
 
 String* String::New(const char* value, uint32_t len) {
   return Cast<String>(HString::New(
-        Isolate::GetCurrent()->heap, Heap::kTenureNew, value, len));
+        ISOLATE->heap, Heap::kTenureNew, value, len));
 }
 
 
 String* String::New(const char* value) {
   return Cast<String>(HString::New(
-        Isolate::GetCurrent()->heap, Heap::kTenureNew, value, strlen(value)));
+        ISOLATE->heap, Heap::kTenureNew, value, strlen(value)));
 }
 
 
@@ -346,12 +348,12 @@ uint32_t String::Length() {
 
 
 Object* Object::New() {
-  return Cast<Object>(HObject::NewEmpty(Isolate::GetCurrent()->heap));
+  return Cast<Object>(HObject::NewEmpty(ISOLATE->heap));
 }
 
 
 void Object::Set(Value* key, Value* value) {
-  char** slot = HObject::LookupProperty(Isolate::GetCurrent()->heap,
+  char** slot = HObject::LookupProperty(ISOLATE->heap,
                                         addr(),
                                         key->addr(),
                                         1);
@@ -360,7 +362,7 @@ void Object::Set(Value* key, Value* value) {
 
 
 Value* Object::Get(Value* key) {
-  return Value::New(*HObject::LookupProperty(Isolate::GetCurrent()->heap,
+  return Value::New(*HObject::LookupProperty(ISOLATE->heap,
                                              addr(),
                                              key->addr(),
                                              0));
@@ -368,7 +370,7 @@ Value* Object::Get(Value* key) {
 
 
 void Object::Delete(Value* key) {
-  RuntimeDeleteProperty(Isolate::GetCurrent()->heap, addr(), key->addr());
+  RuntimeDeleteProperty(ISOLATE->heap, addr(), key->addr());
 }
 
 
@@ -388,24 +390,24 @@ void Object::Delete(const char* key) {
 
 
 Array* Object::Keys() {
-  return Cast<Array>(RuntimeKeysof(Isolate::GetCurrent()->heap, addr()));
+  return Cast<Array>(RuntimeKeysof(ISOLATE->heap, addr()));
 }
 
 
 Object* Object::Clone() {
   return Cast<Object>(RuntimeCloneObject(
-        Isolate::GetCurrent()->heap, addr()));
+        ISOLATE->heap, addr()));
 }
 
 
 Array* Array::New() {
-  return Cast<Array>(HArray::NewEmpty(Isolate::GetCurrent()->heap));
+  return Cast<Array>(HArray::NewEmpty(ISOLATE->heap));
 }
 
 
 void Array::Set(int64_t key, Value* value) {
   char* keyptr = reinterpret_cast<char*>(HNumber::Tag(key));
-  char** slot = HObject::LookupProperty(Isolate::GetCurrent()->heap,
+  char** slot = HObject::LookupProperty(ISOLATE->heap,
                                         addr(),
                                         keyptr,
                                         1);
@@ -415,7 +417,7 @@ void Array::Set(int64_t key, Value* value) {
 
 Value* Array::Get(int64_t key) {
   char* keyptr = reinterpret_cast<char*>(HNumber::Tag(key));
-  return Value::New(*HObject::LookupProperty(Isolate::GetCurrent()->heap,
+  return Value::New(*HObject::LookupProperty(ISOLATE->heap,
                                              addr(),
                                              keyptr,
                                              1));
@@ -424,7 +426,7 @@ Value* Array::Get(int64_t key) {
 
 void Array::Delete(int64_t key) {
   char* keyptr = reinterpret_cast<char*>(HNumber::Tag(key));
-  RuntimeDeleteProperty(Isolate::GetCurrent()->heap, addr(), keyptr);
+  RuntimeDeleteProperty(ISOLATE->heap, addr(), keyptr);
 }
 
 
@@ -434,7 +436,7 @@ int64_t Array::Length() {
 
 
 CData* CData::New(size_t size) {
-  return Cast<CData>(HCData::New(Isolate::GetCurrent()->heap, size));
+  return Cast<CData>(HCData::New(ISOLATE->heap, size));
 }
 
 
@@ -443,7 +445,7 @@ void* CData::GetContents() {
 }
 
 
-CWrapper::CWrapper() : isolate(Isolate::GetCurrent()),
+CWrapper::CWrapper() : isolate(ISOLATE),
                        data(CData::New(sizeof(void*))),
                        ref_count(0),
                        ref(NULL) {

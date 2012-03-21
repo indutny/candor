@@ -236,7 +236,6 @@ class Handle {
   }
 
  protected:
-  Isolate* isolate;
   T* value;
 };
 
