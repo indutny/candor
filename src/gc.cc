@@ -95,11 +95,17 @@ void GC::RelocateWeakHandles() {
     HValueReference* ref = item->value();
     if (ref->is_weak()) {
       GCValue* v;
-      v = new GCValue(ref->value(), reinterpret_cast<char**>(ref->reference()));
-      if (v->value()->IsGCMarked()) v->Relocate(v->value()->GetGCMark());
-
-      v = new GCValue(ref->value(), reinterpret_cast<char**>(ref->valueptr()));
-      if (v->value()->IsGCMarked()) v->Relocate(v->value()->GetGCMark());
+      if (ref->value()->IsGCMarked()) {
+        v = new GCValue(ref->value(),
+                        reinterpret_cast<char**>(ref->reference()));
+        v->Relocate(v->value()->GetGCMark());
+        v = new GCValue(ref->value(),
+                        reinterpret_cast<char**>(ref->valueptr()));
+        v->Relocate(v->value()->GetGCMark());
+      } else {
+        // Value was garbage collected - remove reference from the list
+        heap()->references()->Remove(item);
+      }
     }
 
     item = item->next();

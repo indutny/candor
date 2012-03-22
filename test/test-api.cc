@@ -278,7 +278,7 @@ TEST_START("API test")
 
   {
     Isolate i;
-    const char* code = "return () { __$gc() }";
+    const char* code = "return () {\n__$gc()\n__$gc()\n__$gc()\n}";
 
     Function* f = Function::New(code, strlen(code));
 
