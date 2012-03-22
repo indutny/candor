@@ -530,6 +530,7 @@ AstNode* Parser::ParseObjectLiteral() {
 
   while (!Peek()->is(kBraceClose) && !Peek()->is(kEnd)) {
     AstNode* key;
+    SkipCr();
     if (Peek()->is(kString) || Peek()->is(kName)) {
       key = new AstNode(AstNode::kProperty, Peek());
       Skip();
@@ -561,10 +562,14 @@ AstNode* Parser::ParseObjectLiteral() {
     // Skip ',' or exit loop on '}'
     if (Peek()->is(kComma)) {
       Skip();
-    } else if (!Peek()->is(kBraceClose)) {
-      SetError("Expected '}' or ','");
-      return NULL;
+    } else {
+      SkipCr();
+      if (!Peek()->is(kBraceClose)) {
+        SetError("Expected '}' or ','");
+        return NULL;
+      }
     }
+    SkipCr();
   }
 
   // Skip '}'
