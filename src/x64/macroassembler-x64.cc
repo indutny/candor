@@ -71,24 +71,44 @@ Masm::Align::~Align() {
 }
 
 
-Masm::Spill::Spill(Masm* masm, Register src) : masm_(masm),
-                                               src_(src),
-                                               index_(0) {
-  index_ = masm->spill_index_++;
-  Operand slot(rax, 0);
-  masm->SpillSlot(index(), slot);
-  masm->movq(slot, src);
+Masm::Spill::Spill(Masm* masm) : masm_(masm),
+                                 src_(reg_nil),
+                                 index_(0) {
+}
 
-  if (masm->spill_index_ > masm->spills_) masm->spills_ = masm->spill_index_;
+
+Masm::Spill::Spill(Masm* masm, Register src) : masm_(masm),
+                                               src_(reg_nil),
+                                               index_(0) {
+  Init(src);
+}
+
+
+void Masm::Spill::Init(Register src) {
+  assert(is_empty());
+
+  src_ = src;
+  index_ = masm()->spill_index_++;
+  Operand slot(rax, 0);
+  masm()->SpillSlot(index(), slot);
+  masm()->movq(slot, src);
+
+  if (masm()->spill_index_ > masm()->spills_) {
+    masm()->spills_ = masm()->spill_index_;
+  }
 }
 
 
 Masm::Spill::~Spill() {
-  masm()->spill_index_--;
+  if (!is_empty()) {
+    masm()->spill_index_--;
+  }
 }
 
 
 void Masm::Spill::Unspill(Register dst) {
+  assert(!is_empty());
+
   Operand slot(rax, 0);
   masm()->SpillSlot(index(), slot);
   masm()->movq(dst, slot);

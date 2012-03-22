@@ -33,11 +33,16 @@ class Masm : public Assembler {
 
   class Spill {
    public:
+    Spill(Masm* masm);
     Spill(Masm* masm, Register src);
     ~Spill();
 
+    void Init(Register src);
+
     void Unspill(Register dst);
     void Unspill();
+
+    inline bool is_empty() { return src_.is(reg_nil); }
 
     inline Masm* masm() { return masm_; }
     inline int32_t index() { return index_; }

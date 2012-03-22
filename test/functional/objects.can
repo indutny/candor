@@ -16,3 +16,13 @@ assert(keys[0] === a, "key should be the object")
 
 delete obj[a]
 assert(obj[a] === nil, "lookup after delete")
+
+// Self-calls
+a = {
+  x: (self) {
+    assert(self.y === 1, "Self calls propogate self")
+  },
+  y: 1
+}
+
+a:x()

@@ -33,6 +33,7 @@ typedef List<AstNode*, ZoneObject> AstList;
     V(kReturn)\
     V(kFunction)\
     V(kCall)\
+    V(kSelf)\
     V(kUnOp)\
     V(kBinOp)
 

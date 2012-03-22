@@ -422,7 +422,6 @@ AstNode* Parser::ParseMember() {
   AstNode* result = ParsePrimary(kNoKeywords);
 
   bool colon_call = false;
-  AstNode* colon_receiver = NULL;
   while (!Peek()->is(kEnd) && !Peek()->is(kCr)) {
     if (colon_call && !Peek()->is(kParenOpen)) {
       SetError("Expected '(' after colon call");
@@ -436,7 +435,7 @@ AstNode* Parser::ParseMember() {
       Skip();
 
       if (colon_call) {
-        fn->args()->Push(colon_receiver);
+        fn->args()->Push(new AstNode(AstNode::kSelf));
         colon_call = false;
       }
 
@@ -477,7 +476,6 @@ AstNode* Parser::ParseMember() {
           return NULL;
         }
         colon_call = true;
-        colon_receiver = result;
        case kDot:
         // a.b || a:b(args)
         Skip();

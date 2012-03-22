@@ -257,7 +257,25 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
     return stmt;
   }
 
-  VisitForValue(fn->variable());
+  Spill receiver_s(this);
+  if (fn->args()->length() > 0 &&
+      fn->args()->head()->value()->is(AstNode::kSelf)) {
+    assert(fn->variable()->is(AstNode::kMember));
+
+    AstNode* receiver = fn->variable()->lhs();
+    AstNode* property = fn->variable()->rhs();
+
+    VisitForValue(receiver);
+    receiver_s.Init(rax);
+
+    AstNode* member = new AstNode(AstNode::kMember);
+    member->children()->Push(new FAstSpill(&receiver_s));
+    member->children()->Push(property);
+
+    VisitForValue(member);
+  } else {
+    VisitForValue(fn->variable());
+  }
 
   Spill rax_s(this, rax);
 
@@ -275,7 +293,11 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
     while (item != NULL) {
       {
         Align a(this);
-        VisitForValue(item->value());
+        if (item->value()->is(AstNode::kSelf)) {
+          receiver_s.Unspill(rax);
+        } else {
+          VisitForValue(item->value());
+        }
       }
 
       // Push argument and change alignment
