@@ -60,6 +60,12 @@ static void WeakCallback(Value* obj) {
   weak_called++;
 }
 
+static int weak_handle_called = 0;
+
+static void WeakHandleCallback(Value* obj) {
+  weak_handle_called++;
+}
+
 static Value* GetWeak(uint32_t argc, Value* argv[]) {
   assert(argc == 0);
 
@@ -268,6 +274,25 @@ TEST_START("API test")
     Value* ret = f->Call(0, argv);
     assert(ret->Is<Nil>());
     assert(weak_called == 1);
+  }
+
+  {
+    Isolate i;
+    const char* code = "return () { __$gc() }";
+
+    Function* f = Function::New(code, strlen(code));
+
+    Handle<Object> weak(Object::New());
+    weak.Unref();
+    weak->SetWeakCallback(WeakHandleCallback);
+
+    Value* argv[0];
+    Value* ret = f->Call(0, argv);
+
+    // Call gc
+    ret->As<Function>()->Call(0, argv);
+
+    assert(weak_handle_called == 1);
   }
 
   // CData

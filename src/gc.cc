@@ -56,7 +56,7 @@ void GC::CollectGarbage(char* stack_top) {
     value->value()->ResetSoftGCMark();
   }
 
-  RelocateNormalHandles();
+  RelocateWeakHandles();
 
   // Visit all weak references and call callbacks if some of them are dead
   HandleWeakReferences();
@@ -89,11 +89,11 @@ void GC::ColourPersistentHandles() {
 }
 
 
-void GC::RelocateNormalHandles() {
+void GC::RelocateWeakHandles() {
   HValueRefList::Item* item = heap()->references()->head();
   while (item != NULL) {
     HValueReference* ref = item->value();
-    if (ref->is_normal()) {
+    if (ref->is_weak()) {
       GCValue* v;
       v = new GCValue(ref->value(), reinterpret_cast<char**>(ref->reference()));
       if (v->value()->IsGCMarked()) v->Relocate(v->value()->GetGCMark());

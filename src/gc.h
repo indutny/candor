@@ -47,7 +47,7 @@ class GC {
   void CollectGarbage(char* stack_top);
 
   void ColourPersistentHandles();
-  void RelocateNormalHandles();
+  void RelocateWeakHandles();
 
   void ColourFrames(char* stack_top);
   void HandleWeakReferences();

@@ -147,7 +147,7 @@ class Heap {
   };
 
   enum ReferenceType {
-    kRefNormal,
+    kRefWeak,
     kRefPersistent
   };
 
@@ -176,7 +176,9 @@ class Heap {
   char* AllocateTagged(HeapTag tag, TenureType type, uint32_t bytes);
 
   // Referencing C++ handles
-  void Reference(ReferenceType type, HValue** reference, HValue* value);
+  HValueReference* Reference(ReferenceType type,
+                             HValue** reference,
+                             HValue* value);
   void Dereference(HValue** reference, HValue* value);
 
   // Weakening C++ handles
@@ -295,8 +297,11 @@ class HValueReference {
   inline HValue* value() { return value_; }
   inline HValue** valueptr() { return &value_; }
 
-  inline bool is_normal() { return type() == Heap::kRefNormal; }
+  inline bool is_weak() { return type() == Heap::kRefWeak; }
   inline bool is_persistent() { return type() == Heap::kRefPersistent; }
+
+  inline void make_weak() { type_ = Heap::kRefWeak; }
+  inline void make_persistent() { type_ = Heap::kRefPersistent; }
 
  private:
   Heap::ReferenceType type_;

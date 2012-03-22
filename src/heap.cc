@@ -125,8 +125,13 @@ char* Heap::AllocateTagged(HeapTag tag, TenureType tenure, uint32_t bytes) {
 }
 
 
-void Heap::Reference(ReferenceType type, HValue** reference, HValue* value) {
-  references()->Push(new HValueReference(type, reference, value));
+HValueReference* Heap::Reference(ReferenceType type,
+                                 HValue** reference,
+                                 HValue* value) {
+  HValueReference* ref = new HValueReference(type, reference, value);
+  references()->Push(ref);
+
+  return ref;
 }
 
 

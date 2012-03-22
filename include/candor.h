@@ -13,6 +13,7 @@ namespace internal {
   template <class T, class ItemParent>
   class List;
   class EmptyClass;
+  class HValueReference;
 } // namespace internal
 
 class Value;
@@ -222,7 +223,13 @@ class Handle {
   void Wrap(Value* v);
   void Unwrap();
 
+  void Ref();
+  void Unref();
+
   bool IsEmpty();
+
+  inline bool IsWeak() { return ref_count <= 0; }
+  inline bool IsPersistent() { return ref_count > 0; }
 
   inline T* operator*() { return value; }
   inline T* operator->() { return value; }
@@ -234,6 +241,9 @@ class Handle {
 
  protected:
   T* value;
+  int ref_count;
+
+  internal::HValueReference* ref;
 };
 
 class CWrapper {

@@ -34,6 +34,8 @@ using namespace internal;
     template Handle<V>::Handle();\
     template Handle<V>::Handle(Value* v);\
     template Handle<V>::~Handle();\
+    template void Handle<V>::Ref();\
+    template void Handle<V>::Unref();\
     template void Handle<V>::Wrap(Value* v);\
     template void Handle<V>::Unwrap();\
     template bool Handle<V>::IsEmpty();
@@ -96,13 +98,15 @@ void Isolate::SetError(Error* err) {
 
 
 template <class T>
-Handle<T>::Handle() : value(NULL) {
+Handle<T>::Handle() : value(NULL), ref_count(0), ref(NULL) {
+  Ref();
 }
 
 
 template <class T>
-Handle<T>::Handle(Value* v) : value(NULL) {
+Handle<T>::Handle(Value* v) : value(NULL), ref_count(0) {
   Wrap(v);
+  Ref();
 }
 
 
@@ -113,13 +117,32 @@ Handle<T>::~Handle() {
 
 
 template <class T>
+void Handle<T>::Ref() {
+  if (++ref_count == 1 && ref != NULL) {
+    ref->make_persistent();
+  }
+}
+
+
+template <class T>
+void Handle<T>::Unref() {
+  if (--ref_count == 0 && ref != NULL) {
+    ref->make_weak();
+  }
+}
+
+
+template <class T>
 void Handle<T>::Wrap(Value* v) {
   Unwrap();
 
   value = v->As<T>();
-  ISOLATE->heap->Reference(Heap::kRefPersistent,
-                           reinterpret_cast<HValue**>(&value),
-                           reinterpret_cast<HValue*>(value));
+  ref = ISOLATE->heap->Reference(ref_count > 0 ?
+                                     Heap::kRefPersistent
+                                     :
+                                     Heap::kRefWeak,
+                                 reinterpret_cast<HValue**>(&value),
+                                 reinterpret_cast<HValue*>(value));
 }
 
 
@@ -129,6 +152,7 @@ void Handle<T>::Unwrap() {
   ISOLATE->heap->Dereference(reinterpret_cast<HValue**>(&value),
                              reinterpret_cast<HValue*>(value));
   value = NULL;
+  ref = NULL;
 }
 
 
@@ -473,7 +497,7 @@ CWrapper::CWrapper() : isolate(ISOLATE),
   data->SetWeakCallback(CWrapper::WeakCallback);
 
   // Data field should be changed on reallocation
-  isolate->heap->Reference(Heap::kRefNormal,
+  isolate->heap->Reference(Heap::kRefWeak,
                            reinterpret_cast<HValue**>(&data),
                            reinterpret_cast<HValue*>(data));
 }
