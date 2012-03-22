@@ -106,10 +106,19 @@ class WrapTest : public CWrapper {
   int x, y, z, j;
 };
 
+class SubWrapTest : public WrapTest {
+ public:
+  SubWrapTest() {
+    k = 1;
+  }
+
+  int k;
+};
+
 static Value* GetWrapper(uint32_t argc, Value* argv[]) {
   assert(argc == 0);
 
-  WrapTest* w = new WrapTest();
+  SubWrapTest* w = new SubWrapTest();
 
   w->Ref();
 
@@ -123,6 +132,8 @@ static Value* Unref(uint32_t argc, Value* argv[]) {
   WrapTest* w = CWrapper::Unwrap<WrapTest>(argv[0]);
 
   w->Unref();
+
+  assert(w->x == 0);
 
   return w->Wrap();
 }
