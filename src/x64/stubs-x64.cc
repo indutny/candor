@@ -54,30 +54,32 @@ void EntryStub::Generate() {
   Label even(masm()), args(masm()), args_loop(masm()), unwind_even(masm());
   __ movq(scratch, rsi);
   __ Untag(scratch);
-  __ movq(rbx, rdx);
 
-  // Odd arguments count check
+  // Odd arguments count check (for alignment)
   __ testb(scratch, Immediate(1));
   __ jmp(kEq, &even);
   __ push(Immediate(0));
   __ bind(&even);
 
+  // Get pointer to the end of arguments array
+  __ movq(rbx, scratch);
+  __ shl(rbx, Immediate(3));
+  __ addq(rbx, rdx);
+
   __ jmp(&args_loop);
 
   __ bind(&args);
+
+  __ subq(rbx, Immediate(8));
 
   // Get argument from list
   Operand arg(rbx, 0);
   __ movq(rax, arg);
   __ push(rax);
 
-  // Decrement count and move "finger"
-  __ dec(scratch);
-  __ addq(rbx, Immediate(8));
-
   // Loop if needed
   __ bind(&args_loop);
-  __ cmpq(scratch, Immediate(0));
+  __ cmpq(rbx, rdx);
   __ jmp(kNe, &args);
 
   // Nullify rbp to help GC iterating frames
@@ -231,6 +233,9 @@ void CallBindingStub::Generate() {
 
   // old rbp + return address + two arguments
   __ addq(rsi, Immediate(4 * 8));
+  __ movq(scratch, rdi);
+  __ shl(scratch, Immediate(3));
+  __ subq(rsi, scratch);
 
   // argv should point to the end of arguments array
   __ movq(scratch, rdi);

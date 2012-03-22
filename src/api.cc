@@ -511,8 +511,4 @@ void CWrapper::WeakCallback(Value* data) {
 }
 
 
-Value* Arguments::operator[] (const int index) {
-  return *(reinterpret_cast<Value**>(this) - index - 1);
-}
-
 } // namespace candor

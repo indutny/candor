@@ -31,3 +31,17 @@ a.z = 2
 assert(a.z == 2, "key lookup#3")
 
 assert(1 + ":" + 0 == "1:0", "concat")
+
+// Functions
+fn(a, b, c) {
+  assert(a === 1, "first stack argument")
+  assert(b === 2, "second context argument")
+  assert(c === nil, "third argument")
+  assert(d === nil, "non-initialized stack value")
+
+  return () {
+    return b
+  }
+}
+
+fn(1, 2)

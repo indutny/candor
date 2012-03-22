@@ -47,7 +47,7 @@ const char* StringToChar(candor::String* str) {
 }
 
 
-candor::Value* APIAssert(uint32_t argc, candor::Arguments& argv) {
+candor::Value* APIAssert(uint32_t argc, candor::Value* argv[]) {
   if (argc < 1) {
     fprintf(stderr, "assert(): at least one argument is required\n");
     abort();
@@ -68,7 +68,7 @@ candor::Value* APIAssert(uint32_t argc, candor::Arguments& argv) {
 }
 
 
-candor::Value* APIPrint(uint32_t argc, candor::Arguments& argv) {
+candor::Value* APIPrint(uint32_t argc, candor::Value* argv[]) {
   if (argc < 1) return candor::Nil::New();
 
   const char* value = StringToChar(argv[0]->ToString());

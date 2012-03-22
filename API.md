@@ -194,7 +194,7 @@ value->ClearWeak();
 The Nil class is simple, it creates Nil values.
 
 ```C++
-Value* someFunc(uint32_t argc, Arguments& argv) {
+Value* someFunc(uint32_t argc, Value* argv[]) {
   // Do some work and then return Nil
   return Nil::New();
 }
@@ -284,7 +284,7 @@ To create a native function, simply pass the function pointer
 
 ```C++
 // Define a BindingCallback function
-Value* myPrint(uint32_t argc, Arguments& argv) {
+Value* myPrint(uint32_t argc, Value* argv[]) {
   assert(argc == 1);
   String* str = argv[0]->ToString();
   printf("%.*s\n", str->Length(), str->Value());
@@ -466,7 +466,7 @@ Then later when the cdata is passed to us in a function, we unwrap it.
 
 ```C++
 // Expects the cdata as the first argument, returns the area of the box.
-Value* box_area(uint32_t argc, Arguments& argv) {
+Value* box_area(uint32_t argc, Value* argv[]) {
   assert(argc == 1);
   CData* cdata = argv[0]->As<CData>();
   MyBox* box = CWrapper::Unwrap<MyBox>(cdata);

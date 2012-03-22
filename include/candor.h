@@ -24,7 +24,6 @@ class String;
 class Object;
 class Array;
 class CData;
-class Arguments;
 struct Error;
 
 class Isolate {
@@ -117,7 +116,7 @@ class Value {
 
 class Function : public Value {
  public:
-  typedef Value* (*BindingCallback)(uint32_t argc, Arguments& argv);
+  typedef Value* (*BindingCallback)(uint32_t argc, Value* argv[]);
 
   static Function* New(const char* source, uint32_t length);
   static Function* New(const char* source);
@@ -211,11 +210,6 @@ class CData : public Value {
   void* GetContents();
 
   static const ValueType tag = kCData;
-};
-
-class Arguments {
- public:
-  Value* operator[] (const int index);
 };
 
 template <class T>

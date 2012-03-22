@@ -1,6 +1,6 @@
 #include "test.h"
 
-static Value* Callback(uint32_t argc, Arguments& argv) {
+static Value* Callback(uint32_t argc, Value* argv[]) {
   assert(argc == 3);
 
   Handle<Number> lhs(argv[0]->As<Number>());
@@ -16,14 +16,14 @@ static Value* Callback(uint32_t argc, Arguments& argv) {
   return Number::NewIntegral(lhs_value + 2 * rhs_value + 3 * fn_ret);
 }
 
-static Value* ObjectCallback(uint32_t argc, Arguments& argv) {
+static Value* ObjectCallback(uint32_t argc, Value* argv[]) {
   Object* obj = Object::New();
   obj->Set(String::New("y", 1), Number::NewIntegral(1234));
 
   return obj;
 }
 
-static Value* ArrayCallback(uint32_t argc, Arguments& argv) {
+static Value* ArrayCallback(uint32_t argc, Value* argv[]) {
   Array* arr = Array::New();
   arr->Set(3, Number::NewIntegral(4));
 
@@ -32,19 +32,19 @@ static Value* ArrayCallback(uint32_t argc, Arguments& argv) {
   return arr;
 }
 
-static Value* FnThreeCallback(uint32_t argc, Arguments& argv) {
+static Value* FnThreeCallback(uint32_t argc, Value* argv[]) {
   assert(argc == 3);
 
   return Nil::New();
 }
 
-static Value* FnTwoCallback(uint32_t argc, Arguments& argv) {
+static Value* FnTwoCallback(uint32_t argc, Value* argv[]) {
   assert(argc == 2);
 
   return Nil::New();
 }
 
-static Value* PrintCallback(uint32_t argc, Arguments& argv) {
+static Value* PrintCallback(uint32_t argc, Value* argv[]) {
   assert(argc == 1);
 
   return Nil::New();
@@ -60,7 +60,7 @@ static void WeakCallback(Value* obj) {
   weak_called++;
 }
 
-static Value* GetWeak(uint32_t argc, Arguments& argv) {
+static Value* GetWeak(uint32_t argc, Value* argv[]) {
   assert(argc == 0);
 
   Handle<Object> obj(Object::New());
@@ -77,7 +77,7 @@ struct CDataStruct {
   int y;
 };
 
-static Value* UseCDataCallback(uint32_t argc, Arguments& argv) {
+static Value* UseCDataCallback(uint32_t argc, Value* argv[]) {
   assert(argc == 1);
 
   CDataStruct* s = reinterpret_cast<CDataStruct*>(
@@ -106,7 +106,7 @@ class WrapTest : public CWrapper {
   int x, y, z, j;
 };
 
-static Value* GetWrapper(uint32_t argc, Arguments& argv) {
+static Value* GetWrapper(uint32_t argc, Value* argv[]) {
   assert(argc == 0);
 
   WrapTest* w = new WrapTest();
@@ -117,7 +117,7 @@ static Value* GetWrapper(uint32_t argc, Arguments& argv) {
 }
 
 
-static Value* Unref(uint32_t argc, Arguments& argv) {
+static Value* Unref(uint32_t argc, Value* argv[]) {
   assert(argc == 1);
 
   WrapTest* w = CWrapper::Unwrap<WrapTest>(argv[0]);
@@ -128,7 +128,7 @@ static Value* Unref(uint32_t argc, Arguments& argv) {
 }
 
 
-static Value* Unwrap(uint32_t argc, Arguments& argv) {
+static Value* Unwrap(uint32_t argc, Value* argv[]) {
   assert(argc == 1);
 
   WrapTest* w = CWrapper::Unwrap<WrapTest>(argv[0]);

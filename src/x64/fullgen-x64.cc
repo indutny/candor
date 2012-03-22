@@ -128,7 +128,7 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
   uint32_t i = 0;
   while (item != NULL) {
     Operand lhs(rax, 0);
-    Operand rhs(rbp, 8 * (2 + fn->args()->length() - ++i));
+    Operand rhs(rbp, 8 * (2 + i++));
 
     cmpq(rsi, Immediate(TagNumber(i)));
     jmp(kLt, &body);
@@ -143,6 +143,7 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
   bind(&body);
 
   // Cleanup junk
+  xorq(rax, rax);
   xorq(rdx, rdx);
 }
 
@@ -284,29 +285,40 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
   IsHeapObject(Heap::kTagFunction, rax, &not_function, NULL);
 
   Spill rsi_s(this, rsi), rdi_s(this, rdi), root_s(this, root_reg);
-  {
-    ChangeAlign(fn->args()->length());
-    Align a(this);
-    ChangeAlign(-fn->args()->length());
 
+  ChangeAlign(fn->args()->length());
+  {
+    Align a(this);
+
+    uint32_t i;
+
+    // Allocate space on stack
+    movq(rax, Immediate(Heap::kTagNil));
+    for (i = 0; i < fn->args()->length(); i++) {
+      push(rax);
+    }
     AstList::Item* item = fn->args()->head();
+
+    movq(rbx, rsp);
+    Spill rbx_s(this, rbx);
+
+    // Put arguments
+    // [top] [1] ... [n]
+    i = 0;
     while (item != NULL) {
-      {
-        Align a(this);
-        if (item->value()->is(AstNode::kSelf)) {
-          receiver_s.Unspill(rax);
-        } else {
-          VisitForValue(item->value());
-        }
+      Operand arg_slot(rbx, i++ * 8);
+
+      if (item->value()->is(AstNode::kSelf)) {
+        receiver_s.Unspill(rax);
+      } else {
+        VisitForValue(item->value());
       }
 
-      // Push argument and change alignment
-      push(rax);
-      ChangeAlign(1);
+      rbx_s.Unspill();
+      movq(arg_slot, rax);
+
       item = item->next();
     }
-    // Restore alignment
-    ChangeAlign(-fn->args()->length());
 
     // Generate calling code
     rax_s.Unspill();
@@ -317,6 +329,8 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
       addq(rsp, Immediate(fn->args()->length() * 8));
     }
   }
+  ChangeAlign(-fn->args()->length());
+
   root_s.Unspill();
   rdi_s.Unspill();
   rsi_s.Unspill();
