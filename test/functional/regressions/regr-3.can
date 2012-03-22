@@ -1,0 +1,15 @@
+print = global.print
+assert = global.assert
+
+print("-- can: parser regr#3 --")
+
+StreamPrototype = {
+ pipe: (self, stream) {
+   self.onData = (chunk) {
+     stream:write(chunk)
+   }
+   self.onEnd = () {
+     stream:end()
+   }
+ }
+}

@@ -83,6 +83,7 @@ test: candor.a can $(TESTS)
 	@test/test-numbers
 	@test/test-api
 	@test/test-gc
+	@./can test/functional/return.can
 	@./can test/functional/basics.can
 	@./can test/functional/arrays.can
 	@./can test/functional/objects.can
