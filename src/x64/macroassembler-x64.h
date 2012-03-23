@@ -108,6 +108,7 @@ class Masm : public Assembler {
                     Label* mismatch,
                     Label* match);
   void IsTrue(Register reference, Label* is_false, Label* is_true);
+  void IsDenseArray(Register reference, Label* non_dense, Label* dense);
 
   // Sets correct environment and calls function
   void Call(Register addr);

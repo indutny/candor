@@ -356,7 +356,7 @@ void LookupPropertyStub::Generate() {
   GeneratePrologue();
   __ AllocateSpills(0);
 
-  Label is_object(masm()), is_array(masm()), cleanup(masm());
+  Label is_object(masm()), is_array(masm()), cleanup(masm()), slow_case(masm());
   Label non_object_error(masm()), done(masm());
 
   // rax <- object
@@ -375,11 +375,11 @@ void LookupPropertyStub::Generate() {
 
   __ bind(&is_object);
 
-  // Fast case object and a string key
+  // Fast case: object and a string key
   {
-    __ IsNil(rbx, NULL, &is_array);
-    __ IsUnboxed(rbx, NULL, &is_array);
-    __ IsHeapObject(Heap::kTagString, rbx, &is_array, NULL);
+    __ IsNil(rbx, NULL, &slow_case);
+    __ IsUnboxed(rbx, NULL, &slow_case);
+    __ IsHeapObject(Heap::kTagString, rbx, &slow_case, NULL);
 
     __ StringHash(rbx, rdx);
 
@@ -440,12 +440,64 @@ void LookupPropertyStub::Generate() {
     GenerateEpilogue(0);
   }
 
+  __ bind(&is_array);
+  // Fast case: dense array and a unboxed key
+  {
+    __ IsNil(rbx, NULL, &slow_case);
+    __ IsUnboxed(rbx, &slow_case, NULL);
+    __ cmpq(rbx, Immediate(-1));
+    __ jmp(kLe, &slow_case);
+    __ IsDenseArray(rax, &slow_case, NULL);
+
+    // Get mask
+    Operand qmask(rax, HObject::kMaskOffset);
+    __ movq(rdx, qmask);
+
+    // Check if index is above the mask
+    // NOTE: rbx is tagged so we need to shift it only 2 times
+    __ movq(r15, rbx);
+    __ shl(r15, Immediate(2));
+    __ cmpq(r15, rdx);
+    __ jmp(kGt, &cleanup);
+
+    // Apply mask
+    __ andq(r15, rdx);
+
+    // Check if length was increased
+    Label length_set(masm());
+
+    Operand qlength(rax, HArray::kLengthOffset);
+    __ movq(rdx, qlength);
+    __ Untag(rbx);
+    __ inc(rbx);
+    __ cmpq(rbx, rdx);
+    __ jmp(kLe, &length_set);
+
+    // Update length
+    __ movq(qlength, rbx);
+
+    __ bind(&length_set);
+    // Rbx is untagged here - so nullify it
+    __ xorq(rbx, rbx);
+
+    // Get index
+    __ movq(rax, r15);
+    __ addq(rax, Immediate(HMap::kSpaceOffset));
+
+    // Cleanup
+    __ xorq(r15, r15);
+    __ xorq(rdx, rdx);
+
+    // Return value
+    GenerateEpilogue(0);
+  }
+
   __ bind(&cleanup);
 
   __ xorq(r15, r15);
   __ xorq(rdx, rdx);
 
-  __ bind(&is_array);
+  __ bind(&slow_case);
 
   __ Pushad();
 

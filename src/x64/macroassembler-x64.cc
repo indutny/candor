@@ -520,6 +520,14 @@ void Masm::IsTrue(Register reference, Label* is_false, Label* is_true) {
 }
 
 
+void Masm::IsDenseArray(Register reference, Label* non_dense, Label* dense) {
+  Operand qlength(reference, HArray::kLengthOffset);
+  cmpq(qlength, Immediate(HArray::kDenseLengthMax));
+  if (non_dense != NULL) jmp(kGt, non_dense);
+  if (dense != NULL) jmp(kLe, dense);
+}
+
+
 void Masm::Call(Register addr) {
   while ((offset() & 0x1) != 0x1) {
     nop();
