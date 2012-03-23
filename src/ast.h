@@ -67,7 +67,7 @@ class AstNode : public ZoneObject {
 
   AstNode(Type type) : type_(type),
                        value_(NULL),
-                       offset_(0),
+                       offset_(-1),
                        length_(0),
                        stack_count_(0),
                        context_count_(0),

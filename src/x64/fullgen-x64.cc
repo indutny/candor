@@ -133,7 +133,7 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
     cmpq(rsi, Immediate(TagNumber(i)));
     jmp(kLt, &body);
 
-    VisitForSlot(item->value());
+    VisitFor(kSlot, item->value());
     movq(rdx, rhs);
     movq(slot(), rdx);
 
@@ -170,29 +170,17 @@ char* Fullgen::AllocateRoot() {
 }
 
 
-AstNode* Fullgen::VisitForValue(AstNode* node) {
+AstNode* Fullgen::VisitFor(VisitorType type, AstNode* node) {
   // Save previous data
   VisitorType stored_type = visitor_type_;
 
   // Set new
-  visitor_type_ = kValue;
+  visitor_type_ = type;
 
-  // Visit node
-  AstNode* result = Visit(node);
-
-  // Restore
-  visitor_type_ = stored_type;
-
-  return result;
-}
-
-
-AstNode* Fullgen::VisitForSlot(AstNode* node) {
-  // Save data
-  VisitorType stored_type = visitor_type_;
-
-  // Set new
-  visitor_type_ = kSlot;
+  // Amend source_map
+  if (node->offset() != -1) {
+    source_map()->Set(NumberKey::New(offset()), NumberKey::New(node->offset()));
+  }
 
   // Visit node
   AstNode* result = Visit(node);
@@ -266,16 +254,16 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
     AstNode* receiver = fn->variable()->lhs();
     AstNode* property = fn->variable()->rhs();
 
-    VisitForValue(receiver);
+    VisitFor(kValue, receiver);
     receiver_s.Init(rax);
 
     AstNode* member = new AstNode(AstNode::kMember);
     member->children()->Push(new FAstSpill(&receiver_s));
     member->children()->Push(property);
 
-    VisitForValue(member);
+    VisitFor(kValue, member);
   } else {
-    VisitForValue(fn->variable());
+    VisitFor(kValue, fn->variable());
   }
 
   Spill rax_s(this, rax);
@@ -311,7 +299,7 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
       if (item->value()->is(AstNode::kSelf)) {
         receiver_s.Unspill(rax);
       } else {
-        VisitForValue(item->value());
+        VisitFor(kValue, item->value());
       }
 
       rbx_s.Unspill();
@@ -350,11 +338,11 @@ AstNode* Fullgen::VisitAssign(AstNode* stmt) {
   Label done(this);
 
   // Get value of right-hand side expression in rbx
-  VisitForValue(stmt->rhs());
+  VisitFor(kValue, stmt->rhs());
   Spill rax_s(this, rax);
 
   // Get target slot for left-hand side
-  VisitForSlot(stmt->lhs());
+  VisitFor(kSlot, stmt->lhs());
 
   rax_s.Unspill(scratch);
 
@@ -444,10 +432,10 @@ AstNode* Fullgen::VisitValue(AstNode* node) {
 
 
 AstNode* Fullgen::VisitMember(AstNode* node) {
-  VisitForValue(node->lhs());
+  VisitFor(kValue, node->lhs());
   Spill rax_s(this, rax);
 
-  VisitForValue(node->rhs());
+  VisitFor(kValue, node->rhs());
   movq(rbx, rax);
   rax_s.Unspill(rax);
 
@@ -535,18 +523,18 @@ AstNode* Fullgen::VisitIf(AstNode* node) {
   AstNode* fail = NULL;
   if (fail_item != NULL) fail = fail_item->value();
 
-  VisitForValue(expr);
+  VisitFor(kValue, expr);
 
   Call(stubs()->GetCoerceToBooleanStub());
 
   IsTrue(rax, &fail_body, NULL);
 
-  VisitForValue(success);
+  VisitFor(kValue, success);
 
   jmp(&done);
   bind(&fail_body);
 
-  if (fail != NULL) VisitForValue(fail);
+  if (fail != NULL) VisitFor(kValue, fail);
 
   bind(&done);
 
@@ -564,13 +552,13 @@ AstNode* Fullgen::VisitWhile(AstNode* node) {
 
   bind(&loop_start);
 
-  VisitForValue(expr);
+  VisitFor(kValue, expr);
 
   Call(stubs()->GetCoerceToBooleanStub());
 
   IsTrue(rax, &loop_end, NULL);
 
-  VisitForValue(body);
+  VisitFor(kValue, body);
 
   jmp(&loop_start);
 
@@ -645,7 +633,7 @@ AstNode* Fullgen::VisitObjectLiteral(AstNode* node) {
     assign->children()->Push(member);
     assign->children()->Push(value->value());
 
-    VisitForValue(assign);
+    VisitFor(kValue, assign);
 
     key = key->next();
     value = value->next();
@@ -686,7 +674,7 @@ AstNode* Fullgen::VisitArrayLiteral(AstNode* node) {
     assign->children()->Push(member);
     assign->children()->Push(item->value());
 
-    VisitForValue(assign);
+    VisitFor(kValue, assign);
 
     item = item->next();
     index++;
@@ -701,7 +689,7 @@ AstNode* Fullgen::VisitArrayLiteral(AstNode* node) {
 AstNode* Fullgen::VisitReturn(AstNode* node) {
   if (node->lhs() != NULL) {
     // Get value of expression
-    VisitForValue(node->lhs());
+    VisitFor(kValue, node->lhs());
   } else {
     // Or just nullify output
     movq(rax, Immediate(Heap::kTagNil));
@@ -714,7 +702,7 @@ AstNode* Fullgen::VisitReturn(AstNode* node) {
 
 
 AstNode* Fullgen::VisitNew(AstNode* node) {
-  VisitForValue(node->lhs());
+  VisitFor(kValue, node->lhs());
   Call(stubs()->GetCloneObjectStub());
 
   return node;
@@ -730,10 +718,10 @@ AstNode* Fullgen::VisitDelete(AstNode* node) {
   AstNode* receiver = node->lhs()->lhs();
   AstNode* property = node->lhs()->rhs();
 
-  VisitForValue(property);
+  VisitFor(kValue, property);
   Spill rax_s(this, rax);
 
-  VisitForValue(receiver);
+  VisitFor(kValue, receiver);
   rax_s.Unspill(rbx);
 
   Call(stubs()->GetDeletePropertyStub());
@@ -774,7 +762,7 @@ AstNode* Fullgen::VisitTypeof(AstNode* node) {
 
   Align a(this);
 
-  VisitForValue(node->lhs());
+  VisitFor(kValue, node->lhs());
   Call(stubs()->GetTypeofStub());
 
   return node;
@@ -789,7 +777,7 @@ AstNode* Fullgen::VisitSizeof(AstNode* node) {
 
   Align a(this);
 
-  VisitForValue(node->lhs());
+  VisitFor(kValue, node->lhs());
   Call(stubs()->GetSizeofStub());
 
   return node;
@@ -804,7 +792,7 @@ AstNode* Fullgen::VisitKeysof(AstNode* node) {
 
   Align a(this);
 
-  VisitForValue(node->lhs());
+  VisitFor(kValue, node->lhs());
   Call(stubs()->GetKeysofStub());
 
   return node;
@@ -850,7 +838,7 @@ AstNode* Fullgen::VisitUnOp(AstNode* node) {
     }
 
     // a++ => $scratch = a; a = $scratch + 1; $scratch
-    VisitForSlot(op->lhs());
+    VisitFor(kSlot, op->lhs());
 
     Label done(this), nil_result(this);
 
@@ -868,7 +856,7 @@ AstNode* Fullgen::VisitUnOp(AstNode* node) {
 
     assign->children()->head()->value(new FAstOperand(&slot()));
     rhs->children()->head()->value(new FAstSpill(&rbx_s));
-    VisitForValue(assign);
+    VisitFor(kValue, assign);
 
     scratch_s.Unspill(rax);
 
@@ -893,11 +881,11 @@ AstNode* Fullgen::VisitUnOp(AstNode* node) {
         zero,
         op->lhs());
 
-    VisitForValue(wrap);
+    VisitFor(kValue, wrap);
 
   } else if (op->subtype() == UnOp::kNot) {
     // Get value and convert it to boolean
-    VisitForValue(op->lhs());
+    VisitFor(kValue, op->lhs());
     Call(stubs()->GetCoerceToBooleanStub());
 
     Label done(this), ret_false(this);
@@ -933,7 +921,7 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
     return node;
   }
 
-  VisitForValue(op->lhs());
+  VisitFor(kValue, op->lhs());
 
   Label call_stub(this), done(this);
 
@@ -1012,7 +1000,7 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
   bind(&call_stub);
 
   Spill rax_s(this, rax);
-  VisitForValue(op->rhs());
+  VisitFor(kValue, op->rhs());
   movq(rbx, rax);
   rax_s.Unspill(rax);
 

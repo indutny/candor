@@ -4,6 +4,7 @@
 #include <stdlib.h> // NULL
 #include <stdarg.h> // va_list
 #include <stdint.h> // uint32_t
+#include <sys/types.h> // off_t
 #include <stdio.h> // vsnprintf
 #include <string.h> // strncmp, memset
 #include <unistd.h> // sysconf or getpagesize
@@ -177,6 +178,30 @@ class StringKey : public Base {
  private:
   const char* value_;
   uint32_t length_;
+};
+
+
+class NumberKey {
+ public:
+  static NumberKey* New(const uint32_t value) {
+    off_t ptr = static_cast<off_t>(value);
+
+    return reinterpret_cast<NumberKey*>(ptr);
+  }
+
+  int32_t value() {
+    off_t ptr = reinterpret_cast<off_t>(this);
+
+    return static_cast<uint32_t>(ptr);
+  }
+
+  static uint32_t Hash(NumberKey* key) {
+    return ComputeHash(key->value());
+  }
+
+  static int Compare(NumberKey* left, NumberKey* right) {
+    return left == right ? 0 : -1;
+  }
 };
 
 
