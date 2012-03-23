@@ -107,7 +107,7 @@ class List {
 
   void Remove(Item* item) {
     if (current_ == item) current_ = item->prev_;
-    if (head_ == item) head_ = item->prev_;
+    if (head_ == item) head_ = item->next_;
     if (allocated) delete item->value();
 
     item->remove();
