@@ -155,29 +155,52 @@ class List {
 };
 
 
-template <class T, class ItemParent>
+template <class Base>
+class StringKey : public Base {
+ public:
+  StringKey(const char* value, uint32_t length) : value_(value),
+                                                  length_(length) {
+  }
+
+  static uint32_t Hash(StringKey* key) {
+    return ComputeHash(key->value(), key->length());
+  }
+
+  static int Compare(StringKey* left, StringKey* right) {
+    if (left->length() != right->length()) return - 1;
+    return strncmp(left->value(), right->value(), left->length());
+  }
+
+  const char* value() { return value_; }
+  const uint32_t length() { return length_; }
+
+ private:
+  const char* value_;
+  uint32_t length_;
+};
+
+
+template <class Key, class Value, class ItemParent>
 class HashMap {
  public:
-  typedef void (*EnumerateCallback)(void* map, T value);
+  typedef void (*EnumerateCallback)(void* map, Value* value);
 
   class Item : public ItemParent {
    public:
-    Item(const char* key, uint32_t length, T value) : key_(key),
-                                                      length_(length),
-                                                      value_(value),
-                                                      next_(NULL),
-                                                      next_linear_(NULL) {
+    Item(Key* key, Value* value) : key_(key),
+                                   value_(value),
+                                   next_(NULL),
+                                   next_linear_(NULL) {
     }
 
-    inline T value() { return value_; }
-    inline void value(T value) { value_ = value; }
+    inline Value* value() { return value_; }
+    inline void value(Value* value) { value_ = value; }
     inline Item* next() { return next_; }
     inline Item* next_linear() { return next_linear_; }
 
    protected:
-    const char* key_;
-    uint32_t length_;
-    T value_;
+    Key* key_;
+    Value* value_;
 
     Item* next_;
     Item* next_linear_;
@@ -189,11 +212,10 @@ class HashMap {
     memset(&map_, 0, sizeof(map_));
   }
 
-
-  void Set(const char* key, uint32_t length, T value) {
-    uint32_t index = ComputeHash(key, length) & mask_;
+  void Set(Key* key, Value* value) {
+    uint32_t index = Key::Hash(key) & mask_;
     Item* i = map_[index];
-    Item* next = new Item(key, length, value);
+    Item* next = new Item(key, value);
 
     // Setup head or append item to linked list
     // (Needed for enumeration)
@@ -213,13 +235,12 @@ class HashMap {
   }
 
 
-  T Get(const char* key, uint32_t length) {
-    uint32_t index = ComputeHash(key, length) & mask_;
+  Value* Get(Key* key) {
+    uint32_t index = Key::Hash(key) & mask_;
     Item* i = map_[index];
 
     while (i != NULL) {
-      if (length == i->length_ &&
-          strncmp(i->key_, key, length) == 0) {
+      if (Key::Compare(i->key_, key) == 0) {
         return i->value();
       }
       i = i->next();

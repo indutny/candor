@@ -27,7 +27,8 @@ Scope::Scope(ScopeAnalyze* a, Type type) : a_(a),
   if (parent() == NULL) {
     depth_ = 0;
     // And put a global object in
-    Set("global", 6, new ScopeSlot(ScopeSlot::kContext, -1));
+    Set(new StringKey<ZoneObject>("global", 6),
+        new ScopeSlot(ScopeSlot::kContext, -1));
   } else {
     depth_ = parent()->depth_;
     if (type_ == kFunction) depth_++;
@@ -55,9 +56,9 @@ Scope::~Scope() {
 }
 
 
-ScopeSlot* Scope::GetSlot(const char* name,
-                          uint32_t length) {
-  ScopeSlot* slot = Get(name, length);
+ScopeSlot* Scope::GetSlot(const char* name, uint32_t length) {
+  StringKey<ZoneObject>* key = new StringKey<ZoneObject>(name, length);
+  ScopeSlot* slot = Get(key);
 
   if (slot != NULL) return slot;
 
@@ -65,7 +66,7 @@ ScopeSlot* Scope::GetSlot(const char* name,
   int depth = 1;
   Scope* scope = parent();
   while (scope != NULL) {
-    slot = scope->Get(name, length);
+    slot = scope->Get(key);
 
     if (slot != NULL && slot->depth() <= 0) {
       if (slot->is_stack()) {
@@ -94,7 +95,7 @@ ScopeSlot* Scope::GetSlot(const char* name,
     slot = new ScopeSlot(ScopeSlot::kContext, depth);
     source->uses()->Push(slot);
   }
-  Set(name, length, slot);
+  Set(key, slot);
 
   return slot;
 }

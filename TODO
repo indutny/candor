@@ -1,4 +1,4 @@
-* Stack trace support
+* Stack trace support (Source to code map)
 * Cons strings
 * On-stack replacement and profile-based optimizations (register allocation too)
 * Incremental GC
