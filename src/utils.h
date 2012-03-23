@@ -173,7 +173,7 @@ class StringKey : public Base {
   }
 
   const char* value() { return value_; }
-  const uint32_t length() { return length_; }
+  uint32_t length() { return length_; }
 
  private:
   const char* value_;
