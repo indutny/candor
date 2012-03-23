@@ -112,8 +112,8 @@ class AstNode : public ZoneObject {
   inline void value(const char* value) { value_ = value; }
   inline const char* value() { return value_; }
 
-  inline void offset(uint32_t offset) { offset_ = offset; }
-  inline uint32_t offset() { return offset_; }
+  inline void offset(int32_t offset) { offset_ = offset; }
+  inline int32_t offset() { return offset_; }
 
   inline void length(uint32_t length) { length_ = length; }
   inline uint32_t length() { return length_; }
@@ -173,7 +173,7 @@ class AstNode : public ZoneObject {
   Type type_;
 
   const char* value_;
-  uint32_t offset_;
+  int32_t offset_;
   uint32_t length_;
 
   int32_t stack_count_;

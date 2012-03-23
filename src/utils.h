@@ -183,16 +183,16 @@ class StringKey : public Base {
 
 class NumberKey {
  public:
-  static NumberKey* New(const uint32_t value) {
+  static NumberKey* New(const uint64_t value) {
     off_t ptr = static_cast<off_t>(value);
 
     return reinterpret_cast<NumberKey*>(ptr);
   }
 
-  int32_t value() {
+  uint64_t value() {
     off_t ptr = reinterpret_cast<off_t>(this);
 
-    return static_cast<uint32_t>(ptr);
+    return static_cast<uint64_t>(ptr);
   }
 
   static uint32_t Hash(NumberKey* key) {
@@ -233,8 +233,27 @@ class HashMap {
     friend class HashMap;
   };
 
+  enum DestructorType {
+    kWithoutValues,
+    kWithValues
+  };
+
   HashMap() : head_(NULL), current_(NULL) {
     memset(&map_, 0, sizeof(map_));
+  }
+
+  void Destroy(DestructorType type) {
+    Item* i = head_;
+
+    while (i != NULL) {
+      Item* prev = i;
+      Value* value = i->value();
+
+      i = i->next_linear();
+
+      delete prev;
+      if (type == kWithValues) delete value;
+    }
   }
 
   void Set(Key* key, Value* value) {
