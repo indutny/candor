@@ -19,3 +19,17 @@ assert(sizeof a == 4, "shrinking")
 // Delete
 delete a[3]
 assert(sizeof a == 3, "delete")
+
+// Rehashing dense->dense->...->object
+i = 100
+a = []
+while (--i) {
+  a[i] = i
+}
+
+assert(sizeof a === 100, "array grows through rehashing")
+
+i = 100
+while (--i) {
+  assert(a[i] === i, "All items are in place:" + i)
+}
