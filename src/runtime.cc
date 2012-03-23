@@ -117,7 +117,7 @@ off_t RuntimeLookupProperty(Heap* heap,
 
   if (is_array) {
     numkey = HNumber::IntegralValue(RuntimeToNumber(heap, key));
-    keyptr = reinterpret_cast<char*>(HNumber::Tag(numkey));
+    keyptr = HNumber::ToPointer(numkey);
     hash = ComputeHash(numkey);
 
     // Negative lookups are prohibited
@@ -132,38 +132,56 @@ off_t RuntimeLookupProperty(Heap* heap,
     hash = RuntimeGetHash(heap, key);
   }
 
-  // Dive into space and walk it in circular manner
-  uint32_t start = hash & mask;
-  uint32_t end = start == 0 ? mask : start - HValue::kPointerSize;
+  if (is_array && HArray::IsDense(obj)) {
+    // Dense arrays use another lookup mechanism
+    uint32_t index = numkey << 3;
 
-  uint32_t index = start;
-  char* key_slot;
-  while (index != end) {
-    key_slot = *reinterpret_cast<char**>(space + index);
-    if (key_slot == HNil::New()) break;
-    if (is_array) {
-      if (key_slot == keyptr) break;
-    } else {
-      if (RuntimeStrictCompare(key_slot, key) == 0) break;
+    if (index > mask) {
+      if (insert) {
+        RuntimeGrowObject(heap, obj);
+
+        return RuntimeLookupProperty(heap, obj, keyptr, insert);
+      } else {
+        // get a[length + x] == nil
+        return Heap::kTagNil;
+      }
     }
 
-    index += HValue::kPointerSize;
-    if (index > mask) index = 0;
+    return HMap::kSpaceOffset + (index & mask);
+  } else {
+    // Dive into space and walk it in circular manner
+    uint32_t start = hash & mask;
+    uint32_t end = start == 0 ? mask : start - HValue::kPointerSize;
+
+    uint32_t index = start;
+    char* key_slot;
+    while (index != end) {
+      key_slot = *reinterpret_cast<char**>(space + index);
+      if (key_slot == HNil::New()) break;
+      if (is_array) {
+        if (key_slot == keyptr) break;
+      } else {
+        if (RuntimeStrictCompare(key_slot, key) == 0) break;
+      }
+
+      index += HValue::kPointerSize;
+      if (index > mask) index = 0;
+    }
+
+    // All key slots are filled - rehash and lookup again
+    if (index == end) {
+      assert(insert);
+      RuntimeGrowObject(heap, obj);
+
+      return RuntimeLookupProperty(heap, obj, keyptr, insert);
+    }
+
+    if (insert) {
+      *reinterpret_cast<char**>(space + index) = keyptr;
+    }
+
+    return HMap::kSpaceOffset + index + (mask + HValue::kPointerSize);
   }
-
-  // All key slots are filled - rehash and lookup again
-  if (index == end) {
-    assert(insert);
-    RuntimeGrowObject(heap, obj);
-
-    return RuntimeLookupProperty(heap, obj, keyptr, insert);
-  }
-
-  if (insert) {
-    *reinterpret_cast<char**>(space + index) = keyptr;
-  }
-
-  return HMap::kSpaceOffset + index + (mask + HValue::kPointerSize);
 }
 
 
@@ -183,14 +201,25 @@ char* RuntimeGrowObject(Heap* heap, char* obj) {
   *HObject::MaskSlot(obj) = mask;
 
   // And rehash properties to new map
-  uint32_t original_size = map->size();
-  for (uint32_t i = 0; i < original_size; i ++) {
-    char* key = *map->GetSlotAddress(i);
-    if (key == HNil::New()) continue;
+  if (HValue::GetTag(obj) == Heap::kTagArray && HArray::IsDense(obj)) {
+    // Dense array's map doesn't contain key pointers, iterate values
+    for (uint32_t i = 0; i < size; i++) {
+      char* value = *map->GetSlotAddress(i);
+      if (value == HNil::New()) continue;
 
-    char* value = *map->GetSlotAddress(i + original_size);
+      *HObject::LookupProperty(heap, obj, HNumber::ToPointer(i), 1) = value;
+    }
+  } else {
+    // Object and non-dense arrays contains both keys and pointers
+    uint32_t original_size = map->size();
+    for (uint32_t i = 0; i < original_size; i++) {
+      char* key = *map->GetSlotAddress(i);
+      if (key == HNil::New()) continue;
 
-    *HObject::LookupProperty(heap, obj, key, 1) = value;
+      char* value = *map->GetSlotAddress(i + original_size);
+
+      *HObject::LookupProperty(heap, obj, key, 1) = value;
+    }
   }
 
   return 0;
@@ -665,12 +694,15 @@ char* RuntimeCloneObject(Heap* heap, char* obj) {
 void RuntimeDeleteProperty(Heap* heap, char* obj, char* property) {
   off_t offset = RuntimeLookupProperty(heap, obj, property, 0);
 
+  // Dense arrays doesn't have keys
+  if (HValue::GetTag(obj) != Heap::kTagArray || !HArray::IsDense(obj)) {
+    // Nil property
+    off_t keyoffset = offset - HObject::Mask(obj) - HValue::kPointerSize;
+    *reinterpret_cast<uint64_t*>(HObject::Map(obj) + keyoffset) = Heap::kTagNil;
+  }
+
   // Nil value
   *reinterpret_cast<uint64_t*>(HObject::Map(obj) + offset) = Heap::kTagNil;
-
-  // Nil property
-  off_t keyoffset = offset - HObject::Mask(obj) - HValue::kPointerSize;
-  *reinterpret_cast<uint64_t*>(HObject::Map(obj) + keyoffset) = Heap::kTagNil;
 }
 
 } // namespace internal

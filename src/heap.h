@@ -371,6 +371,8 @@ class HNumber : public HValue {
   static inline int64_t Untag(int64_t value);
   static inline int64_t Tag(int64_t value);
 
+  static inline char* ToPointer(int64_t value);
+
   inline double value() { return DoubleValue(addr()); }
   static inline int64_t IntegralValue(char* addr);
   static inline double DoubleValue(char* addr);
@@ -462,11 +464,11 @@ class HArray : public HObject {
   static char* NewEmpty(Heap* heap);
 
   static int64_t Length(char* obj, bool shrink);
+  static inline void SetLength(char* obj, int64_t length);
 
-  static inline void SetLength(char* obj, int64_t length) {
-    *reinterpret_cast<int64_t*>(obj + kLengthOffset) = length;
-  }
+  static inline bool IsDense(char* obj);
 
+  static const int kDenseLengthMax = 128;
   static const int kLengthOffset = HINTERIOR_OFFSET(3);
 
   static const Heap::HeapTag class_tag = Heap::kTagArray;

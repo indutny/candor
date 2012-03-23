@@ -1,6 +1,9 @@
 #ifndef _SRC_HEAP_INL_H_
 #define _SRC_HEAP_INL_H_
 
+#include <stdint.h> // int64_t
+#include <sys/types.h> // off_t
+
 namespace candor {
 namespace internal {
 
@@ -102,6 +105,12 @@ inline int64_t HNumber::Tag(int64_t value) {
 }
 
 
+inline char* HNumber::ToPointer(int64_t value) {
+  off_t oval = static_cast<off_t>(HNumber::Tag(value));
+  return reinterpret_cast<char*>(oval);
+}
+
+
 inline int64_t HNumber::IntegralValue(char* addr) {
   if (IsUnboxed(addr)) {
     return Untag(reinterpret_cast<int64_t>(addr));
@@ -122,6 +131,16 @@ inline double HNumber::DoubleValue(char* addr) {
 
 inline bool HNumber::IsIntegral(char* addr) {
   return IsUnboxed(addr);
+}
+
+
+inline void HArray::SetLength(char* obj, int64_t length) {
+  *reinterpret_cast<int64_t*>(obj + kLengthOffset) = length;
+}
+
+
+inline bool HArray::IsDense(char* obj) {
+  return Length(obj, false) <= kDenseLengthMax;
 }
 
 

@@ -447,27 +447,24 @@ Array* Array::New() {
 
 
 void Array::Set(int64_t key, Value* value) {
-  char* keyptr = reinterpret_cast<char*>(HNumber::Tag(key));
   char** slot = HObject::LookupProperty(ISOLATE->heap,
                                         addr(),
-                                        keyptr,
+                                        HNumber::ToPointer(key),
                                         1);
   *slot = value->addr();
 }
 
 
 Value* Array::Get(int64_t key) {
-  char* keyptr = reinterpret_cast<char*>(HNumber::Tag(key));
   return Value::New(*HObject::LookupProperty(ISOLATE->heap,
                                              addr(),
-                                             keyptr,
+                                             HNumber::ToPointer(key),
                                              1));
 }
 
 
 void Array::Delete(int64_t key) {
-  char* keyptr = reinterpret_cast<char*>(HNumber::Tag(key));
-  RuntimeDeleteProperty(ISOLATE->heap, addr(), keyptr);
+  RuntimeDeleteProperty(ISOLATE->heap, addr(), HNumber::ToPointer(key));
 }
 
 
