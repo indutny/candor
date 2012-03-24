@@ -215,44 +215,39 @@ class HashMap {
     Item(Key* key, Value* value) : key_(key),
                                    value_(value),
                                    next_(NULL),
-                                   next_linear_(NULL) {
+                                   next_scalar_(NULL) {
     }
 
     inline Value* value() { return value_; }
     inline void value(Value* value) { value_ = value; }
     inline Item* next() { return next_; }
-    inline Item* next_linear() { return next_linear_; }
+    inline Item* next_scalar() { return next_scalar_; }
 
    protected:
     Key* key_;
     Value* value_;
 
     Item* next_;
-    Item* next_linear_;
+    Item* next_scalar_;
 
     friend class HashMap;
   };
 
-  enum DestructorType {
-    kWithoutValues,
-    kWithValues
-  };
-
-  HashMap() : head_(NULL), current_(NULL) {
+  HashMap() : allocated(false), head_(NULL), current_(NULL) {
     memset(&map_, 0, sizeof(map_));
   }
 
-  void Destroy(DestructorType type) {
+  ~HashMap() {
     Item* i = head_;
 
     while (i != NULL) {
       Item* prev = i;
       Value* value = i->value();
 
-      i = i->next_linear();
+      i = i->next_scalar();
 
       delete prev;
-      if (type == kWithValues) delete value;
+      if (allocated) delete value;
     }
   }
 
@@ -266,7 +261,7 @@ class HashMap {
     if (head_ == NULL) {
       head_ = next;
     } else {
-      current_->next_linear_ = next;
+      current_->next_scalar_ = next;
     }
     current_ = next;
 
@@ -299,9 +294,11 @@ class HashMap {
 
     while (i != NULL) {
       cb(this, i->value());
-      i = i->next_linear();
+      i = i->next_scalar();
     }
   }
+
+  bool allocated;
 
  private:
   static const uint32_t size_ = 64;
