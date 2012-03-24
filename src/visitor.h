@@ -18,7 +18,7 @@ class Visitor {
   Visitor(Type type) : type_(type) {
   }
 
-  AstNode* Visit(AstNode* node);
+  virtual AstNode* Visit(AstNode* node);
   void VisitChildren(AstNode* node);
 
   virtual AstNode* VisitFunction(AstNode* node);

@@ -62,7 +62,7 @@ using namespace internal;
 #define FUN_TEST(code, block)\
     {\
       Isolate i;\
-      Function* f = Function::New(code, strlen(code));\
+      Function* f = Function::New("test", code, strlen(code));\
       if (i.HasError()) {\
         i.PrintError();\
         abort();\

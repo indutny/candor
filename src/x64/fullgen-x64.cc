@@ -74,6 +74,10 @@ void Fullgen::InitRoots() {
 
 
 void Fullgen::CandorFunction::Generate() {
+  if (fn()->offset() != -1) {
+    fullgen()->source_map()->Push(fullgen()->offset(), fn()->offset());
+  }
+
   // Generate function's body
   fullgen()->GeneratePrologue(fn());
   fullgen()->VisitChildren(fn());
@@ -177,17 +181,22 @@ char* Fullgen::AllocateRoot() {
 }
 
 
+AstNode* Fullgen::Visit(AstNode* node) {
+  // Amend source_map
+  if (node->offset() != -1) {
+    source_map()->Push(offset(), node->offset());
+  }
+
+  return Visitor::Visit(node);
+}
+
+
 AstNode* Fullgen::VisitFor(VisitorType type, AstNode* node) {
   // Save previous data
   VisitorType stored_type = visitor_type_;
 
   // Set new
   visitor_type_ = type;
-
-  // Amend source_map
-  if (node->offset() != -1) {
-    source_map()->Push(offset(), node->offset());
-  }
 
   // Visit node
   AstNode* result = Visit(node);
@@ -215,7 +224,7 @@ AstNode* Fullgen::VisitFunction(AstNode* stmt) {
 
     Spill rdx_s(this, rdx);
 
-    AstNode* assign = new AstNode(AstNode::kAssign);
+    AstNode* assign = new AstNode(AstNode::kAssign, stmt);
     assign->children()->Push(fn->variable());
     assign->children()->Push(new FAstSpill(&rdx_s));
 
@@ -246,11 +255,25 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
   AstNode* name = AstValue::Cast(fn->variable())->name();
 
   // handle __$gc() call
-  if (fn->variable()->is(AstNode::kValue) &&
-      name->length() == 5 && strncmp(name->value(), "__$gc", 5) == 0) {
-    Call(stubs()->GetCollectGarbageStub());
-    movq(rax, Immediate(Heap::kTagNil));
-    return stmt;
+  if (fn->variable()->is(AstNode::kValue)) {
+    if (name->length() == 5 && strncmp(name->value(), "__$gc", 5) == 0) {
+      Call(stubs()->GetCollectGarbageStub());
+      movq(rax, Immediate(Heap::kTagNil));
+      return stmt;
+    } else if (name->length() == 8 &&
+               strncmp(name->value(), "__$trace", 8) == 0) {
+      uint32_t ip = offset();
+
+      // Pass ip
+      movq(rax, Immediate(0));
+      RelocationInfo* r = new RelocationInfo(RelocationInfo::kAbsolute,
+                                             RelocationInfo::kQuad,
+                                             offset() - 8);
+      relocation_info_.Push(r);
+      r->target(ip);
+      Call(stubs()->GetStackTraceStub());
+      return stmt;
+    }
   }
 
   Spill receiver_s(this);
@@ -264,7 +287,7 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
     VisitFor(kValue, receiver);
     receiver_s.Init(rax);
 
-    AstNode* member = new AstNode(AstNode::kMember);
+    AstNode* member = new AstNode(AstNode::kMember, receiver);
     member->children()->Push(new FAstSpill(&receiver_s));
     member->children()->Push(property);
 
@@ -632,11 +655,11 @@ AstNode* Fullgen::VisitObjectLiteral(AstNode* node) {
   AstList::Item* key = obj->keys()->head();
   AstList::Item* value = obj->values()->head();
   while (key != NULL) {
-    AstNode* member = new AstNode(AstNode::kMember);
+    AstNode* member = new AstNode(AstNode::kMember, node);
     member->children()->Push(new FAstSpill(&rdx_s));
     member->children()->Push(key->value());
 
-    AstNode* assign = new AstNode(AstNode::kAssign);
+    AstNode* assign = new AstNode(AstNode::kAssign, node);
     assign->children()->Push(member);
     assign->children()->Push(value->value());
 
@@ -669,15 +692,15 @@ AstNode* Fullgen::VisitArrayLiteral(AstNode* node) {
   uint64_t index = 0;
   while (item != NULL) {
     char keystr[32];
-    AstNode* key = new AstNode(AstNode::kNumber);
+    AstNode* key = new AstNode(AstNode::kNumber, node);
     key->value(keystr);
     key->length(snprintf(keystr, sizeof(keystr), "%llu", index));
 
-    AstNode* member = new AstNode(AstNode::kMember);
+    AstNode* member = new AstNode(AstNode::kMember, node);
     member->children()->Push(new FAstSpill(&rdx_s));
     member->children()->Push(key);
 
-    AstNode* assign = new AstNode(AstNode::kAssign);
+    AstNode* assign = new AstNode(AstNode::kAssign, node);
     assign->children()->Push(member);
     assign->children()->Push(item->value());
 
@@ -817,7 +840,7 @@ AstNode* Fullgen::VisitUnOp(AstNode* node) {
   // Changing ops should be translated into another form
   if (op->is_changing()) {
     AstNode* rhs = NULL;
-    AstNode* one = new AstNode(AstNode::kNumber);
+    AstNode* one = new AstNode(AstNode::kNumber, node);
     one->value("1");
     one->length(1);
 
@@ -834,7 +857,7 @@ AstNode* Fullgen::VisitUnOp(AstNode* node) {
       break;
     }
 
-    AstNode* assign = new AstNode(AstNode::kAssign);
+    AstNode* assign = new AstNode(AstNode::kAssign, node);
     assign->children()->Push(op->lhs());
     assign->children()->Push(rhs);
 
@@ -879,7 +902,7 @@ AstNode* Fullgen::VisitUnOp(AstNode* node) {
     // -a = 0 - a
     // TODO: Parser should genereate negative numbers where possible
 
-    AstNode* zero = new AstNode(AstNode::kNumber);
+    AstNode* zero = new AstNode(AstNode::kNumber, node);
     zero->value("0");
     zero->length(1);
 

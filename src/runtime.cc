@@ -434,7 +434,7 @@ char* RuntimeBinOp(Heap* heap, char* lhs, char* rhs) {
   if (lhs == HNil::New() && rhs == HNil::New()) {
     if (BinOp::is_math(type) || BinOp::is_binary(type)) {
       // nil (+) nil = 0
-      return HNumber::New(heap, static_cast<int64_t>(0));
+      return HNumber::New(heap, 0);
     } else if (BinOp::is_logic(type) || BinOp::is_bool_logic(type)) {
       // nil == nil = true
       // nil === nil = true
@@ -649,8 +649,10 @@ char* RuntimeKeysof(Heap* heap, char* value) {
   uint32_t index = 0;
   for (uint32_t i = 0; i < size; i++) {
     if (map->GetSlot(i) != HValue::Cast(HNil::New())) {
-      char* indexptr = reinterpret_cast<char*>(HNumber::Tag(index));
-      char** slot = HObject::LookupProperty(heap, result, indexptr, 1);
+      char** slot = HObject::LookupProperty(heap,
+                                            result,
+                                            HNumber::ToPointer(index),
+                                            1);
       *slot = map->GetSlot(i)->addr();
       index++;
     }
@@ -703,6 +705,67 @@ void RuntimeDeleteProperty(Heap* heap, char* obj, char* property) {
 
   // Nil value
   *reinterpret_cast<uint64_t*>(HObject::Map(obj) + offset) = Heap::kTagNil;
+}
+
+
+char* RuntimeStackTrace(Heap* heap, char** frame, char* ip) {
+  SourceInfo* info;
+  char* result = HArray::NewEmpty(heap);
+
+  char* file_sym = HString::New(heap, Heap::kTenureNew, "filename", 8);
+  char* line_sym  = HString::New(heap, Heap::kTenureNew, "line", 4);
+  char* off_sym  = HString::New(heap, Heap::kTenureNew, "offset", 6);
+
+  uint32_t index = 0;
+  while ((info = heap->source_map()->Get(ip)) != NULL) {
+    {
+      char** slot;
+
+      // Create object with info
+      char* obj = HObject::NewEmpty(heap);
+
+      // Put filename
+      slot = HObject::LookupProperty(heap, obj, file_sym, 1);
+      *slot = HString::New(heap,
+                           Heap::kTenureNew,
+                           info->filename(),
+                           strlen(info->filename()));
+
+      // Put line number and offset
+      int pos;
+      int line = GetSourceLineByOffset(info->source(), info->offset(), &pos);
+
+      slot = HObject::LookupProperty(heap, obj, line_sym, 1);
+      *slot = HNumber::New(heap, line);
+
+      slot = HObject::LookupProperty(heap, obj, off_sym, 1);
+      *slot = HNumber::New(heap, pos);
+
+      // And put it in array
+      slot = HObject::LookupProperty(heap,
+                                     result,
+                                     HNumber::ToPointer(index),
+                                     1);
+      *slot = obj;
+      index++;
+    }
+
+    // Traverse stack
+    if (frame == NULL) break;
+
+    // Get return address and previous frame
+    ip = *(frame + 1);
+    frame = reinterpret_cast<char**>(*frame);
+
+    // Detect frame enter
+    if (frame != NULL &&
+        static_cast<uint32_t>(reinterpret_cast<off_t>(*(frame + 2))) ==
+            Heap::kEnterFrameTag) {
+      frame = NULL;
+    }
+  }
+
+  return result;
 }
 
 } // namespace internal

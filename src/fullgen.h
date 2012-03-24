@@ -136,6 +136,8 @@ class Fullgen : public Masm, public Visitor {
   // Alloctes HContext object for root variables
   char* AllocateRoot();
 
+  AstNode* Visit(AstNode* node);
+
   AstNode* VisitFunction(AstNode* stmt);
   AstNode* VisitCall(AstNode* stmt);
   AstNode* VisitAssign(AstNode* stmt);

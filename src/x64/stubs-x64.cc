@@ -678,6 +678,33 @@ void DeletePropertyStub::Generate() {
 }
 
 
+void StackTraceStub::Generate() {
+  // Store caller's frame pointer
+  __ movq(rbx, rbp);
+
+  GeneratePrologue();
+
+  // rax <- ip
+  // rbx <- rbp
+  //
+  RuntimeStackTraceCallback strace = &RuntimeStackTrace;
+
+  __ Pushad();
+
+  // RuntimeStackTrace(heap, frame, ip)
+  __ movq(rdi, Immediate(reinterpret_cast<uint64_t>(masm()->heap())));
+  __ movq(rsi, rbx);
+  __ movq(rdx, rax);
+
+  __ movq(rax, Immediate(*reinterpret_cast<uint64_t*>(&strace)));
+  __ callq(rax);
+
+  __ Popad(rax);
+
+  GenerateEpilogue(0);
+}
+
+
 #define BINARY_SUB_TYPES(V)\
     V(Add)\
     V(Sub)\

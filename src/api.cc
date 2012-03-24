@@ -83,7 +83,8 @@ void Isolate::PrintError() {
   if (!HasError()) return;
 
   fprintf(stderr,
-          "Error on line %d: %s\n",
+          "Error on line %s#%d: %s\n",
+          error->filename,
           error->line,
           error->message);
 }
@@ -254,13 +255,16 @@ void Value::ClearWeak() {
 
 
 
-Function* Function::New(const char* source, uint32_t length) {
+Function* Function::New(const char* filename,
+                        const char* source,
+                        uint32_t length) {
   char* root;
   Error* error;
-  char* code = ISOLATE->space->Compile(source,
-                                                     length,
-                                                     &root,
-                                                     &error);
+  char* code = ISOLATE->space->Compile(filename,
+                                       source,
+                                       length,
+                                       &root,
+                                       &error);
   // Set errors
   if (code == NULL) {
     ISOLATE->SetError(error);
@@ -277,8 +281,8 @@ Function* Function::New(const char* source, uint32_t length) {
 }
 
 
-Function* Function::New(const char* source) {
-  return New(source, strlen(source));
+Function* Function::New(const char* filename, const char* source) {
+  return New(filename, source, strlen(source));
 }
 
 

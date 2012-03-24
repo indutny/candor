@@ -86,13 +86,6 @@ class Parser : public Lexer {
     ParserSign sign_;
   };
 
-  // Creates new ast node and inserts `original` as it's child
-  inline AstNode* Wrap(AstNode::Type type, AstNode* original) {
-    AstNode* wrap = new AstNode(type);
-    wrap->children()->Push(original);
-    return wrap;
-  }
-
   inline TokenType NegateType(TokenType type) {
     if (sign_ == kNormal) return type;
 

@@ -67,6 +67,7 @@ struct Error {
   int line;
   int offset;
 
+  const char* filename;
   const char* source;
   uint32_t length;
 };
@@ -119,8 +120,10 @@ class Function : public Value {
  public:
   typedef Value* (*BindingCallback)(uint32_t argc, Value* argv[]);
 
-  static Function* New(const char* source, uint32_t length);
-  static Function* New(const char* source);
+  static Function* New(const char* filename,
+                       const char* source,
+                       uint32_t length);
+  static Function* New(const char* filename, const char* source);
   static Function* New(BindingCallback callback);
 
   Object* GetContext();

@@ -9,7 +9,7 @@ namespace internal {
 // Forward declaration
 class SourceInfo;
 
-typedef HashMap<NumberKey, SourceInfo, EmptyClass> SourceMapBase;
+typedef AVLTree<NumberKey, SourceInfo, EmptyClass> SourceMapBase;
 
 class SourceMap : SourceMapBase {
  public:
@@ -22,7 +22,10 @@ class SourceMap : SourceMapBase {
   }
 
   void Push(const uint32_t jit_offset,  const uint32_t offset);
-  void Commit(const char* source, uint32_t length, char* addr);
+  void Commit(const char* filename,
+              const char* source,
+              uint32_t length,
+              char* addr);
   SourceInfo* Get(char* addr);
 
   inline SourceQueue* queue() { return &queue_; }
@@ -34,14 +37,17 @@ class SourceMap : SourceMapBase {
 class SourceInfo {
  public:
   SourceInfo(const uint32_t offset,
-             const uint32_t jit_offset) : source_(NULL),
+             const uint32_t jit_offset) : filename_(NULL),
+                                          source_(NULL),
                                           length_(NULL),
                                           offset_(offset),
                                           jit_offset_(jit_offset) {
   }
 
+  inline const char* filename() { return filename_; }
   inline const char* source() { return source_; }
   inline uint32_t length() { return length_; }
+  inline void filename(const char* filename) { filename_ = filename; }
   inline void source(const char* source) { source_ = source; }
   inline void length(uint32_t length) { length_ = length; }
 
@@ -49,6 +55,7 @@ class SourceInfo {
   inline const uint32_t jit_offset() { return jit_offset_; }
 
  private:
+  const char* filename_;
   const char* source_;
   uint32_t length_;
   const uint32_t offset_;

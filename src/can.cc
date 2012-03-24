@@ -142,7 +142,8 @@ void StartRepl() {
     list.Push(cmd);
 
     const char* prepended = PrependGlobals(&list);
-    candor::Function* cmdfn = candor::Function::New(prepended,
+    candor::Function* cmdfn = candor::Function::New("repl",
+                                                    prepended,
                                                     strlen(prepended));
 
     if (!multiline || strlen(cmd) != 0) {
@@ -189,7 +190,7 @@ int main(int argc, char** argv) {
     off_t size = 0;
     const char* script = ReadContents(argv[1], &size);
 
-    candor::Function* code = candor::Function::New(script, size);
+    candor::Function* code = candor::Function::New(argv[1], script, size);
     delete script;
 
     if (isolate.HasError()) {

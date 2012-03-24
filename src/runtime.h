@@ -69,6 +69,9 @@ typedef void (*RuntimeDeletePropertyCallback)(Heap* heap,
                                               char* property);
 void RuntimeDeleteProperty(Heap* heap, char* obj, char* property);
 
+typedef char* (*RuntimeStackTraceCallback)(Heap* heap, char** frame, char* ip);
+char* RuntimeStackTrace(Heap* heap, char** frame, char* ip);
+
 } // namespace internal
 } // namespace candor
 

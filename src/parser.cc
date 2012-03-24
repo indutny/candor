@@ -254,13 +254,14 @@ AstNode* Parser::ParseExpression(int priority) {
 
     // member "=" expr
     {
+      Lexer::Token* token = Peek();
       Skip();
       AstNode* value = ParseExpression();
       if (value == NULL) {
         SetError("Expected rhs after '='");
         return NULL;
       }
-      result = new AstNode(AstNode::kAssign);
+      result = new AstNode(AstNode::kAssign, token);
       result->children()->Push(member);
       result->children()->Push(value);
     }
@@ -469,7 +470,8 @@ AstNode* Parser::ParseMember() {
       }
 
       AstNode* next = NULL;
-      switch (Peek()->type()) {
+      Lexer::Token* token = Peek();
+      switch (token->type()) {
        case kColon:
         if (colon_call != false) {
           SetError("Nested colons in method invocation are not supported");
@@ -500,8 +502,11 @@ AstNode* Parser::ParseMember() {
 
       if (next == NULL) break;
 
-      result = Wrap(AstNode::kMember, result);
-      result->children()->Push(next);
+      AstNode* node = new AstNode(AstNode::kMember, token);
+      node->children()->Push(result);
+      node->children()->Push(next);
+
+      result = node;
     }
   }
 

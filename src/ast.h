@@ -83,6 +83,15 @@ class AstNode : public ZoneObject {
                                             root_(false) {
   }
 
+  AstNode(Type type, AstNode* node) : type_(type),
+                                      value_(node->value()),
+                                      offset_(node->offset()),
+                                      length_(node->length()),
+                                      stack_count_(0),
+                                      context_count_(0),
+                                      root_(false) {
+  }
+
   virtual ~AstNode() {
   }
 
@@ -501,13 +510,13 @@ class AstValue : public AstNode {
     kSpill
   };
 
-  AstValue(Scope* scope, AstNode* name) : AstNode(kValue),
+  AstValue(Scope* scope, AstNode* name) : AstNode(kValue, name),
                                           type_(kSlot),
                                           name_(name) {
     slot_ = scope->GetSlot(name->value(), name->length());
   }
 
-  AstValue(ScopeSlot* slot, AstNode* name) : AstNode(kValue),
+  AstValue(ScopeSlot* slot, AstNode* name) : AstNode(kValue, name),
                                              type_(kSlot),
                                              slot_(slot),
                                              name_(name) {

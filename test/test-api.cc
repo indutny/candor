@@ -263,7 +263,7 @@ TEST_START("API test")
                        "})()\n"
                        "__$gc()\n__$gc()";
 
-    Function* f = Function::New(code, strlen(code));
+    Function* f = Function::New("api", code, strlen(code));
 
     Object* global = Object::New();
     global->Set(String::New("get", 3), Function::New(GetWeak));
@@ -280,7 +280,7 @@ TEST_START("API test")
     Isolate i;
     const char* code = "return () {\n__$gc()\n__$gc()\n__$gc()\n}";
 
-    Function* f = Function::New(code, strlen(code));
+    Function* f = Function::New("api", code, strlen(code));
 
     Handle<Object> weak(Object::New());
     weak.Unref();
@@ -300,7 +300,7 @@ TEST_START("API test")
     Isolate i;
     const char* code = "global.use(global.data)";
 
-    Function* f = Function::New(code, strlen(code));
+    Function* f = Function::New("api", code, strlen(code));
 
     CDataStruct* s;
     CData* data = CData::New(sizeof(*s));
@@ -334,7 +334,7 @@ TEST_START("API test")
                        "})()\n"
                        "__$gc()\n__$gc()";
 
-    Function* f = Function::New(code, strlen(code));
+    Function* f = Function::New("api", code, strlen(code));
 
     Object* global = Object::New();
     global->Set(String::New("get", 3), Function::New(GetWrapper));
@@ -359,7 +359,7 @@ TEST_START("API test")
                        "__$gc()\n"
                        "return fn()";
 
-    Function* f = Function::New(code, strlen(code));
+    Function* f = Function::New("api", code, strlen(code));
 
     Object* global = Object::New();
     global->Set(String::New("print", 5), Function::New(PrintCallback));

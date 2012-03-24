@@ -13,16 +13,20 @@ void SourceMap::Push(const uint32_t jit_offset,
 }
 
 
-void SourceMap::Commit(const char* source, uint32_t length, char* addr) {
+void SourceMap::Commit(const char* filename,
+                       const char* source,
+                       uint32_t length,
+                       char* addr) {
   off_t addr_o = reinterpret_cast<off_t>(addr);
 
   SourceInfo* info;
   while ((info = queue()->Shift()) != NULL) {
+    info->filename(filename);
     info->source(source);
     info->length(length);
 
-    SourceMapBase::Set(NumberKey::New(addr_o + info->jit_offset()),
-                       info);
+    SourceMapBase::Insert(NumberKey::New(addr_o + info->jit_offset()),
+                          info);
   }
 }
 

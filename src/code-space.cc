@@ -28,7 +28,8 @@ CodeSpace::~CodeSpace() {
 }
 
 
-Error* CodeSpace::CreateError(const char* source,
+Error* CodeSpace::CreateError(const char* filename,
+                              const char* source,
                               uint32_t length,
                               const char* message,
                               uint32_t offset) {
@@ -37,6 +38,7 @@ Error* CodeSpace::CreateError(const char* source,
   err->message = message;
   err->line = GetSourceLineByOffset(source, offset, &err->offset);
 
+  err->filename = filename;
   err->source = source;
   err->length = length;
 
@@ -54,7 +56,8 @@ char* CodeSpace::Put(Masm* masm) {
 }
 
 
-char* CodeSpace::Compile(const char* source,
+char* CodeSpace::Compile(const char* filename,
+                         const char* source,
                          uint32_t length,
                          char** root,
                          Error** error) {
@@ -64,8 +67,17 @@ char* CodeSpace::Compile(const char* source,
 
   AstNode* ast = p.Execute();
 
+  // Set default filename, if no was given
+  if (filename == NULL) {
+    filename = "???";
+  }
+
   if (p.has_error()) {
-    *error = CreateError(source, length, p.error_msg(), p.error_pos());
+    *error = CreateError(filename,
+                         source,
+                         length,
+                         p.error_msg(),
+                         p.error_pos());
     return NULL;
   }
 
@@ -76,7 +88,11 @@ char* CodeSpace::Compile(const char* source,
   f.Generate(ast);
 
   if (f.has_error()) {
-    *error = CreateError(source, length, f.error_msg(), f.error_pos());
+    *error = CreateError(filename,
+                         source,
+                         length,
+                         f.error_msg(),
+                         f.error_pos());
     return NULL;
   }
 
@@ -87,7 +103,7 @@ char* CodeSpace::Compile(const char* source,
   char* addr = Put(&f);
 
   // Relocate source map
-  heap()->source_map()->Commit(source, length, addr);
+  heap()->source_map()->Commit(filename, source, length, addr);
 
   return addr;
 }
