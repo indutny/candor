@@ -498,7 +498,8 @@ class AVLTree {
       return new_node;
     } else {
       // Find more appropriate node (with key less than asked for)
-      while (Key::Compare(key, current->key()) < 0) {
+      while (current->parent() != NULL &&
+             Key::Compare(key, current->key()) < 0) {
         current = current->parent();
       }
     }

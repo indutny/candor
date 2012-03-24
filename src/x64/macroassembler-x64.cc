@@ -351,31 +351,39 @@ void Masm::EnterFrameEpilogue() {
 
 void Masm::ExitFramePrologue() {
   Immediate last_stack(reinterpret_cast<uint64_t>(heap()->last_stack()));
+  Immediate last_frame(reinterpret_cast<uint64_t>(heap()->last_frame()));
   Operand scratch_op(scratch, 0);
+
+  movq(scratch, last_frame);
+  push(scratch_op);
+  movq(scratch_op, rbp);
 
   movq(scratch, last_stack);
   push(scratch_op);
-  push(Immediate(Heap::kTagNil));
   movq(scratch_op, rsp);
   xorq(scratch, scratch);
 }
 
 
 void Masm::ExitFrameEpilogue() {
-  pop(scratch);
-  pop(scratch);
-
   Immediate last_stack(reinterpret_cast<uint64_t>(heap()->last_stack()));
+  Immediate last_frame(reinterpret_cast<uint64_t>(heap()->last_frame()));
   Operand scratch_op(scratch, 0);
 
+  pop(scratch);
+
   // Restore previous last_stack
-  push(rax);
-
-  movq(rax, scratch);
+  // NOTE: we can safely use rbx here, look at stubs-x64.cc
+  movq(rbx, scratch);
   movq(scratch, last_stack);
-  movq(scratch_op, rax);
+  movq(scratch_op, rbx);
 
-  pop(rax);
+  pop(scratch);
+
+  // Restore previous last_frame
+  movq(rbx, scratch);
+  movq(scratch, last_frame);
+  movq(scratch_op, rbx);
 }
 
 

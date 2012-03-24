@@ -160,6 +160,7 @@ class Heap {
   Heap(uint32_t page_size) : new_space_(this, page_size),
                              old_space_(this, page_size),
                              last_stack_(NULL),
+                             last_frame_(NULL),
                              pending_exception_(NULL),
                              needs_gc_(kGCNone),
                              gc_(this) {
@@ -200,6 +201,7 @@ class Heap {
   }
 
   inline char** last_stack() { return &last_stack_; }
+  inline char** last_frame() { return &last_frame_; }
   inline char** pending_exception() { return &pending_exception_; }
 
   inline GCType* needs_gc_addr() {
@@ -220,6 +222,7 @@ class Heap {
 
   // Support reentering candor after invoking C++ side
   char* last_stack_;
+  char* last_frame_;
 
   char* pending_exception_;
 

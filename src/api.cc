@@ -98,6 +98,12 @@ void Isolate::SetError(Error* err) {
 }
 
 
+Array* Isolate::StackTrace() {
+  char** frame = reinterpret_cast<char**>(*heap->last_frame());
+  return Value::Cast<Array>(RuntimeStackTrace(heap, frame, NULL));
+}
+
+
 template <class T>
 Handle<T>::Handle() : value(NULL), ref_count(0), ref(NULL) {
   Ref();

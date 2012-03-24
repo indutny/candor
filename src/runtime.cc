@@ -718,7 +718,7 @@ char* RuntimeStackTrace(Heap* heap, char** frame, char* ip) {
 
   uint32_t index = 0;
   while ((info = heap->source_map()->Get(ip)) != NULL) {
-    {
+    if (ip != NULL) {
       char** slot;
 
       // Create object with info
@@ -761,7 +761,7 @@ char* RuntimeStackTrace(Heap* heap, char** frame, char* ip) {
     if (frame != NULL &&
         static_cast<uint32_t>(reinterpret_cast<off_t>(*(frame + 2))) ==
             Heap::kEnterFrameTag) {
-      frame = NULL;
+      frame = reinterpret_cast<char**>(*(frame + 3));
     }
   }
 

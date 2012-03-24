@@ -75,6 +75,11 @@ static Value* GetWeak(uint32_t argc, Value* argv[]) {
 
   obj->SetWeakCallback(WeakCallback);
 
+  Array* arr = Isolate::GetCurrent()->StackTrace();
+  assert(arr->Length() == 2);
+  assert(arr->Get(0)->As<Object>()->Get("line")->As<Number>()->Value() == 3);
+  assert(arr->Get(1)->As<Object>()->Get("line")->As<Number>()->Value() == 1);
+
   return *obj;
 }
 

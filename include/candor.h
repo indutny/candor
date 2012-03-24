@@ -38,6 +38,8 @@ class Isolate {
   Error* GetError();
   void PrintError();
 
+  Array* StackTrace();
+
  protected:
 
   void SetError(Error* err);
