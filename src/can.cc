@@ -56,11 +56,23 @@ candor::Value* APIAssert(uint32_t argc, candor::Value* argv[]) {
   if (argv[0]->ToBoolean()->IsFalse()) {
     if (argc >= 2) {
       const char* text = StringToChar(argv[1]->ToString());
-      fprintf(stderr, "assert(): assertion failed (%s)\n", text);
+      fprintf(stderr, "assert(): assertion failed (%s) in\n", text);
       delete text;
     } else {
-      fprintf(stderr, "assert(): assertion failed\n");
+      fprintf(stderr, "assert(): assertion failed in\n");
     }
+
+    candor::Array* trace = candor::Isolate::GetCurrent()->StackTrace();
+    assert(trace->Length() > 0);
+    candor::Object* first = trace->Get(0)->As<candor::Object>();
+    candor::String* filename = first->Get("filename")->As<candor::String>();
+    int line = first->Get("line")->As<candor::Number>()->Value();
+
+    fprintf(stderr,
+            "          %.*s:%d\n",
+            filename->Length(),
+            filename->Value(),
+            line);
     abort();
   }
 
