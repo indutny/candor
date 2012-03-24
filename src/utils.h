@@ -183,16 +183,12 @@ class StringKey : public Base {
 
 class NumberKey {
  public:
-  static NumberKey* New(const uint64_t value) {
-    off_t ptr = static_cast<off_t>(value);
-
-    return reinterpret_cast<NumberKey*>(ptr);
+  static NumberKey* New(const off_t value) {
+    return reinterpret_cast<NumberKey*>(value);
   }
 
-  uint64_t value() {
-    off_t ptr = reinterpret_cast<off_t>(this);
-
-    return static_cast<uint64_t>(ptr);
+  off_t value() {
+    return reinterpret_cast<off_t>(this);
   }
 
   static uint32_t Hash(NumberKey* key) {

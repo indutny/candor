@@ -12,6 +12,7 @@
 
 #include "zone.h" // ZoneObject
 #include "gc.h" // GC
+#include "source-map.h" // SourceMap
 #include "utils.h"
 
 #include <stdint.h> // uint32_t
@@ -211,6 +212,7 @@ class Heap {
   inline HValueWeakRefList* weak_references() { return &weak_references_; }
 
   inline GC* gc() { return &gc_; }
+  inline SourceMap* source_map() { return &source_map_; }
 
  private:
   Space new_space_;
@@ -228,6 +230,7 @@ class Heap {
   HValueWeakRefList weak_references_;
 
   GC gc_;
+  SourceMap source_map_;
 
   static Heap* current_;
 };
@@ -289,7 +292,9 @@ class HValue {
 class HValueReference {
  public:
   HValueReference(Heap::ReferenceType type, HValue** reference, HValue* value) :
-    type_(type), reference_(reference), value_(value) {
+      type_(type),
+      reference_(reference),
+      value_(value) {
   }
 
   inline Heap::ReferenceType type() { return type_; }
@@ -313,7 +318,8 @@ class HValueReference {
 class HValueWeakRef {
  public:
   HValueWeakRef(HValue* value, Heap::WeakCallback callback) :
-      value_(value), callback_(callback) {
+      value_(value),
+      callback_(callback) {
   }
 
   inline HValue* value() { return value_; }

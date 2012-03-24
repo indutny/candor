@@ -30,6 +30,7 @@ OBJS += src/cpu.o
 OBJS += src/code-space.o
 OBJS += src/gc.o
 OBJS += src/heap.o
+OBJS += src/source-map.o
 OBJS += src/runtime.o
 
 ifeq ($(ARCH),i386)
