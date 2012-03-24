@@ -286,6 +286,11 @@ Function* Function::New(const char* filename, const char* source) {
 }
 
 
+Function* Function::New(const char* source) {
+  return New(NULL, source);
+}
+
+
 Function* Function::New(BindingCallback callback) {
   char* obj = HFunction::NewBinding(ISOLATE->heap,
                                     *reinterpret_cast<char**>(&callback),

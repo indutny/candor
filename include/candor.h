@@ -124,6 +124,7 @@ class Function : public Value {
                        const char* source,
                        uint32_t length);
   static Function* New(const char* filename, const char* source);
+  static Function* New(const char* source);
   static Function* New(BindingCallback callback);
 
   Object* GetContext();
