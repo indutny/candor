@@ -18,6 +18,7 @@ namespace internal {
 // Forward declaration
 class Heap;
 class Register;
+class SourceMap;
 
 class FFunction : public ZoneObject {
  public:
@@ -71,8 +72,6 @@ class FAstOperand : public AstValue {
 // Generates non-optimized code by visiting each node in AST tree in-order
 class Fullgen : public Masm, public Visitor {
  public:
-  typedef HashMap<NumberKey, NumberKey, ZoneObject> SourceMap;
-
   class CandorFunction : public FFunction {
    public:
     CandorFunction(Fullgen* fullgen, FunctionLiteral* fn) : FFunction(fullgen),
@@ -120,7 +119,9 @@ class Fullgen : public Masm, public Visitor {
     kSlot
   };
 
-  Fullgen(CodeSpace* space);
+  Fullgen(CodeSpace* space, SourceMap* map);
+
+  void InitRoots();
 
   void Throw(Heap::Error err);
 
@@ -194,7 +195,7 @@ class Fullgen : public Masm, public Visitor {
   inline void current_function(CandorFunction* fn) { current_function_ = fn; }
   inline CandorFunction* current_function() { return current_function_; }
   inline List<char*, ZoneObject>* root_context() { return &root_context_; }
-  inline SourceMap* source_map() { return &source_map_; }
+  inline SourceMap* source_map() { return source_map_; }
 
  private:
   CodeSpace* space_;
@@ -206,7 +207,7 @@ class Fullgen : public Masm, public Visitor {
   Label* loop_start_;
   Label* loop_end_;
 
-  SourceMap source_map_;
+  SourceMap* source_map_;
 
   const char* error_msg_;
   uint32_t error_pos_;

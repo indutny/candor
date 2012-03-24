@@ -60,7 +60,7 @@ char* CodeSpace::Compile(const char* source,
                          Error** error) {
   Zone zone;
   Parser p(source, length);
-  Fullgen f(this);
+  Fullgen f(this, heap()->source_map());
 
   AstNode* ast = p.Execute();
 
@@ -84,7 +84,12 @@ char* CodeSpace::Compile(const char* source,
   *root = f.AllocateRoot();
 
   // Get address of code
-  return Put(&f);
+  char* addr = Put(&f);
+
+  // Relocate source map
+  heap()->source_map()->Commit(source, length, addr);
+
+  return addr;
 }
 
 

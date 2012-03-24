@@ -21,11 +21,8 @@ class SourceMap : SourceMapBase {
     queue_.allocated = true;
   }
 
-  void Push(const char* source,
-            const uint32_t length,
-            const uint32_t offset,
-            const uint32_t jit_offset);
-  void Commit(char* addr);
+  void Push(const uint32_t jit_offset,  const uint32_t offset);
+  void Commit(const char* source, uint32_t length, char* addr);
   SourceInfo* Get(char* addr);
 
   inline SourceQueue* queue() { return &queue_; }
@@ -36,23 +33,24 @@ class SourceMap : SourceMapBase {
 
 class SourceInfo {
  public:
-  SourceInfo(const char* source,
-             const uint32_t length,
-             const uint32_t offset,
-             const uint32_t jit_offset) : source_(source),
-                                          length_(length),
+  SourceInfo(const uint32_t offset,
+             const uint32_t jit_offset) : source_(NULL),
+                                          length_(NULL),
                                           offset_(offset),
                                           jit_offset_(jit_offset) {
   }
 
   inline const char* source() { return source_; }
-  inline const uint32_t length() { return length_; }
+  inline uint32_t length() { return length_; }
+  inline void source(const char* source) { source_ = source; }
+  inline void length(uint32_t length) { length_ = length; }
+
   inline const uint32_t offset() { return offset_; }
   inline const uint32_t jit_offset() { return jit_offset_; }
 
  private:
   const char* source_;
-  const uint32_t length_;
+  uint32_t length_;
   const uint32_t offset_;
   const uint32_t jit_offset_;
 };

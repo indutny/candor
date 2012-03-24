@@ -3,6 +3,7 @@
 #include "code-space.h" // CodeSpace
 #include "heap.h" // Heap
 #include "heap-inl.h"
+#include "source-map.h" // SourceMap
 #include "ast.h" // AstNode
 #include "zone.h" // ZoneObject
 #include "stubs.h" // Stubs
@@ -38,15 +39,21 @@ void FFunction::Allocate(uint32_t addr) {
 }
 
 
-Fullgen::Fullgen(CodeSpace* space) : Masm(space),
-                                     Visitor(kPreorder),
-                                     space_(space),
-                                     visitor_type_(kValue),
-                                     current_function_(NULL),
-                                     loop_start_(NULL),
-                                     loop_end_(NULL),
-                                     error_msg_(NULL),
-                                     error_pos_(0) {
+Fullgen::Fullgen(CodeSpace* space, SourceMap* map) : Masm(space),
+                                                     Visitor(kPreorder),
+                                                     space_(space),
+                                                     visitor_type_(kValue),
+                                                     current_function_(NULL),
+                                                     loop_start_(NULL),
+                                                     loop_end_(NULL),
+                                                     source_map_(map),
+                                                     error_msg_(NULL),
+                                                     error_pos_(0) {
+  InitRoots();
+}
+
+
+void Fullgen::InitRoots() {
   // Create a `global` object
   root_context()->Push(HObject::NewEmpty(heap()));
 
@@ -179,7 +186,7 @@ AstNode* Fullgen::VisitFor(VisitorType type, AstNode* node) {
 
   // Amend source_map
   if (node->offset() != -1) {
-    source_map()->Set(NumberKey::New(offset()), NumberKey::New(node->offset()));
+    source_map()->Push(offset(), node->offset());
   }
 
   // Visit node
