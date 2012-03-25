@@ -1,3 +1,6 @@
+* sizeof fn
+* ES-harmony-like varargs - a(x, y, z...) {}
+  (and if have no significant runtime overhead a(x, y..., z) ).
 * Cons strings
 * On-stack replacement and profile-based optimizations (register allocation too)
 * Incremental GC
