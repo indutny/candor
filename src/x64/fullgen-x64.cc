@@ -137,16 +137,24 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
   FunctionLiteral* fn = FunctionLiteral::Cast(stmt);
   AstList::Item* item = fn->args()->head();
   uint32_t i = 0;
+  uint32_t argc = fn->args()->length();
+
+  // scratch <- index
+  movq(scratch, Immediate(HNumber::Tag(0)));
+
+  // rcx <- pointer to current stack slot
+  movq(rcx, rbp);
+  addq(rcx, Immediate(2 * 8));
   while (item != NULL) {
     Operand lhs(rax, 0);
 
-    cmpq(rsi, Immediate(HNumber::Tag(i)));
+    cmpq(rsi, scratch);
     jmp(kLt, &body);
 
     switch (item->value()->type()) {
      case AstNode::kValue:
       {
-        Operand rhs(rbp, 8 * (2 + i++));
+        Operand rhs(rcx, 0);
         VisitFor(kSlot, item->value());
 
         movq(rdx, rhs);
@@ -155,21 +163,36 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
       break;
      case AstNode::kVarArg:
       {
-        // Get interior pointer to the arguments
-        movq(rax, rbp);
-        addq(rax, Immediate(8 * (2 + i++)));
+        Spill scratch_s(this, scratch);
+
+        // Interior pointer to the arguments
+        movq(rax, rcx);
 
         // Get left arguments count
+        // = ( total - current real - expected leading )
         movq(rdx, rsi);
+        subq(rdx, scratch);
+        if (argc != i + 1) {
+          subq(rdx, Immediate(HNumber::Tag(argc - i - 1)));
+        }
         shl(rdx, Immediate(2));
-        subq(rdx, Immediate((i - 1) << 3));
+
+        // Move stack pointer forward by vararg's length
+        movq(scratch, rdx);
+        addq(rcx, rdx);
+        subq(rcx, Immediate(8));
+        Spill rcx_s(this, rcx);
 
         // Call stub to generate var arg array
         Call(stubs()->GetVarArgStub());
+
+        rcx_s.Unspill();
         movq(rdx, rax);
 
         VisitFor(kSlot, item->value());
         movq(slot(), rdx);
+
+        scratch_s.Unspill();
       }
       break;
      default:
@@ -177,6 +200,10 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
       break;
     }
 
+    // Advance
+    addq(scratch, Immediate(HNumber::Tag(1)));
+    addq(rcx, Immediate(8));
+    i++;
     item = item->next();
   }
 
@@ -184,7 +211,9 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
 
   // Cleanup junk
   xorq(rax, rax);
+  xorq(rcx, rcx);
   xorq(rdx, rdx);
+  xorq(scratch, scratch);
 }
 
 

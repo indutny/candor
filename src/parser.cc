@@ -454,7 +454,10 @@ AstNode* Parser::ParseMember() {
         fn->args()->Push(expr);
 
         // Skip commas
-        if (Peek()->is(kComma)) Skip();
+        if (Peek()->is(kComma)) {
+          Skip();
+          SkipCr();
+        }
       }
       if (!Peek()->is(kParenClose)) {
         SetError("Failed to parse function's arguments");

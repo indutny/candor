@@ -1,5 +1,3 @@
-* ES-harmony-like varargs - a(x, y, z...) {}
-  (and if have no significant runtime overhead a(x, y..., z) ).
 * Lazy arguments
 * Cons strings
 * On-stack replacement and profile-based optimizations (register allocation too)

@@ -16,8 +16,20 @@ a(b...) {
   return sizeof b
 }
 
-a(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20)
+num = a(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+        21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38)
+assert(num == 38, "big number of arguments")
 assert(a() == 0, "no arguments, zero-length argv")
+
+// Var arg in the middle
+a(a, b..., c) {
+  assert(a === 1, "middle: #1")
+  assert(sizeof b === 2, "middle: #2 - size")
+  assert(b[0] + b[1] === 5, "middle: #2 - values")
+  assert(c === 4, "middle: #3")
+}
+
+a(1, 2, 3, 4)
 
 // Call with var arg
 

@@ -456,6 +456,14 @@ class FunctionLiteral : public AstNode {
       // So it should have a name
       if (variable() == NULL) return false;
 
+      // VarArg should be the last argument of a call statement
+      AstList::Item* head;
+      for (head = children()->head(); head != NULL; head = head->next()) {
+        if (head->value()->is(kVarArg) && head->next() != NULL) {
+          return false;
+        }
+      }
+
       // Transform node into a call
       type(kCall);
       return true;
@@ -465,10 +473,15 @@ class FunctionLiteral : public AstNode {
     if (variable() != NULL && !variable()->is(kName)) return false;
 
     // Arguments should be a kName, not expressions
+    // Only one kVarArg is supported
     AstList::Item* head;
+    bool seen_vararg = false;
     for (head = args_.head(); head != NULL; head = head->next()) {
       if (head->value()->is(kName)) continue;
-      if (head->value()->is(kVarArg) && head->next() == NULL) continue;
+      if (head->value()->is(kVarArg) && !seen_vararg) {
+        seen_vararg = true;
+        continue;
+      }
 
       return false;
     }
