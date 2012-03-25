@@ -81,6 +81,9 @@ class Masm : public Assembler {
   // Allocate object&map
   void AllocateObjectLiteral(Heap::HeapTag tag, Register size, Register result);
 
+  // VarArg
+  void AllocateVarArgSlots(Spill* vararg, Register argc);
+
   // Fills memory segment with immediate value
   void Fill(Register start, Register end, Immediate value);
 
@@ -113,7 +116,6 @@ class Masm : public Assembler {
   // Sets correct environment and calls function
   void Call(Register addr);
   void Call(Operand& addr);
-  void Call(Register fn, uint32_t args);
   void Call(char* stub);
   void CallFunction(Register fn);
 

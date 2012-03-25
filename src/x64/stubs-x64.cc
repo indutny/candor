@@ -441,8 +441,8 @@ void LookupPropertyStub::Generate() {
   Masm::Spill change_s(masm(), rcx);
 
   // Return nil on non-object's property access
-  __ IsNil(rax, NULL, &non_object_error);
   __ IsUnboxed(rax, NULL, &non_object_error);
+  __ IsNil(rax, NULL, &non_object_error);
 
   // Or into non-object
   __ IsHeapObject(Heap::kTagObject, rax, NULL, &is_object);
@@ -452,8 +452,8 @@ void LookupPropertyStub::Generate() {
 
   // Fast case: object and a string key
   {
-    __ IsNil(rbx, NULL, &slow_case);
     __ IsUnboxed(rbx, NULL, &slow_case);
+    __ IsNil(rbx, NULL, &slow_case);
     __ IsHeapObject(Heap::kTagString, rbx, &slow_case, NULL);
 
     __ StringHash(rbx, rdx);
@@ -518,8 +518,8 @@ void LookupPropertyStub::Generate() {
   __ bind(&is_array);
   // Fast case: dense array and a unboxed key
   {
-    __ IsNil(rbx, NULL, &slow_case);
     __ IsUnboxed(rbx, &slow_case, NULL);
+    __ IsNil(rbx, NULL, &slow_case);
     __ cmpq(rbx, Immediate(-1));
     __ jmp(kLe, &slow_case);
     __ IsDenseArray(rax, &slow_case, NULL);
@@ -609,8 +609,8 @@ void CoerceToBooleanStub::Generate() {
   Label unboxed(masm()), truel(masm()), not_bool(masm()), coerced_type(masm());
 
   // Check type and coerce if not boolean
-  __ IsNil(rax, NULL, &not_bool);
   __ IsUnboxed(rax, NULL, &unboxed);
+  __ IsNil(rax, NULL, &not_bool);
   __ IsHeapObject(Heap::kTagBoolean, rax, &not_bool, NULL);
 
   __ jmp(&coerced_type);
@@ -660,8 +660,8 @@ void CloneObjectStub::Generate() {
   Label non_object(masm()), done(masm());
 
   // rax <- object
-  __ IsNil(rax, NULL, &non_object);
   __ IsUnboxed(rax, NULL, &non_object);
+  __ IsNil(rax, NULL, &non_object);
   __ IsHeapObject(Heap::kTagObject, rax, &non_object, NULL);
 
   // Get map

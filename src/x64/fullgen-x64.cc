@@ -279,7 +279,7 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
     return stmt;
   }
 
-  Label not_function(this), done(this);
+  Label not_function(this), incorrect_vararg(this), done(this);
 
   AstNode* name = AstValue::Cast(fn->variable())->name();
 
@@ -327,23 +327,48 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
 
   Spill rax_s(this, rax);
 
-  IsNil(rax, NULL, &not_function);
   IsUnboxed(rax, NULL, &not_function);
+  IsNil(rax, NULL, &not_function);
   IsHeapObject(Heap::kTagFunction, rax, &not_function, NULL);
 
   Spill rsi_s(this, rsi), rdi_s(this, rdi), root_s(this, root_reg);
 
-  ChangeAlign(fn->args()->length());
+  Spill stack_s(this, rsp);
   {
-    Align a(this);
-
+    movq(rax, Immediate(Heap::kTagNil));
+    Spill vararg(this);
+    uint32_t argc = fn->args()->length();
     uint32_t i;
 
+    if (argc > 0 && fn->args()->tail()->value()->is(AstNode::kVarArg)) {
+      argc--;
+      VisitFor(kValue, fn->args()->tail()->value());
+
+      IsUnboxed(rax, NULL, &incorrect_vararg);
+      IsNil(rax, NULL, &incorrect_vararg);
+      IsHeapObject(Heap::kTagArray, rax, &incorrect_vararg, NULL);
+
+      vararg.Init(rax);
+    }
+
+    // Set argc
+    movq(rsi, Immediate(HNumber::Tag(argc)));
+
     // Allocate space on stack
-    movq(rax, Immediate(Heap::kTagNil));
-    for (i = 0; i < fn->args()->length(); i++) {
+
+    // For vararg (and increase rsi)
+    if (!vararg.is_empty()) {
+      AllocateVarArgSlots(&vararg, rsi);
+    }
+
+    // And for regular arguments
+    for (i = 0; i < argc; i++) {
       push(rax);
     }
+
+    // Align stack if needed
+    if (argc & 1) push(rax);
+
     AstList::Item* item = fn->args()->head();
 
     movq(rbx, rsp);
@@ -369,18 +394,19 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
 
     // Generate calling code
     rax_s.Unspill();
-    Call(rax, fn->args()->length());
-
-    if (fn->args()->length() != 0) {
-      // Unwind stack
-      addq(rsp, Immediate(fn->args()->length() * 8));
-    }
+    CallFunction(rax);
   }
-  ChangeAlign(-fn->args()->length());
+  // Unwind stack
+  stack_s.Unspill();
 
   root_s.Unspill();
   rdi_s.Unspill();
   rsi_s.Unspill();
+
+  jmp(&done);
+  bind(&incorrect_vararg);
+
+  movq(rax, Immediate(Heap::kTagNil));
 
   jmp(&done);
   bind(&not_function);
