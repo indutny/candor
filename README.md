@@ -241,11 +241,11 @@ Things that are implemented currently:
 * Parser/lexer/compiler errors
 * Break/Continue statements
 * C++/C bindings support for candor
+* C++/C bindings documentation
+* Dense arrays
 
 Things to come:
 
-* C++/C bindings documentation
-* Dense arrays
 * Cons strings
 * On-stack replacement and profile-based optimizations
 * Incremental GC
