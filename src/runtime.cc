@@ -763,7 +763,7 @@ char* RuntimeStackTrace(Heap* heap, char** frame, char* ip) {
     if (frame != NULL &&
         static_cast<uint32_t>(reinterpret_cast<off_t>(*(frame + 2))) ==
             Heap::kEnterFrameTag) {
-      frame = reinterpret_cast<char**>(*(frame + 3));
+      frame = reinterpret_cast<char**>(*(frame + 4));
     }
   }
 

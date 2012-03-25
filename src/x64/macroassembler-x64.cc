@@ -338,8 +338,12 @@ void Masm::FillStackSlots() {
 
 void Masm::EnterFramePrologue() {
   Immediate last_stack(reinterpret_cast<uint64_t>(heap()->last_stack()));
+  Immediate last_frame(reinterpret_cast<uint64_t>(heap()->last_frame()));
   Operand scratch_op(scratch, 0);
 
+  push(Immediate(Heap::kTagNil));
+  movq(scratch, last_frame);
+  push(scratch_op);
   movq(scratch, last_stack);
   push(scratch_op);
   push(Immediate(Heap::kEnterFrameTag));
@@ -347,7 +351,7 @@ void Masm::EnterFramePrologue() {
 
 
 void Masm::EnterFrameEpilogue() {
-  addq(rsp, Immediate(16));
+  addq(rsp, Immediate(4 * 8));
 }
 
 
