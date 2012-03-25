@@ -32,6 +32,10 @@ void BaseStub::GenerateEpilogue(int args) {
 
 
 void EntryStub::Generate() {
+  GeneratePrologue();
+  // Just for alignment
+  __ push(Immediate(Heap::kTagNil));
+
   // rdi <- function addr
   // rsi <- unboxed arguments count (tagged)
   // rdx <- pointer to arguments array
@@ -82,9 +86,6 @@ void EntryStub::Generate() {
   __ cmpq(rbx, rdx);
   __ jmp(kNe, &args);
 
-  // Nullify rbp to help GC iterating frames
-  __ xorq(rbp, rbp);
-
   // Nullify all registers to help GC distinguish on-stack values
   __ xorq(rax, rax);
   __ xorq(rbx, rbx);
@@ -126,7 +127,7 @@ void EntryStub::Generate() {
   __ pop(rbx);
   __ pop(rbp);
 
-  __ ret(0);
+  GenerateEpilogue(0);
 }
 
 
