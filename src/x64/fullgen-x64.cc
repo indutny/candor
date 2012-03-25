@@ -154,19 +154,21 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
     switch (item->value()->type()) {
      case AstNode::kValue:
       {
-        Operand rhs(rcx, 0);
-        VisitFor(kSlot, item->value());
+        AstValue* arg = AstValue::Cast(item->value());
 
-        movq(rdx, rhs);
-        movq(slot(), rdx);
+        if (arg->slot()->use_count() > 1) {
+          Operand rhs(rcx, 0);
+          VisitFor(kSlot, arg);
+
+          movq(rdx, rhs);
+          movq(slot(), rdx);
+        }
       }
       break;
      case AstNode::kVarArg:
       {
+        AstValue* arg = AstValue::Cast(item->value()->lhs());
         Spill scratch_s(this, scratch);
-
-        // Interior pointer to the arguments
-        movq(rax, rcx);
 
         // Get left arguments count
         // = ( total - current real - expected leading )
@@ -177,20 +179,28 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
         }
         shl(rdx, Immediate(2));
 
+        if (arg->slot()->use_count() > 1) {
+          // Interior pointer to the arguments
+          movq(rax, rcx);
+        }
+
         // Move stack pointer forward by vararg's length
         movq(scratch, rdx);
         addq(rcx, rdx);
         subq(rcx, Immediate(8));
-        Spill rcx_s(this, rcx);
 
-        // Call stub to generate var arg array
-        Call(stubs()->GetVarArgStub());
+        if (arg->slot()->use_count() > 1) {
+          Spill rcx_s(this, rcx);
 
-        rcx_s.Unspill();
-        movq(rdx, rax);
+          // Call stub to generate var arg array
+          Call(stubs()->GetVarArgStub());
 
-        VisitFor(kSlot, item->value());
-        movq(slot(), rdx);
+          rcx_s.Unspill();
+          movq(rdx, rax);
+
+          VisitFor(kSlot, arg);
+          movq(slot(), rdx);
+        }
 
         scratch_s.Unspill();
       }

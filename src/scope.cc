@@ -60,7 +60,10 @@ ScopeSlot* Scope::GetSlot(const char* name, uint32_t length) {
   StringKey<ZoneObject>* key = new StringKey<ZoneObject>(name, length);
   ScopeSlot* slot = Get(key);
 
-  if (slot != NULL) return slot;
+  if (slot != NULL) {
+    slot->use();
+    return slot;
+  }
 
   // No slot was found - go through scopes up to the root one
   int depth = 1;
@@ -94,7 +97,9 @@ ScopeSlot* Scope::GetSlot(const char* name, uint32_t length) {
     // Context variable
     slot = new ScopeSlot(ScopeSlot::kContext, depth);
     source->uses()->Push(slot);
+    source->use();
   }
+  slot->use();
   Set(key, slot);
 
   return slot;
@@ -111,7 +116,7 @@ void ScopeSlot::Enumerate(void* scope, ScopeSlot* slot) {
     slot->index(scope_->stack_index_++);
   } else if (slot->is_context()) {
     if (slot->depth() <= 0) {
-      List<ScopeSlot*, ZoneObject>::Item* item = slot->uses()->head();
+      UseList::Item* item = slot->uses()->head();
 
       // Find if we've already indexed some of uses
       while (item != NULL) {

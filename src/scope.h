@@ -20,17 +20,19 @@ class ScopeAnalyze;
 // After parse end indexes will be allocated
 class ScopeSlot : public ZoneObject {
  public:
+  typedef List<ScopeSlot*, ZoneObject> UseList;
   enum Type {
     kStack,
     kContext
   };
 
-  ScopeSlot(Type type) : type_(type), index_(-1), depth_(0) {
+  ScopeSlot(Type type) : type_(type), index_(-1), depth_(0), use_count_(0) {
   }
 
   ScopeSlot(Type type, int32_t depth) : type_(type),
                                         index_(depth < 0 ? 0 : -1),
-                                        depth_(depth) {
+                                        depth_(depth),
+                                        use_count_(0) {
   }
 
   static void Enumerate(void* scope, ScopeSlot* slot);
@@ -45,13 +47,18 @@ class ScopeSlot : public ZoneObject {
   inline int32_t depth() { return depth_; }
   inline void depth(int32_t depth) { depth_ = depth; }
 
-  inline List<ScopeSlot*, ZoneObject>* uses() { return &uses_; }
+  inline void use() { use_count_++; }
+  inline int use_count() { return use_count_; }
 
+  inline UseList* uses() { return &uses_; }
+
+ private:
   Type type_;
   int32_t index_;
   int32_t depth_;
+  int use_count_;
 
-  List<ScopeSlot*, ZoneObject> uses_;
+  UseList uses_;
 };
 
 // On each block or function enter new scope is created
