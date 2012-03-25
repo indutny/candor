@@ -220,7 +220,7 @@ AstNode* Fullgen::VisitFunction(AstNode* stmt) {
   // and have address of actual code
 
   if (fn->variable() != NULL) {
-    AllocateFunction(rcx, rdx);
+    AllocateFunction(rcx, rdx, fn->args()->length());
 
     Spill rdx_s(this, rdx);
 
@@ -230,7 +230,7 @@ AstNode* Fullgen::VisitFunction(AstNode* stmt) {
 
     Visit(assign);
   } else {
-    AllocateFunction(rcx, rax);
+    AllocateFunction(rcx, rax, fn->args()->length());
   }
 
   return stmt;

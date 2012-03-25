@@ -203,17 +203,19 @@ void Masm::AllocateContext(uint32_t slots) {
 }
 
 
-void Masm::AllocateFunction(Register addr, Register result) {
-  // context + code
-  Allocate(Heap::kTagFunction, reg_nil, HValue::kPointerSize * 3, result);
+void Masm::AllocateFunction(Register addr, Register result, uint32_t argc) {
+  // context + code + root + argc
+  Allocate(Heap::kTagFunction, reg_nil, HValue::kPointerSize * 4, result);
 
   // Move address of current context to first slot
   Operand qparent(result, HFunction::kParentOffset);
   Operand qaddr(result, HFunction::kCodeOffset);
   Operand qroot(result, HFunction::kRootOffset);
+  Operand qargc(result, HFunction::kArgcOffset);
   movq(qparent, rdi);
   movq(qaddr, addr);
   movq(qroot, root_reg);
+  movq(qargc, Immediate(argc));
 
   xorq(addr, addr);
 

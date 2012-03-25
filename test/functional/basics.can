@@ -45,6 +45,7 @@ fn(a, b, c) {
 }
 
 fn(1, 2)
+assert(sizeof fn === 3, "sizeof fn")
 
 // Trace
 a() {
@@ -57,7 +58,7 @@ a() {
 
       assert(sizeof trace === 4, "trace: length")
       assert(typeof trace[0].filename === "string", "trace: filename")
-      assert(trace[0].line === 56, "trace: line")
+      assert(trace[0].line === 57, "trace: line")
       assert(trace[0].offset > 0, "trace: offset")
     }
 

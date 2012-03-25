@@ -318,6 +318,11 @@ void Function::SetContext(Object* context) {
 }
 
 
+uint32_t Function::Argc() {
+  return HFunction::Argc(addr());
+}
+
+
 Value* Function::Call(uint32_t argc, Value* argv[]) {
   return ISOLATE->space->Run(addr(), argc, argv);
 }

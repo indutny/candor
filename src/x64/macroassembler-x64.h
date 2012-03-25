@@ -73,7 +73,7 @@ class Masm : public Assembler {
 
   // Allocate context and function
   void AllocateContext(uint32_t slots);
-  void AllocateFunction(Register addr, Register result);
+  void AllocateFunction(Register addr, Register result, uint32_t argc);
 
   // Allocate heap numbers
   void AllocateNumber(DoubleRegister value, Register result);

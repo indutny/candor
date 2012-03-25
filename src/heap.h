@@ -518,6 +518,9 @@ class HFunction : public HValue {
   static inline char* Parent(char* addr) {
     return *reinterpret_cast<char**>(addr + kParentOffset);
   }
+  static inline uint32_t Argc(char* addr) {
+    return *reinterpret_cast<uint32_t*>(addr + kArgcOffset);
+  }
 
   static inline char* GetContext(char* addr);
   static inline void SetContext(char* addr, char* context);
@@ -530,10 +533,15 @@ class HFunction : public HValue {
   inline char** parent_slot() {
     return reinterpret_cast<char**>(addr() + kParentOffset);
   }
+  inline uint32_t argc() { return *argc_offset(); }
+  inline uint32_t* argc_offset() {
+    return reinterpret_cast<uint32_t*>(addr() + kArgcOffset);
+  }
 
   static const int kParentOffset = HINTERIOR_OFFSET(1);
   static const int kCodeOffset = HINTERIOR_OFFSET(2);
   static const int kRootOffset = HINTERIOR_OFFSET(3);
+  static const int kArgcOffset = HINTERIOR_OFFSET(4);
 
   static const Heap::HeapTag class_tag = Heap::kTagFunction;
 };

@@ -173,8 +173,8 @@ HValue* HValue::CopyTo(Space* old_space, Space* new_space) {
     size += (2 + As<HContext>()->slots()) * kPointerSize;
     break;
    case Heap::kTagFunction:
-    // parent + body
-    size += 3 * kPointerSize;
+    // parent + body + root + argc
+    size += 4 * kPointerSize;
     break;
    case Heap::kTagNumber:
    case Heap::kTagBoolean:
@@ -403,6 +403,9 @@ char* HFunction::New(Heap* heap, char* parent, char* addr, char* root) {
 
   // Set root context
   *reinterpret_cast<char**>(fn + kRootOffset) = root;
+
+  // Set argc
+  *reinterpret_cast<char**>(fn + kArgcOffset) = NULL;
 
   return fn;
 }

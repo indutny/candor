@@ -132,6 +132,8 @@ class Function : public Value {
   Object* GetContext();
   void SetContext(Object* context);
 
+  uint32_t Argc();
+
   Value* Call(uint32_t argc, Value* argv[]);
 
   static const ValueType tag = kFunction;

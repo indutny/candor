@@ -620,9 +620,11 @@ char* RuntimeSizeof(Heap* heap, char* value) {
    case Heap::kTagArray:
     size = HArray::Length(value, true);
     break;
+   case Heap::kTagFunction:
+    size = HFunction::Argc(value);
+    break;
    case Heap::kTagObject:
    case Heap::kTagNil:
-   case Heap::kTagFunction:
    case Heap::kTagBoolean:
    case Heap::kTagNumber:
     size = 0;
