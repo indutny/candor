@@ -125,7 +125,6 @@ class Masm : public Assembler {
   inline void Push(Register src);
   inline void Pop(Register src);
   inline void PreservePop(Register src, Register preserve);
-  inline uint64_t TagNumber(int64_t number);
   inline void TagNumber(Register src);
   inline void Untag(Register src);
   inline Condition BinOpToCondition(BinOp::BinOpType type, BinOpUsage usage);

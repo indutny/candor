@@ -33,8 +33,10 @@ off_t RuntimeLookupProperty(Heap* heap,
                             char* key,
                             off_t insert);
 
-typedef char* (*RuntimeGrowObjectCallback)(Heap* heap, char* obj);
-char* RuntimeGrowObject(Heap* heap, char* obj);
+typedef char* (*RuntimeGrowObjectCallback)(Heap* heap,
+                                           char* obj,
+                                           uint32_t min_size);
+char* RuntimeGrowObject(Heap* heap, char* obj, uint32_t min_size);
 
 typedef char* (*RuntimeCoerceCallback)(Heap* heap, char* value);
 char* RuntimeToString(Heap* heap, char* value);

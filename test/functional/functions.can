@@ -1,0 +1,19 @@
+print = global.print
+assert = global.assert
+
+print('-- can: functions --')
+
+a(a, b, c...) {
+  assert(sizeof c == 3, "arg with ellipsis size")
+  assert(c[0] == 1, "arg with ellipsis value: #0")
+  assert(c[2] == 3, "arg with ellipsis value: #2")
+}
+
+a(-1, 0, 1, 2, 3)
+
+a(b...) {
+  return sizeof b
+}
+
+a(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20)
+assert(a() == 0, "no arguments, zero-length argv")

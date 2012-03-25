@@ -14,6 +14,7 @@ namespace internal {
     V(While)\
     V(Assign)\
     V(Member)\
+    V(VarArg)\
     V(ObjectLiteral)\
     V(ArrayLiteral)\
     V(New)\

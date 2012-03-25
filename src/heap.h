@@ -477,6 +477,7 @@ class HArray : public HObject {
 
   static inline bool IsDense(char* obj);
 
+  static const int kVarArgLength = 16;
   static const int kDenseLengthMax = 128;
   static const int kLengthOffset = HINTERIOR_OFFSET(3);
 

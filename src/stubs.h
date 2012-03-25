@@ -16,6 +16,7 @@ namespace internal {
     V(Entry)\
     V(Allocate)\
     V(CallBinding)\
+    V(VarArg)\
     V(CollectGarbage)\
     V(Throw)\
     V(Typeof)\

@@ -139,14 +139,43 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
   uint32_t i = 0;
   while (item != NULL) {
     Operand lhs(rax, 0);
-    Operand rhs(rbp, 8 * (2 + i++));
 
-    cmpq(rsi, Immediate(TagNumber(i)));
+    cmpq(rsi, Immediate(HNumber::Tag(i)));
     jmp(kLt, &body);
 
-    VisitFor(kSlot, item->value());
-    movq(rdx, rhs);
-    movq(slot(), rdx);
+    switch (item->value()->type()) {
+     case AstNode::kValue:
+      {
+        Operand rhs(rbp, 8 * (2 + i++));
+        VisitFor(kSlot, item->value());
+
+        movq(rdx, rhs);
+        movq(slot(), rdx);
+      }
+      break;
+     case AstNode::kVarArg:
+      {
+        // Get interior pointer to the arguments
+        movq(rax, rbp);
+        addq(rax, Immediate(8 * (2 + i++)));
+
+        // Get left arguments count
+        movq(rdx, rsi);
+        shl(rdx, Immediate(2));
+        subq(rdx, Immediate((i - 1) << 3));
+
+        // Call stub to generate var arg array
+        Call(stubs()->GetVarArgStub());
+        movq(rdx, rax);
+
+        VisitFor(kSlot, item->value());
+        movq(slot(), rdx);
+      }
+      break;
+     default:
+      UNEXPECTED
+      break;
+    }
 
     item = item->next();
   }
@@ -472,6 +501,11 @@ AstNode* Fullgen::VisitMember(AstNode* node) {
   movq(rcx, Immediate(visiting_for_slot()));
   Call(stubs()->GetLookupPropertyStub());
 
+  // Make rax look like unboxed number to GC
+  dec(rax);
+  CheckGC();
+  inc(rax);
+
   Label done(this);
 
   IsNil(rax, NULL, &done);
@@ -513,7 +547,7 @@ AstNode* Fullgen::VisitNumber(AstNode* node) {
   } else {
     // Allocate unboxed number
     int64_t value = StringToInt(node->value(), node->length());
-    movq(rax, Immediate(TagNumber(value)));
+    movq(rax, Immediate(HNumber::Tag(value)));
   }
 
   return node;
@@ -645,7 +679,8 @@ AstNode* Fullgen::VisitObjectLiteral(AstNode* node) {
   ObjectLiteral* obj = ObjectLiteral::Cast(node);
 
   // Ensure that map will be filled only by half at maximum
-  movq(rbx, Immediate(TagNumber(PowerOfTwo(node->children()->length() << 1))));
+  movq(rbx,
+       Immediate(HNumber::Tag(PowerOfTwo(node->children()->length() << 1))));
   AllocateObjectLiteral(Heap::kTagObject, rbx, rdx);
 
   Spill rdx_s(this, rdx);
@@ -683,7 +718,7 @@ AstNode* Fullgen::VisitArrayLiteral(AstNode* node) {
 
   // Ensure that map will be filled only by half at maximum
   movq(rbx,
-       Immediate(TagNumber(PowerOfTwo(node->children()->length() << 1))));
+       Immediate(HNumber::Tag(PowerOfTwo(node->children()->length() << 1))));
   AllocateObjectLiteral(Heap::kTagArray, rbx, rdx);
 
   Spill rdx_s(this, rdx);
@@ -964,7 +999,7 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
 
     IsUnboxed(rax, &call_stub, NULL);
 
-    int64_t num = TagNumber(StringToInt(rhs->value(), rhs->length()));
+    int64_t num = HNumber::Tag(StringToInt(rhs->value(), rhs->length()));
 
     // addq and subq supports only long immediate (not quad)
     if (num >= -0x7fffffff && num <= 0x7fffffff) {

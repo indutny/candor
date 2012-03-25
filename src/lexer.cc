@@ -101,7 +101,14 @@ Lexer::Token* Lexer::Consume() {
   {
     TokenType type = kEnd;
     switch (get(0)) {
-     case '.': type = kDot; break;
+     case '.':
+      if (has(3) && get(1) == '.' && get(2) == '.') {
+        offset_ += 2;
+        type = kEllipsis;
+      } else {
+        type = kDot;
+      }
+      break;
      case ',': type = kComma; break;
      case ':': type = kColon; break;
      case '(': type = kParenOpen; break;

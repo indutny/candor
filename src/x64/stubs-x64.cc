@@ -260,6 +260,80 @@ void CallBindingStub::Generate() {
 }
 
 
+void VarArgStub::Generate() {
+  GeneratePrologue();
+
+  __ AllocateSpills(0);
+
+  // rax <- interior pointer to arguments
+  // rdx <- arguments count (to put into array)
+  __ push(rbx);
+  __ push(rcx);
+
+  __ movq(r13, rax);
+  __ movq(r14, rdx);
+
+  // Allocate array
+  __ movq(rcx, Immediate(HNumber::Tag(PowerOfTwo(HArray::kVarArgLength))));
+  __ AllocateObjectLiteral(Heap::kTagArray, rcx, rax);
+
+  // Key insertion flag
+  __ movq(rcx, Immediate(1));
+
+  // Array index
+  __ xorq(rbx, rbx);
+
+  Label loop_start(masm()), loop_cond(masm());
+  __ jmp(&loop_cond);
+  __ bind(&loop_start);
+
+  // Insert entry : rax[rbx] = *r13
+  __ push(rax);
+  __ push(rbx);
+
+  __ Call(masm()->stubs()->GetLookupPropertyStub());
+
+  // Calculate pointer
+  __ movq(rdx, rax);
+  __ pop(rbx);
+  __ pop(rax);
+
+  Operand qmap(rax, HObject::kMapOffset);
+  __ addq(rdx, qmap);
+
+  // Put value into the slot
+  Operand slot(rdx, 0);
+  Operand value(r13, 0);
+
+  __ movq(scratch, value);
+  __ movq(slot, scratch);
+
+  // Move forward
+  __ addq(r13, Immediate(8));
+  __ subq(r14, Immediate(8));
+  __ addq(rbx, Immediate(HNumber::Tag(1)));
+
+  __ bind(&loop_cond);
+
+  // r14 != 0
+  __ cmpq(r14, Immediate(0));
+  __ jmp(kNe, &loop_start);
+
+  __ pop(rcx);
+  __ pop(rbx);
+
+  // Cleanup
+  __ xorq(r13, r13);
+  __ xorq(r14, r13);
+
+  __ CheckGC();
+
+  __ FinalizeSpills();
+
+  GenerateEpilogue(0);
+}
+
+
 void CollectGarbageStub::Generate() {
   GeneratePrologue();
 
@@ -515,8 +589,6 @@ void LookupPropertyStub::Generate() {
 
   __ Popad(rax);
 
-  __ CheckGC();
-
   __ jmp(&done);
 
   __ bind(&non_object_error);
@@ -548,7 +620,7 @@ void CoerceToBooleanStub::Generate() {
   Operand truev(root_reg, HContext::GetIndexDisp(Heap::kRootTrueIndex));
   Operand falsev(root_reg, HContext::GetIndexDisp(Heap::kRootFalseIndex));
 
-  __ cmpq(rax, Immediate(masm()->TagNumber(0)));
+  __ cmpq(rax, Immediate(HNumber::Tag(0)));
   __ jmp(kNe, &truel);
 
   __ movq(rax, falsev);

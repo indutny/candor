@@ -24,6 +24,7 @@ typedef List<AstNode*, ZoneObject> AstList;
     V(kObjectLiteral)\
     V(kArrayLiteral)\
     V(kMember)\
+    V(kVarArg)\
     V(kValue)\
     V(kMValue)\
     V(kProperty)\
@@ -466,7 +467,10 @@ class FunctionLiteral : public AstNode {
     // Arguments should be a kName, not expressions
     AstList::Item* head;
     for (head = args_.head(); head != NULL; head = head->next()) {
-      if (!head->value()->is(kName)) return false;
+      if (head->value()->is(kName)) continue;
+      if (head->value()->is(kVarArg) && head->next() == NULL) continue;
+
+      return false;
     }
 
     return true;

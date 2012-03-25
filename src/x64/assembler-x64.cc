@@ -302,7 +302,7 @@ void Assembler::addq(Register dst, Operand& src) {
 
 
 void Assembler::addq(Register dst, Immediate imm) {
-  emit_rexw(dst);
+  emit_rexw(rax, dst);
   emitb(0x81);
   emit_modrm(dst, 0);
   emitl(imm.value());
@@ -317,7 +317,7 @@ void Assembler::subq(Register dst, Register src) {
 
 
 void Assembler::subq(Register dst, Immediate src) {
-  emit_rexw(dst);
+  emit_rexw(rax, dst);
   emitb(0x81);
   emit_modrm(dst, 0x05);
   emitl(src.value());

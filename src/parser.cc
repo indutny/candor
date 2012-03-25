@@ -286,6 +286,14 @@ AstNode* Parser::ParseExpression(int priority) {
     Skip();
     result = new UnOp(UnOp::kPostDec, result);
     break;
+   case kEllipsis:
+    {
+      Skip();
+      AstNode* varg = new AstNode(AstNode::kVarArg, result);
+      varg->children()->Push(result);
+      result = varg;
+    }
+    break;
    default:
     break;
   }

@@ -111,9 +111,9 @@ off_t RuntimeLookupProperty(Heap* heap,
 
   bool is_array = HValue::GetTag(obj) == Heap::kTagArray;
 
-  char* keyptr;
-  int64_t numkey;
-  uint32_t hash;
+  char* keyptr = NULL;
+  int64_t numkey = 0;
+  uint32_t hash = 0;
 
   if (is_array) {
     numkey = HNumber::IntegralValue(RuntimeToNumber(heap, key));
@@ -128,6 +128,7 @@ off_t RuntimeLookupProperty(Heap* heap,
       HArray::SetLength(obj, numkey + 1);
     }
   } else {
+    assert(HValue::GetTag(obj) == Heap::kTagObject);
     keyptr = key;
     hash = RuntimeGetHash(heap, key);
   }
@@ -138,7 +139,7 @@ off_t RuntimeLookupProperty(Heap* heap,
 
     if (index > mask) {
       if (insert) {
-        RuntimeGrowObject(heap, obj);
+        RuntimeGrowObject(heap, obj, numkey);
 
         return RuntimeLookupProperty(heap, obj, keyptr, insert);
       } else {
@@ -154,7 +155,7 @@ off_t RuntimeLookupProperty(Heap* heap,
     uint32_t end = start == 0 ? mask : start - HValue::kPointerSize;
 
     uint32_t index = start;
-    char* key_slot;
+    char* key_slot = NULL;
     while (index != end) {
       key_slot = *reinterpret_cast<char**>(space + index);
       if (key_slot == HNil::New()) break;
@@ -171,7 +172,7 @@ off_t RuntimeLookupProperty(Heap* heap,
     // All key slots are filled - rehash and lookup again
     if (index == end) {
       assert(insert);
-      RuntimeGrowObject(heap, obj);
+      RuntimeGrowObject(heap, obj, 0);
 
       return RuntimeLookupProperty(heap, obj, keyptr, insert);
     }
@@ -185,10 +186,14 @@ off_t RuntimeLookupProperty(Heap* heap,
 }
 
 
-char* RuntimeGrowObject(Heap* heap, char* obj) {
+char* RuntimeGrowObject(Heap* heap, char* obj, uint32_t min_size) {
   char** map_addr = HObject::MapSlot(obj);
   HMap* map = HValue::As<HMap>(*map_addr);
   uint32_t size = map->size() << 1;
+
+  if (min_size > size) {
+    size = PowerOfTwo(min_size);
+  }
 
   // Create a new map
   char* new_map = HMap::NewEmpty(heap, size);
@@ -201,9 +206,11 @@ char* RuntimeGrowObject(Heap* heap, char* obj) {
   *HObject::MaskSlot(obj) = mask;
 
   // And rehash properties to new map
+  uint32_t original_size = map->size();
   if (HValue::GetTag(obj) == Heap::kTagArray && HArray::IsDense(obj)) {
     // Dense array's map doesn't contain key pointers, iterate values
-    for (uint32_t i = 0; i < size; i++) {
+    original_size = original_size << 1;
+    for (uint32_t i = 0; i < original_size; i++) {
       char* value = *map->GetSlotAddress(i);
       if (value == HNil::New()) continue;
 
@@ -211,7 +218,6 @@ char* RuntimeGrowObject(Heap* heap, char* obj) {
     }
   } else {
     // Object and non-dense arrays contains both keys and pointers
-    uint32_t original_size = map->size();
     for (uint32_t i = 0; i < original_size; i++) {
       char* key = *map->GetSlotAddress(i);
       if (key == HNil::New()) continue;
