@@ -821,12 +821,8 @@ void BinOpStub::Generate() {
 
     // Number (+) Number
     if (BinOp::is_math(type())) {
-      Label restore(masm());
       Masm::Spill lvalue(masm(), rax);
       Masm::Spill rvalue(masm(), rbx);
-
-      __ movq(scratch, rax);
-      __ movq(rcx, rbx);
 
       switch (type()) {
        case BinOp::kAdd: __ addq(rax, rbx); break;
@@ -955,6 +951,7 @@ void BinOpStub::Generate() {
   __ movq(rbx, rvalue);
   __ movqd(xmm1, rax);
   __ movqd(xmm2, rbx);
+  __ xorq(rbx, rbx);
 
   if (BinOp::is_math(type())) {
     switch (type()) {
@@ -1054,6 +1051,10 @@ void BinOpStub::Generate() {
   __ Popad(rax);
 
   __ bind(&done);
+
+  // Cleanup
+  __ xorq(rcx, rcx);
+  __ xorq(rbx, rbx);
 
   __ CheckGC();
 

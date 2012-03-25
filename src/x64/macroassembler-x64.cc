@@ -20,6 +20,8 @@ Masm::Masm(CodeSpace* space) : slot_(rax, 0),
 
 void Masm::Pushad() {
   // 10 registers to save (10 * 8 = 16 * 5, so stack should be aligned)
+  push(rax);
+  push(rbx);
   push(rcx);
   push(rdx);
   push(rsi);
@@ -29,16 +31,10 @@ void Masm::Pushad() {
   // Root register
   push(root_reg);
   push(r12);
-
-  // Last one just for alignment
-  push(r15);
-  push(rax);
 }
 
 
 void Masm::Popad(Register preserve) {
-  PreservePop(rax, preserve);
-  PreservePop(r15, preserve);
   PreservePop(r12, preserve);
   PreservePop(root_reg, preserve);
   PreservePop(r9, preserve);
@@ -47,6 +43,8 @@ void Masm::Popad(Register preserve) {
   PreservePop(rsi, preserve);
   PreservePop(rdx, preserve);
   PreservePop(rcx, preserve);
+  PreservePop(rbx, preserve);
+  PreservePop(rax, preserve);
 }
 
 
