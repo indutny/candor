@@ -277,9 +277,6 @@ void VarArgStub::Generate() {
   __ movq(rcx, Immediate(HNumber::Tag(PowerOfTwo(HArray::kVarArgLength))));
   __ AllocateObjectLiteral(Heap::kTagArray, rcx, rax);
 
-  // Key insertion flag
-  __ movq(rcx, Immediate(1));
-
   // Array index
   __ xorq(rbx, rbx);
 
@@ -291,6 +288,8 @@ void VarArgStub::Generate() {
   __ push(rax);
   __ push(rbx);
 
+  // Key insertion flag
+  __ movq(rcx, Immediate(1));
   __ Call(masm()->stubs()->GetLookupPropertyStub());
 
   // Calculate pointer
@@ -327,6 +326,69 @@ void VarArgStub::Generate() {
   __ xorq(r14, r13);
 
   __ CheckGC();
+
+  __ FinalizeSpills();
+
+  GenerateEpilogue(0);
+}
+
+
+void PutVarArgStub::Generate() {
+  GeneratePrologue();
+
+  __ AllocateSpills(0);
+
+  // rax <- array
+  // rbx <- stack offset
+  Masm::Spill rax_s(masm(), rax), stack_s(masm(), rbx);
+
+  Operand qlength(rax, HArray::kLengthOffset);
+  __ movq(scratch, qlength);
+  __ TagNumber(scratch);
+
+  Masm::Spill scratch_s(masm(), scratch);
+
+  Label loop_start(masm()), loop_cond(masm());
+
+  // rbx <- index
+  __ movq(rbx, Immediate(HNumber::Tag(0)));
+
+  __ jmp(&loop_cond);
+  __ bind(&loop_start);
+
+  {
+    Masm::Spill rbx_s(masm(), rbx);
+
+    rax_s.Unspill();
+    __ movq(rcx, Immediate(0));
+
+    // rax <- array
+    // rbx <- index
+    // rcx <- flag(0)
+    __ Call(masm()->stubs()->GetLookupPropertyStub());
+    rax_s.Unspill(scratch);
+    Operand qmap(scratch, HObject::kMapOffset);
+    Operand qself(rax, 0);
+    __ addq(rax, qmap);
+    __ movq(rax, qself);
+
+    stack_s.Unspill(rdx);
+    Operand slot(rdx, 0);
+    __ movq(slot, rax);
+    __ addq(rdx, Immediate(8));
+    stack_s.SpillReg(rdx);
+
+    rbx_s.Unspill();
+  }
+
+  __ addq(rbx, Immediate(HNumber::Tag(1)));
+
+  scratch_s.Unspill();
+  __ bind(&loop_cond);
+
+  // while (rbx < scratch)
+  __ cmpq(rbx, scratch);
+  __ jmp(kLt, &loop_start);
 
   __ FinalizeSpills();
 

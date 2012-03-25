@@ -37,7 +37,7 @@ class Masm : public Assembler {
     Spill(Masm* masm, Register src);
     ~Spill();
 
-    void Init(Register src);
+    void SpillReg(Register src);
 
     void Unspill(Register dst);
     void Unspill();

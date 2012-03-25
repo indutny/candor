@@ -78,15 +78,16 @@ Masm::Spill::Spill(Masm* masm) : masm_(masm),
 Masm::Spill::Spill(Masm* masm, Register src) : masm_(masm),
                                                src_(reg_nil),
                                                index_(0) {
-  Init(src);
+  SpillReg(src);
 }
 
 
-void Masm::Spill::Init(Register src) {
-  assert(is_empty());
+void Masm::Spill::SpillReg(Register src) {
+  if (is_empty()) {
+    index_ = masm()->spill_index_++;
+  }
 
   src_ = src;
-  index_ = masm()->spill_index_++;
   Operand slot(rax, 0);
   masm()->SpillSlot(index(), slot);
   masm()->movq(slot, src);

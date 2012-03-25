@@ -314,7 +314,7 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
     AstNode* property = fn->variable()->rhs();
 
     VisitFor(kValue, receiver);
-    receiver_s.Init(rax);
+    receiver_s.SpillReg(rax);
 
     AstNode* member = new AstNode(AstNode::kMember, receiver);
     member->children()->Push(new FAstSpill(&receiver_s));
@@ -348,7 +348,7 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
       IsNil(rax, NULL, &incorrect_vararg);
       IsHeapObject(Heap::kTagArray, rax, &incorrect_vararg, NULL);
 
-      vararg.Init(rax);
+      vararg.SpillReg(rax);
     }
 
     // Set argc
@@ -392,10 +392,20 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
       item = item->next();
     }
 
+    // Put vararg
+    if (!vararg.is_empty()) {
+      vararg.Unspill(rax);
+      rbx_s.Unspill();
+      addq(rbx, Immediate((i - 1) * 8));
+
+      Call(stubs()->GetPutVarArgStub());
+    }
+
     // Generate calling code
     rax_s.Unspill();
     CallFunction(rax);
   }
+
   // Unwind stack
   stack_s.Unspill();
 
