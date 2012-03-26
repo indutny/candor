@@ -99,6 +99,8 @@ class Heap {
   enum HeapTag {
     kTagNil = 0x01,
     kTagContext,
+
+    // Keep this close to each other (needed for typeof)
     kTagBoolean,
     kTagNumber,
     kTagString,
@@ -107,10 +109,7 @@ class Heap {
     kTagFunction,
     kTagCData,
 
-    kTagMap,
-
-    // For GC (return addresses on stack will point to the JIT code
-    kTagCode = 0x90
+    kTagMap
   };
 
   enum TenureType {
@@ -119,7 +118,7 @@ class Heap {
   };
 
   enum GCType {
-    kGCNone = 0,
+    kGCNone     = 0,
     kGCNewSpace = 1,
     kGCOldSpace = 2
   };
@@ -134,17 +133,17 @@ class Heap {
   // Positions in root register
   // NOTE: order of type strings should be the same as in HeapTag enum
   enum RootPositions {
-    kRootGlobalIndex = 0,
-    kRootTrueIndex = 1,
-    kRootFalseIndex = 2,
-    kRootNilTypeIndex = 3,
-    kRootBooleanTypeIndex = 4,
-    kRootNumberTypeIndex = 5,
-    kRootStringTypeIndex = 6,
-    kRootObjectTypeIndex = 7,
-    kRootArrayTypeIndex = 8,
+    kRootGlobalIndex       = 0,
+    kRootTrueIndex         = 1,
+    kRootFalseIndex        = 2,
+    kRootNilTypeIndex      = 3,
+    kRootBooleanTypeIndex  = 4,
+    kRootNumberTypeIndex   = 5,
+    kRootStringTypeIndex   = 6,
+    kRootObjectTypeIndex   = 7,
+    kRootArrayTypeIndex    = 8,
     kRootFunctionTypeIndex = 9,
-    kRootCDataTypeIndex = 10
+    kRootCDataTypeIndex    = 10
   };
 
   enum ReferenceType {
@@ -274,11 +273,23 @@ class HValue {
   inline void IncrementGeneration();
   inline uint8_t Generation();
 
+  template <typename Representation>
+  static inline Representation GetRepresentation(char* addr) {
+    return static_cast<Representation>(*reinterpret_cast<uint8_t*>(
+          addr + kRepresentationOffset));
+  }
+
+  template <typename Representation>
+  static inline void SetRepresentation(char* addr, Representation r) {
+    *reinterpret_cast<uint8_t*>(addr + kRepresentationOffset) = r;
+  }
+
   static const int kPointerSize = 8;
   static const int kTagOffset = HINTERIOR_OFFSET(0);
   static const int kGCMarkOffset = HINTERIOR_OFFSET(1) - 1;
   static const int kGCForwardOffset = HINTERIOR_OFFSET(1);
-  static const int kGenerationOffset = HINTERIOR_OFFSET(0) + 1;
+  static const int kRepresentationOffset = HINTERIOR_OFFSET(0) + 1;
+  static const int kGenerationOffset = HINTERIOR_OFFSET(0) + 2;
 
   static inline int interior_offset(int offset) {
     return HINTERIOR_OFFSET(offset);
@@ -413,6 +424,11 @@ class HBoolean : public HValue {
 
 class HString : public HValue {
  public:
+  enum Representation {
+    kNormal = 0x00,
+    kCons   = 0x01
+  };
+
   static char* New(Heap* heap,
                    Heap::TenureType tenure,
                    uint32_t length);
@@ -420,21 +436,41 @@ class HString : public HValue {
                    Heap::TenureType tenure,
                    const char* value,
                    uint32_t length);
+  static char* NewCons(Heap* heap,
+                       Heap::TenureType tenure,
+                       uint32_t length,
+                       char* left,
+                       char* right);
 
-  inline const char* value() { return Value(addr()); }
   inline uint32_t length() { return Length(addr()); }
-  inline uint32_t hash() { return Hash(addr()); }
 
-  static uint32_t Hash(char* addr);
-  static inline char* Value(char* addr) { return addr + kValueOffset; }
+  static uint32_t Hash(Heap* heap, char* addr);
+  static char* Value(Heap* heap, char* addr);
+  static char* FlattenCons(char* addr, char* buffer);
 
   static inline uint32_t Length(char* addr) {
     return *reinterpret_cast<uint32_t*>(addr + kLengthOffset);
   }
 
+  static inline char* LeftCons(char* addr) { return *LeftConsSlot(addr); }
+  static inline char* RightCons(char* addr) { return *RightConsSlot(addr); }
+
+  static inline char** LeftConsSlot(char* addr) {
+    return reinterpret_cast<char**>(addr + kLeftConsOffset);
+  }
+
+  static inline char** RightConsSlot(char* addr) {
+    return reinterpret_cast<char**>(addr + kRightConsOffset);
+  }
+
   static const int kHashOffset = HINTERIOR_OFFSET(1);
   static const int kLengthOffset = HINTERIOR_OFFSET(2);
   static const int kValueOffset = HINTERIOR_OFFSET(3);
+
+  static const int kLeftConsOffset = HINTERIOR_OFFSET(3);
+  static const int kRightConsOffset = HINTERIOR_OFFSET(4);
+
+  static const int kMinConsLength = 24;
 
   static const Heap::HeapTag class_tag = Heap::kTagString;
 };

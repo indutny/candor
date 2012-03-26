@@ -27,6 +27,7 @@ namespace internal {
     V(CoerceToBoolean)\
     V(CloneObject)\
     V(DeleteProperty)\
+    V(HashValue)\
     V(StackTrace)
 
 #define BINARY_STUBS_LIST(V)\

@@ -399,7 +399,7 @@ String* String::New(const char* value) {
 
 
 const char* String::Value() {
-  return HString::Value(addr());
+  return HString::Value(ISOLATE->heap, addr());
 }
 
 

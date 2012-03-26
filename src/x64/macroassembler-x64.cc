@@ -426,13 +426,19 @@ void Masm::ExitFrameEpilogue() {
 
 void Masm::StringHash(Register str, Register result) {
   Operand hash_field(str, HString::kHashOffset);
+  Operand repr_field(str, HValue::kRepresentationOffset);
 
-  Label done(this);
+  Label call_runtime(this), done(this);
 
   // Check if hash was already calculated
-  movq(result, hash_field);
-  cmpq(result, Immediate(0));
+  movq(scratch, hash_field);
+  cmpq(scratch, Immediate(0));
   jmp(kNe, &done);
+
+  // Check if string is a cons string
+  movzxb(scratch, repr_field);
+  cmpb(scratch, Immediate(HString::kNormal));
+  jmp(kNe, &call_runtime);
 
   // Compute new hash
   assert(!str.is(rcx));
@@ -508,6 +514,21 @@ void Masm::StringHash(Register str, Register result) {
 
   // Store hash into a string
   movq(hash_field, result);
+
+  jmp(&done);
+  bind(&call_runtime);
+
+  push(rax);
+  push(str);
+  Call(stubs()->GetHashValueStub());
+  pop(str);
+
+  if (result.is(rax)) {
+    pop(scratch);
+  } else {
+    movq(result, rax);
+    pop(rax);
+  }
 
   bind(&done);
 }

@@ -92,6 +92,7 @@ test: candor.a can $(TESTS)
 	@./can test/functional/while.can
 	@./can test/functional/new.can
 	@./can test/functional/functions.can
+	@./can test/functional/strings.can
 	@./can test/functional/regressions/regr-1.can
 	@./can test/functional/regressions/regr-2.can
 	@./can test/functional/regressions/regr-3.can

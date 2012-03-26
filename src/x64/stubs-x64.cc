@@ -813,6 +813,28 @@ void DeletePropertyStub::Generate() {
 }
 
 
+void HashValueStub::Generate() {
+  GeneratePrologue();
+
+  Operand str(rbp, 16);
+
+  RuntimeGetHashCallback hash = &RuntimeGetHash;
+
+  __ Pushad();
+
+  // RuntimeStringHash(heap, str)
+  __ movq(rdi, Immediate(reinterpret_cast<uint64_t>(masm()->heap())));
+  __ movq(rsi, str);
+  __ movq(rax, Immediate(*reinterpret_cast<uint64_t*>(&hash)));
+  __ callq(rax);
+
+  __ Popad(rax);
+
+  // Caller will unwind stack
+  GenerateEpilogue(0);
+}
+
+
 void StackTraceStub::Generate() {
   // Store caller's frame pointer
   __ movq(rbx, rbp);

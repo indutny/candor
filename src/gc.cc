@@ -225,8 +225,14 @@ void GC::VisitValue(HValue* value) {
    case Heap::kTagMap:
     return VisitMap(value->As<HMap>());
 
-   // String and numbers ain't referencing anyone
+   // non-cons strings and numbers ain't referencing anyone
    case Heap::kTagString:
+    switch (HValue::GetRepresentation<HString::Representation>(value->addr())) {
+     case HString::kNormal:
+      break;
+     case HString::kCons:
+      return VisitString(value);
+    }
    case Heap::kTagNumber:
    case Heap::kTagBoolean:
    case Heap::kTagCData:
@@ -278,6 +284,14 @@ void GC::VisitMap(HMap* map) {
 
     push_grey(map->GetSlot(i), map->GetSlotAddress(i));
   }
+}
+
+
+void GC::VisitString(HValue* value) {
+  push_grey(HValue::Cast(HString::LeftCons(value->addr())),
+            HString::LeftConsSlot(value->addr()));
+  push_grey(HValue::Cast(HString::RightCons(value->addr())),
+            HString::RightConsSlot(value->addr()));
 }
 
 } // namespace internal

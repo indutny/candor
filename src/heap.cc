@@ -64,7 +64,8 @@ char* Space::Allocate(uint32_t bytes) {
             Heap::kGCOldSpace);
       }
 
-      AddPage(even_bytes);
+      // Including tagging byte offset
+      AddPage(even_bytes + 1);
     }
   }
 
@@ -117,7 +118,9 @@ char* Heap::AllocateTagged(HeapTag tag, TenureType tenure, uint32_t bytes) {
   char* result = space(tenure)->Allocate(bytes + 8);
   uint64_t qtag = tag;
   if (tenure == kTenureOld) {
-    qtag = qtag | (kMinOldSpaceGeneration << 8);
+    int bit_offset = (HValue::kGenerationOffset -
+                      HValue::interior_offset(0)) << 3;
+    qtag = qtag | (kMinOldSpaceGeneration << bit_offset);
   }
   *reinterpret_cast<uint64_t*>(result + HValue::kTagOffset) = qtag;
 
@@ -181,8 +184,21 @@ HValue* HValue::CopyTo(Space* old_space, Space* new_space) {
     size += kPointerSize;
     break;
    case Heap::kTagString:
-    // hash + length + bytes
-    size += 2 * kPointerSize + As<HString>()->length();
+    // hash + length
+    size += 2 * kPointerSize;
+    switch (GetRepresentation<HString::Representation>(addr())) {
+     case HString::kNormal:
+      // + bytes
+      size += As<HString>()->length();
+      break;
+     case HString::kCons:
+      // + lhs + rhs + scratch_slot (for traversing)
+      size += 2 * kPointerSize;
+      break;
+     default:
+      UNEXPECTED
+      break;
+    }
     break;
    case Heap::kTagObject:
     // mask + map
@@ -290,11 +306,90 @@ char* HString::New(Heap* heap,
 }
 
 
-uint32_t HString::Hash(char* addr) {
+char* HString::NewCons(Heap* heap,
+                       Heap::TenureType tenure,
+                       uint32_t length,
+                       char* left,
+                       char* right) {
+  char* result = New(heap, tenure, 2 * kPointerSize);
+
+  // Set representation
+  SetRepresentation<Representation>(result, kCons);
+
+  // Set length
+  *reinterpret_cast<uint32_t*>(result + kLengthOffset) = length;
+
+  // Set lhs and rhs
+  *LeftConsSlot(result) = left;
+  *RightConsSlot(result) = right;
+
+  return result;
+}
+
+
+char* HString::FlattenCons(char* addr, char* buffer) {
+  Zone z;
+  List<char*, ZoneObject> queue;
+  while (addr != NULL) {
+    switch (GetRepresentation<Representation>(addr)) {
+     case kNormal:
+      {
+        uint32_t len = HString::Length(addr);
+        memcpy(buffer, addr + kValueOffset, len);
+        buffer += len;
+
+      }
+      break;
+     case kCons:
+      if (RightCons(addr) != NULL) queue.Unshift(RightCons(addr));
+      if (LeftCons(addr) != NULL) queue.Unshift(LeftCons(addr));
+      break;
+     default:
+      UNEXPECTED
+      return buffer;
+    }
+    addr = queue.Shift();
+  }
+
+  return buffer;
+}
+
+
+char* HString::Value(Heap* heap, char* addr) {
+  switch (GetRepresentation<Representation>(addr)) {
+   case kNormal:
+    return addr + kValueOffset;
+   case kCons:
+    if (RightCons(addr) == NULL) {
+      // Return cached left if right is null
+      return HString::Value(heap, LeftCons(addr));
+    } else {
+      // Concatenate strings and put them into left slot
+      char* result = HString::New(heap,
+                                  Heap::kTenureNew,
+                                  HString::Length(addr));
+      char* value = HString::Value(heap, result);
+
+      // Traverse cons tree and put strings in
+      HString::FlattenCons(addr, value);
+
+      *RightConsSlot(addr) = NULL;
+      *LeftConsSlot(addr) = result;
+
+      return value;
+    }
+   default:
+    UNEXPECTED
+    return NULL;
+  }
+}
+
+
+uint32_t HString::Hash(Heap* heap, char* addr) {
   uint32_t* hash_addr = reinterpret_cast<uint32_t*>(addr + kHashOffset);
   uint32_t hash = *hash_addr;
   if (hash == 0) {
-    hash = ComputeHash(Value(addr), Length(addr));
+    hash = ComputeHash(Value(heap, addr), Length(addr));
     *hash_addr = hash;
   }
   return hash;

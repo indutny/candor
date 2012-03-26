@@ -63,7 +63,7 @@ off_t RuntimeGetHash(Heap* heap, char* value) {
 
   switch (tag) {
    case Heap::kTagString:
-    return HString::Hash(value);
+    return HString::Hash(heap, value);
    case Heap::kTagFunction:
    case Heap::kTagObject:
    case Heap::kTagArray:
@@ -162,7 +162,7 @@ off_t RuntimeLookupProperty(Heap* heap,
       if (is_array) {
         if (key_slot == keyptr) break;
       } else {
-        if (RuntimeStrictCompare(key_slot, key) == 0) break;
+        if (RuntimeStrictCompare(heap, key_slot, key) == 0) break;
       }
 
       index += HValue::kPointerSize;
@@ -281,7 +281,7 @@ char* RuntimeToNumber(Heap* heap, char* value) {
   switch (tag) {
    case Heap::kTagString:
     {
-      char* str = HString::Value(value);
+      char* str = HString::Value(heap, value);
       uint32_t length = HString::Length(value);
 
       return HNumber::New(heap, Heap::kTenureNew, StringToDouble(str, length));
@@ -338,7 +338,7 @@ char* RuntimeToBoolean(Heap* heap, char* value) {
 }
 
 
-size_t RuntimeStrictCompare(char* lhs, char* rhs) {
+size_t RuntimeStrictCompare(Heap* heap, char* lhs, char* rhs) {
   // Fast case - pointers are equal
   if (lhs == rhs) return 0;
 
@@ -350,7 +350,7 @@ size_t RuntimeStrictCompare(char* lhs, char* rhs) {
 
   switch (tag) {
    case Heap::kTagString:
-    return RuntimeStringCompare(lhs, rhs);
+    return RuntimeStringCompare(heap, lhs, rhs);
    case Heap::kTagFunction:
    case Heap::kTagObject:
    case Heap::kTagArray:
@@ -369,25 +369,39 @@ size_t RuntimeStrictCompare(char* lhs, char* rhs) {
 }
 
 
-size_t RuntimeStringCompare(char* lhs, char* rhs) {
+size_t RuntimeStringCompare(Heap* heap, char* lhs, char* rhs) {
   uint32_t lhs_length = HString::Length(lhs);
   uint32_t rhs_length = HString::Length(rhs);
 
   return lhs_length < rhs_length ? -1 :
          lhs_length > rhs_length ? 1 :
-         strncmp(HString::Value(lhs), HString::Value(rhs), lhs_length);
+         strncmp(HString::Value(heap, lhs),
+                 HString::Value(heap, rhs),
+                 lhs_length);
 }
 
 
 char* RuntimeConcatenateStrings(Heap* heap,
                                 char* lhs,
                                 char* rhs) {
-  uint32_t lhs_length = HString::Length(lhs);
-  uint32_t rhs_length = HString::Length(rhs);
-  char* result = HString::New(heap, Heap::kTenureNew, lhs_length + rhs_length);
+  int32_t lhs_length = HString::Length(lhs);
+  int32_t rhs_length = HString::Length(rhs);
 
-  memcpy(HString::Value(result), HString::Value(lhs), lhs_length);
-  memcpy(HString::Value(result) + lhs_length, HString::Value(rhs), rhs_length);
+  char* result;
+  if (lhs_length + rhs_length < HString::kMinConsLength) {
+    result = HString::New(heap, Heap::kTenureNew, lhs_length + rhs_length);
+
+    memcpy(HString::Value(heap, result),
+           HString::Value(heap, lhs), lhs_length);
+    memcpy(HString::Value(heap, result) + lhs_length,
+           HString::Value(heap, rhs), rhs_length);
+  } else {
+    result = HString::NewCons(heap,
+                              Heap::kTenureNew,
+                              lhs_length + rhs_length,
+                              lhs,
+                              rhs);
+  }
 
   return result;
 }
@@ -477,9 +491,10 @@ char* RuntimeBinOp(Heap* heap, char* lhs, char* rhs) {
      case Heap::kTagString:
       // Compare strings
       if (BinOp::is_equality(type)) {
-        result = RuntimeStringCompare(lhs, rhs) == 0;
+        result = RuntimeStringCompare(heap, lhs, rhs) == 0;
       } else {
-        result = BinOp::NumToCompare(type, RuntimeStringCompare(lhs, rhs));
+        result = BinOp::NumToCompare(type,
+                                     RuntimeStringCompare(heap, lhs, rhs));
       }
       break;
      case Heap::kTagObject:

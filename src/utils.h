@@ -120,9 +120,14 @@ class List {
 
   void Unshift(T item) {
     Item* next = new Item(item);
+
+    if (head_ != NULL) {
+      head_->prev_ = next;
+    }
     next->prev_ = NULL;
     next->next_ = head_;
     head_ = next;
+    if (current_ == NULL) current_ = head_;
     length_++;
   }
 

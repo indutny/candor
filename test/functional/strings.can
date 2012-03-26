@@ -1,0 +1,13 @@
+print = global.print
+assert = global.assert
+getValue = global.getValue
+
+print('-- can: strings --')
+
+a = ''
+i = 20000
+while (i--) {
+  a = a + '---------- ' + i + ' -----------\n'
+}
+
+getValue(a)
