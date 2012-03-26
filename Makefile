@@ -20,6 +20,8 @@ endif
 
 all: candor.a
 
+DEPS += src/utils.h
+
 OBJS += src/api.o
 OBJS += src/zone.o
 OBJS += src/lexer.o
@@ -65,7 +67,7 @@ endif
 candor.a: $(OBJS)
 	$(AR) rcs candor.a $(OBJS)
 
-src/%.o: src/%.cc
+src/%.o: src/%.cc src/%.h $(DEPS)
 	$(CXX) $(LIBCPPFLAGS) $(CPPFLAGS) -Isrc -c $< -o $@
 
 TESTS += test/test-parser
