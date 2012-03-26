@@ -119,7 +119,9 @@ Handle<T>::Handle(Value* v) : value(NULL), ref_count(0) {
 
 template <class T>
 Handle<T>::~Handle() {
-  Unwrap();
+  if (ISOLATE->heap != NULL) {
+    Unwrap();
+  }
 }
 
 

@@ -14,20 +14,20 @@ const char* ReadContents(const char* filename, off_t* size) {
   int fd = open(filename, O_RDONLY, S_IRUSR | S_IRGRP);
   if (fd == -1) {
     fprintf(stderr, "init: failed to open file %s\n", filename);
-    abort();
+    exit(1);
   }
 
   off_t s = lseek(fd, 0, SEEK_END);
   if (s == -1) {
     fprintf(stderr, "init: failed to get filesize of %s\n", filename);
-    abort();
+    exit(1);
   }
 
   char* contents = new char[s];
   if (pread(fd, contents, s, 0) != s) {
     fprintf(stderr, "init: failed to get contents of %s\n", filename);
     delete contents;
-    abort();
+    exit(1);
   }
 
   close(fd);
