@@ -360,7 +360,7 @@ char* HString::Value(Heap* heap, char* addr) {
    case kNormal:
     return addr + kValueOffset;
    case kCons:
-    if (RightCons(addr) == NULL) {
+    if (RightCons(addr) == HNil::New()) {
       // Return cached left if right is null
       return HString::Value(heap, LeftCons(addr));
     } else {
@@ -373,7 +373,7 @@ char* HString::Value(Heap* heap, char* addr) {
       // Traverse cons tree and put strings in
       HString::FlattenCons(addr, value);
 
-      *RightConsSlot(addr) = NULL;
+      *RightConsSlot(addr) = HNil::New();
       *LeftConsSlot(addr) = result;
 
       return value;

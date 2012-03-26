@@ -65,7 +65,6 @@ class GC {
   bool IsInCurrentSpace(HValue* value);
 
   inline void push_grey(HValue* value, char** reference) {
-    if (value == NULL) return;
     grey_items()->Push(new GCValue(value, reference));
   }
 
