@@ -545,13 +545,22 @@ AstNode* Parser::ParseObjectLiteral() {
   while (!Peek()->is(kBraceClose) && !Peek()->is(kEnd)) {
     AstNode* key;
     SkipCr();
-    if (Peek()->is(kString) || Peek()->is(kName)) {
+    switch (Peek()->type()) {
+     case kString:
+     case kName:
+     case kTypeof:
+     case kSizeof:
+     case kKeysof:
+     case kNew:
+     case kDelete:
       key = new AstNode(AstNode::kProperty, Peek());
       Skip();
-    } else if (Peek()->is(kNumber)) {
+      break;
+     case kNumber:
       key = new AstNode(AstNode::kNumber, Peek());
       Skip();
-    } else {
+      break;
+     default:
       SetError("Expected string or number as object literal's key");
       return NULL;
     }
