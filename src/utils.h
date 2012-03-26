@@ -54,6 +54,60 @@ inline uint32_t ComputeHash(const char* key, uint32_t length) {
 class EmptyClass { };
 
 template <class T, class ItemParent>
+class Stack {
+ public:
+  class Item : public ItemParent {
+   public:
+    Item(T value, Item* prev) : value_(value), prev_(prev) {
+    }
+
+    inline T value() { return value_; }
+    inline void value(T value) { value_ = value; }
+
+    inline Item* prev() { return prev_; }
+
+   protected:
+    T value_;
+    Item* prev_;
+  };
+
+  Stack() : allocated(false), head_(NULL) {
+  }
+
+  ~Stack() {
+    if (allocated) {
+      T i;
+      while ((i = Pop()) != NULL) delete i;
+    } else {
+      while (Pop() != NULL) {
+      }
+    }
+  }
+
+  inline void Push(T value) {
+    head_ = new Item(value, head());
+  }
+
+  inline T Pop() {
+    if (head() == NULL) return NULL;
+
+    Item* current = head();
+    head_ = current->prev();
+
+    delete current;
+
+    return current->value();
+  }
+
+  inline Item* head() { return head_; }
+
+  bool allocated;
+
+ private:
+  Item* head_;
+};
+
+template <class T, class ItemParent>
 class List {
  public:
   class Item : public ItemParent {

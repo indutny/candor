@@ -329,7 +329,7 @@ char* HString::NewCons(Heap* heap,
 
 char* HString::FlattenCons(char* addr, char* buffer) {
   Zone z;
-  List<char*, ZoneObject> queue;
+  Stack<char*, ZoneObject> stack;
   while (addr != NULL) {
     switch (GetRepresentation<Representation>(addr)) {
      case kNormal:
@@ -341,14 +341,14 @@ char* HString::FlattenCons(char* addr, char* buffer) {
       }
       break;
      case kCons:
-      if (RightCons(addr) != NULL) queue.Unshift(RightCons(addr));
-      if (LeftCons(addr) != NULL) queue.Unshift(LeftCons(addr));
+      if (RightCons(addr) != NULL) stack.Push(RightCons(addr));
+      if (LeftCons(addr) != NULL) stack.Push(LeftCons(addr));
       break;
      default:
       UNEXPECTED
       return buffer;
     }
-    addr = queue.Shift();
+    addr = stack.Pop();
   }
 
   return buffer;
