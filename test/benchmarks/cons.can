@@ -1,0 +1,11 @@
+print = global.print
+assert = global.assert
+getValue = global.getValue
+
+a = ''
+i = 200000
+while (i--) {
+  a = a + '---------- ' + i + ' -----------\n'
+}
+
+getValue(a)
