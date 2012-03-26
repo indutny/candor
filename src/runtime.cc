@@ -166,18 +166,17 @@ off_t RuntimeLookupProperty(Heap* heap,
       }
 
       index += HValue::kPointerSize;
-      if (index > mask) index = 0;
+      index = index & mask;
     } while (index != start);
 
-    // All key slots are filled - rehash and lookup again
-    if (needs_grow) {
-      assert(insert);
-      RuntimeGrowObject(heap, obj, 0);
-
-      return RuntimeLookupProperty(heap, obj, keyptr, insert);
-    }
-
     if (insert) {
+      // All key slots are filled - rehash and lookup again
+      if (needs_grow) {
+        RuntimeGrowObject(heap, obj, 0);
+
+        return RuntimeLookupProperty(heap, obj, keyptr, insert);
+      }
+
       *reinterpret_cast<char**>(space + index) = keyptr;
     }
 
