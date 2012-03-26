@@ -11,3 +11,8 @@ while (i--) {
 }
 
 getValue(a)
+
+a = '11111111111111111111111111111' + '2222222222222222222222'
+b = {}
+b[a] = 1
+assert(b[a] === 1, "cons string as property")

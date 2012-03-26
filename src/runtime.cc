@@ -152,25 +152,25 @@ off_t RuntimeLookupProperty(Heap* heap,
   } else {
     // Dive into space and walk it in circular manner
     uint32_t start = hash & mask;
-    uint32_t end = start == 0 ? mask : start - HValue::kPointerSize;
 
     uint32_t index = start;
     char* key_slot = NULL;
-    while (index != end) {
+    bool needs_grow = true;
+    do {
       key_slot = *reinterpret_cast<char**>(space + index);
-      if (key_slot == HNil::New()) break;
-      if (is_array) {
-        if (key_slot == keyptr) break;
-      } else {
-        if (RuntimeStrictCompare(heap, key_slot, key) == 0) break;
+      if (key_slot == HNil::New() ||
+          (is_array && key_slot == keyptr) ||
+          RuntimeStrictCompare(heap, key_slot, key) == 0) {
+        needs_grow = false;
+        break;
       }
 
       index += HValue::kPointerSize;
       if (index > mask) index = 0;
-    }
+    } while (index != start);
 
     // All key slots are filled - rehash and lookup again
-    if (index == end) {
+    if (needs_grow) {
       assert(insert);
       RuntimeGrowObject(heap, obj, 0);
 
