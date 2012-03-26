@@ -328,27 +328,37 @@ char* HString::NewCons(Heap* heap,
 
 
 char* HString::FlattenCons(char* addr, char* buffer) {
-  Zone z;
-  Stack<char*, ZoneObject> stack;
   while (addr != NULL) {
     switch (GetRepresentation<Representation>(addr)) {
      case kNormal:
       {
         uint32_t len = HString::Length(addr);
         memcpy(buffer, addr + kValueOffset, len);
-        buffer += len;
-
+        return buffer + len;
       }
-      break;
      case kCons:
-      if (RightCons(addr) != NULL) stack.Push(RightCons(addr));
-      if (LeftCons(addr) != NULL) stack.Push(LeftCons(addr));
+      {
+        char* left = LeftCons(addr);
+        char* right = RightCons(addr);
+
+        if (right == HNil::New()) {
+          addr = left;
+        } else {
+          // Iterate through bigger string, recurse through smaller
+          if (HString::Length(left) > HString::Length(right)) {
+            FlattenCons(right, buffer + HString::Length(left));
+            addr = left;
+          } else {
+            buffer = FlattenCons(left, buffer);
+            addr = right;
+          }
+        }
+      }
       break;
      default:
       UNEXPECTED
       return buffer;
     }
-    addr = stack.Pop();
   }
 
   return buffer;
