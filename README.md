@@ -198,7 +198,7 @@ Rectangle = {
 }
 
 // First create a fast shallow clone of the Rectangle prototype
-rect = new Rectangle
+rect = clone Rectangle
 
 // Then initialize it using a one of the functions
 rect.initialize(rect, 3, 5)
