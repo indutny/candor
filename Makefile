@@ -1,19 +1,22 @@
 BUILDTYPE := Debug
-TESTBIN := build/test/out/$(BUILDTYPE)/test
-LIBCANDOR := build/candor/out/$(BUILDTYPE)/libcandor.a
-CANBIN := build/candor/out/$(BUILDTYPE)/can
+TESTBIN := build/out/$(BUILDTYPE)/test
+LIBCANDOR := build/out/$(BUILDTYPE)/libcandor.a
+CANBIN := build/out/$(BUILDTYPE)/can
 
-all: candor
+all: $(LIBCANDOR)
 
-candor $(LIBCANDOR) $(CANBIN):
-	tools/gyp/gyp --generator-output=build/candor --format=make \
-		--depth=. candor.gyp
-	make -C build/candor
+build:
+	tools/gyp/gyp --generator-output=build --format=make \
+		--depth=. candor.gyp test/test.gyp
 
-$(TESTBIN):
-	tools/gyp/gyp --generator-output=build/test --format=make \
-		--depth=. test/test.gyp
-	make -C build/test
+$(LIBCANDOR): build
+	make -C build candor
+
+$(CANBIN): build
+	make -C build can
+
+$(TESTBIN): build
+	make -C build test
 
 test: $(TESTBIN) $(CANBIN)
 	@$(TESTBIN) parser
@@ -37,6 +40,6 @@ test: $(TESTBIN) $(CANBIN)
 	@$(CANBIN) test/functional/regressions/regr-3.can
 
 clean:
-	rm -f $(OBJS) build
+	rm -rf build
 
-.PHONY: all candor test
+.PHONY: all test

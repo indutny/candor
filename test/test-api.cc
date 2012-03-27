@@ -160,7 +160,7 @@ static Value* Unwrap(uint32_t argc, Value* argv[]) {
   return w->Wrap();
 }
 
-TEST_START("API test")
+TEST_START(api)
   FUN_TEST("return (a, b, c) {\n"
            "return a + b + c(1, 2, () { __$gc()\nreturn 3 }) + 2\n"
            "}", {
@@ -375,4 +375,4 @@ TEST_START("API test")
     Value* ret = f->Call(0, argv);
     assert(ret->Is<Function>());
   }
-TEST_END("API test")
+TEST_END(api)
