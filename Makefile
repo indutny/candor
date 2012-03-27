@@ -43,4 +43,4 @@ test: test-runner can
 clean:
 	rm -rf build
 
-.PHONY: all test
+.PHONY: all test libcandor.a can test-runner
