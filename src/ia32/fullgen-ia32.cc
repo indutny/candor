@@ -20,8 +20,8 @@ namespace internal {
 void FFunction::Use(uint32_t offset) {
   RelocationInfo* info = new RelocationInfo(
         RelocationInfo::kAbsolute,
-        RelocationInfo::kQuad,
-        offset - 8);
+        RelocationInfo::kLong,
+        offset - 4);
   if (addr_ != 0) info->target(addr_);
   uses_.Push(info);
   masm()->relocation_info_.Push(info);
@@ -84,7 +84,7 @@ void Fullgen::CandorFunction::Generate() {
 
   // In case if function doesn't have `return` statements
   // we should still return `nil` value
-  masm()->movq(rax, Immediate(Heap::kTagNil));
+  masm()->movl(eax, Immediate(Heap::kTagNil));
 
   fullgen()->GenerateEpilogue(fn());
   fullgen()->FinalizeSpills();
@@ -118,18 +118,22 @@ void Fullgen::Generate(AstNode* ast) {
 
 
 void Fullgen::GeneratePrologue(AstNode* stmt) {
-  // rdi <- reference to parent context (zero for main)
-  // rsi <- unboxed arguments count (tagged)
-  push(rbp);
-  movq(rbp, rsp);
+  // edx <- root address
+  // edi <- reference to parent context (zero for main)
+  // esi <- unboxed arguments count (tagged)
+  push(ebp);
+  movl(ebp, esp);
 
   // Allocate space for spill slots and on-stack variables
-  AllocateSpills(stmt->stack_slots());
+  // and 3 slots for root, context and argc
+  AllocateSpills(stmt->stack_slots() + 3);
 
   FillStackSlots();
 
   // Allocate context and clear stack slots
   AllocateContext(stmt->context_slots());
+  movl(root_op, edi);
+  movl(args_op, esi);
 
   // Place all arguments into their slots
   Label body(this);
@@ -140,16 +144,16 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
   uint32_t argc = fn->args()->length();
 
   // scratch <- index
-  movq(scratch, Immediate(HNumber::Tag(0)));
+  movl(scratch, Immediate(HNumber::Tag(0)));
 
-  // rcx <- pointer to current stack slot
-  movq(rcx, rbp);
+  // ecx <- pointer to current stack slot
+  movl(ecx, ebp);
   // skip return address and previous rbp
-  addq(rcx, Immediate(2 * 8));
+  addl(ecx, Immediate(2 * 4));
   while (item != NULL) {
-    Operand lhs(rax, 0);
+    Operand lhs(eax, 0);
 
-    cmpq(rsi, scratch);
+    cmpl(esi, scratch);
     jmp(kLt, &body);
 
     switch (item->value()->type()) {
@@ -158,11 +162,11 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
         AstValue* arg = AstValue::Cast(item->value());
 
         if (arg->slot()->use_count() > 1) {
-          Operand rhs(rcx, 0);
+          Operand rhs(ecx, 0);
           VisitFor(kSlot, arg);
 
-          movq(rdx, rhs);
-          movq(slot(), rdx);
+          movl(edx, rhs);
+          movl(slot(), edx);
         }
       }
       break;
@@ -173,34 +177,34 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
 
         // Get left arguments count
         // = ( total - current real - expected leading )
-        movq(rdx, rsi);
-        subq(rdx, scratch);
+        movl(edx, esi);
+        subl(edx, scratch);
         if (argc != i + 1) {
-          subq(rdx, Immediate(HNumber::Tag(argc - i - 1)));
+          subl(edx, Immediate(HNumber::Tag(argc - i - 1)));
         }
-        shl(rdx, Immediate(2));
+        shl(edx, Immediate(2));
 
         if (arg->slot()->use_count() > 1) {
           // Interior pointer to the arguments
-          movq(rax, rcx);
+          movl(eax, ecx);
         }
 
         // Move stack pointer forward by vararg's length
-        movq(scratch, rdx);
-        addq(rcx, rdx);
-        subq(rcx, Immediate(8));
+        movl(scratch, edx);
+        addl(ecx, edx);
+        subl(ecx, Immediate(4));
 
         if (arg->slot()->use_count() > 1) {
-          Spill rcx_s(this, rcx);
+          Spill ecx_s(this, ecx);
 
           // Call stub to generate var arg array
           Call(stubs()->GetVarArgStub());
 
-          rcx_s.Unspill();
-          movq(rdx, rax);
+          ecx_s.Unspill();
+          movl(edx, eax);
 
           VisitFor(kSlot, arg);
-          movq(slot(), rdx);
+          movl(slot(), edx);
         }
 
         scratch_s.Unspill();
@@ -212,8 +216,8 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
     }
 
     // Advance
-    addq(scratch, Immediate(HNumber::Tag(1)));
-    addq(rcx, Immediate(8));
+    addl(scratch, Immediate(HNumber::Tag(1)));
+    addl(ecx, Immediate(4));
     i++;
     item = item->next();
   }
@@ -221,25 +225,28 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
   bind(&body);
 
   // Cleanup junk
-  xorq(rax, rax);
-  xorq(rcx, rcx);
-  xorq(rdx, rdx);
-  xorq(scratch, scratch);
+  xorl(eax, eax);
+  xorl(ecx, ecx);
+  xorl(edx, edx);
+  xorl(scratch, scratch);
+  xorl(esi, esi);
+  xorl(edi, edi);
 }
 
 
 void Fullgen::GenerateEpilogue(AstNode* stmt) {
-  // rax will hold result of function
-  movq(rsp, rbp);
-  pop(rbp);
+  // eax will hold result of function
+  movl(esp, ebp);
+  pop(ebp);
 
   ret(0);
 }
 
 
 void Fullgen::PlaceInRoot(char* addr) {
-  Operand root_op(root_reg, HContext::GetIndexDisp(root_context()->length()));
-  movq(rax, root_op);
+  Operand root_slot(eax, HContext::GetIndexDisp(root_context()->length()));
+  movl(eax, root_op);
+  movl(eax, root_slot);
 
   root_context()->Push(addr);
 }
@@ -282,24 +289,24 @@ AstNode* Fullgen::VisitFunction(AstNode* stmt) {
   FFunction* ffn = new CandorFunction(this, fn);
   fns_.Push(ffn);
 
-  movq(rcx, Immediate(0));
+  movl(ecx, Immediate(0));
   ffn->Use(offset());
 
   // Allocate function object that'll reference to current scope
   // and have address of actual code
 
   if (fn->variable() != NULL) {
-    AllocateFunction(rcx, rdx, fn->args()->length());
+    AllocateFunction(ecx, edx, fn->args()->length());
 
-    Spill rdx_s(this, rdx);
+    Spill edx_s(this, edx);
 
     AstNode* assign = new AstNode(AstNode::kAssign, stmt);
     assign->children()->Push(fn->variable());
-    assign->children()->Push(new FAstSpill(&rdx_s));
+    assign->children()->Push(new FAstSpill(&edx_s));
 
     Visit(assign);
   } else {
-    AllocateFunction(rcx, rax, fn->args()->length());
+    AllocateFunction(ecx, eax, fn->args()->length());
   }
 
   return stmt;
@@ -327,17 +334,17 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
   if (fn->variable()->is(AstNode::kValue)) {
     if (name->length() == 5 && strncmp(name->value(), "__$gc", 5) == 0) {
       Call(stubs()->GetCollectGarbageStub());
-      movq(rax, Immediate(Heap::kTagNil));
+      movl(eax, Immediate(Heap::kTagNil));
       return stmt;
     } else if (name->length() == 8 &&
                strncmp(name->value(), "__$trace", 8) == 0) {
       uint32_t ip = offset();
 
       // Pass ip
-      movq(rax, Immediate(0));
+      movl(eax, Immediate(0));
       RelocationInfo* r = new RelocationInfo(RelocationInfo::kAbsolute,
-                                             RelocationInfo::kQuad,
-                                             offset() - 8);
+                                             RelocationInfo::kLong,
+                                             offset() - 4);
       relocation_info_.Push(r);
       r->target(ip);
       Call(stubs()->GetStackTraceStub());
@@ -354,7 +361,7 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
     AstNode* property = fn->variable()->rhs();
 
     VisitFor(kValue, receiver);
-    receiver_s.SpillReg(rax);
+    receiver_s.SpillReg(eax);
 
     AstNode* member = new AstNode(AstNode::kMember, receiver);
     member->children()->Push(new FAstSpill(&receiver_s));
@@ -365,17 +372,17 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
     VisitFor(kValue, fn->variable());
   }
 
-  Spill rax_s(this, rax);
+  Spill eax_s(this, eax);
 
-  IsUnboxed(rax, NULL, &not_function);
-  IsNil(rax, NULL, &not_function);
-  IsHeapObject(Heap::kTagFunction, rax, &not_function, NULL);
+  IsUnboxed(eax, NULL, &not_function);
+  IsNil(eax, NULL, &not_function);
+  IsHeapObject(Heap::kTagFunction, eax, &not_function, NULL);
 
-  Spill rsi_s(this, rsi), rdi_s(this, rdi), root_s(this, root_reg);
+  Spill esi_s(this, esi), edi_s(this, edi);
 
-  Spill stack_s(this, rsp);
+  Spill stack_s(this, esp);
   {
-    movq(rax, Immediate(Heap::kTagNil));
+    movl(eax, Immediate(Heap::kTagNil));
     Spill vararg(this);
     uint32_t argc = fn->args()->length();
     uint32_t i;
@@ -384,84 +391,83 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
       argc--;
       VisitFor(kValue, fn->args()->tail()->value());
 
-      IsUnboxed(rax, NULL, &incorrect_vararg);
-      IsNil(rax, NULL, &incorrect_vararg);
-      IsHeapObject(Heap::kTagArray, rax, &incorrect_vararg, NULL);
+      IsUnboxed(eax, NULL, &incorrect_vararg);
+      IsNil(eax, NULL, &incorrect_vararg);
+      IsHeapObject(Heap::kTagArray, eax, &incorrect_vararg, NULL);
 
-      vararg.SpillReg(rax);
+      vararg.SpillReg(eax);
     }
 
     // Set argc
-    movq(rsi, Immediate(HNumber::Tag(argc)));
+    movl(esi, Immediate(HNumber::Tag(argc)));
 
     // Allocate space on stack
 
-    // For vararg (and increase rsi)
+    // For vararg (and increase esi)
     if (!vararg.is_empty()) {
-      AllocateVarArgSlots(&vararg, rsi);
+      AllocateVarArgSlots(&vararg, esi);
     }
 
     // And for regular arguments
     for (i = 0; i < argc; i++) {
-      push(rax);
+      push(eax);
     }
 
     // Align stack if needed
-    if (argc & 1) push(rax);
+    if (argc & 1) push(eax);
 
     AstList::Item* item = fn->args()->head();
 
-    movq(rbx, rsp);
-    Spill rbx_s(this, rbx);
+    movl(ebx, esp);
+    Spill ebx_s(this, ebx);
 
     // Put arguments
     // [top] [1] ... [n]
     i = 0;
     while (item != NULL) {
-      Operand arg_slot(rbx, i++ * 8);
+      Operand arg_slot(ebx, i++ * 4);
 
       if (item->value()->is(AstNode::kSelf)) {
-        receiver_s.Unspill(rax);
+        receiver_s.Unspill(eax);
       } else {
         VisitFor(kValue, item->value());
       }
 
-      rbx_s.Unspill();
-      movq(arg_slot, rax);
+      ebx_s.Unspill();
+      movl(arg_slot, eax);
 
       item = item->next();
     }
 
     // Put vararg
     if (!vararg.is_empty()) {
-      vararg.Unspill(rax);
-      rbx_s.Unspill();
-      addq(rbx, Immediate((i - 1) * 8));
+      vararg.Unspill(eax);
+      ebx_s.Unspill();
+      addl(ebx, Immediate((i - 1) * 4));
 
       Call(stubs()->GetPutVarArgStub());
     }
 
     // Generate calling code
-    rax_s.Unspill();
-    CallFunction(rax);
+    eax_s.Unspill();
+    CallFunction(eax);
   }
 
   // Unwind stack
   stack_s.Unspill();
 
-  root_s.Unspill();
-  rdi_s.Unspill();
-  rsi_s.Unspill();
+  edi_s.Unspill();
+  esi_s.Unspill();
 
   jmp(&done);
   bind(&incorrect_vararg);
 
-  movq(rax, Immediate(Heap::kTagNil));
+  movl(eax, Immediate(Heap::kTagNil));
 
   jmp(&done);
   bind(&not_function);
 
-  movq(rax, Immediate(Heap::kTagNil));
+  movl(eax, Immediate(Heap::kTagNil));
 
   bind(&done);
 
@@ -472,26 +478,26 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
 AstNode* Fullgen::VisitAssign(AstNode* stmt) {
   Label done(this);
 
-  // Get value of right-hand side expression in rbx
+  // Get value of right-hand side expression in ebx
   VisitFor(kValue, stmt->rhs());
-  Spill rax_s(this, rax);
+  Spill eax_s(this, eax);
 
   // Get target slot for left-hand side
   VisitFor(kSlot, stmt->lhs());
 
-  rax_s.Unspill(scratch);
+  eax_s.Unspill(scratch);
 
   // If slot's base is nil - just return value
-  if (!slot().base().is(rbp)) {
+  if (!slot().base().is(ebp)) {
     IsNil(slot().base(), NULL, &done);
   }
 
   // Put value into slot
-  movq(slot(), scratch);
+  movl(slot(), scratch);
 
   // Propagate result of assign operation
   bind(&done);
-  movq(rax, scratch);
+  movl(eax, scratch);
 
   return stmt;
 }
@@ -503,7 +509,7 @@ AstNode* Fullgen::VisitValue(AstNode* node) {
   // If it's Fullgen generated AST Value
   if (value->is_spill()) {
     assert(visiting_for_value());
-    FAstSpill::Cast(value)->spill()->Unspill(rax);
+    FAstSpill::Cast(value)->spill()->Unspill(eax);
     return node;
   }
 
@@ -512,7 +518,7 @@ AstNode* Fullgen::VisitValue(AstNode* node) {
     slot().disp(FAstOperand::Cast(value)->op()->disp());
 
     if (visiting_for_value()) {
-      movq(rax, slot());
+      movl(eax, slot());
     }
 
     return node;
@@ -523,18 +529,20 @@ AstNode* Fullgen::VisitValue(AstNode* node) {
   // Get pointer to slot first
   if (value->slot()->is_stack()) {
     // On stack variables
-    slot().base(rbp);
-    slot().disp(-8 * (value->slot()->index() + 1));
+    slot().base(ebp);
+    slot().disp(-4 * (value->slot()->index() + 4));
   } else {
     int32_t depth = value->slot()->depth();
 
     if (depth == -2) {
       // Root register lookup
-      slot().base(root_reg);
-      slot().disp(8 * (value->slot()->index() + 3));
+      movl(eax, root_op);
+      slot().base(eax);
+      slot().disp(4 * (value->slot()->index() + 3));
     } else if (depth == -1) {
       // Global lookup
-      slot().base(root_reg);
+      movl(eax, root_op);
+      slot().base(eax);
       slot().disp(HContext::GetIndexDisp(Heap::kRootGlobalIndex));
 
       if (visiting_for_slot()) {
@@ -542,15 +550,15 @@ AstNode* Fullgen::VisitValue(AstNode* node) {
       }
     } else {
       // Context variables
-      movq(rax, rdi);
+      movl(eax, edi);
 
       // Lookup context
       while (--depth >= 0) {
-        Operand parent(rax, HContext::kParentOffset);
-        movq(rax, parent);
+        Operand parent(eax, HContext::kParentOffset);
+        movl(eax, parent);
       }
 
-      slot().base(rax);
+      slot().base(eax);
       slot().scale(Operand::one);
       // Skip tag, code addr and reference to parent scope
       slot().disp(HContext::GetIndexDisp(value->slot()->index()));
@@ -559,7 +567,7 @@ AstNode* Fullgen::VisitValue(AstNode* node) {
 
   // If we was asked to return value - dereference slot
   if (visiting_for_value()) {
-    movq(rax, slot());
+    movl(eax, slot());
   }
 
   return node;
@@ -568,41 +576,41 @@ AstNode* Fullgen::VisitValue(AstNode* node) {
 
 AstNode* Fullgen::VisitMember(AstNode* node) {
   VisitFor(kValue, node->lhs());
-  Spill rax_s(this, rax);
+  Spill eax_s(this, eax);
 
   VisitFor(kValue, node->rhs());
-  movq(rbx, rax);
-  rax_s.Unspill(rax);
+  movl(ebx, eax);
+  eax_s.Unspill(eax);
 
-  movq(rcx, Immediate(visiting_for_slot()));
+  movl(ecx, Immediate(visiting_for_slot()));
   Call(stubs()->GetLookupPropertyStub());
 
-  // Make rax look like unboxed number to GC
-  dec(rax);
+  // Make eax look like unboxed number to GC
+  dec(eax);
   CheckGC();
-  inc(rax);
+  inc(eax);
 
   Label done(this);
 
-  IsNil(rax, NULL, &done);
+  IsNil(eax, NULL, &done);
 
-  rax_s.Unspill(rbx);
+  eax_s.Unspill(ebx);
 
-  Operand qmap(rbx, HObject::kMapOffset);
-  movq(rbx, qmap);
-  addq(rax, rbx);
+  Operand qmap(ebx, HObject::kMapOffset);
+  movl(ebx, qmap);
+  addl(eax, ebx);
 
-  slot().base(rax);
+  slot().base(eax);
   slot().disp(0);
 
   // Unbox value if asked
   if (visiting_for_value()) {
-    movq(rax, slot());
+    movl(eax, slot());
   }
 
   bind(&done);
 
-  slot().base(rax);
+  slot().base(eax);
   slot().disp(0);
 
   return node;
@@ -622,8 +630,8 @@ AstNode* Fullgen::VisitNumber(AstNode* node) {
     PlaceInRoot(HNumber::New(heap(), Heap::kTenureOld, value));
   } else {
     // Allocate unboxed number
-    int64_t value = StringToInt(node->value(), node->length());
-    movq(rax, Immediate(HNumber::Tag(value)));
+    int32_t value = StringToInt(node->value(), node->length());
+    movl(eax, Immediate(HNumber::Tag(value)));
   }
 
   return node;
@@ -667,7 +675,7 @@ AstNode* Fullgen::VisitIf(AstNode* node) {
 
   Call(stubs()->GetCoerceToBooleanStub());
 
-  IsTrue(rax, &fail_body, NULL);
+  IsTrue(eax, &fail_body, NULL);
 
   VisitFor(kValue, success);
 
@@ -696,7 +704,7 @@ AstNode* Fullgen::VisitWhile(AstNode* node) {
 
   Call(stubs()->GetCoerceToBooleanStub());
 
-  IsTrue(rax, &loop_end, NULL);
+  IsTrue(eax, &loop_end, NULL);
 
   VisitFor(kValue, body);
 
@@ -714,7 +722,7 @@ AstNode* Fullgen::VisitNil(AstNode* node) {
     return node;
   }
 
-  movq(rax, Immediate(Heap::kTagNil));
+  movl(eax, Immediate(Heap::kTagNil));
 
   return node;
 }
@@ -726,8 +734,9 @@ AstNode* Fullgen::VisitTrue(AstNode* node) {
     return node;
   }
 
-  Operand true_slot(root_reg, HContext::GetIndexDisp(Heap::kRootTrueIndex));
-  movq(rax, true_slot);
+  Operand true_slot(eax, HContext::GetIndexDisp(Heap::kRootTrueIndex));
+  movl(eax, root_op);
+  movl(eax, true_slot);
 
   return node;
 }
@@ -739,8 +748,9 @@ AstNode* Fullgen::VisitFalse(AstNode* node) {
     return node;
   }
 
-  Operand false_slot(root_reg, HContext::GetIndexDisp(Heap::kRootFalseIndex));
-  movq(rax, false_slot);
+  Operand false_slot(eax, HContext::GetIndexDisp(Heap::kRootFalseIndex));
+  movl(eax, root_op);
+  movl(eax, false_slot);
 
   return node;
 }
@@ -755,11 +765,11 @@ AstNode* Fullgen::VisitObjectLiteral(AstNode* node) {
   ObjectLiteral* obj = ObjectLiteral::Cast(node);
 
   // Ensure that map will be filled only by half at maximum
-  movq(rbx,
+  movl(ebx,
        Immediate(HNumber::Tag(PowerOfTwo(node->children()->length() << 1))));
-  AllocateObjectLiteral(Heap::kTagObject, rbx, rdx);
+  AllocateObjectLiteral(Heap::kTagObject, ebx, edx);
 
-  Spill rdx_s(this, rdx);
+  Spill edx_s(this, edx);
 
   // Set every key/value pair
   assert(obj->keys()->length() == obj->values()->length());
@@ -767,7 +777,7 @@ AstNode* Fullgen::VisitObjectLiteral(AstNode* node) {
   AstList::Item* value = obj->values()->head();
   while (key != NULL) {
     AstNode* member = new AstNode(AstNode::kMember, node);
-    member->children()->Push(new FAstSpill(&rdx_s));
+    member->children()->Push(new FAstSpill(&edx_s));
     member->children()->Push(key->value());
 
     AstNode* assign = new AstNode(AstNode::kAssign, node);
@@ -780,7 +790,7 @@ AstNode* Fullgen::VisitObjectLiteral(AstNode* node) {
     value = value->next();
   }
 
-  rdx_s.Unspill(rax);
+  edx_s.Unspill(eax);
 
   return node;
 }
@@ -793,22 +803,22 @@ AstNode* Fullgen::VisitArrayLiteral(AstNode* node) {
   }
 
   // Ensure that map will be filled only by half at maximum
-  movq(rbx,
+  movl(ebx,
        Immediate(HNumber::Tag(PowerOfTwo(node->children()->length() << 1))));
-  AllocateObjectLiteral(Heap::kTagArray, rbx, rdx);
+  AllocateObjectLiteral(Heap::kTagArray, ebx, edx);
 
-  Spill rdx_s(this, rdx);
+  Spill edx_s(this, edx);
 
   AstList::Item* item = node->children()->head();
-  uint64_t index = 0;
+  uint32_t index = 0;
   while (item != NULL) {
     char keystr[32];
     AstNode* key = new AstNode(AstNode::kNumber, node);
     key->value(keystr);
-    key->length(snprintf(keystr, sizeof(keystr), "%llu", index));
+    key->length(snprintf(keystr, sizeof(keystr), "%u", index));
 
     AstNode* member = new AstNode(AstNode::kMember, node);
-    member->children()->Push(new FAstSpill(&rdx_s));
+    member->children()->Push(new FAstSpill(&edx_s));
     member->children()->Push(key);
 
     AstNode* assign = new AstNode(AstNode::kAssign, node);
@@ -821,7 +831,7 @@ AstNode* Fullgen::VisitArrayLiteral(AstNode* node) {
     index++;
   }
 
-  rdx_s.Unspill(rax);
+  edx_s.Unspill(eax);
 
   return node;
 }
@@ -833,7 +843,7 @@ AstNode* Fullgen::VisitReturn(AstNode* node) {
     VisitFor(kValue, node->lhs());
   } else {
     // Or just nullify output
-    movq(rax, Immediate(Heap::kTagNil));
+    movl(eax, Immediate(Heap::kTagNil));
   }
 
   GenerateEpilogue(current_function()->fn());
@@ -860,10 +870,10 @@ AstNode* Fullgen::VisitDelete(AstNode* node) {
   AstNode* property = node->lhs()->rhs();
 
   VisitFor(kValue, property);
-  Spill rax_s(this, rax);
+  Spill eax_s(this, eax);
 
   VisitFor(kValue, receiver);
-  rax_s.Unspill(rbx);
+  eax_s.Unspill(ebx);
 
   Call(stubs()->GetDeletePropertyStub());
 
@@ -987,24 +997,24 @@ AstNode* Fullgen::VisitUnOp(AstNode* node) {
     IsNil(slot().base(), NULL, &nil_result);
 
     // Get value
-    movq(scratch, slot());
+    movl(scratch, slot());
     Spill scratch_s(this, scratch);
 
-    // Put slot's value into rbx
-    movq(rbx, slot());
+    // Put slot's value into ebx
+    movl(ebx, slot());
 
-    Spill rbx_s(this, rbx);
+    Spill ebx_s(this, ebx);
 
     assign->children()->head()->value(new FAstOperand(&slot()));
-    rhs->children()->head()->value(new FAstSpill(&rbx_s));
+    rhs->children()->head()->value(new FAstSpill(&ebx_s));
     VisitFor(kValue, assign);
 
-    scratch_s.Unspill(rax);
+    scratch_s.Unspill(eax);
 
     jmp(&done);
 
     bind(&nil_result);
-    movq(rax, slot().base());
+    movl(eax, slot().base());
 
     bind(&done);
 
@@ -1031,18 +1041,20 @@ AstNode* Fullgen::VisitUnOp(AstNode* node) {
 
     Label done(this), ret_false(this);
 
-    Operand truev(root_reg, HContext::GetIndexDisp(Heap::kRootTrueIndex));
-    Operand falsev(root_reg, HContext::GetIndexDisp(Heap::kRootFalseIndex));
+    Operand truev(eax, HContext::GetIndexDisp(Heap::kRootTrueIndex));
+    Operand falsev(eax, HContext::GetIndexDisp(Heap::kRootFalseIndex));
 
     // Negate it
-    IsTrue(rax, NULL, &ret_false);
+    IsTrue(eax, NULL, &ret_false);
 
-    movq(rax, truev);
+    movl(eax, root_op);
+    movl(eax, truev);
 
     jmp(&done);
     bind(&ret_false);
 
-    movq(rax, falsev);
+    movl(eax, root_op);
+    movl(eax, falsev);
 
     bind(&done);
 
@@ -1073,15 +1085,15 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
       !StringIsDouble(rhs->value(), rhs->length()) &&
       (op->subtype() == BinOp::kAdd || op->subtype() == BinOp::kSub)) {
 
-    IsUnboxed(rax, &call_stub, NULL);
+    IsUnboxed(eax, &call_stub, NULL);
 
-    int64_t num = HNumber::Tag(StringToInt(rhs->value(), rhs->length()));
+    int32_t num = HNumber::Tag(StringToInt(rhs->value(), rhs->length()));
 
     // addq and subq supports only long immediate (not quad)
     if (num >= -0x7fffffff && num <= 0x7fffffff) {
       switch (op->subtype()) {
-       case BinOp::kAdd: addq(rax, Immediate(num)); break;
-       case BinOp::kSub: subq(rax, Immediate(num)); break;
+       case BinOp::kAdd: addl(eax, Immediate(num)); break;
+       case BinOp::kSub: subl(eax, Immediate(num)); break;
        default:
         UNEXPECTED
         break;
@@ -1091,8 +1103,8 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
 
       // Restore on overflow
       switch (op->subtype()) {
-       case BinOp::kAdd: subq(rax, Immediate(num)); break;
-       case BinOp::kSub: addq(rax, Immediate(num)); break;
+       case BinOp::kAdd: subl(eax, Immediate(num)); break;
+       case BinOp::kSub: addl(eax, Immediate(num)); break;
        default:
         UNEXPECTED
         break;
@@ -1140,10 +1152,10 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
 
   bind(&call_stub);
 
-  Spill rax_s(this, rax);
+  Spill eax_s(this, eax);
   VisitFor(kValue, op->rhs());
-  movq(rbx, rax);
-  rax_s.Unspill(rax);
+  movl(ebx, eax);
+  eax_s.Unspill(eax);
 
   Call(stub);
 
