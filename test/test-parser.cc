@@ -2,7 +2,7 @@
 #include <parser.h>
 #include <ast.h>
 
-TEST_START("parser test")
+TEST_START(parser)
   // Basic
   PARSER_TEST("'a'", "[kString a]")
   PARSER_TEST("1", "[1]")
@@ -136,4 +136,4 @@ TEST_START("parser test")
 
   // Complex names
   PARSER_TEST("__$gc()", "[kCall [__$gc] @[] ]")
-TEST_END("parser test")
+TEST_END(parser)

@@ -1,6 +1,6 @@
 #include "test.h"
 
-TEST_START("binary operations test")
+TEST_START(binary)
   FUN_TEST("return 1 + 2 * 3 + 4 / 2 + (3 | 2) + (5 & 3) + (3 ^ 2)", {
     assert(result->As<Number>()->Value() == 14);
   })
@@ -135,4 +135,4 @@ TEST_START("binary operations test")
   FUN_TEST("return '5' & 3", {
     assert(result->As<Number>()->Value() == 1);
   })
-TEST_END("binary operations test")
+TEST_END(binary)

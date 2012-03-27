@@ -21,12 +21,9 @@ using namespace candor;
 using namespace internal;
 
 #define TEST_START(name)\
-    int main(void) {\
-      fprintf(stdout, "-- %s --\n", name);
+    void __test_runner_##name() {\
 
 #define TEST_END(name)\
-      fclose(stdout);\
-      return 0;\
     }
 
 #define PARSER_TEST(code, expected)\

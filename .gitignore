@@ -2,9 +2,4 @@
 *.a
 *.dSYM
 /can
-/test/*
-!/test/*.h
-!/test/*.cc
-!/test/*/
-/test/*.dSYM/
-!/test/*/*.can
+/build

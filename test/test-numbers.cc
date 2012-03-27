@@ -1,6 +1,6 @@
 #include "test.h"
 
-TEST_START("numbers test")
+TEST_START(numbers)
   // Basics
   FUN_TEST("return 1.2345678", {
     assert(result->As<Number>()->Value() == 1.2345678);
@@ -108,4 +108,4 @@ TEST_START("numbers test")
            "2305843009213693952 - 2305843009213693952", {
     assert(result->As<Number>()->Value() == -4.0 * 2305843009213693952.0);
   })
-TEST_END("numbers test")
+TEST_END(numbers)

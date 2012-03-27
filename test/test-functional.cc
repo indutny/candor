@@ -1,6 +1,6 @@
 #include "test.h"
 
-TEST_START("functional test")
+TEST_START(functional)
   // Basics: return + assign
   FUN_TEST("return 1", {
     assert(result->As<Number>()->Value() == 1);
@@ -278,4 +278,4 @@ TEST_START("functional test")
            "return j", {
     assert(result->As<Number>()->Value() == 10);
   })
-TEST_END("functional test")
+TEST_END(functional)

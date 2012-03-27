@@ -1,6 +1,6 @@
 #include "test.h"
 
-TEST_START("GC test")
+TEST_START(gc)
   FUN_TEST("x=1.0\n"
            "__$gc()\n__$gc()\n__$gc()\n"
            "__$gc()\n__$gc()\n__$gc()\n"
@@ -48,4 +48,4 @@ TEST_START("GC test")
            "return a.x.y", {
     assert(result->Is<Object>());
   })
-TEST_END("GC test")
+TEST_END(gc)

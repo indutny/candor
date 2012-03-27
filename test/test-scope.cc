@@ -2,7 +2,7 @@
 #include <parser.h>
 #include <ast.h>
 
-TEST_START("scope test")
+TEST_START(scope)
   // Global
   SCOPE_TEST("global", "[global @context[-1]:0]")
   SCOPE_TEST("{ global }", "[kBlock [global @context[-1]:0]]")
@@ -46,4 +46,4 @@ TEST_START("scope test")
              "[print @context[1]:0] "
              "[kCall [fn @stack:0] "
              "@[[kFunction (anonymous) @[] [print @context[2]:0]]] ]]] ]")
-TEST_END("scope test")
+TEST_END(scope)
