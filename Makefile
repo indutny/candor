@@ -1,22 +1,22 @@
-BUILDTYPE := Debug
-TESTBIN := build/out/$(BUILDTYPE)/test
+BUILDTYPE ?= Debug
+JOBS ?= 1
 
 all: $(LIBCANDOR)
 
-build:
+build/out/Makefile:
 	tools/gyp/gyp --generator-output=build --format=make \
 		--depth=. candor.gyp test/test.gyp
 
-libcandor.a: build
-	make -C build candor
+libcandor.a: build/out/Makefile
+	$(MAKE) -j $(JOBS) -C build candor
 	ln -sf build/out/$(BUILDTYPE)/libcandor.a libcandor.a
 
-can: build
-	make -C build can
+can: build/out/Makefile
+	$(MAKE) -j $(JOBS) -C build can
 	ln -sf build/out/$(BUILDTYPE)/can can
 
-test-runner: build
-	make -C build test
+test-runner: build/out/Makefile
+	$(MAKE) -j $(JOBS) -C build test
 	ln -sf build/out/$(BUILDTYPE)/test test-runner
 
 test: test-runner can
