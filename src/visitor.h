@@ -35,7 +35,7 @@ class Visitor {
   virtual AstNode* VisitObjectLiteral(AstNode* node);
   virtual AstNode* VisitArrayLiteral(AstNode* node);
   virtual AstNode* VisitNil(AstNode* node);
-  virtual AstNode* VisitNew(AstNode* node);
+  virtual AstNode* VisitClone(AstNode* node);
   virtual AstNode* VisitDelete(AstNode* node);
   virtual AstNode* VisitTrue(AstNode* node);
   virtual AstNode* VisitFalse(AstNode* node);

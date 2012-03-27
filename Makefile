@@ -92,7 +92,7 @@ test: candor.a can $(TESTS)
 	@./can test/functional/objects.can
 	@./can test/functional/binary.can
 	@./can test/functional/while.can
-	@./can test/functional/new.can
+	@./can test/functional/clone.can
 	@./can test/functional/functions.can
 	@./can test/functional/strings.can
 	@./can test/functional/regressions/regr-1.can

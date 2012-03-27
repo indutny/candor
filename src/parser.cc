@@ -220,7 +220,7 @@ AstNode* Parser::ParseExpression(int priority) {
    case kTypeof:
    case kSizeof:
    case kKeysof:
-   case kNew:
+   case kClone:
    case kDelete:
     {
       Position pos(this);
@@ -408,7 +408,7 @@ AstNode* Parser::ParsePrimary(PrimaryRestriction rest) {
    case kReturn:
    case kBreak:
    case kContinue:
-   case kNew:
+   case kClone:
    case kTypeof:
    case kSizeof:
    case kKeysof:
@@ -551,7 +551,7 @@ AstNode* Parser::ParseObjectLiteral() {
      case kTypeof:
      case kSizeof:
      case kKeysof:
-     case kNew:
+     case kClone:
      case kDelete:
       key = new AstNode(AstNode::kProperty, Peek());
       Skip();

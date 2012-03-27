@@ -222,11 +222,11 @@ Lexer::Token* Lexer::Consume() {
     uint32_t len = offset_ - start;
 
     CHECK_KEYWORD(value, len, 2, "if", kIf)
-    CHECK_KEYWORD(value, len, 3, "new", kNew)
     CHECK_KEYWORD(value, len, 3, "nil", kNil)
     CHECK_KEYWORD(value, len, 3, "NaN", kNan)
     CHECK_KEYWORD(value, len, 4, "else", kElse)
     CHECK_KEYWORD(value, len, 4, "true", kTrue)
+    CHECK_KEYWORD(value, len, 5, "clone", kClone)
     CHECK_KEYWORD(value, len, 5, "while", kWhile)
     CHECK_KEYWORD(value, len, 5, "break", kBreak)
     CHECK_KEYWORD(value, len, 5, "false", kFalse)

@@ -841,7 +841,7 @@ AstNode* Fullgen::VisitReturn(AstNode* node) {
 }
 
 
-AstNode* Fullgen::VisitNew(AstNode* node) {
+AstNode* Fullgen::VisitClone(AstNode* node) {
   VisitFor(kValue, node->lhs());
   Call(stubs()->GetCloneObjectStub());
 

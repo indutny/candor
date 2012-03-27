@@ -17,7 +17,7 @@ namespace internal {
     V(VarArg)\
     V(ObjectLiteral)\
     V(ArrayLiteral)\
-    V(New)\
+    V(Clone)\
     V(Delete)\
     V(Return)\
     V(Break)\

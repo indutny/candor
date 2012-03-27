@@ -78,7 +78,7 @@ class Lexer {
     kBreak,
     kContinue,
     kReturn,
-    kNew,
+    kClone,
     kDelete,
     kTypeof,
     kSizeof,
