@@ -823,9 +823,9 @@ inline const char* Unescape(const char* value, uint32_t length, uint32_t* res) {
 
 
 inline uint32_t GetPageSize() {
-#ifdef __DARWIN
+#if CANDOR_PLATFORM_DARWIN
   return getpagesize();
-#else
+#elif CANDOR_PLATFORM_LINUX
   return sysconf(_SC_PAGE_SIZE);
 #endif
 }

@@ -643,5 +643,27 @@ void Masm::CallFunction(Register fn) {
   bind(&done);
 }
 
+
+void Masm::ProbeCPU() {
+  push(rbp);
+  movq(rbp, rsp);
+
+  push(rbx);
+  push(rcx);
+  push(rdx);
+
+  movq(rax, Immediate(0x01));
+  cpuid();
+  movq(rax, rcx);
+
+  pop(rdx);
+  pop(rcx);
+  pop(rbx);
+
+  movq(rsp, rbp);
+  pop(rbp);
+  ret(0);
+}
+
 } // namespace internal
 } // namespace candor

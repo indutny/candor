@@ -118,6 +118,7 @@ class Masm : public Assembler {
   void Call(Operand& addr);
   void Call(char* stub);
   void CallFunction(Register fn);
+  void ProbeCPU();
 
   enum BinOpUsage {
     kIntegral,

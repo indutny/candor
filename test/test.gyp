@@ -20,9 +20,9 @@
     'target_name': 'test',
     'type': 'executable',
     'include_dirs': [
-      'include',
-      'src',
-      'test'
+      '../include',
+      '../src',
+      '../test'
     ],
     'cflags': ['-Wall', '-Wextra', '-Wno-unused-parameter',
                '-fPIC', '-fno-strict-aliasing', '-fno-exceptions',
@@ -39,18 +39,5 @@
       'test-parser.cc',
       'test-scope.cc'
     ]
-  }],
-  'target_defaults': {
-    'defines': [ '__ARCH=<(target_arch)' ],
-    'conditions': [
-      ['OS == "mac"', {
-        'defines': [ '__PLATFORM=darwin' ]
-      }, {
-        'defines': [ '__PLATFORM=linux' ]
-      }]
-    ],
-    'xcode_settings': {
-      'ARCHS': [ 'x86_64' ]
-    }
-  }
+  }]
 }

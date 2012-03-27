@@ -21,26 +21,8 @@ void CPU::Probe() {
   Zone z;
   Assembler a;
 
-#define __ a.
-  __ push(rbp);
-  __ movq(rbp, rsp);
-
-  __ push(rbx);
-  __ push(rcx);
-  __ push(rdx);
-
-  __ movq(rax, Immediate(0x01));
-  __ cpuid();
-  __ movq(rax, rcx);
-
-  __ pop(rdx);
-  __ pop(rcx);
-  __ pop(rbx);
-
-  __ movq(rsp, rbp);
-  __ pop(rbp);
-  __ ret(0);
-#undef __
+  // XXX: I don't like that cast, though it seems to be correct solution
+  reinterpret_cast<Masm*>(&a)->ProbeCPU();
 
   CodePage page(a.length());
   char* code = page.Allocate(a.length());

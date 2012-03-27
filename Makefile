@@ -1,10 +1,11 @@
 BUILDTYPE ?= Debug
 JOBS ?= 1
+ARCH ?=
 
 all: libcandor.a
 
 build:
-	tools/gyp/gyp --generator-output=build --format=make \
+	tools/gyp/gyp -Dosx_arch=$(ARCH) --generator-output=build --format=make \
 		--depth=. candor.gyp test/test.gyp
 
 libcandor.a: build

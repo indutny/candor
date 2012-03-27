@@ -57,6 +57,20 @@
           'src/x64/stubs-x64.h'
         ]
       }],
+      ['target_arch == "ia32"', {
+        'sources': [
+          'src/ia32/assembler-ia32.cc',
+          'src/ia32/assembler-ia32.h',
+          'src/ia32/assembler-ia32-inl.h',
+          'src/ia32/fullgen-ia32.cc',
+          'src/ia32/fullgen-ia32.h',
+          'src/ia32/macroassembler-ia32.cc',
+          'src/ia32/macroassembler-ia32.h',
+          'src/ia32/macroassembler-ia32-inl.h',
+          'src/ia32/stubs-ia32.cc',
+          'src/ia32/stubs-ia32.h'
+        ]
+      }]
     ]
   }, {
     'target_name': 'can',
@@ -74,28 +88,5 @@
     'sources': [
       'src/can.cc'
     ]
-  }],
-  'target_defaults': {
-    'default_configuration': 'Debug',
-    'defines': [ '__ARCH=<(target_arch)' ],
-    'conditions': [
-      ['OS == "mac"', {
-        'defines': [ '__PLATFORM=darwin' ]
-      }, {
-        'defines': [ '__PLATFORM=linux' ]
-      }]
-    ],
-    'xcode_settings': {
-      'ARCHS': [ 'x86_64' ]
-    },
-    'configurations': {
-      'Debug': {
-        'cflags': [ '-g', '-O0' ],
-      },
-      'Release': {
-        'cflags': [ '-O3' ],
-        'defines': [ 'NDEBUG' ]
-      }
-    }
-  }
+  }]
 }
