@@ -220,7 +220,7 @@ rect:getArea() // -> 15
 ```bash
 git clone git://github.com/indutny/candor.git
 cd candor
-make ARCH=x64 test
+make test
 ```
 
 ## Status of project
