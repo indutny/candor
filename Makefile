@@ -15,7 +15,7 @@ ifeq ($(MODE),release)
 endif
 
 ifeq ($(ARCH),)
-	ARCH = $(shell sh -c 'uname -m | sed -e "s/i.86/i386/;s/x86_64/x64/;s/amd64/x64/"')
+	ARCH = $(shell sh -c 'uname -m | sed -e "s/i.86/ia32/;s/x86_64/x64/;s/amd64/x64/"')
 endif
 
 all: candor.a
@@ -35,7 +35,7 @@ OBJS += src/heap.o
 OBJS += src/source-map.o
 OBJS += src/runtime.o
 
-ifeq ($(ARCH),i386)
+ifeq ($(ARCH),ia32)
 	ifeq ($(OS),Darwin)
 		CPPFLAGS += -arch i386
 	else
@@ -45,23 +45,21 @@ ifeq ($(ARCH),i386)
 	OBJS += src/ia32/macroassembler-ia32.o
 	OBJS += src/ia32/stubs-ia32.o
 	OBJS += src/ia32/fullgen-ia32.o
+
+	CPPFLAGS += -D__ARCH=ia32
 else
 	OBJS += src/x64/assembler-x64.o
 	OBJS += src/x64/macroassembler-x64.o
 	OBJS += src/x64/stubs-x64.o
 	OBJS += src/x64/fullgen-x64.o
+
+	CPPFLAGS += -D__ARCH=x64
 endif
 
 ifeq ($(OS),Darwin)
 	CPPFLAGS += -D__PLATFORM=darwin
 else
 	CPPFLAGS += -D__PLATFORM=linux
-endif
-
-ifeq ($(ARCH),i386)
-	CPPFLAGS += -D__ARCH=ia32
-else
-	CPPFLAGS += -D__ARCH=x64
 endif
 
 candor.a: $(OBJS)

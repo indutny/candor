@@ -284,7 +284,12 @@ class HValue {
     *reinterpret_cast<uint8_t*>(addr + kRepresentationOffset) = r;
   }
 
+#if __ARCH == x64
   static const int kPointerSize = 8;
+#elif __ARCH == ia32
+  static const int kPointerSize = 4;
+#endif
+
   static const int kTagOffset = HINTERIOR_OFFSET(0);
   static const int kGCMarkOffset = HINTERIOR_OFFSET(1) - 1;
   static const int kGCForwardOffset = HINTERIOR_OFFSET(1);

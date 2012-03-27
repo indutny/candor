@@ -4,7 +4,7 @@
 #if __ARCH == x64
 #include "x64/macroassembler-x64.h"
 #include "x64/macroassembler-x64-inl.h"
-#else
+#elif __ARCH == ia32
 #include "ia32/macroassembler-ia32.h"
 #include "ia32/macroassembler-ia32-inl.h"
 #endif

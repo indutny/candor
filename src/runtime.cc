@@ -135,7 +135,7 @@ off_t RuntimeLookupProperty(Heap* heap,
 
   if (is_array && HArray::IsDense(obj)) {
     // Dense arrays use another lookup mechanism
-    uint32_t index = numkey << 3;
+    uint32_t index = numkey * HValue::kPointerSize;
 
     if (index > mask) {
       if (insert) {

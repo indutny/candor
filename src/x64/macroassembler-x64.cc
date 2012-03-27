@@ -264,7 +264,7 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
   // keys + values
   shl(size, Immediate(4));
   // + size
-  addq(size, Immediate(8));
+  addq(size, Immediate(HValue::kPointerSize));
   TagNumber(size);
 
   Allocate(Heap::kTagMap, size, 0, scratch);
@@ -283,7 +283,7 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
   shl(size, Immediate(4));
   addq(result, Immediate(HMap::kSpaceOffset));
   addq(size, result);
-  subq(size, Immediate(8));
+  subq(size, Immediate(HValue::kPointerSize));
   Fill(result, size, Immediate(Heap::kTagNil));
 
   result_s.Unspill();
@@ -382,7 +382,7 @@ void Masm::EnterFramePrologue() {
 
 
 void Masm::EnterFrameEpilogue() {
-  addq(rsp, Immediate(4 * 8));
+  addq(rsp, Immediate(4 << 3));
 }
 
 
