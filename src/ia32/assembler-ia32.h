@@ -279,9 +279,8 @@ class Assembler {
   void call(Operand& dst);
 
   // Floating point instructions
-  void movld(DoubleRegister dst, Register src);
-  void movld(Register dst, DoubleRegister src);
-  void movld(Operand& dst, DoubleRegister src);
+  void movdqa(Operand& dst, DoubleRegister src);
+  void movdqa(DoubleRegister dst, Operand &src);
   void addld(DoubleRegister dst, DoubleRegister src);
   void subld(DoubleRegister dst, DoubleRegister src);
   void mulld(DoubleRegister dst, DoubleRegister src);
@@ -304,6 +303,7 @@ class Assembler {
   inline void emit_modrm(Register dst, DoubleRegister src);
   inline void emit_modrm(DoubleRegister dst, DoubleRegister src);
   inline void emit_modrm(DoubleRegister dst, Operand& src);
+  inline void emit_modrm(Operand& dst, DoubleRegister src);
 
   inline void emitb(uint8_t v);
   inline void emitw(uint16_t v);

@@ -405,26 +405,18 @@ void Assembler::call(Operand& dst) {
 // Floating point instructions
 
 
-void Assembler::movld(DoubleRegister dst, Register src) {
+void Assembler::movdqa(Operand& dst, DoubleRegister src) {
   emitb(0x66);
   emitb(0x0F);
-  emitb(0x6E);
-  emit_modrm(dst, src);
-}
-
-
-void Assembler::movld(Register dst, DoubleRegister src) {
-  emitb(0x66);
-  emitb(0x0F);
-  emitb(0x7E);
+  emitb(0x7F);
   emit_modrm(src, dst);
 }
 
 
-void Assembler::movld(Operand& dst, DoubleRegister src) {
+void Assembler::movdqa(DoubleRegister dst, Operand& src) {
   emitb(0x66);
   emitb(0x0F);
-  emitb(0x7E);
+  emitb(0x6F);
   emit_modrm(src, dst);
 }
 

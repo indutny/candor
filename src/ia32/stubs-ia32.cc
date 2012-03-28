@@ -1071,7 +1071,6 @@ void BinOpStub::Generate() {
   // Convert rhs to heap number if needed
   __ IsUnboxed(ecx, &both_boxed, NULL);
 
-  __ emitb(0xcc);
   __ Untag(ecx);
 
   __ xorld(xmm1, xmm1);
@@ -1097,10 +1096,8 @@ void BinOpStub::Generate() {
   // We're adding two heap numbers
   Operand lvalue(eax, HNumber::kValueOffset);
   Operand rvalue(ecx, HNumber::kValueOffset);
-  __ movl(eax, lvalue);
-  __ movl(ecx, rvalue);
-  __ movld(xmm1, eax);
-  __ movld(xmm2, ecx);
+  __ movdqa(lvalue, xmm1);
+  __ movdqa(rvalue, xmm2);
   __ xorl(ecx, ecx);
 
   if (BinOp::is_math(type())) {

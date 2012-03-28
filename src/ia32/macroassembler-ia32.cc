@@ -220,10 +220,10 @@ void Masm::AllocateFunction(Register addr, Register result, uint32_t argc) {
 
 
 void Masm::AllocateNumber(DoubleRegister value, Register result) {
-  Allocate(Heap::kTagNumber, reg_nil, HValue::kPointerSize, result);
+  Allocate(Heap::kTagNumber, reg_nil, 8, result);
 
   Operand qvalue(result, HNumber::kValueOffset);
-  movld(qvalue, value);
+  movdqa(qvalue, value);
 
   CheckGC();
 }
@@ -250,7 +250,7 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
   // mask (= (size - 1) << 2)
   Untag(scratch);
   dec(scratch);
-  shl(scratch, Immediate(3));
+  shl(scratch, Immediate(2));
   movl(qmask, scratch);
   xorl(scratch, scratch);
 

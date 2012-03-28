@@ -263,7 +263,7 @@ char* HNumber::New(Heap* heap, int64_t value) {
 
 
 char* HNumber::New(Heap* heap, Heap::TenureType tenure, double value) {
-  char* result = heap->AllocateTagged(Heap::kTagNumber, tenure, kPointerSize);
+  char* result = heap->AllocateTagged(Heap::kTagNumber, tenure, 8);
   *reinterpret_cast<double*>(result + kValueOffset) = value;
   return result;
 }
