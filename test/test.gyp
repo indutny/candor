@@ -26,7 +26,7 @@
     ],
     'cflags': ['-Wall', '-Wextra', '-Wno-unused-parameter',
                '-fPIC', '-fno-strict-aliasing', '-fno-exceptions',
-               '-pedandtic'],
+               '-pedantic'],
     'dependencies': ['../candor.gyp:candor'],
     'sources': [
       'test.h',
