@@ -12,7 +12,7 @@ namespace candor {
 namespace internal {
 
 static Operand root_op(ebp, -8);
-static Operand context_op(ebp, -16);
+static Operand context_op(ebp, -12);
 
 // Forward declaration
 class BaseStub;

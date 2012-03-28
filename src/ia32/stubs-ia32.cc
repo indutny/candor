@@ -1096,8 +1096,8 @@ void BinOpStub::Generate() {
   // We're adding two heap numbers
   Operand lvalue(eax, HNumber::kValueOffset);
   Operand rvalue(ecx, HNumber::kValueOffset);
-  __ movdqa(lvalue, xmm1);
-  __ movdqa(rvalue, xmm2);
+  __ movdqu(lvalue, xmm1);
+  __ movdqu(rvalue, xmm2);
   __ xorl(ecx, ecx);
 
   if (BinOp::is_math(type())) {

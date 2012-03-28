@@ -223,7 +223,7 @@ void Masm::AllocateNumber(DoubleRegister value, Register result) {
   Allocate(Heap::kTagNumber, reg_nil, 8, result);
 
   Operand qvalue(result, HNumber::kValueOffset);
-  movdqa(qvalue, value);
+  movdqu(qvalue, value);
 
   CheckGC();
 }

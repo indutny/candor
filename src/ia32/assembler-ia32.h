@@ -279,8 +279,8 @@ class Assembler {
   void call(Operand& dst);
 
   // Floating point instructions
-  void movdqa(Operand& dst, DoubleRegister src);
-  void movdqa(DoubleRegister dst, Operand &src);
+  void movdqu(Operand& dst, DoubleRegister src);
+  void movdqu(DoubleRegister dst, Operand &src);
   void addld(DoubleRegister dst, DoubleRegister src);
   void subld(DoubleRegister dst, DoubleRegister src);
   void mulld(DoubleRegister dst, DoubleRegister src);
