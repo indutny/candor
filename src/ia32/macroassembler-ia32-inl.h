@@ -20,7 +20,7 @@ inline void Masm::Pop(Register src) {
 
 inline void Masm::PreservePop(Register src, Register preserve) {
   if (src.is(preserve)) {
-    pop(scratch);
+    addl(esp, Immediate(4));
   } else {
     pop(src);
   }

@@ -103,14 +103,14 @@ void EntryStub::Generate() {
   __ movl(esi, argc);
   __ Untag(esi);
 
-  __ testb(esi, Immediate(1));
+  // XXX: testb(esi, ...) transforms to testb(edx, ...) WAT??!
+  __ testl(esi, Immediate(1));
   __ jmp(kEq, &unwind_even);
   __ inc(esi);
   __ bind(&unwind_even);
 
   __ shl(esi, Immediate(2));
   __ addl(esp, esi);
-  __ xorl(esi, esi);
 
   __ EnterFrameEpilogue();
 
@@ -127,7 +127,7 @@ void AllocateStub::Generate() {
   GeneratePrologue();
   // Align stack
   __ push(Immediate(0));
-  __ push(ebx);
+  __ push(edx);
 
   // Arguments
   Operand size(ebp, 3 * 4);
@@ -149,26 +149,26 @@ void AllocateStub::Generate() {
   __ movl(scratch, top);
   __ movl(scratch, scratch_op);
   __ movl(eax, scratch_op);
-  __ movl(ebx, size);
-  __ Untag(ebx);
+  __ movl(edx, size);
+  __ Untag(edx);
 
   // Add object size to the top
-  __ addl(ebx, eax);
+  __ addl(edx, eax);
   __ jmp(kCarry, &runtime_allocate);
 
   // Check if we exhausted buffer
   __ movl(scratch, limit);
   __ movl(scratch, scratch_op);
-  __ cmpl(ebx, scratch_op);
+  __ cmpl(edx, scratch_op);
   __ jmp(kGt, &runtime_allocate);
 
   // We should allocate only even amount of bytes
-  __ orlb(ebx, Immediate(0x01));
+  __ orlb(edx, Immediate(0x01));
 
   // Update top
   __ movl(scratch, top);
   __ movl(scratch, scratch_op);
-  __ movl(scratch_op, ebx);
+  __ movl(scratch_op, edx);
 
   __ jmp(&done);
 
@@ -177,22 +177,27 @@ void AllocateStub::Generate() {
 
   // Remove junk from registers
   __ xorl(eax, eax);
-  __ xorl(ebx, ebx);
+  __ xorl(edx, edx);
 
   RuntimeAllocateCallback allocate = &RuntimeAllocate;
 
   {
+    __ ChangeAlign(2);
     Masm::Align a(masm());
     __ Pushad();
 
-    // Three arguments: heap, size
-    __ movl(edi, heapref);
-    __ movl(esi, size);
+    // Two arguments: heap, size
+    __ movl(scratch, size);
+    __ push(scratch);
+    __ push(heapref);
 
     __ movl(scratch, Immediate(*reinterpret_cast<uint32_t*>(&allocate)));
 
     __ Call(scratch);
+    __ addl(esp, Immediate(2 * 4));
+
     __ Popad(eax);
+    __ ChangeAlign(-2);
   }
 
   // Voila result and result_end are pointers
@@ -205,7 +210,7 @@ void AllocateStub::Generate() {
   __ movl(qtag, scratch);
 
   // eax will hold resulting pointer
-  __ pop(ebx);
+  __ pop(edx);
   GenerateEpilogue(2);
 }
 
@@ -463,10 +468,18 @@ void SizeofStub::Generate() {
   __ Pushad();
 
   // RuntimeSizeof(heap, obj)
-  __ movl(edi, Immediate(reinterpret_cast<uint32_t>(masm()->heap())));
-  __ movl(esi, eax);
-  __ movl(eax, Immediate(*reinterpret_cast<uint32_t*>(&sizeofc)));
-  __ call(eax);
+  {
+    __ ChangeAlign(2);
+    Masm::Align a();
+    __ push(eax);
+    __ push(Immediate(reinterpret_cast<uint32_t>(masm()->heap())));
+    __ movl(eax, Immediate(*reinterpret_cast<uint32_t*>(&sizeofc)));
+    __ call(eax);
+
+    // Unwind stack
+    __ addl(esp, Immediate(2 * 4));
+    __ ChangeAlign(-2);
+  }
 
   __ Popad(eax);
 
@@ -481,10 +494,18 @@ void KeysofStub::Generate() {
   __ Pushad();
 
   // RuntimeKeysof(heap, obj)
-  __ movl(edi, Immediate(reinterpret_cast<uint32_t>(masm()->heap())));
-  __ movl(esi, eax);
-  __ movl(eax, Immediate(*reinterpret_cast<uint32_t*>(&keysofc)));
-  __ call(eax);
+  {
+    __ ChangeAlign(2);
+    Masm::Align a();
+
+    __ push(eax);
+    __ push(Immediate(reinterpret_cast<uint32_t>(masm()->heap())));
+    __ movl(eax, Immediate(*reinterpret_cast<uint32_t*>(&keysofc)));
+    __ call(eax);
+    __ addl(esp, Immediate(2 * 4));
+
+    __ ChangeAlign(-2);
+  }
 
   __ Popad(eax);
 

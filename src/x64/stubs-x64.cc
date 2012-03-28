@@ -193,7 +193,7 @@ void AllocateStub::Generate() {
     Masm::Align a(masm());
     __ Pushad();
 
-    // Three arguments: heap, size
+    // Two arguments: heap, size
     __ movq(rdi, heapref);
     __ movq(rsi, size);
 

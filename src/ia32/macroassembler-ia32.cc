@@ -33,10 +33,10 @@ void Masm::Pushad() {
 
 
 void Masm::Popad(Register preserve) {
-  PreservePop(edi, preserve);
-  PreservePop(edi, preserve);
+  addl(esp, Immediate(4 * 2));
   PreservePop(edi, preserve);
   PreservePop(esi, preserve);
+
   PreservePop(edx, preserve);
   PreservePop(ecx, preserve);
   PreservePop(ebx, preserve);
@@ -60,6 +60,7 @@ Masm::Align::Align(Masm* masm) : masm_(masm), align_(masm->align_) {
 
 Masm::Align::~Align() {
   masm_->addl(esp, Immediate((masm_->align_ - align_) * 4));
+  masm_->align_ = align_;
 }
 
 

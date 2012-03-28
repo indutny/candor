@@ -125,7 +125,7 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
   movl(ebp, esp);
 
   // Allocate space for spill slots and on-stack variables
-  // and 3 slots for root, context and argc
+  // and 2 slots for root and context
   AllocateSpills(stmt->stack_slots() + 6);
 
   FillStackSlots();
@@ -136,7 +136,6 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
   // Allocate context and clear stack slots
   AllocateContext(stmt->context_slots());
   movl(context_op, edi);
-  movl(argc_op, esi);
 
   // Place all arguments into their slots
   Label body(this);
@@ -238,9 +237,6 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
 
 
 void Fullgen::GenerateEpilogue(AstNode* stmt) {
-  // Restore argc
-  movl(esi, argc_op);
-
   // eax will hold result of function
   movl(esp, ebp);
   pop(ebp);
@@ -536,7 +532,7 @@ AstNode* Fullgen::VisitValue(AstNode* node) {
   if (value->slot()->is_stack()) {
     // On stack variables
     slot().base(ebp);
-    slot().disp(-4 * (value->slot()->index() + 4));
+    slot().disp(-4 * (value->slot()->index() + 3));
   } else {
     int32_t depth = value->slot()->depth();
 
@@ -771,9 +767,9 @@ AstNode* Fullgen::VisitObjectLiteral(AstNode* node) {
   ObjectLiteral* obj = ObjectLiteral::Cast(node);
 
   // Ensure that map will be filled only by half at maximum
-  movl(ebx,
+  movl(eax,
        Immediate(HNumber::Tag(PowerOfTwo(node->children()->length() << 1))));
-  AllocateObjectLiteral(Heap::kTagObject, ebx, edx);
+  AllocateObjectLiteral(Heap::kTagObject, eax, edx);
 
   Spill edx_s(this, edx);
 
@@ -809,9 +805,9 @@ AstNode* Fullgen::VisitArrayLiteral(AstNode* node) {
   }
 
   // Ensure that map will be filled only by half at maximum
-  movl(ebx,
+  movl(eax,
        Immediate(HNumber::Tag(PowerOfTwo(node->children()->length() << 1))));
-  AllocateObjectLiteral(Heap::kTagArray, ebx, edx);
+  AllocateObjectLiteral(Heap::kTagArray, eax, edx);
 
   Spill edx_s(this, edx);
 

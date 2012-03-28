@@ -13,7 +13,6 @@ namespace internal {
 
 static Operand root_op(ebp, -8);
 static Operand context_op(ebp, -16);
-static Operand argc_op(ebp, -24);
 
 // Forward declaration
 class BaseStub;
