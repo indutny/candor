@@ -10,7 +10,7 @@
     ],
     'cflags': ['-Wall', '-Wextra', '-Wno-unused-parameter',
                '-fPIC', '-fno-strict-aliasing', '-fno-exceptions',
-               '-pedandtic'],
+               '-pedantic'],
     'sources': [
       'src/api.cc',
       'src/api.h',
