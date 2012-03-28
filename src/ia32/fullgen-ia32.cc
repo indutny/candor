@@ -416,7 +416,12 @@ AstNode* Fullgen::VisitCall(AstNode* stmt) {
     }
 
     // Align stack if needed
-    if (argc & 1) push(eax);
+    switch (argc & 3) {
+     case 1: push(eax);
+     case 2: push(eax);
+     case 3: push(eax);
+     default: break;
+    }
 
     AstList::Item* item = fn->args()->head();
 

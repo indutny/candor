@@ -1190,12 +1190,19 @@ void BinOpStub::Generate() {
   Immediate heapref(reinterpret_cast<uint32_t>(masm()->heap()));
 
   // binop(heap, lhs, rhs)
-  __ movl(edi, heapref);
-  __ movl(esi, eax);
-  __ movl(edx, ebx);
+  {
+    __ ChangeAlign(3);
+    Masm::Align a(masm());
+    __ push(ebx);
+    __ push(eax);
+    __ push(heapref);
 
-  __ movl(scratch, Immediate(*reinterpret_cast<uint32_t*>(&cb)));
-  __ call(scratch);
+    __ movl(scratch, Immediate(*reinterpret_cast<uint32_t*>(&cb)));
+    __ call(scratch);
+    __ addl(esp, Immediate(4 * 3));
+
+    __ ChangeAlign(-3);
+  }
 
   __ Popad(eax);
 
