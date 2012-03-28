@@ -1161,7 +1161,7 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
 
   Spill eax_s(this, eax);
   VisitFor(kValue, op->rhs());
-  movl(ebx, eax);
+  movl(ecx, eax);
   eax_s.Unspill(eax);
 
   movl(edx, root_op);

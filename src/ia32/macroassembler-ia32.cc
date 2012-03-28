@@ -250,7 +250,7 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
   // mask (= (size - 1) << 2)
   Untag(scratch);
   dec(scratch);
-  shl(scratch, Immediate(2));
+  shl(scratch, Immediate(3));
   movl(qmask, scratch);
   xorl(scratch, scratch);
 

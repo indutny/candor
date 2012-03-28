@@ -966,17 +966,17 @@ void BinOpStub::Generate() {
     // Try working with unboxed numbers
 
     __ IsUnboxed(eax, &not_unboxed, NULL);
-    __ IsUnboxed(ebx, &not_unboxed, NULL);
+    __ IsUnboxed(ecx, &not_unboxed, NULL);
 
     // Number (+) Number
     if (BinOp::is_math(type())) {
       Masm::Spill lvalue(masm(), eax);
-      Masm::Spill rvalue(masm(), ebx);
+      Masm::Spill rvalue(masm(), ecx);
 
       switch (type()) {
-       case BinOp::kAdd: __ addl(eax, ebx); break;
-       case BinOp::kSub: __ subl(eax, ebx); break;
-       case BinOp::kMul: __ Untag(ebx); __ imull(ebx); break;
+       case BinOp::kAdd: __ addl(eax, ecx); break;
+       case BinOp::kSub: __ subl(eax, ecx); break;
+       case BinOp::kMul: __ Untag(ecx); __ imull(ecx); break;
 
        default: __ emitb(0xcc); break;
       }
@@ -991,19 +991,19 @@ void BinOpStub::Generate() {
       __ jmp(&not_unboxed);
     } else if (BinOp::is_binary(type())) {
       switch (type()) {
-       case BinOp::kBAnd: __ andl(eax, ebx); break;
-       case BinOp::kBOr: __ orl(eax, ebx); break;
-       case BinOp::kBXor: __ xorl(eax, ebx); break;
+       case BinOp::kBAnd: __ andl(eax, ecx); break;
+       case BinOp::kBOr: __ orl(eax, ecx); break;
+       case BinOp::kBXor: __ xorl(eax, ecx); break;
        case BinOp::kMod:
         __ xorl(edx, edx);
-        __ idivl(ebx);
+        __ idivl(ecx);
         __ movl(eax, edx);
         break;
        case BinOp::kShl:
        case BinOp::kShr:
        case BinOp::kUShr:
-        __ movl(ecx, ebx);
-        __ shr(ecx, Immediate(1));
+        __ movl(ebx, ecx);
+        __ shr(ebx, Immediate(1));
 
         switch (type()) {
          case BinOp::kShl: __ sal(eax); break;
@@ -1022,9 +1022,9 @@ void BinOpStub::Generate() {
       }
     } else if (BinOp::is_logic(type())) {
       Condition cond = masm()->BinOpToCondition(type(), Masm::kIntegral);
-      // Note: eax and ebx are boxed here
+      // Note: eax and ecx are boxed here
       // Otherwise cmp won't work for negative numbers
-      __ cmpl(eax, ebx);
+      __ cmpl(eax, ecx);
 
       Label true_(masm()), cond_end(masm());
 
@@ -1054,7 +1054,7 @@ void BinOpStub::Generate() {
   Label call_runtime(masm()), nil_result(masm());
 
   __ IsNil(eax, NULL, &call_runtime);
-  __ IsNil(ebx, NULL, &call_runtime);
+  __ IsNil(ecx, NULL, &call_runtime);
 
   // Convert lhs to heap number if needed
   __ IsUnboxed(eax, &box_rhs, NULL);
@@ -1069,15 +1069,16 @@ void BinOpStub::Generate() {
   __ bind(&box_rhs);
 
   // Convert rhs to heap number if needed
-  __ IsUnboxed(ebx, &both_boxed, NULL);
+  __ IsUnboxed(ecx, &both_boxed, NULL);
 
-  __ Untag(ebx);
+  __ emitb(0xcc);
+  __ Untag(ecx);
 
   __ xorld(xmm1, xmm1);
-  __ cvtsi2sd(xmm1, ebx);
-  __ xorl(ebx, ebx);
+  __ cvtsi2sd(xmm1, ecx);
+  __ xorl(ecx, ecx);
 
-  __ AllocateNumber(xmm1, ebx);
+  __ AllocateNumber(xmm1, ecx);
 
   // Both lhs and rhs are heap values (not-unboxed)
   __ bind(&both_boxed);
@@ -1088,19 +1089,19 @@ void BinOpStub::Generate() {
   }
 
   __ IsNil(eax, NULL, &call_runtime);
-  __ IsNil(ebx, NULL, &call_runtime);
+  __ IsNil(ecx, NULL, &call_runtime);
 
   __ IsHeapObject(Heap::kTagNumber, eax, &call_runtime, NULL);
-  __ IsHeapObject(Heap::kTagNumber, ebx, &call_runtime, NULL);
+  __ IsHeapObject(Heap::kTagNumber, ecx, &call_runtime, NULL);
 
   // We're adding two heap numbers
   Operand lvalue(eax, HNumber::kValueOffset);
-  Operand rvalue(ebx, HNumber::kValueOffset);
+  Operand rvalue(ecx, HNumber::kValueOffset);
   __ movl(eax, lvalue);
-  __ movl(ebx, rvalue);
+  __ movl(ecx, rvalue);
   __ movld(xmm1, eax);
-  __ movld(xmm2, ebx);
-  __ xorl(ebx, ebx);
+  __ movld(xmm2, ecx);
+  __ xorl(ecx, ecx);
 
   if (BinOp::is_math(type())) {
     switch (type()) {
@@ -1115,21 +1116,21 @@ void BinOpStub::Generate() {
   } else if (BinOp::is_binary(type())) {
     // Truncate lhs and rhs first
     __ cvttsd2si(eax, xmm1);
-    __ cvttsd2si(ebx, xmm2);
+    __ cvttsd2si(ecx, xmm2);
 
     switch (type()) {
-     case BinOp::kBAnd: __ andl(eax, ebx); break;
-     case BinOp::kBOr: __ orl(eax, ebx); break;
-     case BinOp::kBXor: __ xorl(eax, ebx); break;
+     case BinOp::kBAnd: __ andl(eax, ecx); break;
+     case BinOp::kBOr: __ orl(eax, ecx); break;
+     case BinOp::kBXor: __ xorl(eax, ecx); break;
      case BinOp::kMod:
       __ xorl(edx, edx);
-      __ idivl(ebx);
+      __ idivl(ecx);
       __ movl(eax, edx);
       break;
      case BinOp::kShl:
      case BinOp::kShr:
      case BinOp::kUShr:
-      __ movl(ecx, ebx);
+      __ movl(ebx, ecx);
 
       switch (type()) {
        case BinOp::kUShr:
@@ -1193,7 +1194,7 @@ void BinOpStub::Generate() {
   {
     __ ChangeAlign(3);
     Masm::Align a(masm());
-    __ push(ebx);
+    __ push(ecx);
     __ push(eax);
     __ push(heapref);
 
@@ -1209,8 +1210,8 @@ void BinOpStub::Generate() {
   __ bind(&done);
 
   // Cleanup
-  __ xorl(ecx, ecx);
   __ xorl(ebx, ebx);
+  __ xorl(ecx, ecx);
 
   __ CheckGC();
 
