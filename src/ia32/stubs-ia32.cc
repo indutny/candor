@@ -264,7 +264,7 @@ void VarArgStub::Generate() {
 
   // eax <- interior pointer to arguments
   // edx <- arguments count (to put into array)
-  __ push(ebx);
+  __ push(esi);
   __ push(ecx);
 
   Masm::Spill argv_s(masm(), eax);
@@ -275,7 +275,7 @@ void VarArgStub::Generate() {
   __ AllocateObjectLiteral(Heap::kTagArray, ecx, eax);
 
   // Array index
-  __ xorl(ebx, ebx);
+  __ xorl(esi, esi);
 
   Label loop_start(masm()), loop_cond(masm());
 
@@ -283,9 +283,9 @@ void VarArgStub::Generate() {
   __ jmp(&loop_cond);
   __ bind(&loop_start);
 
-  // Insert entry : eax[ebx] = *eax_s
+  // Insert entry : eax[esi] = *eax_s
   __ push(eax);
-  __ push(ebx);
+  __ push(esi);
 
   // Key insertion flag
   __ movl(ecx, Immediate(1));
@@ -293,7 +293,7 @@ void VarArgStub::Generate() {
 
   // Calculate pointer
   __ movl(edx, eax);
-  __ pop(ebx);
+  __ pop(esi);
   __ pop(eax);
 
   Operand qmap(eax, HObject::kMapOffset);
@@ -315,7 +315,7 @@ void VarArgStub::Generate() {
   __ subl(scratch, Immediate(4));
   argc_s.SpillReg(ecx);
 
-  __ addl(ebx, Immediate(HNumber::Tag(1)));
+  __ addl(esi, Immediate(HNumber::Tag(1)));
 
   __ bind(&loop_cond);
 
@@ -324,11 +324,11 @@ void VarArgStub::Generate() {
   __ jmp(kNe, &loop_start);
 
   __ pop(ecx);
-  __ pop(ebx);
+  __ pop(esi);
 
   // Cleanup
   __ xorl(eax, eax);
-  __ xorl(ebx, ebx);
+  __ xorl(esi, esi);
 
   __ CheckGC();
 
@@ -408,13 +408,17 @@ void CollectGarbageStub::Generate() {
   __ Pushad();
 
   {
+    __ ChangeAlign(2);
     Masm::Align a(masm());
 
     // RuntimeCollectGarbage(heap, stack_top)
-    __ movl(edi, Immediate(reinterpret_cast<uint32_t>(masm()->heap())));
-    __ movl(esi, esp);
+    __ push(esp);
+    __ push(Immediate(reinterpret_cast<uint32_t>(masm()->heap())));
     __ movl(eax, Immediate(*reinterpret_cast<uint32_t*>(&gc)));
     __ Call(eax);
+    __ addl(esp, Immediate(2 * 4));
+
+    __ ChangeAlign(-2);
   }
 
   __ Popad(reg_nil);
@@ -470,7 +474,7 @@ void SizeofStub::Generate() {
   // RuntimeSizeof(heap, obj)
   {
     __ ChangeAlign(2);
-    Masm::Align a();
+    Masm::Align a(masm());
     __ push(eax);
     __ push(Immediate(reinterpret_cast<uint32_t>(masm()->heap())));
     __ movl(eax, Immediate(*reinterpret_cast<uint32_t*>(&sizeofc)));
@@ -496,7 +500,7 @@ void KeysofStub::Generate() {
   // RuntimeKeysof(heap, obj)
   {
     __ ChangeAlign(2);
-    Masm::Align a();
+    Masm::Align a(masm());
 
     __ push(eax);
     __ push(Immediate(reinterpret_cast<uint32_t>(masm()->heap())));
@@ -516,6 +520,12 @@ void KeysofStub::Generate() {
 void LookupPropertyStub::Generate() {
   GeneratePrologue();
   __ AllocateSpills(0);
+
+  // Save registers and align
+  __ push(esi);
+  __ push(edi);
+  __ push(ebx);
+  __ push(ecx);
 
   Label is_object(masm()), is_array(masm()), cleanup(masm()), slow_case(masm());
   Label non_object_error(masm()), done(masm());
@@ -555,22 +565,22 @@ void LookupPropertyStub::Generate() {
     object_s.Unspill(eax);
 
     Operand qmap(eax, HObject::kMapOffset);
-    __ movl(scratch, qmap);
-    __ addl(scratch, edx);
+    __ movl(esi, qmap);
+    __ addl(esi, edx);
 
     Label match(masm());
 
     // edx now contains pointer to the key slot in map's space
     // compare key's addresses
-    Operand slot(scratch, 0);
-    __ movl(scratch, slot);
+    Operand slot(esi, 0);
+    __ movl(esi, slot);
 
     // Slot should contain either key
-    __ cmpl(scratch, ebx);
+    __ cmpl(esi, ebx);
     __ jmp(kEq, &match);
 
     // or nil
-    __ cmpl(scratch, Immediate(Heap::kTagNil));
+    __ cmpl(esi, Immediate(Heap::kTagNil));
     __ jmp(kNe, &cleanup);
 
     __ bind(&match);
@@ -582,8 +592,8 @@ void LookupPropertyStub::Generate() {
     __ jmp(kEq, &fast_case_end);
 
     // Restore map's interior pointer
-    __ movl(scratch, qmap);
-    __ addl(scratch, edx);
+    __ movl(esi, qmap);
+    __ addl(esi, edx);
 
     // Put the key into slot
     __ movl(slot, ebx);
@@ -669,14 +679,22 @@ void LookupPropertyStub::Generate() {
 
   RuntimeLookupPropertyCallback lookup = &RuntimeLookupProperty;
 
-  // RuntimeLookupProperty(heap, obj, key, change)
-  // (returns addr of slot)
-  __ movl(edi, Immediate(reinterpret_cast<uint32_t>(masm()->heap())));
-  __ movl(esi, eax);
-  __ movl(edx, ebx);
-  // ecx already contains change flag
-  __ movl(eax, Immediate(*reinterpret_cast<uint32_t*>(&lookup)));
-  __ call(eax);
+  {
+    __ ChangeAlign(3);
+    Masm::Align a(masm());
+
+    // RuntimeLookupProperty(heap, obj, key, change)
+    // (returns addr of slot)
+    __ push(ebx);
+    __ push(eax);
+    __ push(Immediate(reinterpret_cast<uint32_t>(masm()->heap())));
+    // ecx already contains change flag
+    __ movl(eax, Immediate(*reinterpret_cast<uint32_t*>(&lookup)));
+    __ call(eax);
+    __ addl(esp, Immediate(3 * 4));
+
+    __ ChangeAlign(-3);
+  }
 
   __ Popad(eax);
 
@@ -689,6 +707,10 @@ void LookupPropertyStub::Generate() {
 
   __ bind(&done);
 
+  __ pop(ecx);
+  __ pop(ebx);
+  __ pop(edi);
+  __ pop(esi);
   __ FinalizeSpills();
   GenerateEpilogue(0);
 }
@@ -747,8 +769,13 @@ void CoerceToBooleanStub::Generate() {
 
 void CloneObjectStub::Generate() {
   GeneratePrologue();
-
   __ AllocateSpills(0);
+
+  // Align and save
+  __ push(esi);
+  __ push(edi);
+  __ push(ebx);
+  __ push(ecx);
 
   Label non_object(masm()), done(masm());
 
@@ -788,8 +815,8 @@ void CloneObjectStub::Generate() {
   __ bind(&loop_start);
 
   Operand from(eax, 0), to(ebx, 0);
-  __ movl(scratch, from);
-  __ movl(to, scratch);
+  __ movl(esi, from);
+  __ movl(to, esi);
 
   // Move forward
   __ addl(eax, Immediate(4));
@@ -814,6 +841,10 @@ void CloneObjectStub::Generate() {
 
   __ FinalizeSpills();
 
+  __ pop(ecx);
+  __ pop(ebx);
+  __ pop(esi);
+  __ pop(edi);
   GenerateEpilogue(0);
 }
 
