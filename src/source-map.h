@@ -39,7 +39,7 @@ class SourceInfo {
   SourceInfo(const uint32_t offset,
              const uint32_t jit_offset) : filename_(NULL),
                                           source_(NULL),
-                                          length_(NULL),
+                                          length_(0),
                                           offset_(offset),
                                           jit_offset_(jit_offset) {
   }
@@ -51,8 +51,8 @@ class SourceInfo {
   inline void source(const char* source) { source_ = source; }
   inline void length(uint32_t length) { length_ = length; }
 
-  inline const uint32_t offset() { return offset_; }
-  inline const uint32_t jit_offset() { return jit_offset_; }
+  inline uint32_t offset() { return offset_; }
+  inline uint32_t jit_offset() { return jit_offset_; }
 
  private:
   const char* filename_;
