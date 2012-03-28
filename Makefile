@@ -43,6 +43,6 @@ test: test-runner can
 
 clean:
 	-rm -rf build
-	-rm libcandor.a
+	-rm libcandor.a can test-runner
 
 .PHONY: clean all build test libcandor.a can test-runner
