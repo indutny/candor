@@ -42,6 +42,7 @@ test: test-runner can
 	@./can test/functional/regressions/regr-3.can
 
 clean:
-	rm -rf build
+	-rm -rf build
+	-rm libcandor.a
 
 .PHONY: clean all build test libcandor.a can test-runner
