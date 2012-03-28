@@ -3,6 +3,8 @@
 #include "heap-inl.h"
 #include "utils.h" // ComputeHash, etc
 
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h> // printf formats for big integers
 #include <stdint.h> // uint32_t
 #include <assert.h> // assert
 #include <string.h> // strncmp
@@ -257,7 +259,7 @@ char* RuntimeToString(Heap* heap, char* value) {
       if (HValue::IsUnboxed(value)) {
         int64_t num = HNumber::IntegralValue(value);
         // Maximum int64 value may contain only 20 chars, last one for '\0'
-        len = snprintf(str, sizeof(str), "%lld", num);
+        len = snprintf(str, sizeof(str), "%" PRIi64, num);
       } else {
         double num = HNumber::DoubleValue(value);
         len = snprintf(str, sizeof(str), "%g", num);

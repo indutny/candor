@@ -10,6 +10,8 @@
 #include "utils.h" // List
 
 #include <assert.h>
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h> // printf formats for big integers
 #include <stdint.h> // uint32_t
 #include <stdlib.h> // NULL
 #include <stdio.h> // snprintf
@@ -805,7 +807,7 @@ AstNode* Fullgen::VisitArrayLiteral(AstNode* node) {
     char keystr[32];
     AstNode* key = new AstNode(AstNode::kNumber, node);
     key->value(keystr);
-    key->length(snprintf(keystr, sizeof(keystr), "%llu", index));
+    key->length(snprintf(keystr, sizeof(keystr), "%" PRIu64, index));
 
     AstNode* member = new AstNode(AstNode::kMember, node);
     member->children()->Push(new FAstSpill(&rdx_s));
