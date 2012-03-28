@@ -55,9 +55,6 @@ void EntryStub::Generate() {
   // esi <- unboxed arguments count (tagged)
   // edx <- pointer to arguments array
 
-  // Store address of root context
-  __ movl(root_op, edi);
-
   __ EnterFramePrologue();
 
   // Push all arguments to stack
@@ -424,21 +421,23 @@ void CollectGarbageStub::Generate() {
 void TypeofStub::Generate() {
   GeneratePrologue();
 
+  // edx <- root register
+
   Label not_nil(masm()), not_unboxed(masm()), done(masm());
 
-  Operand type(eax, 0);
-
-  __ IsNil(eax, &not_nil, NULL);
-
-  __ movl(eax, Immediate(HContext::GetIndexDisp(Heap::kRootNilTypeIndex)));
-  __ jmp(&done);
-  __ bind(&not_nil);
-
+  // Typeof 1 = 'number'
   __ IsUnboxed(eax, &not_unboxed, NULL);
   __ movl(eax, Immediate(HContext::GetIndexDisp(Heap::kRootNumberTypeIndex)));
 
   __ jmp(&done);
   __ bind(&not_unboxed);
+
+  // Typeof nil = 'nil'
+  __ IsNil(eax, &not_nil, NULL);
+
+  __ movl(eax, Immediate(HContext::GetIndexDisp(Heap::kRootNilTypeIndex)));
+  __ jmp(&done);
+  __ bind(&not_nil);
 
   Operand btag(eax, HValue::kTagOffset);
   __ movzxb(eax, btag);
@@ -449,8 +448,8 @@ void TypeofStub::Generate() {
   __ bind(&done);
 
   // eax contains offset in root_reg
-  __ movl(scratch, root_op);
-  __ addl(eax, scratch);
+  Operand type(eax, 0);
+  __ addl(eax, edx);
   __ movl(eax, type);
 
   GenerateEpilogue(0);
@@ -677,6 +676,8 @@ void LookupPropertyStub::Generate() {
 void CoerceToBooleanStub::Generate() {
   GeneratePrologue();
 
+  // edx <- root register
+
   Label unboxed(masm()), truel(masm()), not_bool(masm()), coerced_type(masm());
 
   // Check type and coerce if not boolean
@@ -688,19 +689,17 @@ void CoerceToBooleanStub::Generate() {
 
   __ bind(&unboxed);
 
-  Operand truev(eax, HContext::GetIndexDisp(Heap::kRootTrueIndex));
-  Operand falsev(eax, HContext::GetIndexDisp(Heap::kRootFalseIndex));
+  Operand truev(edx, HContext::GetIndexDisp(Heap::kRootTrueIndex));
+  Operand falsev(edx, HContext::GetIndexDisp(Heap::kRootFalseIndex));
 
   __ cmpl(eax, Immediate(HNumber::Tag(0)));
   __ jmp(kNe, &truel);
 
-  __ movl(eax, root_op);
   __ movl(eax, falsev);
 
   __ jmp(&coerced_type);
   __ bind(&truel);
 
-  __ movl(eax, root_op);
   __ movl(eax, truev);
 
   __ jmp(&coerced_type);
@@ -901,6 +900,7 @@ void BinOpStub::Generate() {
 
   // eax <- lhs
   // ebx <- rhs
+  // edx <- root register
 
   // Allocate space for spill slots
   __ AllocateSpills(0);
@@ -974,18 +974,16 @@ void BinOpStub::Generate() {
 
       Label true_(masm()), cond_end(masm());
 
-      Operand truev(eax, HContext::GetIndexDisp(Heap::kRootTrueIndex));
-      Operand falsev(eax, HContext::GetIndexDisp(Heap::kRootFalseIndex));
+      Operand truev(edx, HContext::GetIndexDisp(Heap::kRootTrueIndex));
+      Operand falsev(edx, HContext::GetIndexDisp(Heap::kRootFalseIndex));
 
       __ jmp(cond, &true_);
 
-      __ movl(eax, root_op);
       __ movl(eax, falsev);
       __ jmp(&cond_end);
 
       __ bind(&true_);
 
-      __ movl(eax, root_op);
       __ movl(eax, truev);
       __ bind(&cond_end);
     } else {
@@ -1100,17 +1098,15 @@ void BinOpStub::Generate() {
 
     Label true_(masm()), comp_end(masm());
 
-    Operand truev(eax, HContext::GetIndexDisp(Heap::kRootTrueIndex));
-    Operand falsev(eax, HContext::GetIndexDisp(Heap::kRootFalseIndex));
+    Operand truev(edx, HContext::GetIndexDisp(Heap::kRootTrueIndex));
+    Operand falsev(edx, HContext::GetIndexDisp(Heap::kRootFalseIndex));
 
     __ jmp(cond, &true_);
 
-    __ movl(eax, root_op);
     __ movl(eax, falsev);
     __ jmp(&comp_end);
 
     __ bind(&true_);
-    __ movl(eax, root_op);
     __ movl(eax, truev);
     __ bind(&comp_end);
   } else if (BinOp::is_bool_logic(type())) {

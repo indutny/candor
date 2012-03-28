@@ -628,8 +628,7 @@ void Masm::CallFunction(Register fn) {
   Operand root_slot(fn, HFunction::kRootOffset);
 
   Label binding(this), done(this);
-  movl(edi, root_op);
-  movl(root_slot, edi);
+  movl(edx, root_slot);
   movl(edi, context_slot);
 
   cmpl(edi, Immediate(Heap::kBindingContextTag));

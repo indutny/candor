@@ -130,9 +130,12 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
 
   FillStackSlots();
 
+  // Save root
+  movl(root_op, edx);
+
   // Allocate context and clear stack slots
   AllocateContext(stmt->context_slots());
-  movl(root_op, edi);
+  movl(context_op, edi);
   movl(argc_op, esi);
 
   // Place all arguments into their slots
@@ -553,7 +556,7 @@ AstNode* Fullgen::VisitValue(AstNode* node) {
       }
     } else {
       // Context variables
-      movl(eax, edi);
+      movl(eax, context_op);
 
       // Lookup context
       while (--depth >= 0) {
@@ -917,6 +920,7 @@ AstNode* Fullgen::VisitTypeof(AstNode* node) {
   Align a(this);
 
   VisitFor(kValue, node->lhs());
+  movl(edx, root_op);
   Call(stubs()->GetTypeofStub());
 
   return node;
@@ -1044,19 +1048,18 @@ AstNode* Fullgen::VisitUnOp(AstNode* node) {
 
     Label done(this), ret_false(this);
 
-    Operand truev(eax, HContext::GetIndexDisp(Heap::kRootTrueIndex));
-    Operand falsev(eax, HContext::GetIndexDisp(Heap::kRootFalseIndex));
+    Operand truev(edx, HContext::GetIndexDisp(Heap::kRootTrueIndex));
+    Operand falsev(edx, HContext::GetIndexDisp(Heap::kRootFalseIndex));
 
     // Negate it
+    movl(edx, root_op);
     IsTrue(eax, NULL, &ret_false);
 
-    movl(eax, root_op);
     movl(eax, truev);
 
     jmp(&done);
     bind(&ret_false);
 
-    movl(eax, root_op);
     movl(eax, falsev);
 
     bind(&done);
@@ -1160,6 +1163,7 @@ AstNode* Fullgen::VisitBinOp(AstNode* node) {
   movl(ebx, eax);
   eax_s.Unspill(eax);
 
+  movl(edx, root_op);
   Call(stub);
 
   bind(&done);
