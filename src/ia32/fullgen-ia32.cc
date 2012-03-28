@@ -581,7 +581,7 @@ AstNode* Fullgen::VisitMember(AstNode* node) {
   Spill eax_s(this, eax);
 
   VisitFor(kValue, node->rhs());
-  movl(ebx, eax);
+  movl(edx, eax);
   eax_s.Unspill(eax);
 
   movl(ecx, Immediate(visiting_for_slot()));

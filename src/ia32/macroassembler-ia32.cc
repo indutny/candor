@@ -250,7 +250,7 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
   // mask (= (size - 1) << 2)
   Untag(scratch);
   dec(scratch);
-  shl(scratch, Immediate(3));
+  shl(scratch, Immediate(2));
   movl(qmask, scratch);
   xorl(scratch, scratch);
 
@@ -434,14 +434,16 @@ void Masm::StringHash(Register str, Register result) {
 
   Label call_runtime(this), done(this);
 
+  push(eax);
+
   // Check if hash was already calculated
-  movl(scratch, hash_field);
-  cmpl(scratch, Immediate(0));
+  movl(eax, hash_field);
+  cmpl(eax, Immediate(0));
   jmp(kNe, &done);
 
   // Check if string is a cons string
-  movzxb(scratch, repr_field);
-  cmpb(scratch, Immediate(HString::kNormal));
+  movzxb(eax, repr_field);
+  cmpl(eax, Immediate(HString::kNormal));
   jmp(kNe, &call_runtime);
 
   // Compute new hash
@@ -449,8 +451,6 @@ void Masm::StringHash(Register str, Register result) {
   if (!result.is(ecx)) push(ecx);
   push(str);
   push(esi);
-
-  Register scratch = esi;
 
   // hash = 0
   xorl(result, result);
@@ -471,18 +471,18 @@ void Masm::StringHash(Register str, Register result) {
   Operand ch(str, 0);
 
   // result += str[0]
-  movzxb(scratch, ch);
-  addl(result, scratch);
+  movzxb(eax, ch);
+  addl(result, eax);
 
   // result += result << 10
-  movl(scratch, result);
+  movl(eax, result);
   shl(result, Immediate(10));
-  addl(result, scratch);
+  addl(result, eax);
 
   // result ^= result >> 6
-  movl(scratch, result);
+  movl(eax, result);
   shr(result, Immediate(6));
-  xorl(result, scratch);
+  xorl(result, eax);
 
   // ecx--; str++
   dec(ecx);
@@ -498,19 +498,19 @@ void Masm::StringHash(Register str, Register result) {
 
   // Mixup
   // result += (result << 3);
-  movl(scratch, result);
+  movl(eax, result);
   shl(result, Immediate(3));
-  addl(result, scratch);
+  addl(result, eax);
 
   // result ^= (result >> 11);
-  movl(scratch, result);
+  movl(eax, result);
   shr(result, Immediate(11));
-  xorl(result, scratch);
+  xorl(result, eax);
 
   // result += (result << 15);
-  movl(scratch, result);
+  movl(eax, result);
   shl(result, Immediate(15));
-  addl(result, scratch);
+  addl(result, eax);
 
   pop(esi);
   pop(str);
@@ -522,19 +522,14 @@ void Masm::StringHash(Register str, Register result) {
   jmp(&done);
   bind(&call_runtime);
 
-  push(eax);
   push(str);
   Call(stubs()->GetHashValueStub());
   pop(str);
 
-  if (result.is(eax)) {
-    pop(scratch);
-  } else {
-    movl(result, eax);
-    pop(eax);
-  }
+  movl(result, eax);
 
   bind(&done);
+  pop(eax);
 }
 
 

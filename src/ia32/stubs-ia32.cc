@@ -531,10 +531,11 @@ void LookupPropertyStub::Generate() {
   Label non_object_error(masm()), done(masm());
 
   // eax <- object
-  // ebx <- property
+  // edx <- property
   // ecx <- change flag
+
   Masm::Spill object_s(masm(), eax);
-  Masm::Spill key_s(masm(), ebx);
+  Masm::Spill key_s(masm(), edx);
   Masm::Spill change_s(masm(), ecx);
 
   // Return nil on non-object's property access
@@ -549,34 +550,34 @@ void LookupPropertyStub::Generate() {
 
   // Fast case: object and a string key
   {
-    __ IsUnboxed(ebx, NULL, &slow_case);
-    __ IsNil(ebx, NULL, &slow_case);
-    __ IsHeapObject(Heap::kTagString, ebx, &slow_case, NULL);
+    __ IsUnboxed(edx, NULL, &slow_case);
+    __ IsNil(edx, NULL, &slow_case);
+    __ IsHeapObject(Heap::kTagString, edx, &slow_case, NULL);
 
-    __ StringHash(ebx, edx);
+    __ StringHash(edx, ebx);
 
     Operand qmask(eax, HObject::kMaskOffset);
     __ movl(eax, qmask);
 
     // offset = hash & mask + kSpaceOffset
-    __ andl(edx, eax);
-    __ addl(edx, Immediate(HMap::kSpaceOffset));
+    __ andl(ebx, eax);
+    __ addl(ebx, Immediate(HMap::kSpaceOffset));
 
     object_s.Unspill(eax);
 
     Operand qmap(eax, HObject::kMapOffset);
     __ movl(esi, qmap);
-    __ addl(esi, edx);
+    __ addl(esi, ebx);
 
     Label match(masm());
 
-    // edx now contains pointer to the key slot in map's space
+    // ebx now contains pointer to the key slot in map's space
     // compare key's addresses
     Operand slot(esi, 0);
     __ movl(esi, slot);
 
     // Slot should contain either key
-    __ cmpl(esi, ebx);
+    __ cmpl(esi, edx);
     __ jmp(kEq, &match);
 
     // or nil
@@ -593,10 +594,10 @@ void LookupPropertyStub::Generate() {
 
     // Restore map's interior pointer
     __ movl(esi, qmap);
-    __ addl(esi, edx);
+    __ addl(esi, ebx);
 
     // Put the key into slot
-    __ movl(slot, ebx);
+    __ movl(slot, edx);
 
     __ bind(&fast_case_end);
 
@@ -604,11 +605,11 @@ void LookupPropertyStub::Generate() {
     // eax = key_offset + mask + 4
     object_s.Unspill(eax);
     __ movl(eax, qmask);
-    __ addl(eax, edx);
+    __ addl(eax, ebx);
     __ addl(eax, Immediate(HValue::kPointerSize));
 
     // Cleanup
-    __ xorl(edx, edx);
+    __ xorl(ebx, ebx);
 
     // Return value
     GenerateEpilogue(0);
@@ -617,50 +618,50 @@ void LookupPropertyStub::Generate() {
   __ bind(&is_array);
   // Fast case: dense array and a unboxed key
   {
-    __ IsUnboxed(ebx, &slow_case, NULL);
-    __ IsNil(ebx, NULL, &slow_case);
-    __ cmpl(ebx, Immediate(-1));
+    __ IsUnboxed(edx, &slow_case, NULL);
+    __ IsNil(edx, NULL, &slow_case);
+    __ cmpl(edx, Immediate(-1));
     __ jmp(kLe, &slow_case);
     __ IsDenseArray(eax, &slow_case, NULL);
 
     // Get mask
     Operand qmask(eax, HObject::kMaskOffset);
-    __ movl(edx, qmask);
+    __ movl(ebx, qmask);
 
     // Check if index is above the mask
-    // NOTE: ebx is tagged so we need to shift it only 2 times
-    __ shl(ebx, Immediate(2));
-    __ cmpl(ebx, edx);
+    // NOTE: edx is tagged so we need to shift it only 2 times
+    __ shl(edx, Immediate(2));
+    __ cmpl(edx, ebx);
     __ jmp(kGt, &cleanup);
 
     // Apply mask
-    __ andl(ebx, edx);
-    Masm::Spill mask_s(masm(), ebx);
-    key_s.Unspill(ebx);
+    __ andl(edx, ebx);
+    Masm::Spill mask_s(masm(), edx);
+    key_s.Unspill(edx);
 
     // Check if length was increased
     Label length_set(masm());
 
     Operand qlength(eax, HArray::kLengthOffset);
-    __ movl(edx, qlength);
-    __ Untag(ebx);
-    __ inc(ebx);
-    __ cmpl(ebx, edx);
+    __ movl(ebx, qlength);
+    __ Untag(edx);
+    __ inc(edx);
+    __ cmpl(edx, ebx);
     __ jmp(kLe, &length_set);
 
     // Update length
-    __ movl(qlength, ebx);
+    __ movl(qlength, edx);
 
     __ bind(&length_set);
-    // ebx is untagged here - so nullify it
-    __ xorl(ebx, ebx);
+    // edx is untagged here - so nullify it
+    __ xorl(edx, edx);
 
     // Get index
     mask_s.Unspill(eax);
     __ addl(eax, Immediate(HMap::kSpaceOffset));
 
     // Cleanup
-    __ xorl(edx, edx);
+    __ xorl(ebx, ebx);
 
     // Return value
     GenerateEpilogue(0);
@@ -668,7 +669,7 @@ void LookupPropertyStub::Generate() {
 
   __ bind(&cleanup);
 
-  __ xorl(edx, edx);
+  __ xorl(ebx, ebx);
 
   object_s.Unspill();
   key_s.Unspill();
@@ -680,20 +681,21 @@ void LookupPropertyStub::Generate() {
   RuntimeLookupPropertyCallback lookup = &RuntimeLookupProperty;
 
   {
-    __ ChangeAlign(3);
+    __ ChangeAlign(4);
     Masm::Align a(masm());
 
     // RuntimeLookupProperty(heap, obj, key, change)
     // (returns addr of slot)
-    __ push(ebx);
+    __ push(ecx);
+    __ push(edx);
     __ push(eax);
     __ push(Immediate(reinterpret_cast<uint32_t>(masm()->heap())));
     // ecx already contains change flag
     __ movl(eax, Immediate(*reinterpret_cast<uint32_t*>(&lookup)));
     __ call(eax);
-    __ addl(esp, Immediate(3 * 4));
+    __ addl(esp, Immediate(4 * 4));
 
-    __ ChangeAlign(-3);
+    __ ChangeAlign(-4);
   }
 
   __ Popad(eax);
@@ -708,7 +710,7 @@ void LookupPropertyStub::Generate() {
   __ bind(&done);
 
   __ pop(ecx);
-  __ pop(ebx);
+  __ pop(edx);
   __ pop(edi);
   __ pop(esi);
   __ FinalizeSpills();
