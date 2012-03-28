@@ -32,10 +32,16 @@
     'configurations': {
       'Debug': {
         'cflags': [ '-g', '-O0' ],
+        'xcode_settings': {
+          'OTHER_CFLAGS': [ '-g', '-O0' ]
+        }
       },
       'Release': {
         'cflags': [ '-O3' ],
-        'defines': [ 'NDEBUG' ]
+        'defines': [ 'NDEBUG' ],
+        'xcode_settings': {
+          'OTHER_CFLAGS': [ '-O3' ]
+        }
       }
     }
   }

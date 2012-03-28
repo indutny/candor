@@ -608,8 +608,8 @@ char* RuntimeBinOp(Heap* heap, char* lhs, char* rhs) {
        case BinOp::kShr: result = lval >> rval; break;
        case BinOp::kUShr:
         {
-          uint64_t ulval = lval;
-          uint64_t urval = rval;
+          off_t ulval = lval;
+          off_t urval = rval;
           result = type == ulval >> urval;
         }
         break;
@@ -698,14 +698,14 @@ char* RuntimeCloneObject(Heap* heap, char* obj) {
       ((source_map->size() << 1) + 1) * HValue::kPointerSize);
 
   // Set mask
-  *reinterpret_cast<uint64_t*>(result + HObject::kMaskOffset) =
+  *reinterpret_cast<off_t*>(result + HObject::kMaskOffset) =
       (source_map->size() - 1) * HValue::kPointerSize;
 
   // Set map
   *reinterpret_cast<char**>(result + HObject::kMapOffset) = map;
 
   // Set map's size
-  *reinterpret_cast<uint64_t*>(map + HMap::kSizeOffset) = source_map->size();
+  *reinterpret_cast<off_t*>(map + HMap::kSizeOffset) = source_map->size();
 
   // Nullify all map's slots (both keys and values)
   uint32_t size = (source_map->size() << 1) * HValue::kPointerSize;
@@ -722,11 +722,11 @@ void RuntimeDeleteProperty(Heap* heap, char* obj, char* property) {
   if (HValue::GetTag(obj) != Heap::kTagArray || !HArray::IsDense(obj)) {
     // Nil property
     off_t keyoffset = offset - HObject::Mask(obj) - HValue::kPointerSize;
-    *reinterpret_cast<uint64_t*>(HObject::Map(obj) + keyoffset) = Heap::kTagNil;
+    *reinterpret_cast<off_t*>(HObject::Map(obj) + keyoffset) = Heap::kTagNil;
   }
 
   // Nil value
-  *reinterpret_cast<uint64_t*>(HObject::Map(obj) + offset) = Heap::kTagNil;
+  *reinterpret_cast<off_t*>(HObject::Map(obj) + offset) = Heap::kTagNil;
 }
 
 

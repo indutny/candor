@@ -225,7 +225,7 @@ class Heap {
 
   char* pending_exception_;
 
-  uint64_t needs_gc_;
+  off_t needs_gc_;
 
   HValueRefList references_;
   HValueRefList reloc_references_;
@@ -374,7 +374,7 @@ class HContext : public HValue {
     return reinterpret_cast<char**>(addr() + kParentOffset);
   }
   inline uint32_t slots() {
-    return *reinterpret_cast<uint64_t*>(addr() + kSlotsOffset);
+    return *reinterpret_cast<off_t*>(addr() + kSlotsOffset);
   }
 
   static const int kParentOffset = HINTERIOR_OFFSET(1);

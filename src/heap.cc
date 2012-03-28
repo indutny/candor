@@ -116,13 +116,13 @@ const char* Heap::ErrorToString(Error err) {
 
 char* Heap::AllocateTagged(HeapTag tag, TenureType tenure, uint32_t bytes) {
   char* result = space(tenure)->Allocate(bytes + 8);
-  uint64_t qtag = tag;
+  off_t qtag = tag;
   if (tenure == kTenureOld) {
     int bit_offset = (HValue::kGenerationOffset -
                       HValue::interior_offset(0)) << 3;
     qtag = qtag | (kMinOldSpaceGeneration << bit_offset);
   }
-  *reinterpret_cast<uint64_t*>(result + HValue::kTagOffset) = qtag;
+  *reinterpret_cast<off_t*>(result + HValue::kTagOffset) = qtag;
 
   return result;
 }
@@ -244,13 +244,13 @@ char* HContext::New(Heap* heap,
   *reinterpret_cast<char**>(result + kParentOffset) = HNil::New();
 
   // Put size
-  *reinterpret_cast<uint64_t*>(result + kSlotsOffset) = values->length();
+  *reinterpret_cast<off_t*>(result + kSlotsOffset) = values->length();
 
   // Put all values
-  char* slot = result + GetIndexDisp(0);
+  char** slot = reinterpret_cast<char**>(result + GetIndexDisp(0));
   while (values->length() != 0) {
-    *reinterpret_cast<char**>(slot) = values->Shift();
-    slot += kPointerSize;
+    *slot = values->Shift();
+    slot ++;
   }
 
   return result;
@@ -285,9 +285,9 @@ char* HString::New(Heap* heap,
                                       length + 3 * kPointerSize);
 
   // Zero hash
-  *reinterpret_cast<uint64_t*>(result + kHashOffset) = 0;
+  *reinterpret_cast<off_t*>(result + kHashOffset) = 0;
   // Set length
-  *reinterpret_cast<uint64_t*>(result + kLengthOffset) = length;
+  *reinterpret_cast<off_t*>(result + kLengthOffset) = length;
 
   return result;
 }
@@ -420,7 +420,7 @@ void HObject::Init(Heap* heap, char* obj) {
   static const uint32_t size = 16;
 
   // Set mask
-  *reinterpret_cast<uint64_t*>(obj + kMaskOffset) = (size - 1) * kPointerSize;
+  *reinterpret_cast<off_t*>(obj + kMaskOffset) = (size - 1) * kPointerSize;
   // Set map
   *reinterpret_cast<char**>(obj + kMapOffset) = HMap::NewEmpty(heap, size);
 }
@@ -482,7 +482,7 @@ char* HMap::NewEmpty(Heap* heap, uint32_t size) {
                                    ((size << 1) + 1) * kPointerSize);
 
   // Set map's size
-  *reinterpret_cast<uint64_t*>(map + kSizeOffset) = size;
+  *reinterpret_cast<off_t*>(map + kSizeOffset) = size;
 
   // Nullify all map's slots (both keys and values)
   size = (size << 1) * kPointerSize;

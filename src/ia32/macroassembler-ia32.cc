@@ -114,7 +114,8 @@ void Masm::Spill::Unspill() {
 
 
 void Masm::AllocateSpills(uint32_t stack_slots) {
-  spill_offset_ = RoundUp((stack_slots + 1) * 4, 16);
+  // 2 slots or alignment
+  spill_offset_ = RoundUp((stack_slots + 1) * 4, 16) + 2 * 4;
   spills_ = 0;
   spill_index_ = 0;
   subl(esp, Immediate(0));
@@ -353,18 +354,18 @@ void Masm::Fill(Register start, Register end, Immediate value) {
 
 void Masm::FillStackSlots() {
   movl(eax, esp);
-  movl(ebx, ebp);
+  movl(ecx, ebp);
   // Skip frame info
-  subl(ebx, Immediate(4));
-  Fill(eax, ebx, Immediate(Heap::kTagNil));
+  subl(ecx, Immediate(4));
+  Fill(eax, ecx, Immediate(Heap::kTagNil));
   xorl(eax, eax);
-  xorl(ebx, ebx);
+  xorl(ecx, ecx);
 }
 
 
 void Masm::EnterFramePrologue() {
-  Immediate last_stack(reinterpret_cast<uint64_t>(heap()->last_stack()));
-  Immediate last_frame(reinterpret_cast<uint64_t>(heap()->last_frame()));
+  Immediate last_stack(reinterpret_cast<uint32_t>(heap()->last_stack()));
+  Immediate last_frame(reinterpret_cast<uint32_t>(heap()->last_frame()));
   Operand scratch_op(scratch, 0);
 
   push(Immediate(Heap::kTagNil));
@@ -382,8 +383,8 @@ void Masm::EnterFrameEpilogue() {
 
 
 void Masm::ExitFramePrologue() {
-  Immediate last_stack(reinterpret_cast<uint64_t>(heap()->last_stack()));
-  Immediate last_frame(reinterpret_cast<uint64_t>(heap()->last_frame()));
+  Immediate last_stack(reinterpret_cast<uint32_t>(heap()->last_stack()));
+  Immediate last_frame(reinterpret_cast<uint32_t>(heap()->last_frame()));
   Operand scratch_op(scratch, 0);
 
   // Just for alignment
@@ -402,8 +403,8 @@ void Masm::ExitFramePrologue() {
 
 
 void Masm::ExitFrameEpilogue() {
-  Immediate last_stack(reinterpret_cast<uint64_t>(heap()->last_stack()));
-  Immediate last_frame(reinterpret_cast<uint64_t>(heap()->last_frame()));
+  Immediate last_stack(reinterpret_cast<uint32_t>(heap()->last_stack()));
+  Immediate last_frame(reinterpret_cast<uint32_t>(heap()->last_frame()));
   Operand scratch_op(scratch, 0);
 
   pop(scratch);
@@ -537,7 +538,7 @@ void Masm::StringHash(Register str, Register result) {
 
 
 void Masm::CheckGC() {
-  Immediate gc_flag(reinterpret_cast<uint64_t>(heap()->needs_gc_addr()));
+  Immediate gc_flag(reinterpret_cast<uint32_t>(heap()->needs_gc_addr()));
   Operand scratch_op(scratch, 0);
 
   Label done(this);
@@ -615,7 +616,7 @@ void Masm::Call(Operand& addr) {
 
 
 void Masm::Call(char* stub) {
-  movl(scratch, reinterpret_cast<uint64_t>(stub));
+  movl(scratch, reinterpret_cast<uint32_t>(stub));
 
   Call(scratch);
 }

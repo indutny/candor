@@ -126,14 +126,14 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
 
   // Allocate space for spill slots and on-stack variables
   // and 3 slots for root, context and argc
-  AllocateSpills(stmt->stack_slots() + 3);
+  AllocateSpills(stmt->stack_slots() + 6);
 
   FillStackSlots();
 
   // Allocate context and clear stack slots
   AllocateContext(stmt->context_slots());
   movl(root_op, edi);
-  movl(args_op, esi);
+  movl(argc_op, esi);
 
   // Place all arguments into their slots
   Label body(this);
@@ -235,6 +235,9 @@ void Fullgen::GeneratePrologue(AstNode* stmt) {
 
 
 void Fullgen::GenerateEpilogue(AstNode* stmt) {
+  // Restore argc
+  movl(esi, argc_op);
+
   // eax will hold result of function
   movl(esp, ebp);
   pop(ebp);

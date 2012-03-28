@@ -33,12 +33,19 @@ void BaseStub::GenerateEpilogue(int args) {
 
 void EntryStub::Generate() {
   GeneratePrologue();
-  // Just for alignment
-  __ push(Immediate(Heap::kTagNil));
 
-  Operand fn(ebp, 4 * 4);
+  // Align stack and allocate some spill slots
+  // (for root_op)
+  __ subl(esp, Immediate(3 * 4));
+
+  Operand fn(ebp, 2 * 4);
   Operand argc(ebp, 3 * 4);
-  Operand argv(ebp, 2 * 4);
+  Operand argv(ebp, 4 * 4);
+
+  // Store registers
+  __ push(ebx);
+  __ push(esi);
+  __ push(edi);
 
   __ movl(edi, fn);
   __ movl(esi, argc);
@@ -50,11 +57,6 @@ void EntryStub::Generate() {
 
   // Store address of root context
   __ movl(root_op, edi);
-
-  // Store registers
-  __ push(ebp);
-  __ push(ebx);
-  __ push(edx);
 
   __ EnterFramePrologue();
 
@@ -101,6 +103,7 @@ void EntryStub::Generate() {
   __ CallFunction(scratch);
 
   // Unwind arguments
+  __ movl(esi, argc);
   __ Untag(esi);
 
   __ testb(esi, Immediate(1));
@@ -115,9 +118,9 @@ void EntryStub::Generate() {
   __ EnterFrameEpilogue();
 
   // Restore registers
-  __ pop(edx);
+  __ pop(edi);
+  __ pop(esi);
   __ pop(ebx);
-  __ pop(ebp);
 
   GenerateEpilogue(0);
 }
