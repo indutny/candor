@@ -297,6 +297,7 @@ AstNode* Fullgen::VisitFunction(AstNode* stmt) {
   // Allocate function object that'll reference to current scope
   // and have address of actual code
 
+  movl(edi, context_op);
   if (fn->variable() != NULL) {
     AllocateFunction(ecx, edx, fn->args()->length());
 
@@ -537,7 +538,7 @@ AstNode* Fullgen::VisitValue(AstNode* node) {
   if (value->slot()->is_stack()) {
     // On stack variables
     slot().base(ebp);
-    slot().disp(-4 * (value->slot()->index() + 3));
+    slot().disp(-4 * (value->slot()->index() + 4));
   } else {
     int32_t depth = value->slot()->depth();
 
@@ -680,6 +681,7 @@ AstNode* Fullgen::VisitIf(AstNode* node) {
 
   VisitFor(kValue, expr);
 
+  movl(edx, root_op);
   Call(stubs()->GetCoerceToBooleanStub());
 
   IsTrue(eax, &fail_body, NULL);
@@ -709,6 +711,7 @@ AstNode* Fullgen::VisitWhile(AstNode* node) {
 
   VisitFor(kValue, expr);
 
+  movl(edx, root_op);
   Call(stubs()->GetCoerceToBooleanStub());
 
   IsTrue(eax, &loop_end, NULL);
@@ -1045,6 +1048,8 @@ AstNode* Fullgen::VisitUnOp(AstNode* node) {
   } else if (op->subtype() == UnOp::kNot) {
     // Get value and convert it to boolean
     VisitFor(kValue, op->lhs());
+
+    movl(edx, root_op);
     Call(stubs()->GetCoerceToBooleanStub());
 
     Label done(this), ret_false(this);

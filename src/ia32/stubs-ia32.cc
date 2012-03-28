@@ -754,10 +754,18 @@ void CoerceToBooleanStub::Generate() {
 
   RuntimeCoerceCallback to_boolean = &RuntimeToBoolean;
 
-  __ movl(edi, Immediate(reinterpret_cast<uint32_t>(masm()->heap())));
-  __ movl(esi, eax);
-  __ movl(eax, Immediate(*reinterpret_cast<uint32_t*>(&to_boolean)));
-  __ call(eax);
+  {
+    __ ChangeAlign(2);
+    Masm::Align a(masm());
+
+    __ push(eax);
+    __ push(Immediate(reinterpret_cast<uint32_t>(masm()->heap())));
+
+    __ movl(eax, Immediate(*reinterpret_cast<uint32_t*>(&to_boolean)));
+    __ call(eax);
+
+    __ ChangeAlign(-2);
+  }
 
   __ Popad(eax);
 
@@ -1191,6 +1199,7 @@ void BinOpStub::Generate() {
   {
     __ ChangeAlign(3);
     Masm::Align a(masm());
+
     __ push(ecx);
     __ push(eax);
     __ push(heapref);

@@ -498,7 +498,7 @@ char* HMap::NewEmpty(Heap* heap, uint32_t size) {
 char* HFunction::New(Heap* heap, char* parent, char* addr, char* root) {
   char* fn = heap->AllocateTagged(Heap::kTagFunction,
                                   Heap::kTenureOld,
-                                  3 * kPointerSize);
+                                  4 * kPointerSize);
 
   // Set parent context
   *reinterpret_cast<char**>(fn + kParentOffset) = parent;
