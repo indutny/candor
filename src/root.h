@@ -23,7 +23,7 @@ class Root {
   ScopeSlot* Put(AstNode* node);
   HContext* Allocate();
 
-  char* NumberToValue(AstNode* node);
+  char* NumberToValue(AstNode* node, ScopeSlot* slot);
   char* StringToValue(AstNode* node);
 
   inline Heap* heap() { return heap_; }

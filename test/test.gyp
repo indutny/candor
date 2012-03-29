@@ -37,7 +37,8 @@
       'test-gc.cc',
       'test-numbers.cc',
       'test-parser.cc',
-      'test-scope.cc'
+      'test-scope.cc',
+      'test-hir.cc'
     ]
   }]
 }

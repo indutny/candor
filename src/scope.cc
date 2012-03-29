@@ -143,6 +143,17 @@ void ScopeSlot::Enumerate(void* scope, ScopeSlot* slot) {
 }
 
 
+void ScopeSlot::Print(PrintBuffer* p) {
+  if (is_stack()) {
+    p->Print("[st:%d]", index());
+  } else if (is_context()) {
+    p->Print("[ctx %d:%d]", depth(), index());
+  } else {
+    p->Print("[reg]");
+  }
+}
+
+
 void Scope::Analyze(AstNode* ast) {
   ScopeAnalyze a(ast);
 }

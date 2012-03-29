@@ -56,6 +56,22 @@ using namespace internal;
       ast = NULL;\
     }
 
+#define HIR_TEST(code, expected)\
+    {\
+      Zone z;\
+      char out[1024];\
+      Heap heap(2 * 1024 * 1024);\
+      Parser p(code, strlen(code));\
+      AstNode* ast = p.Execute();\
+      assert(!p.has_error());\
+      Scope::Analyze(ast);\
+      assert(ast != NULL);\
+      HIR hir(&heap, ast);\
+      hir.Print(out, 1000);\
+      assert(strcmp(expected, out) == 0);\
+      ast = NULL;\
+    }
+
 #define FUN_TEST(code, block)\
     {\
       Isolate i;\

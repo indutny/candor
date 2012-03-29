@@ -16,7 +16,7 @@ ScopeSlot* Root::Put(AstNode* node) {
   char* value = HNil::New();
   switch (node->type()) {
    case AstNode::kNumber:
-    value = NumberToValue(node);
+    value = NumberToValue(node, slot);
     break;
    case AstNode::kProperty:
    case AstNode::kString:
@@ -39,7 +39,7 @@ ScopeSlot* Root::Put(AstNode* node) {
 }
 
 
-char* Root::NumberToValue(AstNode* node) {
+char* Root::NumberToValue(AstNode* node, ScopeSlot* slot) {
   if (StringIsDouble(node->value(), node->length())) {
     // Allocate boxed heap number
     double value = StringToDouble(node->value(), node->length());
@@ -48,6 +48,10 @@ char* Root::NumberToValue(AstNode* node) {
   } else {
     // Allocate unboxed number
     int64_t value = StringToInt(node->value(), node->length());
+
+    // Change slot's type
+    slot->type(ScopeSlot::kRegister);
+
     return HNumber::New(heap(), value);
   }
 }

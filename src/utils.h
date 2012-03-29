@@ -355,6 +355,10 @@ class NumberKey {
     return reinterpret_cast<off_t>(this);
   }
 
+  static uint32_t Hash(NumberKey* key) {
+    return ComputeHash(key->value());
+  }
+
   static int Compare(NumberKey* left, NumberKey* right) {
     off_t l = reinterpret_cast<off_t>(left);
     off_t r = reinterpret_cast<off_t>(right);

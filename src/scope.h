@@ -23,6 +23,7 @@ class ScopeSlot : public ZoneObject {
  public:
   typedef List<ScopeSlot*, ZoneObject> UseList;
   enum Type {
+    kRegister,
     kStack,
     kContext
   };
@@ -45,6 +46,7 @@ class ScopeSlot : public ZoneObject {
 
   inline bool is_stack() { return type_ == kStack; }
   inline bool is_context() { return type_ == kContext; }
+  inline bool is_register() { return type_ == kRegister; }
 
   inline void type(Type type) { type_ = type; }
 
@@ -60,6 +62,8 @@ class ScopeSlot : public ZoneObject {
   inline int use_count() { return use_count_; }
 
   inline UseList* uses() { return &uses_; }
+
+  void Print(PrintBuffer* p);
 
  private:
   Type type_;
