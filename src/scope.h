@@ -13,6 +13,7 @@ namespace internal {
 // Forward declarations
 class AstNode;
 class AstValue;
+class HIRValue;
 class Scope;
 class ScopeAnalyze;
 
@@ -26,10 +27,15 @@ class ScopeSlot : public ZoneObject {
     kContext
   };
 
-  ScopeSlot(Type type) : type_(type), index_(-1), depth_(0), use_count_(0) {
+  ScopeSlot(Type type) : type_(type),
+                         index_(-1),
+                         hir_(NULL),
+                         depth_(0),
+                         use_count_(0) {
   }
 
   ScopeSlot(Type type, int32_t depth) : type_(type),
+                                        hir_(NULL),
                                         index_(depth < 0 ? 0 : -1),
                                         depth_(depth),
                                         use_count_(0) {
@@ -41,6 +47,9 @@ class ScopeSlot : public ZoneObject {
   inline bool is_context() { return type_ == kContext; }
 
   inline void type(Type type) { type_ = type; }
+
+  inline HIRValue* hir() { return hir_; }
+  inline void hir(HIRValue* hir) { hir_ = hir; }
 
   inline int32_t index() { return index_; }
   inline void index(int32_t index) { index_ = index; }
@@ -54,6 +63,9 @@ class ScopeSlot : public ZoneObject {
 
  private:
   Type type_;
+
+  HIRValue* hir_;
+
   int32_t index_;
   int32_t depth_;
   int use_count_;

@@ -1,5 +1,6 @@
 #include "fullgen.h"
 #include "macroassembler.h"
+#include "hir.h" // HIR
 #include "code-space.h" // CodeSpace
 #include "heap.h" // Heap
 #include "heap-inl.h"
@@ -79,6 +80,8 @@ void Fullgen::CandorFunction::Generate() {
   if (fn()->offset() != -1) {
     fullgen()->source_map()->Push(fullgen()->offset(), fn()->offset());
   }
+
+  HIR hir(fullgen()->heap(), fn());
 
   // Generate function's body
   fullgen()->GeneratePrologue(fn());
