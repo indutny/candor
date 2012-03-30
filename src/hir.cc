@@ -228,6 +228,7 @@ void HIRValue::Print(PrintBuffer* p) {
 
 HIR::HIR(Heap* heap, AstNode* node) : Visitor(kPreorder),
                                       root_(heap),
+                                      first_instruction_(NULL),
                                       last_instruction_(NULL),
                                       block_index_(0),
                                       variable_index_(0),
@@ -333,7 +334,7 @@ HIRBasicBlock* HIR::CreateJoin(HIRBasicBlock* left, HIRBasicBlock* right) {
 
 void HIR::AddInstruction(HIRInstruction* instr) {
   assert(current_block() != NULL);
-  assert(current_block()->finished() == false);
+  if (current_block()->finished()) return;
 
   // Link instructions together
   if (last_instruction() != NULL) {
@@ -355,9 +356,12 @@ void HIR::Finish(HIRInstruction* instr) {
 
 
 HIRValue* HIR::GetLastInstructionResult() {
-  assert(current_block() != NULL);
-  assert(current_block()->instructions()->length() != 0);
-  return current_block()->instructions()->tail()->value()->GetResult();
+  if (current_block() == NULL ||
+      current_block()->instructions()->length() == 0) {
+    return CreateValue(root()->Put(new AstNode(AstNode::kNil)));
+  } else {
+    return current_block()->instructions()->tail()->value()->GetResult();
+  }
 }
 
 
@@ -378,10 +382,15 @@ AstNode* HIR::VisitFunction(AstNode* stmt) {
   FunctionLiteral* fn = FunctionLiteral::Cast(stmt);
 
   if (current_block() == root_block()) {
-    AddInstruction(new HIREntry());
+    HIRInstruction* entry = new HIREntry();
+    if (first_instruction() == NULL) first_instruction(entry);
+
+    AddInstruction(entry);
+
     VisitChildren(stmt);
+
     AddInstruction(new HIRReturn(CreateValue(
-            root()->Put(new AstNode(AstNode::kNil, stmt)))));
+            root()->Put(new AstNode(AstNode::kNil)))));
   } else {
     work_list_.Push(stmt);
     // AddInstruction(new HIRAllocateFunction());
@@ -500,6 +509,15 @@ void HIR::VisitGenericObject(AstNode* node) {
 
 
 AstNode* HIR::VisitReturn(AstNode* node) {
+  HIRValue* result;
+  if (node->lhs() == NULL) {
+    result = CreateValue(root()->Put(new AstNode(AstNode::kNil)));
+  } else {
+    Visit(node->lhs());
+    result = GetLastInstructionResult();
+  }
+  Finish(new HIRReturn(result));
+
   return node;
 }
 

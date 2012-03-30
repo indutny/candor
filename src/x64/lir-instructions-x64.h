@@ -51,9 +51,13 @@ class LIRInstruction : public ZoneObject {
   inline Masm* masm() { return masm_; }
   inline void masm(Masm* masm) { masm_ = masm; }
 
- private:
+ protected:
   HIRInstruction* hir_;
   Masm* masm_;
+
+  int inputs_;
+  int outputs_;
+  int temporary_;
 };
 
 // I <- input registers count
@@ -62,11 +66,20 @@ class LIRInstruction : public ZoneObject {
 template <int I, int R, int T>
 class LIRInstructionTemplate : public LIRInstruction {
  public:
+  LIRInstructionTemplate() {
+    inputs_ = I;
+    outputs_ = R;
+    temporary_ = T;
+  }
 };
 
 template <int I, int T>
 class LIRControlInstructionTemplate : public LIRInstruction {
  public:
+  LIRControlInstructionTemplate() {
+    inputs_ = I;
+    temporary_ = T;
+  }
 };
 
 

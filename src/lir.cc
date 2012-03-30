@@ -16,6 +16,12 @@ namespace candor {
 namespace internal {
 
 LIR::LIR(Heap* heap, HIR* hir) : heap_(heap), hir_(hir) {
+  // Visit all instructions
+  HIRInstruction* hinstr = hir->first_instruction();
+
+  for (; hinstr != NULL; hinstr = hinstr->next()) {
+    LIRInstruction* linstr = Cast(hinstr);
+  }
 }
 
 

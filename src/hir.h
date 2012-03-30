@@ -246,6 +246,11 @@ class HIR : public Visitor {
   inline HIRValueList* values() { return &values_; }
   inline HIRPhiList* phis() { return &phis_; }
 
+  inline HIRInstruction* first_instruction() { return first_instruction_; }
+  inline void first_instruction(HIRInstruction* first_instruction) {
+    first_instruction_ = first_instruction;
+  }
+
   inline HIRInstruction* last_instruction() { return last_instruction_; }
   inline void last_instruction(HIRInstruction* last_instruction) {
     last_instruction_ = last_instruction;
@@ -265,6 +270,7 @@ class HIR : public Visitor {
 
   HIRValueList values_;
   HIRPhiList phis_;
+  HIRInstruction* first_instruction_;
   HIRInstruction* last_instruction_;
 
   // debugging indexes (and for liveness-range calculations)
