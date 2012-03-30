@@ -149,7 +149,7 @@ void ScopeSlot::Print(PrintBuffer* p) {
   } else if (is_context()) {
     p->Print("[ctx %d:%d]", depth(), index());
   } else if (is_register()) {
-    p->Print("[reg]");
+    p->Print("[reg %p]", value());
   }
 }
 

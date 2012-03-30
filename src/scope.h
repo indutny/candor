@@ -29,6 +29,7 @@ class ScopeSlot : public ZoneObject {
   };
 
   ScopeSlot(Type type) : type_(type),
+                         value_(NULL),
                          index_(-1),
                          hir_(NULL),
                          depth_(0),
@@ -36,6 +37,7 @@ class ScopeSlot : public ZoneObject {
   }
 
   ScopeSlot(Type type, int32_t depth) : type_(type),
+                                        value_(NULL),
                                         hir_(NULL),
                                         index_(depth < 0 ? 0 : -1),
                                         depth_(depth),
@@ -49,6 +51,10 @@ class ScopeSlot : public ZoneObject {
   inline bool is_register() { return type_ == kRegister; }
 
   inline void type(Type type) { type_ = type; }
+
+  // Register slots should have a value (unboxed nil or number)
+  inline char* value() { assert(is_register()); return value_; }
+  inline void value(char* value) { assert(is_register()); value_ = value; }
 
   inline HIRValue* hir() { return hir_; }
   inline void hir(HIRValue* hir) { hir_ = hir; }
@@ -67,6 +73,7 @@ class ScopeSlot : public ZoneObject {
 
  private:
   Type type_;
+  char* value_;
 
   HIRValue* hir_;
 

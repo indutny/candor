@@ -29,11 +29,14 @@ ScopeSlot* Root::Put(AstNode* node) {
     value = HBoolean::New(heap(), Heap::kTenureOld, false);
     break;
    case AstNode::kNil:
-    value = HNil::New();
+    slot->type(ScopeSlot::kRegister);
+    slot->value(HNil::New());
     break;
    default: UNEXPECTED break;
   }
-  values()->Push(value);
+  if (value != NULL) {
+    values()->Push(value);
+  }
 
   return slot;
 }
@@ -51,8 +54,9 @@ char* Root::NumberToValue(AstNode* node, ScopeSlot* slot) {
 
     // Change slot's type
     slot->type(ScopeSlot::kRegister);
+    slot->value(HNumber::New(heap(), value));
 
-    return HNumber::New(heap(), value);
+    return NULL;
   }
 }
 
