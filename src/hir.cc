@@ -196,7 +196,7 @@ HIRValue::HIRValue(HIRBasicBlock* block) : type_(kNormal),
                                            block_(block),
                                            current_block_(block),
                                            prev_def_(NULL),
-                                           parent_phi_(NULL) {
+                                           operand_(NULL) {
   slot_ = new ScopeSlot(ScopeSlot::kRegister);
   block->AddValue(this);
   id_ = block->hir()->get_variable_index();
@@ -207,9 +207,9 @@ HIRValue::HIRValue(HIRBasicBlock* block, ScopeSlot* slot)
     : type_(kNormal),
       block_(block),
       current_block_(block),
-      slot_(slot),
       prev_def_(NULL),
-      parent_phi_(NULL) {
+      operand_(NULL),
+      slot_(slot) {
   block->AddValue(this);
   id_ = block->hir()->get_variable_index();
 }

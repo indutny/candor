@@ -17,6 +17,7 @@ namespace internal {
 class HIR;
 class HIRPhi;
 class HIRValue;
+class LOperand;
 class Heap;
 class ScopeSlot;
 class AstNode;
@@ -100,8 +101,7 @@ class HIRValue : public ZoneObject {
   inline void prev_def(HIRValue* prev_def) { prev_def_ = prev_def; };
   inline HIRValueList* next_defs() { return &next_defs_; };
 
-  inline HIRPhi* parent_phi() { return parent_phi_; }
-  inline void parent_phi(HIRPhi* parent_phi) { parent_phi_ = parent_phi; }
+  inline LOperand* operand() { return operand_; }
 
   inline ScopeSlot* slot() { return slot_; }
 
@@ -125,7 +125,8 @@ class HIRValue : public ZoneObject {
   HIRValue* prev_def_;
   HIRValueList next_defs_;
 
-  HIRPhi* parent_phi_;
+  // Used in lir.h
+  LOperand* operand_;
 
   ScopeSlot* slot_;
 

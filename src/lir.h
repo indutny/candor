@@ -28,15 +28,14 @@ class LOperand : public ZoneObject {
   int value_;
 };
 
-class LInstruction : public ZoneObject {
- public:
-};
-
 class LIR {
  public:
   LIR(Heap* heap, HIR* hir);
 
   char* Generate();
+
+  inline Heap* heap() { return heap_; }
+  inline HIR* hir() { return hir_; }
 
  private:
   Heap* heap_;

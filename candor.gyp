@@ -33,6 +33,8 @@
       'src/lexer.h',
       'src/lir.cc',
       'src/lir.h',
+      'src/lir-instructions.cc',
+      'src/lir-instructions.h',
       'src/parser.cc',
       'src/parser.h',
       'src/root.cc',
