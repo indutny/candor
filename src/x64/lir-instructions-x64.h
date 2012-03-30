@@ -23,6 +23,13 @@ class HIRInstruction;
     V(BranchBool)\
     V(AllocateObject)
 
+#define LIR_GEN_FORWARD_HIR_DECL(V)\
+    class HIR##V;
+
+LIR_ENUM_INSTRUCTIONS(LIR_GEN_FORWARD_HIR_DECL)
+
+#undef LIR_GEN_FORWARD_HIR_DECL
+
 #define LIR_GEN_TYPE_ENUM(V)\
     k##V,
 
@@ -38,7 +45,7 @@ class LIRInstruction : public ZoneObject {
 
   virtual void Generate() = 0;
 
-  inline HIRInstruction* hir() { return hir_; }
+  inline HIRInstruction* generic_hir() { return hir_; }
   inline void hir(HIRInstruction* hir) { hir_ = hir; }
 
   inline Masm* masm() { return masm_; }
@@ -62,60 +69,89 @@ class LIRControlInstructionTemplate : public LIRInstruction {
  public:
 };
 
+
+#define HIR_GETTER(V)\
+    inline HIR##V* hir() { return reinterpret_cast<HIR##V*>(generic_hir()); }
+
 class LIREntry : public LIRInstructionTemplate<0, 0, 0> {
  public:
   void Generate();
+
+  HIR_GETTER(Entry)
 };
 
 class LIRReturn : public LIRInstructionTemplate<1, 0, 0> {
  public:
   void Generate();
+
+  HIR_GETTER(Return)
 };
 
 class LIRGoto : public LIRInstructionTemplate<0, 0, 0> {
  public:
   void Generate();
+
+  HIR_GETTER(Goto)
 };
 
 class LIRStoreLocal : public LIRInstructionTemplate<1, 0, 0> {
  public:
   void Generate();
+
+  HIR_GETTER(StoreLocal)
 };
 
 class LIRStoreContext : public LIRInstructionTemplate<1, 0, 0> {
  public:
   void Generate();
+
+  HIR_GETTER(StoreContext)
 };
 
 class LIRStoreProperty : public LIRInstructionTemplate<1, 0, 0> {
  public:
   void Generate();
+
+  HIR_GETTER(StoreProperty)
 };
 
 class LIRLoadRoot : public LIRInstructionTemplate<0, 1, 0> {
  public:
   void Generate();
+
+  HIR_GETTER(LoadRoot)
 };
 
 class LIRLoadLocal : public LIRInstructionTemplate<0, 1, 0> {
  public:
   void Generate();
+
+  HIR_GETTER(LoadLocal)
 };
 
 class LIRLoadContext : public LIRInstructionTemplate<0, 1, 0> {
  public:
   void Generate();
+
+  HIR_GETTER(LoadContext)
 };
 
 class LIRBranchBool : public LIRControlInstructionTemplate<1, 0> {
  public:
   void Generate();
+
+  HIR_GETTER(BranchBool)
 };
 
 class LIRAllocateObject : public LIRInstructionTemplate<0, 1, 0> {
  public:
   void Generate();
+
+  HIR_GETTER(AllocateObject)
 };
+
+
+#undef HIR_GETTER
 
 } // namespace internal
 } // namespace candor
