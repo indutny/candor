@@ -48,12 +48,12 @@ void HIRBasicBlock::AddPredecessor(HIRBasicBlock* block) {
 
     // If value is already in current block - insert phi!
     if (value->slot()->hir()->current_block() == this) {
-      HIRPhi* phi = value->slot()->hir()->parent_phi();
-      if (phi == NULL) {
+      HIRPhi* phi = HIRPhi::Cast(value->slot()->hir());
+      if (!phi->is_phi()) {
         phi = new HIRPhi(this, value->slot()->hir());
 
-        value->slot()->hir(phi->result());
-        values()->Push(phi->result());
+        value->slot()->hir(phi);
+        values()->Push(phi);
 
         this->phis()->Push(phi);
       }
@@ -171,10 +171,9 @@ void HIRBasicBlock::Print(PrintBuffer* p) {
 }
 
 
-HIRPhi::HIRPhi(HIRBasicBlock* block, HIRValue* value) {
-  result_ = new HIRValue(block, value->slot());
-  result_->parent_phi(this);
-
+HIRPhi::HIRPhi(HIRBasicBlock* block, HIRValue* value)
+    : HIRValue(block, value->slot()) {
+  type_ = kPhi;
   incoming()->Push(value);
 }
 
@@ -187,11 +186,12 @@ void HIRPhi::Print(PrintBuffer* p) {
     item = item->next();
     if (item != NULL) p->Print(",");
   }
-  p->Print("]:%d", result()->id());
+  p->Print("]:%d", id());
 }
 
 
-HIRValue::HIRValue(HIRBasicBlock* block) : block_(block),
+HIRValue::HIRValue(HIRBasicBlock* block) : type_(kNormal),
+                                           block_(block),
                                            current_block_(block),
                                            prev_def_(NULL),
                                            parent_phi_(NULL) {
@@ -202,7 +202,8 @@ HIRValue::HIRValue(HIRBasicBlock* block) : block_(block),
 
 
 HIRValue::HIRValue(HIRBasicBlock* block, ScopeSlot* slot)
-    : block_(block),
+    : type_(kNormal),
+      block_(block),
       current_block_(block),
       slot_(slot),
       prev_def_(NULL),

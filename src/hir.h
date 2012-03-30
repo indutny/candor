@@ -76,24 +76,18 @@ class HIRBasicBlock : public ZoneObject {
   int id_;
 };
 
-class HIRPhi : public ZoneObject {
- public:
-  HIRPhi(HIRBasicBlock* block, HIRValue* value);
-
-  void Print(PrintBuffer* p);
-
-  inline HIRValueList* incoming() { return &incoming_; }
-  inline HIRValue* result() { return result_; }
- private:
-  HIRValueList incoming_;
-  HIRValue* result_;
-};
-
 // SSA Value
 class HIRValue : public ZoneObject {
  public:
+  enum ValueType {
+    kNormal,
+    kPhi
+  };
+
   HIRValue(HIRBasicBlock* block);
   HIRValue(HIRBasicBlock* block, ScopeSlot* slot);
+
+  inline bool is_phi() { return type_ == kPhi; }
 
   inline HIRBasicBlock* block() { return block_; }
   inline HIRBasicBlock* current_block() { return current_block_; }
@@ -115,7 +109,9 @@ class HIRValue : public ZoneObject {
   // Debug printing
   void Print(PrintBuffer* p);
 
- private:
+ protected:
+  ValueType type_;
+
   // Block where variable was defined
   HIRBasicBlock* block_;
 
@@ -131,6 +127,22 @@ class HIRValue : public ZoneObject {
 
   int id_;
 };
+
+// Phi
+class HIRPhi : public HIRValue {
+ public:
+  HIRPhi(HIRBasicBlock* block, HIRValue* value);
+
+  void Print(PrintBuffer* p);
+
+  static inline HIRPhi* Cast(HIRValue* value) {
+    return reinterpret_cast<HIRPhi*>(value);
+  }
+  inline HIRValueList* incoming() { return &incoming_; }
+ private:
+  HIRValueList incoming_;
+};
+
 
 class HIR : public Visitor {
  public:
