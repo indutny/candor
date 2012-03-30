@@ -171,7 +171,15 @@ AstNode* ScopeAnalyze::VisitFunction(AstNode* node) {
 
   // Put variable into outer scope
   if (fn->variable() != NULL) {
-    fn->variable(Visit(fn->variable()));
+    if (fn->children()->length() != 0) {
+      AstNode* assign = new AstNode(AstNode::kAssign);
+      assign->children()->Push(fn->variable());
+      assign->children()->Push(fn);
+      fn->variable(NULL);
+      return Visit(assign);
+    } else {
+      fn->variable(Visit(fn->variable()));
+    }
   }
 
   // Call takes variables from outer scope

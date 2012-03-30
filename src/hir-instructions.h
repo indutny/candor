@@ -19,6 +19,8 @@ class HIRInstruction {
  public:
   enum Type {
     kNone,
+    kEntry,
+    kReturn,
     kGoto,
     kStoreLocal,
     kStoreContext,
@@ -133,7 +135,20 @@ class HIRBranchBase : public HIRInstruction, public ZoneObject {
   HIRBasicBlock* right_;
 };
 
-class HIRGoto : public HIRInstruction, public ZoneObject {
+class HIREntry : public HIRInstruction {
+ public:
+  HIREntry() : HIRInstruction(kEntry) {
+  }
+};
+
+class HIRReturn : public HIRInstruction {
+ public:
+  HIRReturn(HIRValue* value) : HIRInstruction(kReturn) {
+    SetResult(value);
+  }
+};
+
+class HIRGoto : public HIRInstruction {
  public:
   HIRGoto() : HIRInstruction(kGoto) {
   }

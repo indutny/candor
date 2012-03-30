@@ -20,6 +20,8 @@ void HIRInstruction::Print(PrintBuffer* p) {
 
 #define ENUM_TYPE(V)\
     V(None)\
+    V(Entry)\
+    V(Return)\
     V(Goto)\
     V(StoreLocal)\
     V(StoreContext)\
@@ -40,8 +42,9 @@ void HIRInstruction::Print(PrintBuffer* p) {
 #undef SWITCH_CASE
 #undef ENUM_TYPE
 
-  p->Print("[%s ", str);
+  p->Print("[%s", str);
   List<HIRValue*, ZoneObject>::Item* item = values()->head();
+  if (item != NULL) p->Print(" ");
   while (item != NULL) {
     item->value()->Print(p);
     item = item->next();

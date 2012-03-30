@@ -24,7 +24,7 @@ TEST_START(scope)
 
   // Various
   SCOPE_TEST("a() {}\nc = a()",
-             "[kFunction [a @stack:1] @[] [kNop ]] "
+             "[kAssign [a @stack:1] [kFunction (anonymous) @[] [kNop ]]] "
              "[kAssign [c @stack:0] [kCall [a @stack:1] @[] ]]")
 
   SCOPE_TEST("print = 1\n"

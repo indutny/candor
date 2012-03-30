@@ -272,6 +272,8 @@ class HIR : public Visitor {
   int variable_index_;
   int instruction_index_;
 
+  List<AstNode*, ZoneObject> work_list_;
+
   PrintMap* print_map_;
 };
 

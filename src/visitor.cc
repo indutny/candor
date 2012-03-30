@@ -73,14 +73,12 @@ void Visitor::VisitChildren(AstNode* node) {
     // In breadth-first visiting
     // do not increase depth until all same-level nodes will be visited
     if (type_ == kBreadthFirst &&
-        (child->value()->is(AstNode::kFunction) ||
-        child->value()->is(AstNode::kBlock))) {
+        child->value()->is(AstNode::kFunction)) {
       blocks_queue.Push(child);
-      child = child->next();
     } else {
       child->value(Visit(child->value()));
-      child = child->next();
     }
+    child = child->next();
   }
 
   while ((child = blocks_queue.Shift()) != NULL) {

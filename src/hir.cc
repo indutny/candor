@@ -233,9 +233,12 @@ HIR::HIR(Heap* heap, AstNode* node) : Visitor(kPreorder),
                                       variable_index_(0),
                                       instruction_index_(0),
                                       print_map_(NULL) {
-  root_block_ = CreateBlock();
-  current_block_ = root_block_;
-  Visit(node);
+  work_list_.Push(node);
+  while ((node = work_list_.Shift()) != NULL) {
+    root_block_ = CreateBlock();
+    set_current_block(root_block());
+    Visit(node);
+  }
 }
 
 
@@ -372,10 +375,16 @@ void HIR::Print(char* buffer, uint32_t size) {
 
 
 AstNode* HIR::VisitFunction(AstNode* stmt) {
+  FunctionLiteral* fn = FunctionLiteral::Cast(stmt);
+
   if (current_block() == root_block()) {
+    AddInstruction(new HIREntry());
     VisitChildren(stmt);
+    AddInstruction(new HIRReturn(CreateValue(
+            root()->Put(new AstNode(AstNode::kNil, stmt)))));
   } else {
-    // TODO: Allocate instruction for non-main functions
+    work_list_.Push(stmt);
+    // AddInstruction(new HIRAllocateFunction());
   }
 
   return stmt;
