@@ -8,6 +8,7 @@ namespace internal {
 
 // Forward declarations
 class Heap;
+class Masm;
 class HIR;
 class HIRInstruction;
 class LIRInstruction;
@@ -34,9 +35,10 @@ class LIR {
  public:
   LIR(Heap* heap, HIR* hir);
 
+  void CalculateLiveness();
   LIRInstruction* Cast(HIRInstruction* instr);
 
-  char* Generate();
+  void Generate(Masm* masm);
 
   inline Heap* heap() { return heap_; }
   inline HIR* hir() { return hir_; }

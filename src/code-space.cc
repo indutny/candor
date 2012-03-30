@@ -105,8 +105,9 @@ char* CodeSpace::Compile(const char* filename,
   // Generate low-level representation
   LIR lir(heap(), &hir);
 
-  // TODO: Get address of code
-  char* addr = lir.Generate();
+  Masm masm(this);
+  lir.Generate(&masm);
+  char* addr = Put(&masm);
 
   // Relocate source map
   heap()->source_map()->Commit(filename, source, length, addr);

@@ -10,29 +10,30 @@
 #include "ia32/lir-instructions-ia32.h"
 #endif
 
+#include "macroassembler.h"
+
 #include <stdlib.h> // NULL
 
 namespace candor {
 namespace internal {
 
 LIR::LIR(Heap* heap, HIR* hir) : heap_(heap), hir_(hir) {
-  // Visit all instructions
-  HIRInstruction* hinstr = hir->first_instruction();
-
-  for (; hinstr != NULL; hinstr = hinstr->next()) {
-    LIRInstruction* linstr = Cast(hinstr);
-  }
+  // Calculate numeric liveness ranges
+  CalculateLiveness();
 }
 
 
-#define LIR_GEN_CAST(V)\
-    case HIRInstruction::k##V:\
-      result = new LIR##V();\
-      result->hir(instr);\
-      break;
+void LIR::CalculateLiveness() {
+}
 
 
 LIRInstruction* LIR::Cast(HIRInstruction* instr) {
+#define LIR_GEN_CAST(V)\
+  case HIRInstruction::k##V:\
+    result = new LIR##V();\
+    result->hir(instr);\
+    break;
+
   LIRInstruction* result = NULL;
   switch (instr->type()) {
    LIR_ENUM_INSTRUCTIONS(LIR_GEN_CAST)
@@ -40,14 +41,18 @@ LIRInstruction* LIR::Cast(HIRInstruction* instr) {
   }
 
   return result;
+#undef LIR_GEN_CAST
 }
 
 
-#undef LIR_GEN_CAST
+void LIR::Generate(Masm* masm) {
+  // Visit all instructions
+  HIRInstruction* hinstr = hir()->first_instruction();
 
-
-char* LIR::Generate() {
-  return NULL;
+  for (; hinstr != NULL; hinstr = hinstr->next()) {
+    LIRInstruction* linstr = Cast(hinstr);
+    linstr->masm(masm);
+  }
 }
 
 } // namespace internal
