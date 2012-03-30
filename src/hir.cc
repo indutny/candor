@@ -24,19 +24,55 @@ HIRBasicBlock::HIRBasicBlock(HIR* hir) : hir_(hir),
 
 
 void HIRBasicBlock::AddValue(HIRValue* value) {
+  // If value is already in values list - remove previous
+  HIRValueList::Item* item = values()->head();
+  for (; item != NULL; item = item->next()) {
+    if (item->value()->slot() == value->slot()) {
+      values()->Remove(item);
+    }
+  }
   values()->Push(value);
 }
 
 
 void HIRBasicBlock::AddPredecessor(HIRBasicBlock* block) {
   assert(predecessors_count() < 2);
-  predecessors_[predecessors_count_++] = block;
+  predecessors()[predecessors_count_++] = block;
+
+  // Propagate used values from predecessor to current block
+  HIRValueList::Item* item = block->values()->head();
+  for (; item != NULL; item = item->next()) {
+    HIRValue* value = item->value();
+
+    if (value == NULL) continue;
+
+    // If value is already in current block - insert phi!
+    if (value->slot()->hir()->current_block() == this) {
+      HIRPhi* phi = value->slot()->hir()->parent_phi();
+      if (phi == NULL) {
+        phi = new HIRPhi(this, value->slot()->hir());
+
+        value->slot()->hir(phi->result());
+        values()->Push(phi->result());
+
+        this->phis()->Push(phi);
+      }
+
+      phi->incoming()->Push(value);
+    } else {
+      // Otherwise put value to the list
+      values()->Push(value);
+      // And associated with a current block
+      value->current_block(this);
+      value->slot()->hir(value);
+    }
+  }
 }
 
 
 void HIRBasicBlock::AddSuccessor(HIRBasicBlock* block) {
   assert(successors_count() < 2);
-  successors_[successors_count_++] = block;
+  successors()[successors_count_++] = block;
   block->AddPredecessor(this);
 }
 
@@ -49,6 +85,7 @@ void HIRBasicBlock::Goto(HIRBasicBlock* block) {
   HIRGoto* instr = new HIRGoto();
   instructions()->Push(instr);
   instr->Init(this);
+
   finished(true);
 }
 
@@ -70,66 +107,119 @@ void HIRBasicBlock::Print(PrintBuffer* p) {
 
   p->Print("[Block#%d ", id());
 
-  // Print instructions
-  InstructionList::Item* item = instructions()->head();
-  while (item != NULL) {
-    item->value()->Print(p);
-    item = item->next();
-    p->Print(" ");
+  // Print values
+  {
+    HIRValueList::Item* item = values()->head();
+    p->Print("{");
+    while (item != NULL) {
+      p->Print("%d", item->value()->id());
+      item = item->next();
+      if (item != NULL) p->Print(",");
+    }
+    p->Print("} ");
   }
 
-  // Print successors' ids
-  p->Print("{");
-  if (successors_count() == 2) {
-    p->Print("%d+%d", successors()[0]->id(), successors()[1]->id());
-  } else if (successors_count() == 1) {
-    p->Print("%d", successors()[0]->id());
+  // Print phis
+  {
+    PhiList::Item* item = phis()->head();
+    while (item != NULL) {
+      item->value()->Print(p);
+      item = item->next();
+      p->Print(" ");
+    }
   }
-  p->Print("}]");
+
+  // Print instructions
+  {
+    InstructionList::Item* item = instructions()->head();
+    while (item != NULL) {
+      item->value()->Print(p);
+      item = item->next();
+      p->Print(" ");
+    }
+  }
+
+  // Print predecessors' ids
+  if (predecessors_count() == 2) {
+    p->Print("[%d,%d]", predecessors()[0]->id(), predecessors()[1]->id());
+  } else if (predecessors_count() == 1) {
+    p->Print("[%d]", predecessors()[0]->id());
+  } else {
+    p->Print("[]");
+  }
+
+  p->Print(">*>");
+
+  // Print successors' ids
+  if (successors_count() == 2) {
+    p->Print("[%d,%d]", successors()[0]->id(), successors()[1]->id());
+  } else if (successors_count() == 1) {
+    p->Print("[%d]", successors()[0]->id());
+  } else {
+    p->Print("[]");
+  }
+
+  p->Print("]\n");
 
   // Print successors
   if (successors_count() == 2) {
-    if (successors()[0]->IsPrintable()) {
-      p->Print(" ");
-      successors()[0]->Print(p);
-    }
-    if (successors()[1]->IsPrintable()) {
-      p->Print(" ");
-      successors()[1]->Print(p);
-    }
+    if (successors()[0]->IsPrintable()) successors()[0]->Print(p);
+    if (successors()[1]->IsPrintable()) successors()[1]->Print(p);
   } else if (successors_count() == 1) {
-    if (successors()[0]->IsPrintable()) {
-      p->Print(" ");
-      successors()[0]->Print(p);
-    }
+    if (successors()[0]->IsPrintable()) successors()[0]->Print(p);
   }
 }
 
 
-HIRBasicBlock::Phi::Phi(HIRBasicBlock* block) {
-  result_ = new HIRValue(block);
+HIRPhi::HIRPhi(HIRBasicBlock* block, HIRValue* value) {
+  result_ = new HIRValue(block, value->slot());
+  result_->parent_phi(this);
+
+  incoming()->Push(value);
 }
 
 
-HIRValue::HIRValue(HIRBasicBlock* block) : block_(block), prev_def_(NULL) {
+void HIRPhi::Print(PrintBuffer* p) {
+  p->Print("@[");
+  HIRValueList::Item* item = incoming()->head();
+  while (item != NULL) {
+    p->Print("%d", item->value()->id());
+    item = item->next();
+    if (item != NULL) p->Print(",");
+  }
+  p->Print("]:%d", result()->id());
+}
+
+
+HIRValue::HIRValue(HIRBasicBlock* block) : block_(block),
+                                           current_block_(block),
+                                           prev_def_(NULL),
+                                           parent_phi_(NULL) {
   slot_ = new ScopeSlot(ScopeSlot::kRegister);
   block->AddValue(this);
   id_ = block->hir()->get_variable_index();
 }
 
 
-HIRValue::HIRValue(HIRBasicBlock* block, ScopeSlot* slot) : block_(block),
-                                                            slot_(slot),
-                                                            prev_def_(NULL) {
+HIRValue::HIRValue(HIRBasicBlock* block, ScopeSlot* slot)
+    : block_(block),
+      current_block_(block),
+      slot_(slot),
+      prev_def_(NULL),
+      parent_phi_(NULL) {
   block->AddValue(this);
   id_ = block->hir()->get_variable_index();
 }
 
 
 void HIRValue::Print(PrintBuffer* p) {
-  p->Print("@[%d ", id());
-  slot()->Print(p);
-  p->Print("]");
+  if (prev_def() == NULL) {
+    p->Print("*[%d ", id());
+  } else {
+    p->Print("*[%d>%d ", prev_def()->id(), id());
+  }
+    slot()->Print(p);
+    p->Print("]");
 }
 
 
@@ -144,12 +234,11 @@ HIR::HIR(Heap* heap, AstNode* node) : Visitor(kPreorder),
 }
 
 
-HIRValue* HIR::CreateValue(ScopeSlot* slot) {
+HIRValue* HIR::FindPredecessorValue(ScopeSlot* slot) {
   assert(current_block() != NULL);
-  HIRValue* value = new HIRValue(current_block(), slot);
 
-  HIRValue* previous = slot->hir();
   // Find appropriate value
+  HIRValue* previous = slot->hir();
   while (previous != NULL) {
     // Traverse blocks to the root, to check
     // if variable was used in predecessor
@@ -157,11 +246,20 @@ HIRValue* HIR::CreateValue(ScopeSlot* slot) {
     while (block != NULL && previous->block() != block) {
       block = block->predecessors()[0];
     }
+    if (block != NULL) break;
     previous = previous->prev_def();
   }
 
+  return previous;
+}
+
+
+HIRValue* HIR::CreateValue(ScopeSlot* slot) {
+  HIRValue* value = new HIRValue(current_block(), slot);
+  HIRValue* previous = FindPredecessorValue(slot);
+
+  // Link with previous
   if (previous != NULL) {
-    // Link variables
     value->prev_def(previous);
     previous->next_defs()->Push(value);
   }
@@ -173,10 +271,31 @@ HIRValue* HIR::CreateValue(ScopeSlot* slot) {
 
 
 HIRValue* HIR::GetValue(ScopeSlot* slot) {
-  if (slot->hir() == NULL || slot->hir()->block() != current_block()) {
-    // Slot wasn't used or was used in some of predecessor blocks
+  assert(current_block() != NULL);
+
+  // Slot was used - find one in our branch
+  HIRValue* previous = FindPredecessorValue(slot);
+
+  // Lazily create new variable
+  if (previous == NULL) {
+    // Slot wasn't used in HIR yet
     // Insert new one HIRValue in the current block
     CreateValue(slot);
+  } else {
+    if (previous != slot->hir()) {
+      // Create slot and link variables
+      HIRValue* value = new HIRValue(current_block(), slot);
+
+      // Link with previous
+      if (slot->hir() != NULL) {
+        value->prev_def(previous);
+        previous->next_defs()->Push(value);
+      }
+
+      slot->hir(value);
+    } else {
+      slot->hir()->current_block(current_block());
+    }
   }
 
   return slot->hir();
@@ -190,36 +309,11 @@ HIRBasicBlock* HIR::CreateBlock() {
 
 HIRBasicBlock* HIR::CreateJoin(HIRBasicBlock* left, HIRBasicBlock* right) {
   HIRBasicBlock* join = CreateBlock();
+
   left->Goto(join);
   right->Goto(join);
 
   return join;
-
-  // Check both block's values and insert phis for those
-  // that was modified (used) in both blocks
-  HIRValueList::Item* litem = left->values()->head();
-  HIRValueList::Item* ritem = right->values()->head();
-  for (;litem != NULL; litem = litem->next()) {
-    // Check only final values
-    if (litem->value()->next_defs()->length() != 0) continue;
-
-    HIRBasicBlock::Phi* phi = NULL;
-
-    for (;ritem != NULL; ritem = ritem->next()) {
-      // Check only final values
-      if (ritem->value()->next_defs()->length() != 0) continue;
-
-      if (litem->value()->slot() == ritem->value()->slot()) {
-        // Lazily allocate phi
-        if (phi == NULL) {
-          phi = new HIRBasicBlock::Phi(join);
-          join->phis()->Push(phi);
-        }
-
-        phi->incoming()->Push(litem->value());
-      }
-    }
-  }
 }
 
 
@@ -327,12 +421,14 @@ AstNode* HIR::VisitIf(AstNode* node) {
 
   set_current_block(on_true);
   Visit(node->rhs());
+  on_true = current_block();
 
   AstList::Item* else_body = node->children()->head()->next()->next();
   if (else_body != NULL) {
     // Visit else body and create additional `join` block
     set_current_block(on_false);
     Visit(else_body->value());
+    on_false = current_block();
   }
 
   set_current_block(CreateJoin(on_true, on_false));

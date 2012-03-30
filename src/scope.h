@@ -23,9 +23,9 @@ class ScopeSlot : public ZoneObject {
  public:
   typedef List<ScopeSlot*, ZoneObject> UseList;
   enum Type {
-    kRegister,
     kStack,
-    kContext
+    kContext,
+    kRegister
   };
 
   ScopeSlot(Type type) : type_(type),

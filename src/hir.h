@@ -13,6 +13,7 @@ namespace internal {
 
 // Forward declarations
 class HIR;
+class HIRPhi;
 class HIRValue;
 class HIRInstruction;
 class Heap;
@@ -25,26 +26,17 @@ typedef List<HIRValue*, ZoneObject> HIRValueList;
 class HIRBasicBlock : public ZoneObject {
  public:
   typedef List<HIRInstruction*, ZoneObject> InstructionList;
-
-  class Phi : public ZoneObject {
-   public:
-    Phi(HIRBasicBlock* block);
-
-    inline HIRValueList* incoming() { return &incoming_; }
-    inline HIRValue* result() { return result_; }
-   private:
-    HIRValueList incoming_;
-    HIRValue* result_;
-  };
-  typedef List<Phi*, ZoneObject> PhiList;
+  typedef List<HIRPhi*, ZoneObject> PhiList;
 
   HIRBasicBlock(HIR* hir);
 
   // Add value for generating PHIs later
   void AddValue(HIRValue* value);
 
-  // Connect block with others
+  // NOTE: Called automatically, do not call by-hand!
   void AddPredecessor(HIRBasicBlock* block);
+
+  // Connect block with others
   void AddSuccessor(HIRBasicBlock* block);
   void Goto(HIRBasicBlock* block);
 
@@ -84,6 +76,19 @@ class HIRBasicBlock : public ZoneObject {
   int id_;
 };
 
+class HIRPhi : public ZoneObject {
+ public:
+  HIRPhi(HIRBasicBlock* block, HIRValue* value);
+
+  void Print(PrintBuffer* p);
+
+  inline HIRValueList* incoming() { return &incoming_; }
+  inline HIRValue* result() { return result_; }
+ private:
+  HIRValueList incoming_;
+  HIRValue* result_;
+};
+
 // SSA Value
 class HIRValue : public ZoneObject {
  public:
@@ -91,10 +96,17 @@ class HIRValue : public ZoneObject {
   HIRValue(HIRBasicBlock* block, ScopeSlot* slot);
 
   inline HIRBasicBlock* block() { return block_; }
+  inline HIRBasicBlock* current_block() { return current_block_; }
+  inline void current_block(HIRBasicBlock* current_block) {
+    current_block_ = current_block;
+  }
 
   inline HIRValue* prev_def() { return prev_def_; };
   inline void prev_def(HIRValue* prev_def) { prev_def_ = prev_def; };
   inline HIRValueList* next_defs() { return &next_defs_; };
+
+  inline HIRPhi* parent_phi() { return parent_phi_; }
+  inline void parent_phi(HIRPhi* parent_phi) { parent_phi_ = parent_phi; }
 
   inline ScopeSlot* slot() { return slot_; }
 
@@ -104,9 +116,17 @@ class HIRValue : public ZoneObject {
   void Print(PrintBuffer* p);
 
  private:
+  // Block where variable was defined
   HIRBasicBlock* block_;
+
+  // Block where it is used now (needed for Phi construction)
+  HIRBasicBlock* current_block_;
+
   HIRValue* prev_def_;
   HIRValueList next_defs_;
+
+  HIRPhi* parent_phi_;
+
   ScopeSlot* slot_;
 
   int id_;
@@ -119,6 +139,7 @@ class HIR : public Visitor {
   HIR(Heap* heap, AstNode* node);
 
   // Creating blocks and values
+  HIRValue* FindPredecessorValue(ScopeSlot* slot);
   HIRValue* CreateValue(ScopeSlot* slot);
   HIRValue* GetValue(ScopeSlot* slot);
   HIRBasicBlock* CreateBlock();
