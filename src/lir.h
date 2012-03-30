@@ -1,12 +1,36 @@
 #ifndef _SRC_LIR_H_
 #define _SRC_LIR_H_
 
+#include "zone.h"
+
 namespace candor {
 namespace internal {
 
 // Forward declarations
 class Heap;
 class HIR;
+
+class LOperand : public ZoneObject {
+ public:
+  enum Type {
+    kSpill,
+    kRegister
+  };
+
+  LOperand(Type type) : type_(type) {
+  }
+
+  inline Type type() { return type_; }
+  inline bool is(Type type) { return type_ == type; }
+
+ private:
+  Type type_;
+  int value_;
+};
+
+class LInstruction : public ZoneObject {
+ public:
+};
 
 class LIR {
  public:

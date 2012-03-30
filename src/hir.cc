@@ -86,7 +86,7 @@ void HIRBasicBlock::Goto(HIRBasicBlock* block) {
   // Add goto instruction and finalize block
   HIRGoto* instr = new HIRGoto();
   instructions()->Push(instr);
-  instr->Init(this);
+  instr->Init(this, hir()->get_instruction_index());
 
   finished(true);
 }
@@ -228,8 +228,10 @@ void HIRValue::Print(PrintBuffer* p) {
 
 HIR::HIR(Heap* heap, AstNode* node) : Visitor(kPreorder),
                                       root_(heap),
+                                      last_instruction_(NULL),
                                       block_index_(0),
                                       variable_index_(0),
+                                      instruction_index_(0),
                                       print_map_(NULL) {
   root_block_ = CreateBlock();
   current_block_ = root_block_;
@@ -331,14 +333,14 @@ void HIR::AddInstruction(HIRInstruction* instr) {
   assert(current_block()->finished() == false);
 
   // Link instructions together
-  if (current_block()->instructions()->length() > 0) {
-    HIRInstruction* last = current_block()->instructions()->tail()->value();
-    last->next(instr);
-    instr->prev(last);
+  if (last_instruction() != NULL) {
+    last_instruction()->next(instr);
+    instr->prev(last_instruction());
   }
+  last_instruction(instr);
 
   current_block()->instructions()->Push(instr);
-  instr->Init(current_block());
+  instr->Init(current_block(), get_instruction_index());
 }
 
 

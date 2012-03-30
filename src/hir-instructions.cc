@@ -4,8 +4,9 @@
 namespace candor {
 namespace internal {
 
-void HIRInstruction::Init(HIRBasicBlock* block) {
+void HIRInstruction::Init(HIRBasicBlock* block, int id) {
   block_ = block;
+  id_ = id;
 }
 
 
@@ -50,13 +51,13 @@ void HIRInstruction::Print(PrintBuffer* p) {
 }
 
 
-void HIRBranchBase::Init(HIRBasicBlock* block) {
+void HIRBranchBase::Init(HIRBasicBlock* block, int id) {
   block->AddSuccessor(left());
   block->AddSuccessor(right());
 }
 
 
-void HIRAllocateObject::Init(HIRBasicBlock* block) {
+void HIRAllocateObject::Init(HIRBasicBlock* block, int id) {
   SetResult(new HIRValue(block));
 }
 

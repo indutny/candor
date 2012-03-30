@@ -37,7 +37,7 @@ class HIRInstruction {
                               next_(NULL) {
   }
 
-  virtual void Init(HIRBasicBlock* block);
+  virtual void Init(HIRBasicBlock* block, int id);
 
   void Use(HIRValue* value);
 
@@ -58,6 +58,9 @@ class HIRInstruction {
   inline HIRInstruction* next() { return next_; }
   inline void next(HIRInstruction* next) { next_ = next; }
 
+  // For liveness-range calculations
+  int id() { return id_; }
+
   virtual void Print(PrintBuffer* p);
 
  private:
@@ -70,6 +73,8 @@ class HIRInstruction {
 
   HIRInstruction* prev_;
   HIRInstruction* next_;
+
+  int id_;
 };
 
 class HIRLoadBase : public HIRInstruction, public ZoneObject {
@@ -116,7 +121,7 @@ class HIRBranchBase : public HIRInstruction, public ZoneObject {
     values()->Push(clause);
   }
 
-  virtual void Init(HIRBasicBlock* block);
+  virtual void Init(HIRBasicBlock* block, int id);
 
   inline HIRValue* clause() { return clause_; }
   inline HIRBasicBlock* left() { return left_; }
@@ -196,7 +201,7 @@ class HIRAllocateObject : public HIRInstruction {
         size_(PowerOfTwo(size << 1)) {
   }
 
-  void Init(HIRBasicBlock* block);
+  void Init(HIRBasicBlock* block, int id);
 
   inline ObjectKind kind() { return kind_; }
   inline int size() { return size_; }

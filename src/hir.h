@@ -245,8 +245,14 @@ class HIR : public Visitor {
   inline HIRValueList* values() { return &values_; }
   inline HIRPhiList* phis() { return &phis_; }
 
+  inline HIRInstruction* last_instruction() { return last_instruction_; }
+  inline void last_instruction(HIRInstruction* last_instruction) {
+    last_instruction_ = last_instruction;
+  }
+
   inline int get_block_index() { return block_index_++; }
   inline int get_variable_index() { return variable_index_++; }
+  inline int get_instruction_index() { return instruction_index_++; }
 
   inline void print_map(PrintMap* print_map) { print_map_ = print_map; }
   inline PrintMap* print_map() { return print_map_; }
@@ -258,10 +264,12 @@ class HIR : public Visitor {
 
   HIRValueList values_;
   HIRPhiList phis_;
+  HIRInstruction* last_instruction_;
 
-  // debugging indexes
+  // debugging indexes (and for liveness-range calculations)
   int block_index_;
   int variable_index_;
+  int instruction_index_;
 
   PrintMap* print_map_;
 };
