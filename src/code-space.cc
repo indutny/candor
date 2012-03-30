@@ -5,6 +5,8 @@
 #include "parser.h" // Parser
 #include "scope.h" // Scope
 #include "fullgen.h" // Fullgen, Masm
+#include "hir.h" // HIR
+#include "lir.h" // LIR
 #include "stubs.h" // EntryStub
 #include "utils.h" // GetPageSize
 
@@ -63,7 +65,6 @@ char* CodeSpace::Compile(const char* filename,
                          Error** error) {
   Zone zone;
   Parser p(source, length);
-  Fullgen f(this, heap()->source_map());
 
   AstNode* ast = p.Execute();
 
@@ -84,23 +85,28 @@ char* CodeSpace::Compile(const char* filename,
   // Add scope information to variables (i.e. stack vs context, and indexes)
   Scope::Analyze(ast);
 
-  // Generate machine code
-  f.Generate(ast);
+  // Generate CFG with SSA
+  HIR hir(heap(), ast);
 
-  if (f.has_error()) {
+  /*
+  if (hir.has_error()) {
     *error = CreateError(filename,
                          source,
                          length,
-                         f.error_msg(),
-                         f.error_pos());
+                         hir.error_msg(),
+                         hir.error_pos());
     return NULL;
   }
+  */
 
   // Store root
-  *root = f.AllocateRoot();
+  *root = hir.root()->Allocate()->addr();
 
-  // Get address of code
-  char* addr = Put(&f);
+  // Generate low-level representation
+  LIR lir(heap(), &hir);
+
+  // TODO: Get address of code
+  char* addr = lir.Generate();
 
   // Relocate source map
   heap()->source_map()->Commit(filename, source, length, addr);

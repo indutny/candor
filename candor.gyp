@@ -31,6 +31,8 @@
       'src/heap-inl.h',
       'src/lexer.cc',
       'src/lexer.h',
+      'src/lir.cc',
+      'src/lir.h',
       'src/parser.cc',
       'src/parser.h',
       'src/root.cc',
