@@ -9,6 +9,11 @@ void HIRInstruction::Init(HIRBasicBlock* block) {
 }
 
 
+void HIRInstruction::Use(HIRValue* value) {
+  value->uses()->Push(this);
+}
+
+
 void HIRInstruction::Print(PrintBuffer* p) {
   const char* str;
 

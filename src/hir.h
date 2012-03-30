@@ -1,6 +1,8 @@
 #ifndef _SRC_HIR_H_
 #define _SRC_HIR_H_
 
+#include "hir-instructions.h" // HIRInstructions
+
 #include "visitor.h" // Visitor
 #include "root.h" // Root
 #include "zone.h" // ZoneObject
@@ -15,7 +17,6 @@ namespace internal {
 class HIR;
 class HIRPhi;
 class HIRValue;
-class HIRInstruction;
 class Heap;
 class ScopeSlot;
 class AstNode;
@@ -89,6 +90,7 @@ class HIRValue : public ZoneObject {
   inline bool is_phi() { return type_ == kPhi; }
 
   inline HIRBasicBlock* block() { return block_; }
+  inline HIRInstructionList* uses() { return &uses_; }
   inline HIRBasicBlock* current_block() { return current_block_; }
   inline void current_block(HIRBasicBlock* current_block) {
     current_block_ = current_block;
@@ -113,6 +115,9 @@ class HIRValue : public ZoneObject {
 
   // Block where variable was defined
   HIRBasicBlock* block_;
+
+  // Variable uses
+  HIRInstructionList uses_;
 
   // Block where it is used now (needed for Phi construction)
   HIRBasicBlock* current_block_;

@@ -39,12 +39,15 @@ class HIRInstruction {
 
   virtual void Init(HIRBasicBlock* block);
 
+  void Use(HIRValue* value);
+
   inline Type type() { return type_; }
   inline bool is(Type type) { return type_ == type; }
 
   inline List<HIRValue*, ZoneObject>* values() { return &values_; }
 
   inline void SetResult(HIRValue* result) {
+    Use(result);
     values()->Push(result);
     result_ = result;
   }
@@ -87,6 +90,7 @@ class HIRStoreBase : public HIRInstruction, public ZoneObject {
   HIRStoreBase(Type type, HIRValue* lhs, HIRValue* rhs) : HIRInstruction(type),
                                                           lhs_(lhs),
                                                           rhs_(rhs) {
+    Use(lhs);
     values()->Push(lhs);
     SetResult(rhs);
   }
@@ -108,6 +112,7 @@ class HIRBranchBase : public HIRInstruction, public ZoneObject {
                                         clause_(clause),
                                         left_(left),
                                         right_(right) {
+    Use(clause);
     values()->Push(clause);
   }
 
