@@ -21,13 +21,12 @@ class ScopeSlot;
 class AstNode;
 
 typedef List<HIRValue*, ZoneObject> HIRValueList;
+typedef List<HIRPhi*, ZoneObject> HIRPhiList;
+typedef List<HIRInstruction*, ZoneObject> HIRInstructionList;
 
 // CFG Block
 class HIRBasicBlock : public ZoneObject {
  public:
-  typedef List<HIRInstruction*, ZoneObject> InstructionList;
-  typedef List<HIRPhi*, ZoneObject> PhiList;
-
   HIRBasicBlock(HIR* hir);
 
   // Add value for generating PHIs later
@@ -45,8 +44,8 @@ class HIRBasicBlock : public ZoneObject {
 
   inline HIR* hir() { return hir_; }
   inline HIRValueList* values() { return &values_; }
-  inline PhiList* phis() { return &phis_; }
-  inline InstructionList* instructions() { return &instructions_; }
+  inline HIRPhiList* phis() { return &phis_; }
+  inline HIRInstructionList* instructions() { return &instructions_; }
   inline HIRBasicBlock** predecessors() { return predecessors_; }
   inline HIRBasicBlock** successors() { return successors_; }
   inline int predecessors_count() { return predecessors_count_; }
@@ -63,8 +62,8 @@ class HIRBasicBlock : public ZoneObject {
   HIR* hir_;
 
   HIRValueList values_;
-  PhiList phis_;
-  InstructionList instructions_;
+  HIRPhiList phis_;
+  HIRInstructionList instructions_;
 
   HIRBasicBlock* predecessors_[2];
   HIRBasicBlock* successors_[2];
@@ -238,6 +237,9 @@ class HIR : public Visitor {
 
   inline Root* root() { return &root_; }
 
+  inline HIRValueList* values() { return &values_; }
+  inline HIRPhiList* phis() { return &phis_; }
+
   inline int get_block_index() { return block_index_++; }
   inline int get_variable_index() { return variable_index_++; }
 
@@ -249,12 +251,14 @@ class HIR : public Visitor {
   HIRBasicBlock* current_block_;
   Root root_;
 
+  HIRValueList values_;
+  HIRPhiList phis_;
+
+  // debugging indexes
   int block_index_;
   int variable_index_;
 
   PrintMap* print_map_;
-
-  friend class HIRValue;
 };
 
 } // namespace internal

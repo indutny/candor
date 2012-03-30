@@ -55,7 +55,9 @@ void HIRBasicBlock::AddPredecessor(HIRBasicBlock* block) {
         value->slot()->hir(phi);
         values()->Push(phi);
 
-        this->phis()->Push(phi);
+        // Push to block's and global phi list
+        phis()->Push(phi);
+        hir()->phis()->Push(phi);
       }
 
       phi->incoming()->Push(value);
@@ -121,7 +123,7 @@ void HIRBasicBlock::Print(PrintBuffer* p) {
 
   // Print phis
   {
-    PhiList::Item* item = phis()->head();
+    HIRPhiList::Item* item = phis()->head();
     while (item != NULL) {
       item->value()->Print(p);
       item = item->next();
@@ -131,7 +133,7 @@ void HIRBasicBlock::Print(PrintBuffer* p) {
 
   // Print instructions
   {
-    InstructionList::Item* item = instructions()->head();
+    HIRInstructionList::Item* item = instructions()->head();
     while (item != NULL) {
       item->value()->Print(p);
       item = item->next();
@@ -267,6 +269,9 @@ HIRValue* HIR::CreateValue(ScopeSlot* slot) {
 
   slot->hir(value);
 
+  // Push value to the values list
+  values()->Push(value);
+
   return value;
 }
 
@@ -294,6 +299,9 @@ HIRValue* HIR::GetValue(ScopeSlot* slot) {
       }
 
       slot->hir(value);
+
+      // Push value to the values list
+      values()->Push(value);
     } else {
       slot->hir()->current_block(current_block());
     }
@@ -321,6 +329,13 @@ HIRBasicBlock* HIR::CreateJoin(HIRBasicBlock* left, HIRBasicBlock* right) {
 void HIR::AddInstruction(HIRInstruction* instr) {
   assert(current_block() != NULL);
   assert(current_block()->finished() == false);
+
+  // Link instructions together
+  if (current_block()->instructions()->length() > 0) {
+    HIRInstruction* last = current_block()->instructions()->tail()->value();
+    last->next(instr);
+    instr->prev(last);
+  }
 
   current_block()->instructions()->Push(instr);
   instr->Init(current_block());

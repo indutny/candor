@@ -30,7 +30,11 @@ class HIRInstruction {
     kAllocateObject
   };
 
-  HIRInstruction(Type type) : type_(type), block_(NULL), result_(NULL) {
+  HIRInstruction(Type type) : type_(type),
+                              block_(NULL),
+                              result_(NULL),
+                              prev_(NULL),
+                              next_(NULL) {
   }
 
   virtual void Init(HIRBasicBlock* block);
@@ -46,6 +50,11 @@ class HIRInstruction {
   }
   inline HIRValue* GetResult() { return result_; }
 
+  inline HIRInstruction* prev() { return prev_; }
+  inline void prev(HIRInstruction* prev) { prev_ = prev; }
+  inline HIRInstruction* next() { return next_; }
+  inline void next(HIRInstruction* next) { next_ = next; }
+
   virtual void Print(PrintBuffer* p);
 
  private:
@@ -55,6 +64,9 @@ class HIRInstruction {
   List<HIRValue*, ZoneObject> values_;
 
   HIRValue* result_;
+
+  HIRInstruction* prev_;
+  HIRInstruction* next_;
 };
 
 class HIRLoadBase : public HIRInstruction, public ZoneObject {
