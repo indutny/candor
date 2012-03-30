@@ -9,15 +9,17 @@ namespace internal {
 // Forward declarations
 class Heap;
 class HIR;
+class HIRInstruction;
+class LIRInstruction;
 
-class LOperand : public ZoneObject {
+class LIROperand : public ZoneObject {
  public:
   enum Type {
     kSpill,
     kRegister
   };
 
-  LOperand(Type type) : type_(type) {
+  LIROperand(Type type) : type_(type) {
   }
 
   inline Type type() { return type_; }
@@ -31,6 +33,8 @@ class LOperand : public ZoneObject {
 class LIR {
  public:
   LIR(Heap* heap, HIR* hir);
+
+  LIRInstruction* Cast(HIRInstruction* instr);
 
   char* Generate();
 

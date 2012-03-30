@@ -15,10 +15,7 @@ void HIRInstruction::Use(HIRValue* value) {
 }
 
 
-void HIRInstruction::Print(PrintBuffer* p) {
-  const char* str;
-
-#define ENUM_TYPE(V)\
+#define HIR_ENUM_INSTRUCTIONS(V)\
     V(None)\
     V(Entry)\
     V(Return)\
@@ -31,16 +28,17 @@ void HIRInstruction::Print(PrintBuffer* p) {
     V(LoadContext)\
     V(BranchBool)\
     V(AllocateObject)
-#define SWITCH_CASE(V)\
+#define HIR_GEN_SWITCH_CASE(V)\
     case k##V: str = #V; break;
 
+
+void HIRInstruction::Print(PrintBuffer* p) {
+  const char* str;
+
   switch (type()) {
-   ENUM_TYPE(SWITCH_CASE)
+   HIR_ENUM_INSTRUCTIONS(HIR_GEN_SWITCH_CASE)
    default: str = NULL; break;
   }
-
-#undef SWITCH_CASE
-#undef ENUM_TYPE
 
   p->Print("[%s", str);
   List<HIRValue*, ZoneObject>::Item* item = values()->head();
@@ -52,6 +50,10 @@ void HIRInstruction::Print(PrintBuffer* p) {
   }
   p->Print("]");
 }
+
+
+#undef HIR_GEN_SWITCH_CASE
+#undef HIR_ENUM_INSTRUCTONS
 
 
 void HIRBranchBase::Init(HIRBasicBlock* block, int id) {
