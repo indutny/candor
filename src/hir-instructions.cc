@@ -6,21 +6,24 @@
 namespace candor {
 namespace internal {
 
+#define HIR_ENUM_STUB_INSTRUCTIONS(V)\
+    V(AllocateContext)\
+    V(AllocateObject)
+
 #define HIR_ENUM_INSTRUCTIONS(V)\
-  V(None)\
-  V(ParallelMove)\
-  V(Entry)\
-  V(Return)\
-  V(Goto)\
-  V(StoreLocal)\
-  V(StoreContext)\
-  V(StoreProperty)\
-  V(LoadRoot)\
-  V(LoadLocal)\
-  V(LoadContext)\
-  V(BranchBool)\
-  V(AllocateContext)\
-  V(AllocateObject)
+    V(None)\
+    V(ParallelMove)\
+    V(Entry)\
+    V(Return)\
+    V(Goto)\
+    V(StoreLocal)\
+    V(StoreContext)\
+    V(StoreProperty)\
+    V(LoadRoot)\
+    V(LoadLocal)\
+    V(LoadContext)\
+    V(BranchBool)\
+    HIR_ENUM_STUB_INSTRUCTIONS(V)
 
 void HIRInstruction::Init(HIRBasicBlock* block, int id) {
   block_ = block;
@@ -93,11 +96,26 @@ void HIRBranchBase::Init(HIRBasicBlock* block, int id) {
 }
 
 
+
+HIRStubCall::HIRStubCall(Type type) : HIRInstruction(type) {
+#define HIR_GEN_SWITCH_STUB_CASE(V)\
+  case k##V: stub_ = kStub##V; break;
+
+  switch (type) {
+   HIR_ENUM_STUB_INSTRUCTIONS(HIR_GEN_SWITCH_STUB_CASE)
+   default: UNEXPECTED break;
+  }
+
+#undef HIR_GEN_SWITCH_STUB_CASE
+}
+
+
 void HIRStubCall::Init(HIRBasicBlock* block, int id) {
   SetResult(new HIRValue(block));
 }
 
 #undef HIR_ENUM_INSTRUCTONS
+#undef HIR_ENUM_STUB_INSTRUCTIONS
 
 } // namespace internal
 } // namespace candor

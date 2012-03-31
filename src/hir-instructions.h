@@ -15,7 +15,6 @@ namespace internal {
 class HIRBasicBlock;
 class HIRValue;
 class LIROperand;
-class BaseStub;
 
 // Instruction base class
 class HIRInstruction {
@@ -168,16 +167,20 @@ class HIRBranchBase : public HIRInstruction, public ZoneObject {
 
 class HIRStubCall : public HIRInstruction, public ZoneObject {
  public:
-  HIRStubCall(Type type, BaseStub* stub) : HIRInstruction(type), stub_(stub) {
-  }
+  enum StubType {
+    kStubAllocateContext,
+    kStubAllocateObject
+  };
+
+  HIRStubCall(Type type);
 
   void Init(HIRBasicBlock* block, int id);
   virtual bool HasSideEffects() const { return true; };
 
-  inline BaseStub* stub() { return stub_; }
+  inline StubType stub() { return stub_; }
 
  private:
-  BaseStub* stub_;
+  StubType stub_;
 };
 
 class HIRParallelMove : public HIRInstruction {
@@ -271,7 +274,7 @@ class HIRBranchBool : public HIRBranchBase {
 
 class HIRAllocateContext : public HIRStubCall {
  public:
-  HIRAllocateContext(int size) : HIRStubCall(kAllocateContext, NULL),
+  HIRAllocateContext(int size) : HIRStubCall(kAllocateContext),
                                  size_(size) {
   }
 
@@ -289,7 +292,7 @@ class HIRAllocateObject : public HIRStubCall {
   };
 
   HIRAllocateObject(ObjectKind kind, int size)
-      : HIRStubCall(kAllocateObject, NULL),
+      : HIRStubCall(kAllocateObject),
         kind_(kind),
         size_(PowerOfTwo(size << 1)) {
   }
