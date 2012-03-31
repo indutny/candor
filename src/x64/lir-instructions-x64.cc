@@ -4,7 +4,12 @@
 #include "hir-instructions.h"
 #include "macroassembler.h"
 
+#include "scope.h" // ScopeSlot
+#include "heap.h" // HContext::GetIndexDisp
+#include "heap-inl.h"
+
 #include <stdlib.h> // NULL
+#include <assert.h> // assert
 
 namespace candor {
 namespace internal {
@@ -97,6 +102,15 @@ void LIRStoreProperty::Generate() {
 
 
 void LIRLoadRoot::Generate() {
+  // root()->Place(...) may generate immediate values
+  // ignore them here
+  ScopeSlot* slot = hir()->value()->slot();
+  if (slot->is_immediate()) return;
+  assert(slot->is_context());
+
+  Operand root_slot(root_reg, HContext::GetIndexDisp(slot->index()));
+
+  __ movq(RegisterByIndex(result->value()), root_slot);
 }
 
 

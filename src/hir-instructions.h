@@ -220,22 +220,24 @@ class HIRGoto : public HIRInstruction {
 
 class HIRLoadRoot : public HIRLoadBase {
  public:
-  HIRLoadRoot(HIRValue* value)
-      : HIRLoadBase(kLoadRoot, value) {
+  HIRLoadRoot(HIRValue* value) : HIRLoadBase(kLoadRoot, value), value_(value) {
   }
+
+  inline HIRValue* value() { return value_; }
+
+ private:
+  HIRValue* value_;
 };
 
 class HIRLoadLocal : public HIRLoadBase {
  public:
-  HIRLoadLocal(HIRValue* value)
-      : HIRLoadBase(kLoadLocal, value) {
+  HIRLoadLocal(HIRValue* value) : HIRLoadBase(kLoadLocal, value) {
   }
 };
 
 class HIRLoadContext : public HIRLoadBase {
  public:
-  HIRLoadContext(HIRValue* value)
-      : HIRLoadBase(kLoadContext, value) {
+  HIRLoadContext(HIRValue* value) : HIRLoadBase(kLoadContext, value) {
   }
 };
 

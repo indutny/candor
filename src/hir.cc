@@ -522,12 +522,14 @@ void HIR::VisitGenericObject(AstNode* node) {
 
 
 AstNode* HIR::VisitReturn(AstNode* node) {
-  HIRValue* result;
-  if (node->lhs() == NULL) {
-    result = CreateValue(root()->Put(new AstNode(AstNode::kNil)));
-  } else {
+  HIRValue* result = NULL;
+  if (node->lhs() != NULL) {
     Visit(node->lhs());
     result = GetLastInstructionResult();
+  }
+
+  if (result == NULL) {
+    result = CreateValue(root()->Put(new AstNode(AstNode::kNil)));
   }
   Finish(new HIRReturn(result));
 
