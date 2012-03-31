@@ -126,53 +126,92 @@ void LIR::AddToSpillCandidates(HIRValue* value) {
 }
 
 
+int LIR::AllocateRegister(HIRInstruction* hinstr, HIRParallelMove* &move) {
+  // Get register (spill if all registers are in use)
+  if (registers()->IsEmpty()) {
+    // Lazily create parallel move instruction
+    if (move == NULL) {
+      // NOTE: hinstr->id() is always even, odds are reserved for moves
+      move = new HIRParallelMove();
+      move->Init(hinstr->block(), hinstr->id() + 1);
+
+      // Insert `move` into instruction's linked-list
+      // (for debug purposes)
+      move->next(hinstr);
+      if (hinstr->prev() != NULL) hinstr->prev()->next(move);
+      hinstr->prev(move);
+    }
+
+    // Spill some allocated register and try again
+    SpillAllocated(move);
+  }
+
+  return registers()->Get();
+}
+
+
 void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
   // Parallel move instruction doesn't need allocation
   if (hinstr->type() == HIRInstruction::kParallelMove) return;
 
-  ExpireOldValues(hinstr);
-  HIRValueList::Item* item = hinstr->values()->tail();
-  HIRParallelMove* move = NULL;
+  LIRInstruction* linstr = Cast(hinstr);
+  int i;
 
-  for (; item != NULL; item = item->prev()) {
+  ExpireOldValues(hinstr);
+
+  // Allocate all values used in instruction
+  HIRValueList::Item* item = hinstr->values()->head();
+  HIRParallelMove* move = NULL;
+  for (; item != NULL; item = item->next()) {
     HIRValue* value = item->value();
 
-    // Skip immediate values
+    // Allocate immediate values
     if (value->slot()->is_immediate()) {
-      value->operand(new LIROperand(LIROperand::kImmediate, value->slot()->value()));
+      value->operand(
+          new LIROperand(LIROperand::kImmediate, value->slot()->value()));
       continue;
     }
+
+    // Skip result if it's not immediate
+    if (value == hinstr->GetResult()) continue;
 
     // Skip already allocated values
     if (value->operand() != NULL) continue;
 
-    // Get register (spill if all registers are in use)
-    if (registers()->IsEmpty()) {
-      // Lazily create parallel move instruction
-      if (move == NULL) {
-        // NOTE: hinstr->id() is always even, odds are reserved for moves
-        move = new HIRParallelMove();
-        move->Init(hinstr->block(), hinstr->id() + 1);
-
-        // Insert `move` into instruction's linked-list
-        // (for debug purposes)
-        move->next(hinstr);
-        if (hinstr->prev() != NULL) hinstr->prev()->next(move);
-        hinstr->prev(move);
-      }
-
-      // Spill some allocated register and try again
-      SpillAllocated(move);
-    }
-    int reg = registers()->Get();
+    int reg = AllocateRegister(hinstr, move);
     value->operand(new LIROperand(LIROperand::kRegister, reg));
 
     // Amend active values and spill candidates
     active_values()->Push(value);
 
     AddToSpillCandidates(value);
-    {
+  }
+
+  // Allocate scratch registers
+  for (i = 0; i < linstr->scratch_count(); i++) {
+    int reg = AllocateRegister(hinstr, move);
+    linstr->scratches[i] = new LIROperand(LIROperand::kRegister, reg);
+  }
+
+  // Allocate result
+  if (hinstr->GetResult() != NULL) {
+    HIRValue* value = hinstr->GetResult();
+    if (value->operand() == NULL) {
+      int reg = AllocateRegister(hinstr, move);
+      value->operand(new LIROperand(LIROperand::kRegister, reg));
+      active_values()->Push(value);
+      AddToSpillCandidates(value);
     }
+    linstr->result = value->operand();
+  }
+
+  // Set inputs
+  item = hinstr->values()->head();
+  for (i = 0; i < linstr->input_count(); item = item->next()) {
+    if (item->value() == hinstr->GetResult()) continue;
+
+    assert(item->value()->operand() != NULL);
+    linstr->inputs[i++] = item->value()->operand();
   }
 
   // All registers was allocated, perform move if needed
@@ -184,10 +223,13 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
   }
 
   // Generate instruction itself
-  LIRInstruction* linstr = Cast(hinstr);
-
   linstr->masm(masm);
   linstr->Generate();
+
+  // Release scratch registeres
+  for (i = 0; i < linstr->scratch_count(); i++) {
+    registers()->Release(linstr->scratches[i]->value());
+  }
 }
 
 

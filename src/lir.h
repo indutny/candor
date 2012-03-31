@@ -62,6 +62,8 @@ class LIR {
   // Linear scan methods
   void ExpireOldValues(HIRInstruction* hinstr);
   void SpillAllocated(HIRParallelMove* move);
+  int AllocateRegister(HIRInstruction* hinstr, HIRParallelMove* &move);
+
   void GenerateInstruction(Masm* masm, HIRInstruction* hinstr);
 
   // Insert into sorted list

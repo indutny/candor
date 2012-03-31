@@ -9,6 +9,7 @@ namespace internal {
 // Forward declarations
 class Masm;
 class HIRInstruction;
+class LIROperand;
 
 #define LIR_ENUM_INSTRUCTIONS(V)\
     V(ParallelMove)\
@@ -59,9 +60,13 @@ class LIRInstruction : public ZoneObject {
   inline int id() { return id_; }
   inline void id(int id) { id_ = id; }
 
-  virtual int inputs() const = 0;
-  virtual int results() const = 0;
-  virtual int temporary() const = 0;
+  virtual int input_count() const = 0;
+  virtual int result_count() const = 0;
+  virtual int scratch_count() const = 0;
+
+  LIROperand* inputs[5];
+  LIROperand* result;
+  LIROperand* scratches[3];
 
  protected:
   HIRInstruction* hir_;
@@ -79,9 +84,9 @@ class LIRInstructionTemplate : public LIRInstruction {
   LIRInstructionTemplate() {
   }
 
-  int inputs() const { return I; }
-  int results() const { return R; }
-  int temporary() const { return T; }
+  int input_count() const { return I; }
+  int result_count() const { return R; }
+  int scratch_count() const { return T; }
 };
 
 template <int I, int T>
@@ -90,9 +95,9 @@ class LIRControlInstructionTemplate : public LIRInstruction {
   LIRControlInstructionTemplate() {
   }
 
-  int inputs() const { return I; }
-  int results() const { return 0; }
-  int temporary() const { return T; }
+  int input_count() const { return I; }
+  int result_count() const { return 0; }
+  int scratch_count() const { return T; }
 };
 
 

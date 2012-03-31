@@ -19,10 +19,8 @@ void LIREntry::Generate() {
 
 
 void LIRReturn::Generate() {
-  LIROperand* result = hir()->inputs()->head()->value()->operand();
-
-  if (result->is_immediate()) {
-    __ movq(rax, Immediate(result->value()));
+  if (inputs[0]->is_immediate()) {
+    __ movq(rax, Immediate(inputs[0]->value()));
   }
 
   __ movq(rsp, rbp);
