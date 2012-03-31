@@ -14,6 +14,18 @@
 namespace candor {
 namespace internal {
 
+inline LIROperand* LIR::GetSpill() {
+  int spill_index;
+  if (spills()->IsEmpty()) {
+    spill_index = get_new_spill();
+  } else {
+    spill_index = spills()->Get();
+  }
+
+  return new LIROperand(LIROperand::kSpill, spill_index);
+}
+
+
 inline LIRInstruction* LIR::Cast(HIRInstruction* instr) {
 #define LIR_GEN_CAST(V)\
   case HIRInstruction::k##V:\

@@ -241,7 +241,7 @@ HIR::HIR(Heap* heap, AstNode* node) : Visitor(kPreorder),
                                       last_instruction_(NULL),
                                       block_index_(0),
                                       variable_index_(0),
-                                      instruction_index_(0),
+                                      instruction_index_(1),
                                       print_map_(NULL) {
   work_list_.Push(node);
   while ((node = work_list_.Shift()) != NULL) {
@@ -396,6 +396,9 @@ AstNode* HIR::VisitFunction(AstNode* stmt) {
     if (first_instruction() == NULL) first_instruction(entry);
 
     AddInstruction(entry);
+    if (fn->context_slots() > 0) {
+      AddInstruction(new HIRAllocateContext(fn->context_slots()));
+    }
 
     VisitChildren(stmt);
 

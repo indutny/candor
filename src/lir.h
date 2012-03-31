@@ -66,6 +66,10 @@ class LIR {
   //
   void GenerateInstruction(Masm* masm, HIRInstruction* hinstr);
 
+  // Spill all active (in-use) registers that will be live after hinstr.
+  // Returns reverse movement for restoring original registers values
+  void SpillActive(Masm* masm, HIRInstruction* hinstr, HIRParallelMove* &move);
+
   // Linear scan methods:
 
   // Find all values that occupy registers/spills, but not used anymore
@@ -80,6 +84,9 @@ class LIR {
 
   // Insert value into sorted spills list
   void AddToSpillCandidates(HIRValue* value);
+
+  // Wrapper over spills FreeList and incremental index
+  inline LIROperand* GetSpill();
 
   // Convert HIR instruction into LIR instruction
   inline LIRInstruction* Cast(HIRInstruction* instr);
@@ -98,6 +105,7 @@ class LIR {
   inline FreeList<int, 128>* spills() { return &spills_; }
 
   inline int spill_count() { return spill_count_; }
+  inline void spill_count(int spill_count) { spill_count_ = spill_count; }
   inline int get_new_spill() { return spill_count_++; }
 
   inline Heap* heap() { return heap_; }

@@ -182,8 +182,12 @@ class HIRStubCall : public HIRInstruction, public ZoneObject {
 
 class HIRParallelMove : public HIRInstruction {
  public:
-  HIRParallelMove() : HIRInstruction(kParallelMove) {
-  }
+  enum InsertionType {
+    kBefore,
+    kAfter
+  };
+
+  HIRParallelMove(HIRInstruction* instr, InsertionType type);
 
   void AddMove(LIROperand* source, LIROperand* target);
 

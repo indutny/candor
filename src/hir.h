@@ -270,7 +270,9 @@ class HIR : public Visitor {
 
   inline int get_block_index() { return block_index_++; }
   inline int get_variable_index() { return variable_index_++; }
-  // NOTE: Odd instructions are moves
+
+  // NOTE: Odd instructions are moves,
+  // indexing starts from 1
   inline int get_instruction_index() { return instruction_index_ += 2; }
 
   inline void print_map(PrintMap* print_map) { print_map_ = print_map; }

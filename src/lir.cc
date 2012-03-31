@@ -83,15 +83,7 @@ void LIR::SpillAllocated(HIRParallelMove* move) {
 
   assert(value != NULL);
 
-  int spill_index;
-  if (spills()->IsEmpty()) {
-    spill_index = get_new_spill();
-  } else {
-    spill_index = spills()->Get();
-  }
-
-  LIROperand* spill = new LIROperand(LIROperand::kSpill, spill_index);
-
+  LIROperand* spill = GetSpill();
   move->AddMove(value->operand(), spill);
 
   registers()->Release(value->operand()->value());
@@ -132,14 +124,7 @@ int LIR::AllocateRegister(HIRInstruction* hinstr, HIRParallelMove* &move) {
     // Lazily create parallel move instruction
     if (move == NULL) {
       // NOTE: hinstr->id() is always even, odds are reserved for moves
-      move = new HIRParallelMove();
-      move->Init(hinstr->block(), hinstr->id() + 1);
-
-      // Insert `move` into instruction's linked-list
-      // (for debug purposes)
-      move->next(hinstr);
-      if (hinstr->prev() != NULL) hinstr->prev()->next(move);
-      hinstr->prev(move);
+      move = new HIRParallelMove(hinstr, HIRParallelMove::kBefore);
     }
 
     // Spill some allocated register and try again
@@ -150,25 +135,72 @@ int LIR::AllocateRegister(HIRInstruction* hinstr, HIRParallelMove* &move) {
 }
 
 
-void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
-  // Parallel move instruction doesn't need allocation
-  if (hinstr->type() == HIRInstruction::kParallelMove) return;
+void LIR::SpillActive(Masm* masm,
+                      HIRInstruction* hinstr,
+                      HIRParallelMove* &move) {
+  HIRValueList::Item* item = active_values()->head();
+  HIRParallelMove* reverse_move = NULL;
 
+  int old_spills = spill_count();
+  for (; item != NULL; item = item->next()) {
+    HIRValue* value = item->value();
+
+    // Do not spill values that are dead after instruction with side-effect
+    // or are just not registers
+    if (value->live_range()->end < hinstr->id() ||
+        !value->operand()->is_register()) {
+      continue;
+    }
+
+    // Lazily allocate move instructions
+    if (move == NULL) {
+      move = new HIRParallelMove(hinstr, HIRParallelMove::kBefore);
+    }
+    if (reverse_move == NULL) {
+      reverse_move = new HIRParallelMove(hinstr, HIRParallelMove::kAfter);
+    }
+
+    LIROperand* spill = GetSpill();
+    move->AddMove(value->operand(), spill);
+    reverse_move->AddMove(spill, value->operand());
+  }
+
+  // Restore spills, they are not used after restoring
+  spill_count(old_spills);
+}
+
+
+void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
   LIRInstruction* linstr = Cast(hinstr);
-  int i;
+
+  // Parallel move instruction doesn't need allocation nor generation.
+  if (hinstr->type() == HIRInstruction::kParallelMove) {
+    // However if it's last instruction - it won't be generated automatically
+    if (hinstr->next() == NULL) {
+      linstr->masm(masm);
+      linstr->Generate();
+    }
+    return;
+  }
 
   ExpireOldValues(hinstr);
 
+  // Get previous move instruction (if there're any)
+  HIRParallelMove* move = NULL;
+  if (hinstr->prev() != NULL &&
+      hinstr->prev()->is(HIRInstruction::kParallelMove)) {
+    move = reinterpret_cast<HIRParallelMove*>(hinstr->prev());
+  }
+
   // Allocate all values used in instruction
   HIRValueList::Item* item = hinstr->values()->head();
-  HIRParallelMove* move = NULL;
   for (; item != NULL; item = item->next()) {
     HIRValue* value = item->value();
 
     // Allocate immediate values
     if (value->slot()->is_immediate()) {
-      value->operand(
-          new LIROperand(LIROperand::kImmediate, value->slot()->value()));
+      value->operand(new LIROperand(LIROperand::kImmediate,
+                                    value->slot()->value()));
       continue;
     }
 
@@ -188,6 +220,7 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
   }
 
   // Allocate scratch registers
+  int i;
   for (i = 0; i < linstr->scratch_count(); i++) {
     int reg = AllocateRegister(hinstr, move);
     linstr->scratches[i] = new LIROperand(LIROperand::kRegister, reg);
@@ -215,10 +248,16 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
   }
   assert(item == NULL || item->next() == NULL);
 
+  // All active registers should be spilled before entering
+  // instruction with side effects (like stubs)
+  //
+  // Though instruction itself should receive arguments in registers
+  // (if that's possible)
+  if (hinstr->HasSideEffects()) SpillActive(masm, hinstr, move);
+
   // All registers was allocated, perform move if needed
   if (move != NULL) {
     LIRInstruction* lmove = Cast(move);
-
     lmove->masm(masm);
     lmove->Generate();
   }

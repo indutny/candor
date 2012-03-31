@@ -58,6 +58,29 @@ void HIRInstruction::Print(PrintBuffer* p) {
 }
 
 
+HIRParallelMove::HIRParallelMove(HIRInstruction* instr, InsertionType type)
+    : HIRInstruction(kParallelMove) {
+  Init(instr->block(), type == kBefore ? instr->id() - 1 : instr->id() + 1);
+
+  // Insert `move` into instruction's linked-list
+  if (type == kBefore) {
+    next(instr);
+    prev(instr->prev());
+
+    if (instr->prev() != NULL) instr->prev()->next(this);
+    instr->prev(this);
+  } else if (type == kAfter) {
+    prev(instr);
+    next(instr->next());
+
+    if (instr->next() != NULL) instr->next()->prev(this);
+    instr->next(this);
+  } else {
+    UNEXPECTED
+  }
+}
+
+
 void HIRParallelMove::AddMove(LIROperand* source, LIROperand* target) {
   sources()->Push(source);
   targets()->Push(target);
