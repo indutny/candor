@@ -198,8 +198,7 @@ HIRValue::HIRValue(HIRBasicBlock* block) : type_(kNormal),
                                            prev_def_(NULL),
                                            operand_(NULL) {
   slot_ = new ScopeSlot(ScopeSlot::kRegister);
-  block->AddValue(this);
-  id_ = block->hir()->get_variable_index();
+  Init();
 }
 
 
@@ -210,8 +209,16 @@ HIRValue::HIRValue(HIRBasicBlock* block, ScopeSlot* slot)
       prev_def_(NULL),
       operand_(NULL),
       slot_(slot) {
-  block->AddValue(this);
-  id_ = block->hir()->get_variable_index();
+  Init();
+}
+
+
+void HIRValue::Init() {
+  block()->AddValue(this);
+  id_ = block()->hir()->get_variable_index();
+
+  live_range()->start = -1;
+  live_range()->end = -1;
 }
 
 
@@ -334,6 +341,8 @@ HIRBasicBlock* HIR::CreateJoin(HIRBasicBlock* left, HIRBasicBlock* right) {
 
 void HIR::AddInstruction(HIRInstruction* instr) {
   assert(current_block() != NULL);
+  instr->Init(current_block(), get_instruction_index());
+
   if (current_block()->finished()) return;
 
   // Link instructions together
@@ -344,7 +353,6 @@ void HIR::AddInstruction(HIRInstruction* instr) {
   last_instruction(instr);
 
   current_block()->instructions()->Push(instr);
-  instr->Init(current_block(), get_instruction_index());
 }
 
 

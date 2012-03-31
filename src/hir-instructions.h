@@ -46,14 +46,19 @@ class HIRInstruction {
   inline Type type() { return type_; }
   inline bool is(Type type) { return type_ == type; }
 
-  inline List<HIRValue*, ZoneObject>* values() { return &values_; }
-
+  inline void SetInput(HIRValue* input) {
+    Use(input);
+    inputs()->Push(input);
+  }
   inline void SetResult(HIRValue* result) {
     Use(result);
     values()->Push(result);
     result_ = result;
   }
   inline HIRValue* GetResult() { return result_; }
+
+  inline List<HIRValue*, ZoneObject>* inputs() { return &inputs_; }
+  inline List<HIRValue*, ZoneObject>* values() { return &values_; }
 
   inline HIRInstruction* prev() { return prev_; }
   inline void prev(HIRInstruction* prev) { prev_ = prev; }
@@ -70,6 +75,7 @@ class HIRInstruction {
   HIRBasicBlock* block_;
 
   List<HIRValue*, ZoneObject> values_;
+  List<HIRValue*, ZoneObject> inputs_;
 
   HIRValue* result_;
 
@@ -97,6 +103,7 @@ class HIRStoreBase : public HIRInstruction, public ZoneObject {
   HIRStoreBase(Type type, HIRValue* lhs, HIRValue* rhs) : HIRInstruction(type),
                                                           lhs_(lhs),
                                                           rhs_(rhs) {
+    SetInput(lhs);
     Use(lhs);
     values()->Push(lhs);
     SetResult(rhs);
@@ -119,7 +126,7 @@ class HIRBranchBase : public HIRInstruction, public ZoneObject {
                                         clause_(clause),
                                         left_(left),
                                         right_(right) {
-    Use(clause);
+    SetInput(clause);
     values()->Push(clause);
   }
 
@@ -144,7 +151,8 @@ class HIREntry : public HIRInstruction {
 class HIRReturn : public HIRInstruction {
  public:
   HIRReturn(HIRValue* value) : HIRInstruction(kReturn) {
-    SetResult(value);
+    SetInput(value);
+    values()->Push(value);
   }
 };
 

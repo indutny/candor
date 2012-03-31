@@ -85,8 +85,15 @@ class HIRValue : public ZoneObject {
     kPhi
   };
 
+  struct LiveRange {
+    int start;
+    int end;
+  };
+
   HIRValue(HIRBasicBlock* block);
   HIRValue(HIRBasicBlock* block, ScopeSlot* slot);
+
+  void Init();
 
   inline bool is_phi() { return type_ == kPhi; }
 
@@ -101,6 +108,7 @@ class HIRValue : public ZoneObject {
   inline void prev_def(HIRValue* prev_def) { prev_def_ = prev_def; };
   inline HIRValueList* next_defs() { return &next_defs_; };
 
+  inline LiveRange* live_range() { return &live_range_; }
   inline LOperand* operand() { return operand_; }
 
   inline ScopeSlot* slot() { return slot_; }
@@ -126,6 +134,7 @@ class HIRValue : public ZoneObject {
   HIRValueList next_defs_;
 
   // Used in lir.h
+  LiveRange live_range_;
   LOperand* operand_;
 
   ScopeSlot* slot_;
