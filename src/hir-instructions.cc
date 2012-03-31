@@ -1,8 +1,25 @@
 #include "hir-instructions.h"
 #include "hir.h"
 
+#include "lir.h" // LIROperand
+
 namespace candor {
 namespace internal {
+
+#define HIR_ENUM_INSTRUCTIONS(V)\
+  V(None)\
+  V(ParallelMove)\
+  V(Entry)\
+  V(Return)\
+  V(Goto)\
+  V(StoreLocal)\
+  V(StoreContext)\
+  V(StoreProperty)\
+  V(LoadRoot)\
+  V(LoadLocal)\
+  V(LoadContext)\
+  V(BranchBool)\
+  V(AllocateObject)
 
 void HIRInstruction::Init(HIRBasicBlock* block, int id) {
   block_ = block;
@@ -15,30 +32,18 @@ void HIRInstruction::Use(HIRValue* value) {
 }
 
 
-#define HIR_ENUM_INSTRUCTIONS(V)\
-    V(None)\
-    V(Entry)\
-    V(Return)\
-    V(Goto)\
-    V(StoreLocal)\
-    V(StoreContext)\
-    V(StoreProperty)\
-    V(LoadRoot)\
-    V(LoadLocal)\
-    V(LoadContext)\
-    V(BranchBool)\
-    V(AllocateObject)
-#define HIR_GEN_SWITCH_CASE(V)\
-    case k##V: str = #V; break;
-
-
 void HIRInstruction::Print(PrintBuffer* p) {
   const char* str;
+
+#define HIR_GEN_SWITCH_CASE(V)\
+  case k##V: str = #V; break;
 
   switch (type()) {
    HIR_ENUM_INSTRUCTIONS(HIR_GEN_SWITCH_CASE)
    default: str = NULL; break;
   }
+
+#undef HIR_GEN_SWITCH_CASE
 
   p->Print("[%s", str);
   List<HIRValue*, ZoneObject>::Item* item = values()->head();
@@ -52,8 +57,10 @@ void HIRInstruction::Print(PrintBuffer* p) {
 }
 
 
-#undef HIR_GEN_SWITCH_CASE
-#undef HIR_ENUM_INSTRUCTONS
+void HIRParallelMove::AddMove(LIROperand* source, LIROperand* target) {
+  sources()->Push(source);
+  targets()->Push(target);
+}
 
 
 void HIRBranchBase::Init(HIRBasicBlock* block, int id) {
@@ -65,6 +72,8 @@ void HIRBranchBase::Init(HIRBasicBlock* block, int id) {
 void HIRAllocateObject::Init(HIRBasicBlock* block, int id) {
   SetResult(new HIRValue(block));
 }
+
+#undef HIR_ENUM_INSTRUCTONS
 
 } // namespace internal
 } // namespace candor

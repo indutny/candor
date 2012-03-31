@@ -14,11 +14,13 @@ namespace internal {
 // Forward declarations
 class HIRBasicBlock;
 class HIRValue;
+class LIROperand;
 
 class HIRInstruction {
  public:
   enum Type {
     kNone,
+    kParallelMove,
     kEntry,
     kReturn,
     kGoto,
@@ -45,6 +47,8 @@ class HIRInstruction {
 
   inline Type type() { return type_; }
   inline bool is(Type type) { return type_ == type; }
+
+  inline HIRBasicBlock* block() { return block_; }
 
   inline void SetInput(HIRValue* input) {
     Use(input);
@@ -140,6 +144,21 @@ class HIRBranchBase : public HIRInstruction, public ZoneObject {
   HIRValue* clause_;
   HIRBasicBlock* left_;
   HIRBasicBlock* right_;
+};
+
+class HIRParallelMove : public HIRInstruction {
+ public:
+  HIRParallelMove() : HIRInstruction(kParallelMove) {
+  }
+
+  void AddMove(LIROperand* source, LIROperand* target);
+
+  inline List<LIROperand*, ZoneObject>* sources() { return &sources_; }
+  inline List<LIROperand*, ZoneObject>* targets() { return &targets_; }
+
+ private:
+  List<LIROperand*, ZoneObject> sources_;
+  List<LIROperand*, ZoneObject> targets_;
 };
 
 class HIREntry : public HIRInstruction {

@@ -1,5 +1,6 @@
 #include "hir.h"
 #include "hir-instructions.h"
+#include "lir.h" // LIROperand
 #include "visitor.h" // Visitor
 #include "ast.h" // AstNode
 #include "utils.h" // List
@@ -197,7 +198,8 @@ HIRValue::HIRValue(HIRBasicBlock* block) : type_(kNormal),
                                            current_block_(block),
                                            prev_def_(NULL),
                                            operand_(NULL) {
-  slot_ = new ScopeSlot(ScopeSlot::kRegister);
+  slot_ = new ScopeSlot(ScopeSlot::kImmediate);
+  slot_->value(NULL);
   Init();
 }
 

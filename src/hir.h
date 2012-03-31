@@ -17,7 +17,7 @@ namespace internal {
 class HIR;
 class HIRPhi;
 class HIRValue;
-class LOperand;
+class LIROperand;
 class Heap;
 class ScopeSlot;
 class AstNode;
@@ -108,8 +108,10 @@ class HIRValue : public ZoneObject {
   inline void prev_def(HIRValue* prev_def) { prev_def_ = prev_def; };
   inline HIRValueList* next_defs() { return &next_defs_; };
 
+  // LIR helpers
   inline LiveRange* live_range() { return &live_range_; }
-  inline LOperand* operand() { return operand_; }
+  inline LIROperand* operand() { return operand_; }
+  inline void operand(LIROperand* operand) { operand_ = operand; }
 
   inline ScopeSlot* slot() { return slot_; }
 
@@ -135,7 +137,7 @@ class HIRValue : public ZoneObject {
 
   // Used in lir.h
   LiveRange live_range_;
-  LOperand* operand_;
+  LIROperand* operand_;
 
   ScopeSlot* slot_;
 
@@ -267,7 +269,8 @@ class HIR : public Visitor {
 
   inline int get_block_index() { return block_index_++; }
   inline int get_variable_index() { return variable_index_++; }
-  inline int get_instruction_index() { return instruction_index_++; }
+  // NOTE: Odd instructions are moves
+  inline int get_instruction_index() { return instruction_index_ += 2; }
 
   inline void print_map(PrintMap* print_map) { print_map_ = print_map; }
   inline PrintMap* print_map() { return print_map_; }

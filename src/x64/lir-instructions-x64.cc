@@ -1,15 +1,33 @@
 #include "lir-instructions-x64.h"
+#include "hir.h"
+#include "lir.h"
+#include "macroassembler.h"
 
 namespace candor {
 namespace internal {
 
 #define __ masm()->
 
+void LIRParallelMove::Generate() {
+}
+
+
 void LIREntry::Generate() {
+  __ push(rbp);
+  __ movq(rbp, rsp);
 }
 
 
 void LIRReturn::Generate() {
+  LIROperand* result = hir()->inputs()->head()->value()->operand();
+
+  if (result->is_immediate()) {
+    __ movq(rax, Immediate(result->value()));
+  }
+
+  __ movq(rsp, rbp);
+  __ pop(rbp);
+  __ ret(0);
 }
 
 

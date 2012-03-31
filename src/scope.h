@@ -25,7 +25,7 @@ class ScopeSlot : public ZoneObject {
   enum Type {
     kStack,
     kContext,
-    kRegister
+    kImmediate
   };
 
   ScopeSlot(Type type) : type_(type),
@@ -48,13 +48,13 @@ class ScopeSlot : public ZoneObject {
 
   inline bool is_stack() { return type_ == kStack; }
   inline bool is_context() { return type_ == kContext; }
-  inline bool is_register() { return type_ == kRegister; }
+  inline bool is_immediate() { return type_ == kImmediate; }
 
   inline void type(Type type) { type_ = type; }
 
   // Register slots should have a value (unboxed nil or number)
-  inline char* value() { assert(is_register()); return value_; }
-  inline void value(char* value) { assert(is_register()); value_ = value; }
+  inline char* value() { assert(is_immediate()); return value_; }
+  inline void value(char* value) { assert(is_immediate()); value_ = value; }
 
   inline HIRValue* hir() { return hir_; }
   inline void hir(HIRValue* hir) { hir_ = hir; }

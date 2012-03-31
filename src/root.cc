@@ -29,7 +29,7 @@ ScopeSlot* Root::Put(AstNode* node) {
     value = HBoolean::New(heap(), Heap::kTenureOld, false);
     break;
    case AstNode::kNil:
-    slot->type(ScopeSlot::kRegister);
+    slot->type(ScopeSlot::kImmediate);
     slot->value(HNil::New());
     break;
    default: UNEXPECTED break;
@@ -53,7 +53,7 @@ char* Root::NumberToValue(AstNode* node, ScopeSlot* slot) {
     int64_t value = StringToInt(node->value(), node->length());
 
     // Change slot's type
-    slot->type(ScopeSlot::kRegister);
+    slot->type(ScopeSlot::kImmediate);
     slot->value(HNumber::New(heap(), value));
 
     return NULL;

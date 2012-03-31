@@ -117,8 +117,12 @@ class List {
 
     inline T value() { return value_; }
     inline void value(T value) { value_ = value; }
-    inline Item* next() { return next_; }
+
     inline Item* prev() { return prev_; }
+    inline Item* next() { return next_; }
+    inline void prev(Item* prev) { prev_ = prev; }
+    inline void next(Item* next) { next_ = next; }
+
     inline void remove() {
       if (prev_ != NULL) prev_->next_ = next_;
       if (next_ != NULL) next_->prev_ = prev_;
@@ -337,8 +341,8 @@ class HashMap {
   bool allocated;
 
  private:
-  static const uint32_t size_ = 64;
-  static const uint32_t mask_ = 63;
+  static const uint32_t size_ = 128;
+  static const uint32_t mask_ = 127;
   Item* map_[size_];
   Item* head_;
   Item* current_;
@@ -581,6 +585,22 @@ class AVLTree {
 
  private:
   Item* head_;
+};
+
+
+template <class T, int size>
+class FreeList {
+ public:
+  FreeList() : length_(0) {
+  }
+
+  inline bool IsEmpty() { return length_ == 0; }
+  inline T Get() { return list_[--length_]; }
+  inline void Release(T value) { list_[length_++] = value; }
+
+ private:
+  T list_[size];
+  int length_;
 };
 
 
