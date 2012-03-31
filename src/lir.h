@@ -26,10 +26,13 @@ class LIROperand : public ZoneObject {
     kImmediate
   };
 
-  LIROperand(Type type, off_t value) : type_(type), value_(value) {
+  LIROperand(Type type, off_t value) : type_(type),
+                                       value_(value),
+                                       being_moved_(false) {
   }
 
-  LIROperand(Type type, char* value) : type_(type) {
+  LIROperand(Type type, char* value) : type_(type),
+                                       being_moved_(false) {
     value_ = reinterpret_cast<off_t>(value);
   }
 
@@ -38,11 +41,20 @@ class LIROperand : public ZoneObject {
   inline bool is_spill() { return type_ == kSpill; }
   inline bool is_immediate() { return type_ == kImmediate; }
 
+  inline bool is_equal(LIROperand* op) {
+    return type() == op->type() && value() == op->value();
+  }
+
+  // Whether operand is being moved by HIRParallelMove::Reorder, or not
+  inline bool being_moved() { return being_moved_; }
+  inline void being_moved(bool being_moved) { being_moved_ = being_moved; }
+
   inline off_t value() { return value_; }
 
  private:
   Type type_;
   off_t value_;
+  bool being_moved_;
 };
 
 // LIR class
@@ -104,6 +116,7 @@ class LIR {
   inline FreeList<int, 128>* registers() { return &registers_; }
   inline FreeList<int, 128>* spills() { return &spills_; }
 
+  // NOTE: spill with id = 0 is reserved as ParallelMove's scratch
   inline int spill_count() { return spill_count_; }
   inline void spill_count(int spill_count) { spill_count_ = spill_count; }
   inline int get_new_spill() { return spill_count_++; }

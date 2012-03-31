@@ -185,6 +185,8 @@ class HIRStubCall : public HIRInstruction, public ZoneObject {
 
 class HIRParallelMove : public HIRInstruction {
  public:
+  typedef List<LIROperand*, ZoneObject> OperandList;
+
   enum InsertionType {
     kBefore,
     kAfter
@@ -194,12 +196,28 @@ class HIRParallelMove : public HIRInstruction {
 
   void AddMove(LIROperand* source, LIROperand* target);
 
-  inline List<LIROperand*, ZoneObject>* sources() { return &sources_; }
-  inline List<LIROperand*, ZoneObject>* targets() { return &targets_; }
+  // Order movements to prevent "overlapping"
+  void Reorder();
+
+  static inline HIRParallelMove* Cast(HIRInstruction* instr) {
+    assert(instr->type() == kParallelMove);
+    return reinterpret_cast<HIRParallelMove*>(instr);
+  }
+
+  inline OperandList* sources() { return &sources_; }
+  inline OperandList* targets() { return &targets_; }
 
  private:
-  List<LIROperand*, ZoneObject> sources_;
-  List<LIROperand*, ZoneObject> targets_;
+  // For recursive reordering
+  void Reorder(LIROperand* source, LIROperand* target);
+
+  // Sources/Targets after reordering
+  OperandList sources_;
+  OperandList targets_;
+
+  // Sources/Targets before reordering (because it's cheaper to leave it here)
+  OperandList raw_sources_;
+  OperandList raw_targets_;
 };
 
 class HIREntry : public HIRInstruction {

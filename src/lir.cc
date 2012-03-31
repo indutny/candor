@@ -18,7 +18,7 @@
 namespace candor {
 namespace internal {
 
-LIR::LIR(Heap* heap, HIR* hir) : heap_(heap), hir_(hir), spill_count_(0) {
+LIR::LIR(Heap* heap, HIR* hir) : heap_(heap), hir_(hir), spill_count_(1) {
   // Calculate numeric liveness ranges
   CalculateLiveness();
 
@@ -177,6 +177,8 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
   if (hinstr->type() == HIRInstruction::kParallelMove) {
     // However if it's last instruction - it won't be generated automatically
     if (hinstr->next() == NULL) {
+      HIRParallelMove::Cast(hinstr)->Reorder();
+
       linstr->masm(masm);
       linstr->Generate();
     }
@@ -189,7 +191,7 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
   HIRParallelMove* move = NULL;
   if (hinstr->prev() != NULL &&
       hinstr->prev()->is(HIRInstruction::kParallelMove)) {
-    move = reinterpret_cast<HIRParallelMove*>(hinstr->prev());
+    move = HIRParallelMove::Cast(hinstr->prev());
   }
 
   // Allocate all values used in instruction
@@ -258,6 +260,10 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
   // All registers was allocated, perform move if needed
   if (move != NULL) {
     LIRInstruction* lmove = Cast(move);
+
+    // Order movements (see Parallel Move paper)
+    move->Reorder();
+
     lmove->masm(masm);
     lmove->Generate();
   }
