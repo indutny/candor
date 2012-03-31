@@ -37,6 +37,12 @@ inline void Masm::Untag(Register src) {
 }
 
 
+inline Operand& Masm::SpillToOperand(int index) {
+  spill_operand_.disp(- 8 * (index + 1));
+  return spill_operand_;
+}
+
+
 inline Condition Masm::BinOpToCondition(BinOp::BinOpType type,
                                         BinOpUsage usage) {
   if (usage == kIntegral) {

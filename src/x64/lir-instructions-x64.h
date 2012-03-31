@@ -35,7 +35,7 @@ LIR_ENUM_INSTRUCTIONS(LIR_GEN_FORWARD_HIR_DECL)
 #define LIR_GEN_TYPE_ENUM(V)\
     k##V,
 
-static const int kLIRRegisterCount = 11;
+static const int kLIRRegisterCount = 10;
 
 class LIRInstruction : public ZoneObject {
  public:
@@ -65,8 +65,8 @@ class LIRInstruction : public ZoneObject {
   virtual int scratch_count() const = 0;
 
   LIROperand* inputs[5];
-  LIROperand* result;
   LIROperand* scratches[3];
+  LIROperand* result;
 
  protected:
   HIRInstruction* hir_;
@@ -133,21 +133,21 @@ class LIRGoto : public LIRInstructionTemplate<0, 0, 0> {
   LIR_COMMON_METHODS(Goto)
 };
 
-class LIRStoreLocal : public LIRInstructionTemplate<1, 0, 0> {
+class LIRStoreLocal : public LIRInstructionTemplate<1, 1, 0> {
  public:
   void Generate();
 
   LIR_COMMON_METHODS(StoreLocal)
 };
 
-class LIRStoreContext : public LIRInstructionTemplate<1, 0, 0> {
+class LIRStoreContext : public LIRInstructionTemplate<1, 1, 0> {
  public:
   void Generate();
 
   LIR_COMMON_METHODS(StoreContext)
 };
 
-class LIRStoreProperty : public LIRInstructionTemplate<1, 0, 0> {
+class LIRStoreProperty : public LIRInstructionTemplate<2, 1, 0> {
  public:
   void Generate();
 

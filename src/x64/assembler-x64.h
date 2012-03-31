@@ -54,8 +54,27 @@ const Register r13 = { 13 };
 const Register r14 = { 14 };
 const Register r15 = { 15 };
 
-const Register scratch = r11;
-const Register root_reg = r10;
+const Register root_reg = r12;
+const Register context_reg = r13;
+const Register scratch = r14;
+
+static Register RegisterByIndex(int index) {
+  // r12, r13, r14, r15 are reserved
+  switch (index) {
+   case 0: return rax;
+   case 1: return rcx;
+   case 2: return rdx;
+   case 3: return rbx;
+   case 4: return rsi;
+   case 5: return rdi;
+   case 6: return r8;
+   case 7: return r9;
+   case 8: return r10;
+   case 9: return r11;
+   default: UNEXPECTED return reg_nil;
+  }
+}
+
 
 struct DoubleRegister {
   int high() {

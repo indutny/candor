@@ -21,6 +21,12 @@ void LIREntry::Generate() {
 void LIRReturn::Generate() {
   if (inputs[0]->is_immediate()) {
     __ movq(rax, Immediate(inputs[0]->value()));
+  } else if (inputs[0]->is_register()) {
+    if (!RegisterByIndex(inputs[0]->value()).is(rax)) {
+      __ movq(rax, RegisterByIndex(inputs[0]->value()));
+    }
+  } else if (inputs[0]->is_spill()) {
+    __ movq(rax, masm()->SpillToOperand(inputs[0]->value()));
   }
 
   __ movq(rsp, rbp);
@@ -34,6 +40,23 @@ void LIRGoto::Generate() {
 
 
 void LIRStoreLocal::Generate() {
+  if (inputs[0]->is_register()) {
+    Register slot = RegisterByIndex(inputs[0]->value());
+    if (result->is_register()) {
+      __ movq(slot, RegisterByIndex(result->value()));
+    } else if (result->is_immediate()) {
+      __ movq(slot, Immediate(result->value()));
+    }
+  } else if (inputs[0]->is_spill()) {
+    Operand slot = masm()->SpillToOperand(inputs[0]->value());
+    if (result->is_register()) {
+      __ movq(slot, RegisterByIndex(result->value()));
+    } else if (result->is_immediate()) {
+      __ movq(slot, Immediate(result->value()));
+    }
+  } else {
+    UNEXPECTED
+  }
 }
 
 

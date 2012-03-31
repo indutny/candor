@@ -130,6 +130,7 @@ class Masm : public Assembler {
   inline void PreservePop(Register src, Register preserve);
   inline void TagNumber(Register src);
   inline void Untag(Register src);
+  inline Operand& SpillToOperand(int index);
   inline Condition BinOpToCondition(BinOp::BinOpType type, BinOpUsage usage);
   inline void SpillSlot(uint32_t index, Operand& op);
 
@@ -149,6 +150,9 @@ class Masm : public Assembler {
   uint32_t spill_offset_;
   int32_t spill_index_;
   int32_t spills_;
+
+  // Temporary operand
+  Operand spill_operand_;
 
   friend class Align;
 };

@@ -17,6 +17,7 @@ class HIRInstruction;
 class HIRParallelMove;
 class LIRInstruction;
 
+// Operand for LIRInstruction
 class LIROperand : public ZoneObject {
  public:
   enum Type {
@@ -44,30 +45,37 @@ class LIROperand : public ZoneObject {
   off_t value_;
 };
 
+// LIR class
 class LIR {
  public:
-  struct RegisterFreeList {
-    int list[128];
-    int length;
-  };
-
   LIR(Heap* heap, HIR* hir);
 
+  // Calculate values' liveness ranges
   void CalculateLiveness();
 
+  // Generate machine code for `hir`
   void Generate(Masm* masm);
 
-  inline LIRInstruction* Cast(HIRInstruction* instr);
-
-  // Linear scan methods
-  void ExpireOldValues(HIRInstruction* hinstr);
-  void SpillAllocated(HIRParallelMove* move);
-  int AllocateRegister(HIRInstruction* hinstr, HIRParallelMove* &move);
-
+  // Generate machine code for a specific instruction
   void GenerateInstruction(Masm* masm, HIRInstruction* hinstr);
 
-  // Insert into sorted list
+  // Linear scan methods:
+
+  // Find all values that occupy registers/spills, but not used anymore
+  // Release them and put into freelist
+  void ExpireOldValues(HIRInstruction* hinstr);
+
+  // Spill some value (that is in register) and release it's register
+  void SpillAllocated(HIRParallelMove* move);
+
+  // Allocate register for instruction
+  int AllocateRegister(HIRInstruction* hinstr, HIRParallelMove* &move);
+
+  // Insert value into sorted spills list
   void AddToSpillCandidates(HIRValue* value);
+
+  // Convert HIR instruction into LIR instruction
+  inline LIRInstruction* Cast(HIRInstruction* instr);
 
   // List of active values sorted by increasing live_range()->start
   inline List<HIRValue*, ZoneObject>* active_values() {
@@ -82,8 +90,8 @@ class LIR {
   inline FreeList<int, 128>* registers() { return &registers_; }
   inline FreeList<int, 128>* spills() { return &spills_; }
 
-  inline int spills_count() { return spills_count_; }
-  inline int get_new_spill() { return spills_count_++; }
+  inline int spill_count() { return spill_count_; }
+  inline int get_new_spill() { return spill_count_++; }
 
   inline Heap* heap() { return heap_; }
   inline HIR* hir() { return hir_; }
@@ -94,7 +102,7 @@ class LIR {
 
   FreeList<int, 128> registers_;
   FreeList<int, 128> spills_;
-  int spills_count_;
+  int spill_count_;
 
   Heap* heap_;
   HIR* hir_;

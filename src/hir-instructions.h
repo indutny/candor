@@ -16,6 +16,7 @@ class HIRBasicBlock;
 class HIRValue;
 class LIROperand;
 
+// Instruction base class
 class HIRInstruction {
  public:
   enum Type {
@@ -41,29 +42,40 @@ class HIRInstruction {
                               next_(NULL) {
   }
 
+  // Called by HIR to associate instruction with block and to
+  // give instruction a monothonic id
   virtual void Init(HIRBasicBlock* block, int id);
 
+  // Wrapper to push into value->uses()
   void Use(HIRValue* value);
 
+  // Type checks
   inline Type type() { return type_; }
   inline bool is(Type type) { return type_ == type; }
 
+  // Block in which this instruction is located
   inline HIRBasicBlock* block() { return block_; }
 
+  // Instruction takes multiple inputs
   inline void SetInput(HIRValue* input) {
     Use(input);
-    inputs()->Push(input);
+    values()->Push(input);
   }
+
+  // And one output
   inline void SetResult(HIRValue* result) {
+    assert(result_ == NULL);
+
     Use(result);
     values()->Push(result);
     result_ = result;
   }
   inline HIRValue* GetResult() { return result_; }
 
-  inline List<HIRValue*, ZoneObject>* inputs() { return &inputs_; }
+  // List of all used values
   inline List<HIRValue*, ZoneObject>* values() { return &values_; }
 
+  // Links to previous and next instructions
   inline HIRInstruction* prev() { return prev_; }
   inline void prev(HIRInstruction* prev) { prev_ = prev; }
   inline HIRInstruction* next() { return next_; }
@@ -72,6 +84,7 @@ class HIRInstruction {
   // For liveness-range calculations
   int id() { return id_; }
 
+  // Debug printing
   virtual void Print(PrintBuffer* p);
 
  private:
@@ -79,7 +92,6 @@ class HIRInstruction {
   HIRBasicBlock* block_;
 
   List<HIRValue*, ZoneObject> values_;
-  List<HIRValue*, ZoneObject> inputs_;
 
   HIRValue* result_;
 
@@ -108,8 +120,6 @@ class HIRStoreBase : public HIRInstruction, public ZoneObject {
                                                           lhs_(lhs),
                                                           rhs_(rhs) {
     SetInput(lhs);
-    Use(lhs);
-    values()->Push(lhs);
     SetResult(rhs);
   }
 
@@ -131,7 +141,6 @@ class HIRBranchBase : public HIRInstruction, public ZoneObject {
                                         left_(left),
                                         right_(right) {
     SetInput(clause);
-    values()->Push(clause);
   }
 
   virtual void Init(HIRBasicBlock* block, int id);
@@ -171,7 +180,6 @@ class HIRReturn : public HIRInstruction {
  public:
   HIRReturn(HIRValue* value) : HIRInstruction(kReturn) {
     SetInput(value);
-    values()->Push(value);
   }
 };
 

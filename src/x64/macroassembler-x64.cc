@@ -14,7 +14,8 @@ namespace internal {
 
 Masm::Masm(CodeSpace* space) : slot_(rax, 0),
                                space_(space),
-                               align_(0) {
+                               align_(0),
+                               spill_operand_(rbp, 0) {
 }
 
 

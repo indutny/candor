@@ -44,6 +44,7 @@ class HIRBasicBlock : public ZoneObject {
   // Debug printing
   void Print(PrintBuffer* p);
 
+  // Various ancestors
   inline HIR* hir() { return hir_; }
   inline HIRValueList* values() { return &values_; }
   inline HIRPhiList* phis() { return &phis_; }

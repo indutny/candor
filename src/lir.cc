@@ -18,7 +18,7 @@
 namespace candor {
 namespace internal {
 
-LIR::LIR(Heap* heap, HIR* hir) : heap_(heap), hir_(hir) {
+LIR::LIR(Heap* heap, HIR* hir) : heap_(heap), hir_(hir), spill_count_(0) {
   // Calculate numeric liveness ranges
   CalculateLiveness();
 
@@ -58,7 +58,7 @@ void LIR::CalculateLiveness() {
 void LIR::ExpireOldValues(HIRInstruction* hinstr) {
   int current = hinstr->id();
   while (active_values()->length() > 0 &&
-         current > active_values()->head()->value()->live_range()->start) {
+         current > active_values()->head()->value()->live_range()->end) {
     HIRValue* value = active_values()->Shift();
     if (value->operand() == NULL) continue;
 
@@ -213,6 +213,7 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
     assert(item->value()->operand() != NULL);
     linstr->inputs[i++] = item->value()->operand();
   }
+  assert(item == NULL || item->next() == NULL);
 
   // All registers was allocated, perform move if needed
   if (move != NULL) {
