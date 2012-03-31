@@ -1,7 +1,10 @@
+#include "lir.h"
 #include "lir-instructions-x64.h"
 #include "hir.h"
-#include "lir.h"
+#include "hir-instructions.h"
 #include "macroassembler.h"
+
+#include <stdlib.h> // NULL
 
 namespace candor {
 namespace internal {
@@ -9,6 +12,31 @@ namespace internal {
 #define __ masm()->
 
 void LIRParallelMove::Generate() {
+  List<LIROperand*, ZoneObject>::Item* source = hir()->sources()->head();
+  List<LIROperand*, ZoneObject>::Item* target = hir()->targets()->head();
+
+  for (; source != NULL; source = source->next(), target = target->next()) {
+    LIROperand* source_op = source->value();
+    LIROperand* target_op = target->value();
+
+    if (source_op->is_register()) {
+      if (target_op->is_register()) {
+        __ movq(RegisterByIndex(target_op->value()),
+                RegisterByIndex(source_op->value()));
+      } else {
+        __ movq(masm()->SpillToOperand(target_op->value()),
+                RegisterByIndex(source_op->value()));
+      }
+    } else {
+      if (target_op->is_register()) {
+        __ movq(RegisterByIndex(target_op->value()),
+                masm()->SpillToOperand(source_op->value()));
+      } else {
+        __ movq(scratch, masm()->SpillToOperand(source_op->value()));
+        __ movq(masm()->SpillToOperand(target_op->value()), scratch);
+      }
+    }
+  }
 }
 
 

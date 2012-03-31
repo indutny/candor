@@ -209,14 +209,14 @@ class List {
 
   inline Item* head() { return head_; }
   inline Item* tail() { return current_; }
-  inline uint32_t length() { return length_; }
+  inline int32_t length() { return length_; }
 
   bool allocated;
 
  private:
   Item* head_;
   Item* current_;
-  uint32_t length_;
+  int32_t length_;
 };
 
 

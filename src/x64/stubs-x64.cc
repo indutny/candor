@@ -33,6 +33,9 @@ void BaseStub::GenerateEpilogue(int args) {
 
 void EntryStub::Generate() {
   GeneratePrologue();
+
+  __ AllocateSpills(0);
+
   // Just for alignment
   __ push(Immediate(Heap::kTagNil));
 
@@ -100,11 +103,14 @@ void EntryStub::Generate() {
   __ xorq(r14, r14);
   __ xorq(r15, r15);
 
+  Masm::Spill rsi_s(masm(), rsi);
+
   // Call code
   __ movq(scratch, rdi);
   __ CallFunction(scratch);
 
   // Unwind arguments
+  rsi_s.Unspill();
   __ Untag(rsi);
 
   __ testb(rsi, Immediate(1));
@@ -126,6 +132,8 @@ void EntryStub::Generate() {
   __ pop(r11);
   __ pop(rbx);
   __ pop(rbp);
+
+  __ FinalizeSpills();
 
   GenerateEpilogue(0);
 }

@@ -26,6 +26,12 @@ TEST_START(functional)
     assert(result->Is<Nil>());
   })
 
+  // Spill test
+  FUN_TEST("a=1\nb=2\nc=3\nd=4\ne=5\nf=6\ng=7\nh=8\ni=9\nj=10\nk=11\nl=12\n"
+           "b\nc\nd\ne\nf\ng\nh\ni\nj\nk\nl\nreturn a", {
+    assert(result->As<Number>()->Value() == 1);
+  })
+
   FUN_TEST("return 'abcdef'", {
     String* str = result->As<String>();
     assert(str->Length() == 6);
