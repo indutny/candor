@@ -112,6 +112,10 @@ void LIRBranchBool::Generate() {
 }
 
 
+void LIRAllocateContext::Generate() {
+}
+
+
 void LIRAllocateObject::Generate() {
 }
 

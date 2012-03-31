@@ -15,12 +15,15 @@ namespace internal {
 class HIRBasicBlock;
 class HIRValue;
 class LIROperand;
+class BaseStub;
 
 // Instruction base class
 class HIRInstruction {
  public:
   enum Type {
     kNone,
+
+    // Instruction w/o side-effects
     kParallelMove,
     kEntry,
     kReturn,
@@ -31,7 +34,12 @@ class HIRInstruction {
     kLoadRoot,
     kLoadLocal,
     kLoadContext,
+
+    // Branching
     kBranchBool,
+
+    // Stubs and instructions with side-effects
+    kAllocateContext,
     kAllocateObject
   };
 
@@ -55,6 +63,9 @@ class HIRInstruction {
 
   // Block in which this instruction is located
   inline HIRBasicBlock* block() { return block_; }
+
+  // Instruction with side
+  virtual bool HasSideEffects() const { return false; };
 
   // Instruction takes multiple inputs
   inline void SetInput(HIRValue* input) {
@@ -155,6 +166,20 @@ class HIRBranchBase : public HIRInstruction, public ZoneObject {
   HIRBasicBlock* right_;
 };
 
+class HIRStubCall : public HIRInstruction, public ZoneObject {
+ public:
+  HIRStubCall(Type type, BaseStub* stub) : HIRInstruction(type), stub_(stub) {
+  }
+
+  void Init(HIRBasicBlock* block, int id);
+  virtual bool HasSideEffects() const { return true; };
+
+  inline BaseStub* stub() { return stub_; }
+
+ private:
+  BaseStub* stub_;
+};
+
 class HIRParallelMove : public HIRInstruction {
  public:
   HIRParallelMove() : HIRInstruction(kParallelMove) {
@@ -238,7 +263,19 @@ class HIRBranchBool : public HIRBranchBase {
   }
 };
 
-class HIRAllocateObject : public HIRInstruction {
+class HIRAllocateContext : public HIRStubCall {
+ public:
+  HIRAllocateContext(int size) : HIRStubCall(kAllocateContext, NULL),
+                                 size_(size) {
+  }
+
+  inline int size() { return size_; }
+
+ private:
+  int size_;
+};
+
+class HIRAllocateObject : public HIRStubCall {
  public:
   enum ObjectKind {
     kObject,
@@ -246,12 +283,10 @@ class HIRAllocateObject : public HIRInstruction {
   };
 
   HIRAllocateObject(ObjectKind kind, int size)
-      : HIRInstruction(kAllocateObject),
+      : HIRStubCall(kAllocateObject, NULL),
         kind_(kind),
         size_(PowerOfTwo(size << 1)) {
   }
-
-  void Init(HIRBasicBlock* block, int id);
 
   inline ObjectKind kind() { return kind_; }
   inline int size() { return size_; }

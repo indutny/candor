@@ -19,6 +19,7 @@ namespace internal {
   V(LoadLocal)\
   V(LoadContext)\
   V(BranchBool)\
+  V(AllocateContext)\
   V(AllocateObject)
 
 void HIRInstruction::Init(HIRBasicBlock* block, int id) {
@@ -69,7 +70,7 @@ void HIRBranchBase::Init(HIRBasicBlock* block, int id) {
 }
 
 
-void HIRAllocateObject::Init(HIRBasicBlock* block, int id) {
+void HIRStubCall::Init(HIRBasicBlock* block, int id) {
   SetResult(new HIRValue(block));
 }
 

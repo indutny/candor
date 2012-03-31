@@ -57,6 +57,13 @@ class LIR {
   void Generate(Masm* masm);
 
   // Generate machine code for a specific instruction
+  //
+  // First of all, instruction's values will be placed in registers/spills.
+  // Then scratch registers will be created, and only after it - the result
+  // register.
+  //
+  // After instruction, scratch registers will be put back into FreeList
+  //
   void GenerateInstruction(Masm* masm, HIRInstruction* hinstr);
 
   // Linear scan methods:
