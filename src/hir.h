@@ -51,7 +51,7 @@ class HIRBasicBlock : public ZoneObject {
   // Various ancestors
   inline HIR* hir() { return hir_; }
   inline bool is_enumerated() {
-    return predecessors_count() == 0 || enumerated_ == predecessors_count();
+    return enumerated_ == predecessors_count();
   }
   inline void enumerate() { ++enumerated_; }
 

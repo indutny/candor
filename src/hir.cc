@@ -395,16 +395,13 @@ void HIR::EnumInstructions() {
 
   // Add roots to worklist
   for (; root != NULL; root = root->next()) {
+    root->value()->enumerate();
     work_list.Push(root->value());
   }
 
   // And process it
   HIRBasicBlock* current;
   while ((current = work_list.Shift()) != NULL) {
-    // Skip processed blocks and join blocks that was visited only once
-    current->enumerate();
-    if (!current->is_enumerated()) continue;
-
     // Go through all block's instructions, link them together and assign id
     HIRInstructionList::Item* instr = current->instructions()->head();
     for (; instr != NULL; instr = instr->next()) {
@@ -419,7 +416,11 @@ void HIR::EnumInstructions() {
 
     // Add block's successors to the work list
     for (int i = current->successors_count() - 1; i >= 0; i--) {
-      work_list.Unshift(current->successors()[i]);
+      // Skip processed blocks and join blocks that was visited only once
+      current->successors()[i]->enumerate();
+      if (current->successors()[i]->is_enumerated()) {
+        work_list.Unshift(current->successors()[i]);
+      }
     }
   }
 }
