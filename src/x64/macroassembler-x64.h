@@ -13,6 +13,7 @@ namespace internal {
 
 // Forward declaration
 class BaseStub;
+class LIROperand;
 
 class Masm : public Assembler {
  public:
@@ -53,6 +54,11 @@ class Masm : public Assembler {
     Register src_;
     int32_t index_;
   };
+
+  // Routines for working with operands
+  void Push(LIROperand* src);
+  void Mov(Register dst, LIROperand* src);
+  void Mov(LIROperand* dst, LIROperand* src);
 
   // Allocate slots for spills
   void AllocateSpills();

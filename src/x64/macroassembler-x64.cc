@@ -3,6 +3,7 @@
 #include "code-space.h" // CodeSpace
 #include "heap.h" // HeapValue
 #include "heap-inl.h"
+#include "lir.h" // LIROperand
 
 #include "stubs.h"
 #include "utils.h" // ComputeHash
@@ -118,6 +119,50 @@ void Masm::Spill::Unspill(Register dst) {
 
 void Masm::Spill::Unspill() {
   return Unspill(src_);
+}
+
+
+void Masm::Push(LIROperand* src) {
+  if (src->is_register()) {
+    push(RegisterByIndex(src->value()));
+  } else if (src->is_immediate()) {
+    push(Immediate(src->value()));
+  } else {
+    push(SpillToOperand(src->value()));
+  }
+}
+
+
+void Masm::Mov(Register dst, LIROperand* src) {
+  if (src->is_register()) {
+    if (dst.is(RegisterByIndex(src->value()))) return;
+
+    movq(dst, RegisterByIndex(src->value()));
+  } else if (src->is_immediate()) {
+    movq(dst, Immediate(src->value()));
+  } else {
+    movq(dst, SpillToOperand(src->value()));
+  }
+}
+
+
+void Masm::Mov(LIROperand* dst, LIROperand* src) {
+  if (src == dst) return;
+
+  if (dst->is_register()) {
+    Mov(RegisterByIndex(dst->value()), src);
+  } else if (dst->is_spill()) {
+    if (src->is_register()) {
+      movq(SpillToOperand(dst->value()), RegisterByIndex(src->value()));
+    } else if (src->is_immediate()) {
+      movq(SpillToOperand(dst->value()), Immediate(src->value()));
+    } else {
+      movq(scratch, SpillToOperand(src->value()));
+      movq(SpillToOperand(dst->value()), scratch);
+    }
+  } else {
+    UNEXPECTED
+  }
 }
 
 

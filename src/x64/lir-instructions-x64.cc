@@ -23,23 +23,7 @@ void LIRParallelMove::Generate() {
   ZoneList<LIROperand*>::Item* target = hir()->targets()->head();
 
   for (; source != NULL; source = source->next(), target = target->next()) {
-    LIROperand* source_op = source->value();
-    LIROperand* target_op = target->value();
-
-    if (source_op->is_register()) {
-      if (target_op->is_register()) {
-        __ movq(ToRegister(target_op), ToRegister(source_op));
-      } else {
-        __ movq(ToOperand(target_op), ToRegister(source_op));
-      }
-    } else {
-      if (target_op->is_register()) {
-        __ movq(ToRegister(target_op), ToOperand(source_op));
-      } else {
-        __ movq(scratch, ToOperand(source_op));
-        __ movq(ToOperand(target_op), scratch);
-      }
-    }
+    __ Mov(target->value(), source->value());
   }
 }
 
@@ -58,15 +42,7 @@ void LIREntry::Generate() {
 
 
 void LIRReturn::Generate() {
-  if (inputs[0]->is_immediate()) {
-    __ movq(rax, Immediate(inputs[0]->value()));
-  } else if (inputs[0]->is_register()) {
-    if (!ToRegister(inputs[0]).is(rax)) {
-      __ movq(rax, ToRegister(inputs[0]));
-    }
-  } else if (inputs[0]->is_spill()) {
-    __ movq(rax, ToOperand(inputs[0]));
-  }
+  __ Mov(rax, inputs[0]);
 
   __ movq(rsp, rbp);
   __ pop(rbp);
@@ -94,21 +70,7 @@ void LIRGoto::Generate() {
 void LIRStoreLocal::Generate() {
   // NOTE: Store acts in reverse order - input = result
   // that's needed for result propagation in chain assignments
-  if (inputs[0]->is_register()) {
-    if (result->is_register()) {
-      __ movq(ToRegister(inputs[0]), ToRegister(result));
-    } else if (result->is_immediate()) {
-      __ movq(ToRegister(inputs[0]), Immediate(result->value()));
-    }
-  } else if (inputs[0]->is_spill()) {
-    if (result->is_register()) {
-      __ movq(ToOperand(inputs[0]), ToRegister(result));
-    } else if (result->is_immediate()) {
-      __ movq(ToOperand(inputs[0]), Immediate(result->value()));
-    }
-  } else {
-    UNEXPECTED
-  }
+  __ Mov(inputs[0], result);
 }
 
 
@@ -117,6 +79,33 @@ void LIRStoreContext::Generate() {
 
 
 void LIRStoreProperty::Generate() {
+  __ Push(result);
+  __ Push(inputs[0]);
+
+  __ Mov(rax, inputs[0]);
+  __ Mov(rbx, inputs[1]);
+  __ movq(rcx, Immediate(1));
+  __ Call(masm()->stubs()->GetLookupPropertyStub());
+
+  // Make rax look like unboxed number to GC
+  __ dec(rax);
+  __ CheckGC();
+  __ inc(rax);
+
+  Label done(masm());
+
+  __ pop(rbx);
+  __ pop(rcx);
+
+  __ IsNil(rax, NULL, &done);
+  Operand qmap(rbx, HObject::kMapOffset);
+  __ movq(rbx, qmap);
+  __ addq(rax, rbx);
+
+  Operand slot(rax, 0);
+  __ movq(slot, rcx);
+
+  __ bind(&done);
 }
 
 
@@ -142,16 +131,8 @@ void LIRLoadContext::Generate() {
 
 
 void LIRBranchBool::Generate() {
-  // NOTE: input is definitely a register here
-  if (inputs[0]->is_register()) {
-    if (!ToRegister(inputs[0]).is(rax)) {
-      __ movq(rax, ToRegister(inputs[0]));
-    }
-  } else if (inputs[0]->is_immediate()) {
-    __ movq(rax, Immediate(inputs[0]->value()));
-  }
-
   // Coerce value to boolean first
+  __ Mov(rax, inputs[0]);
   __ Call(masm()->stubs()->GetCoerceToBooleanStub());
 
   // Jmp to `right` block if value is `false`
