@@ -537,12 +537,16 @@ AstNode* HIR::VisitIf(AstNode* node) {
   on_true = current_block();
 
   AstList::Item* else_body = node->children()->head()->next()->next();
+  set_current_block(on_false);
+
   if (else_body != NULL) {
     // Visit else body and create additional `join` block
-    set_current_block(on_false);
     Visit(else_body->value());
-    on_false = current_block();
+  } else {
+    AddInstruction(new HIRNop());
   }
+
+  on_false = current_block();
 
   set_current_block(CreateJoin(on_true, on_false));
 

@@ -52,6 +52,10 @@ TEST_START(functional)
   })
 
   // If
+  FUN_TEST("if (true) { return 1 }", {
+    assert(result->As<Number>()->Value() == 1);
+  })
+
   FUN_TEST("if (true) { a = 1 } else { a = 2 }\n return a", {
     assert(result->As<Number>()->Value() == 1);
   })

@@ -44,7 +44,7 @@ TEST_START(hir)
            "[Return *[4 [imm 0x1]]] "
            "[1,2]>*>[]]\n"
 
-           "[Block#2 {0} [Goto] [0]>*>[3]]\n")
+           "[Block#2 {0} [Nop] [Goto] [0]>*>[3]]\n")
 
   HIR_TEST("if (a) { a = 2 } else { a = 3 }\na",
            "[Block#0 {0} "

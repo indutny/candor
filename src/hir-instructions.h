@@ -23,6 +23,7 @@ class HIRInstruction {
  public:
   enum Type {
     kNone,
+    kNop,
 
     // Instruction w/o side-effects
     kParallelMove,
@@ -215,6 +216,12 @@ class HIRParallelMove : public HIRInstruction {
   // Sources/Targets before reordering (because it's cheaper to leave it here)
   OperandList raw_sources_;
   OperandList raw_targets_;
+};
+
+class HIRNop : public HIRInstruction {
+ public:
+  HIRNop() : HIRInstruction(kNop) {
+  }
 };
 
 class HIREntry : public HIRInstruction {

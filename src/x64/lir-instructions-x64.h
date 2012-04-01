@@ -14,6 +14,7 @@ struct Register;
 class Operand;
 
 #define LIR_ENUM_INSTRUCTIONS(V)\
+    V(Nop)\
     V(ParallelMove)\
     V(Entry)\
     V(Return)\
@@ -119,6 +120,13 @@ class LIRParallelMove : public LIRInstructionTemplate<0, 0, 0> {
   void Generate();
 
   LIR_COMMON_METHODS(ParallelMove);
+};
+
+class LIRNop : public LIRInstructionTemplate<0, 0, 0> {
+ public:
+  void Generate();
+
+  LIR_COMMON_METHODS(Nop)
 };
 
 class LIREntry : public LIRInstructionTemplate<0, 0, 0> {

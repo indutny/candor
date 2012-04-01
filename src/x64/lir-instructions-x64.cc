@@ -44,6 +44,11 @@ void LIRParallelMove::Generate() {
 }
 
 
+void LIRNop::Generate() {
+  __ nop();
+}
+
+
 void LIREntry::Generate() {
   __ push(rbp);
   __ movq(rbp, rsp);
@@ -139,7 +144,7 @@ void LIRLoadContext::Generate() {
 void LIRBranchBool::Generate() {
   // NOTE: input is definitely a register here
   if (inputs[0]->is_register()) {
-    if (ToRegister(inputs[0]).is(rax)) {
+    if (!ToRegister(inputs[0]).is(rax)) {
       __ movq(rax, ToRegister(inputs[0]));
     }
   } else if (inputs[0]->is_immediate()) {

@@ -14,6 +14,7 @@ namespace internal {
 
 #define HIR_ENUM_INSTRUCTIONS(V)\
     V(None)\
+    V(Nop)\
     V(ParallelMove)\
     V(Entry)\
     V(Return)\
