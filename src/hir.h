@@ -50,6 +50,11 @@ class HIRBasicBlock : public ZoneObject {
 
   // Various ancestors
   inline HIR* hir() { return hir_; }
+  inline bool is_enumerated() {
+    return predecessors_count() == 0 || enumerated_ == predecessors_count();
+  }
+  inline void enumerate() { ++enumerated_; }
+
   inline HIRValueList* values() { return &values_; }
   inline HIRPhiList* phis() { return &phis_; }
   inline HIRInstructionList* instructions() { return &instructions_; }
@@ -80,6 +85,9 @@ class HIRBasicBlock : public ZoneObject {
 
  private:
   HIR* hir_;
+
+  // Whether block was enumerated by EnumInstructions() or not
+  int enumerated_;
 
   HIRValueList values_;
   HIRPhiList phis_;
@@ -215,6 +223,9 @@ class HIR : public Visitor {
   // Working with instructions in the current block
   void AddInstruction(HIRInstruction* instr);
   void Finish(HIRInstruction* instr);
+
+  // Go through all blocks in pre-order and enum/link instructions
+  void EnumInstructions();
 
   // Visit node and get last instruction's result
   HIRValue* GetValue(AstNode* node);

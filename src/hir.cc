@@ -15,6 +15,7 @@ namespace candor {
 namespace internal {
 
 HIRBasicBlock::HIRBasicBlock(HIR* hir) : hir_(hir),
+                                         enumerated_(0),
                                          predecessors_count_(0),
                                          successors_count_(0),
                                          finished_(false),
@@ -90,49 +91,11 @@ void HIRBasicBlock::Goto(HIRBasicBlock* block) {
   // Connect graph nodes
   AddSuccessor(block);
 
-  // Find previous instruction to
-  // insert Goto in the instructions chain and to
-  // detemine optimal instruction index
-  HIRInstruction* prev = NULL;
-  int id = 0;
-  HIRBasicBlock* current = this;
-  while (current != NULL) {
-    if (current->instructions()->length() > 0) {
-      prev = current->last_instruction();
-      id = prev->id();
-      break;
-    }
-
-    // Go to the predecessor block
-    current = current->predecessors()[0];
-  }
-
   // Add goto instruction and finalize block
   HIRGoto* instr = new HIRGoto();
   instructions()->Push(instr);
-  instr->Init(this, id);
+  instr->Init(this);
   finished(true);
-
-  if (prev != NULL) {
-    // Previous instruction found - insert Goto in the linked list
-    instr->prev(prev);
-    instr->next(prev->next());
-
-    if (prev->next() != NULL) prev->next()->prev(instr);
-    prev->next(instr);
-
-    if (prev == hir()->last_instruction()) hir()->last_instruction(instr);
-  } else {
-    // No previous instruction - goto should become the first instruction
-    instr->prev(prev);
-    instr->next(hir()->first_instruction());
-
-    if (hir()->first_instruction() != NULL) {
-      hir()->first_instruction()->prev(instr);
-    }
-    hir()->first_instruction(instr);
-    if (hir()->last_instruction() == NULL) hir()->last_instruction(instr);
-  }
 }
 
 
@@ -305,6 +268,8 @@ HIR::HIR(Heap* heap, AstNode* node) : Visitor(kPreorder),
     set_current_block(fn->block());
     Visit(fn->node());
   }
+
+  EnumInstructions();
 }
 
 
@@ -409,16 +374,9 @@ HIRBasicBlock* HIR::CreateJoin(HIRBasicBlock* left, HIRBasicBlock* right) {
 
 void HIR::AddInstruction(HIRInstruction* instr) {
   assert(current_block() != NULL);
-  instr->Init(current_block(), get_instruction_index());
+  instr->Init(current_block());
 
   if (current_block()->finished()) return;
-
-  // Link instructions together
-  if (last_instruction() != NULL) {
-    last_instruction()->next(instr);
-    instr->prev(last_instruction());
-  }
-  last_instruction(instr);
 
   current_block()->instructions()->Push(instr);
 }
@@ -428,6 +386,42 @@ void HIR::Finish(HIRInstruction* instr) {
   assert(current_block() != NULL);
   AddInstruction(instr);
   current_block()->finished(true);
+}
+
+
+void HIR::EnumInstructions() {
+  ZoneList<HIRBasicBlock*>::Item* root = roots()->head();
+  ZoneList<HIRBasicBlock*> work_list;
+
+  // Add roots to worklist
+  for (; root != NULL; root = root->next()) {
+    work_list.Push(root->value());
+  }
+
+  // And process it
+  HIRBasicBlock* current;
+  while ((current = work_list.Shift()) != NULL) {
+    // Skip processed blocks and join blocks that was visited only once
+    current->enumerate();
+    if (!current->is_enumerated()) continue;
+
+    // Go through all block's instructions, link them together and assign id
+    HIRInstructionList::Item* instr = current->instructions()->head();
+    for (; instr != NULL; instr = instr->next()) {
+      if (last_instruction() != NULL) last_instruction()->next(instr->value());
+      instr->value()->prev(last_instruction());
+      instr->value()->id(get_instruction_index());
+      last_instruction(instr->value());
+
+      // Lazily set first instruction
+      if (first_instruction() == NULL) first_instruction(instr->value());
+    }
+
+    // Add block's successors to the work list
+    for (int i = current->successors_count() - 1; i >= 0; i--) {
+      work_list.Unshift(current->successors()[i]);
+    }
+  }
 }
 
 
@@ -465,8 +459,6 @@ AstNode* HIR::VisitFunction(AstNode* stmt) {
   if (current_block() == root_block() &&
       current_block()->instructions()->length() == 0) {
     HIRInstruction* entry = new HIREntry();
-    if (first_instruction() == NULL) first_instruction(entry);
-
     AddInstruction(entry);
     if (fn->context_slots() > 0) {
       AddInstruction(new HIRAllocateContext(fn->context_slots()));

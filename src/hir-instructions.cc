@@ -28,9 +28,8 @@ namespace internal {
     V(BranchBool)\
     HIR_ENUM_STUB_INSTRUCTIONS(V)
 
-void HIRInstruction::Init(HIRBasicBlock* block, int id) {
+void HIRInstruction::Init(HIRBasicBlock* block) {
   block_ = block;
-  id_ = id;
 }
 
 
@@ -68,7 +67,8 @@ void HIRInstruction::Print(PrintBuffer* p) {
 
 HIRParallelMove::HIRParallelMove(HIRInstruction* instr, InsertionType type)
     : HIRInstruction(kParallelMove) {
-  Init(instr->block(), type == kBefore ? instr->id() - 1 : instr->id() + 1);
+  Init(instr->block());
+  id(type == kBefore ? instr->id() - 1 : instr->id() + 1);
 
   // Insert `move` into instruction's linked-list
   if (type == kBefore) {
@@ -146,16 +146,16 @@ void HIRParallelMove::Reorder() {
 }
 
 
-void HIRBranchBase::Init(HIRBasicBlock* block, int id) {
-  HIRInstruction::Init(block, id);
+void HIRBranchBase::Init(HIRBasicBlock* block) {
+  HIRInstruction::Init(block);
 
   block->AddSuccessor(left());
   block->AddSuccessor(right());
 }
 
 
-void HIRStubCall::Init(HIRBasicBlock* block, int id) {
-  HIRInstruction::Init(block, id);
+void HIRStubCall::Init(HIRBasicBlock* block) {
+  HIRInstruction::Init(block);
 
   HIRValue* result = block->hir()->CreateValue(block);
   SetResult(result);

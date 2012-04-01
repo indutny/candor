@@ -56,7 +56,7 @@ class HIRInstruction {
 
   // Called by HIR to associate instruction with block and to
   // give instruction a monothonic id
-  virtual void Init(HIRBasicBlock* block, int id);
+  virtual void Init(HIRBasicBlock* block);
 
   // Wrapper to push into value->uses()
   void Use(HIRValue* value);
@@ -97,7 +97,8 @@ class HIRInstruction {
   inline void next(HIRInstruction* next) { next_ = next; }
 
   // For liveness-range calculations
-  int id() { return id_; }
+  inline int id() { return id_; }
+  inline void id(int id) { id_ = id; }
 
   // Debug printing
   virtual void Print(PrintBuffer* p);
@@ -158,7 +159,7 @@ class HIRBranchBase : public HIRInstruction, public ZoneObject {
     SetInput(clause);
   }
 
-  virtual void Init(HIRBasicBlock* block, int id);
+  virtual void Init(HIRBasicBlock* block);
 
   virtual bool HasSideEffects() const { return true; };
 
@@ -177,7 +178,7 @@ class HIRStubCall : public HIRInstruction, public ZoneObject {
   HIRStubCall(Type type) : HIRInstruction(type) {
   }
 
-  void Init(HIRBasicBlock* block, int id);
+  void Init(HIRBasicBlock* block);
   virtual bool HasSideEffects() const { return true; };
 };
 
