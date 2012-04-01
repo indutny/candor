@@ -54,11 +54,6 @@ class Masm : public Assembler {
     int32_t index_;
   };
 
-  // Routines for working with operands
-  void Push(LIROperand* src);
-  void Mov(Register dst, LIROperand* src);
-  void Mov(LIROperand* dst, LIROperand* src);
-
   // Allocate slots for spills
   void AllocateSpills();
   void FinalizeSpills(int spills);
@@ -129,6 +124,11 @@ class Masm : public Assembler {
     kDouble
   };
 
+  // Routines for working with operands
+  inline void Push(LIROperand* src);
+  inline void Mov(Register dst, LIROperand* src);
+  inline void Mov(LIROperand* dst, LIROperand* src);
+
   inline void Push(Register src);
   inline void Pop(Register src);
   inline void PreservePop(Register src, Register preserve);
@@ -138,12 +138,8 @@ class Masm : public Assembler {
   inline Condition BinOpToCondition(BinOp::BinOpType type, BinOpUsage usage);
   inline void SpillSlot(uint32_t index, Operand& op);
 
-  // See VisitForSlot and VisitForValue in fullgen for disambiguation
-  inline Operand& slot() { return slot_; }
   inline Heap* heap() { return space_->heap(); }
   inline Stubs* stubs() { return space_->stubs(); }
-
-  Operand slot_;
 
  protected:
   CodeSpace* space_;

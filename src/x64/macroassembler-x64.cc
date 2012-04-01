@@ -3,7 +3,6 @@
 #include "code-space.h" // CodeSpace
 #include "heap.h" // HeapValue
 #include "heap-inl.h"
-#include "lir.h" // LIROperand
 
 #include "stubs.h"
 #include "utils.h" // ComputeHash
@@ -13,8 +12,7 @@
 namespace candor {
 namespace internal {
 
-Masm::Masm(CodeSpace* space) : slot_(rax, 0),
-                               space_(space),
+Masm::Masm(CodeSpace* space) : space_(space),
                                align_(0),
                                spill_reloc_(NULL),
                                spill_operand_(rbp, 0) {
@@ -93,7 +91,7 @@ void Masm::Spill::SpillReg(Register src) {
   src_ = src;
   Operand slot(rax, 0);
   masm()->SpillSlot(index(), slot);
-  masm()->movq(slot, src);
+  masm()->mov(slot, src);
 
   if (masm()->spill_index_ > masm()->spills_) {
     masm()->spills_ = masm()->spill_index_;
@@ -113,56 +111,12 @@ void Masm::Spill::Unspill(Register dst) {
 
   Operand slot(rax, 0);
   masm()->SpillSlot(index(), slot);
-  masm()->movq(dst, slot);
+  masm()->mov(dst, slot);
 }
 
 
 void Masm::Spill::Unspill() {
   return Unspill(src_);
-}
-
-
-void Masm::Push(LIROperand* src) {
-  if (src->is_register()) {
-    push(RegisterByIndex(src->value()));
-  } else if (src->is_immediate()) {
-    push(Immediate(src->value()));
-  } else {
-    push(SpillToOperand(src->value()));
-  }
-}
-
-
-void Masm::Mov(Register dst, LIROperand* src) {
-  if (src->is_register()) {
-    if (dst.is(RegisterByIndex(src->value()))) return;
-
-    movq(dst, RegisterByIndex(src->value()));
-  } else if (src->is_immediate()) {
-    movq(dst, Immediate(src->value()));
-  } else {
-    movq(dst, SpillToOperand(src->value()));
-  }
-}
-
-
-void Masm::Mov(LIROperand* dst, LIROperand* src) {
-  if (src == dst) return;
-
-  if (dst->is_register()) {
-    Mov(RegisterByIndex(dst->value()), src);
-  } else if (dst->is_spill()) {
-    if (src->is_register()) {
-      movq(SpillToOperand(dst->value()), RegisterByIndex(src->value()));
-    } else if (src->is_immediate()) {
-      movq(SpillToOperand(dst->value()), Immediate(src->value()));
-    } else {
-      movq(scratch, SpillToOperand(src->value()));
-      movq(SpillToOperand(dst->value()), scratch);
-    }
-  } else {
-    UNEXPECTED
-  }
 }
 
 
@@ -194,22 +148,22 @@ void Masm::Allocate(Heap::HeapTag tag,
 
   // Add tag size
   if (size_reg.is(reg_nil)) {
-    movq(rax, Immediate(HNumber::Tag(size + HValue::kPointerSize)));
+    mov(rax, Immediate(HNumber::Tag(size + HValue::kPointerSize)));
   } else {
-    movq(rax, size_reg);
+    mov(rax, size_reg);
     Untag(rax);
     addq(rax, Immediate(HValue::kPointerSize));
     TagNumber(rax);
   }
   push(rax);
-  movq(rax, Immediate(HNumber::Tag(tag)));
+  mov(rax, Immediate(HNumber::Tag(tag)));
   push(rax);
 
   Call(stubs()->GetAllocateStub());
   // Stub will unwind stack
   //
   if (!result.is(rax)) {
-    movq(result, rax);
+    mov(result, rax);
     pop(rax);
     pop(rax);
   }
@@ -224,21 +178,21 @@ void Masm::AllocateContext(uint32_t slots) {
 
   // Move address of current context to first slot
   Operand qparent(rax, HContext::kParentOffset);
-  movq(qparent, rdi);
+  mov(qparent, rdi);
 
   // Save number of slots
   Operand qslots(rax, HContext::kSlotsOffset);
-  movq(qslots, Immediate(slots));
+  mov(qslots, Immediate(slots));
 
   // Clear context
   for (uint32_t i = 0; i < slots; i++) {
     Operand qslot(rax, HContext::GetIndexDisp(i));
-    movq(qslot, Immediate(Heap::kTagNil));
+    mov(qslot, Immediate(Heap::kTagNil));
   }
 
   // Replace current context
   // (It'll be restored by caller)
-  movq(rdi, rax);
+  mov(rdi, rax);
   rax_s.Unspill();
 
   CheckGC();
@@ -249,7 +203,7 @@ void Masm::AllocateNumber(DoubleRegister value, Register result) {
   Allocate(Heap::kTagNumber, reg_nil, HValue::kPointerSize, result);
 
   Operand qvalue(result, HNumber::kValueOffset);
-  movqd(qvalue, value);
+  movd(qvalue, value);
 
   CheckGC();
 }
@@ -271,13 +225,13 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
   Operand qlength(result, HArray::kLengthOffset);
 
   // Set mask
-  movq(scratch, size);
+  mov(scratch, size);
 
   // mask (= (size - 1) << 3)
   Untag(scratch);
   dec(scratch);
   shl(scratch, Immediate(3));
-  movq(qmask, scratch);
+  mov(qmask, scratch);
   xorq(scratch, scratch);
 
   // Create map
@@ -291,16 +245,16 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
   TagNumber(size);
 
   Allocate(Heap::kTagMap, size, 0, scratch);
-  movq(qmap, scratch);
+  mov(qmap, scratch);
 
   size_s.Unspill();
   Spill result_s(this, result);
-  movq(result, scratch);
+  mov(result, scratch);
 
   // Save map size for GC
   Operand qmapsize(result, HMap::kSizeOffset);
   Untag(size);
-  movq(qmapsize, size);
+  mov(qmapsize, size);
 
   // Fill map with nil
   shl(size, Immediate(4));
@@ -314,7 +268,7 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
 
   // Set length
   if (tag == Heap::kTagArray) {
-    movq(qlength, Immediate(0));
+    mov(qlength, Immediate(0));
   }
 
   CheckGC();
@@ -324,7 +278,7 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
 void Masm::AllocateVarArgSlots(Spill* vararg, Register argc) {
   Operand qlength(scratch, HArray::kLengthOffset);
   vararg->Unspill(scratch);
-  movq(scratch, qlength);
+  mov(scratch, qlength);
 
   // Increase argc
   TagNumber(scratch);
@@ -333,7 +287,7 @@ void Masm::AllocateVarArgSlots(Spill* vararg, Register argc) {
   // Push RoundUp(scratch, 2) nils to stack
   Label loop_start(this), loop_cond(this);
 
-  movq(rax, Immediate(Heap::kTagNil));
+  mov(rax, Immediate(Heap::kTagNil));
 
   testb(scratch, Immediate(HNumber::Tag(1)));
   jmp(kEq, &loop_cond);
@@ -355,7 +309,7 @@ void Masm::AllocateVarArgSlots(Spill* vararg, Register argc) {
 
 void Masm::Fill(Register start, Register end, Immediate value) {
   Push(start);
-  movq(scratch, value);
+  mov(scratch, value);
 
   Label entry(this), loop(this);
   jmp(&entry);
@@ -363,7 +317,7 @@ void Masm::Fill(Register start, Register end, Immediate value) {
 
   // Fill
   Operand op(start, 0);
-  movq(op, scratch);
+  mov(op, scratch);
 
   // Move
   addq(start, Immediate(8));
@@ -380,8 +334,8 @@ void Masm::Fill(Register start, Register end, Immediate value) {
 
 
 void Masm::FillStackSlots() {
-  movq(rax, rsp);
-  movq(rbx, rbp);
+  mov(rax, rsp);
+  mov(rbx, rbp);
   // Skip frame info
   subq(rbx, Immediate(8));
   Fill(rax, rbx, Immediate(Heap::kTagNil));
@@ -396,9 +350,9 @@ void Masm::EnterFramePrologue() {
   Operand scratch_op(scratch, 0);
 
   push(Immediate(Heap::kTagNil));
-  movq(scratch, last_frame);
+  mov(scratch, last_frame);
   push(scratch_op);
-  movq(scratch, last_stack);
+  mov(scratch, last_stack);
   push(scratch_op);
   push(Immediate(Heap::kEnterFrameTag));
 }
@@ -414,13 +368,13 @@ void Masm::ExitFramePrologue() {
   Immediate last_frame(reinterpret_cast<uint64_t>(heap()->last_frame()));
   Operand scratch_op(scratch, 0);
 
-  movq(scratch, last_frame);
+  mov(scratch, last_frame);
   push(scratch_op);
-  movq(scratch_op, rbp);
+  mov(scratch_op, rbp);
 
-  movq(scratch, last_stack);
+  mov(scratch, last_stack);
   push(scratch_op);
-  movq(scratch_op, rsp);
+  mov(scratch_op, rsp);
   xorq(scratch, scratch);
 }
 
@@ -434,16 +388,16 @@ void Masm::ExitFrameEpilogue() {
 
   // Restore previous last_stack
   // NOTE: we can safely use rbx here, look at stubs-x64.cc
-  movq(rbx, scratch);
-  movq(scratch, last_stack);
-  movq(scratch_op, rbx);
+  mov(rbx, scratch);
+  mov(scratch, last_stack);
+  mov(scratch_op, rbx);
 
   pop(scratch);
 
   // Restore previous last_frame
-  movq(rbx, scratch);
-  movq(scratch, last_frame);
-  movq(scratch_op, rbx);
+  mov(rbx, scratch);
+  mov(scratch, last_frame);
+  mov(scratch_op, rbx);
 }
 
 
@@ -454,7 +408,7 @@ void Masm::StringHash(Register str, Register result) {
   Label call_runtime(this), done(this);
 
   // Check if hash was already calculated
-  movq(scratch, hash_field);
+  mov(scratch, hash_field);
   cmpq(scratch, Immediate(0));
   jmp(kNe, &done);
 
@@ -476,7 +430,7 @@ void Masm::StringHash(Register str, Register result) {
 
   // rcx = length
   Operand length_field(str, HString::kLengthOffset);
-  movq(rcx, length_field);
+  mov(rcx, length_field);
 
   // str += kValueOffset
   addq(str, Immediate(HString::kValueOffset));
@@ -494,12 +448,12 @@ void Masm::StringHash(Register str, Register result) {
   addl(result, scratch);
 
   // result += result << 10
-  movq(scratch, result);
+  mov(scratch, result);
   shll(result, Immediate(10));
   addl(result, scratch);
 
   // result ^= result >> 6
-  movq(scratch, result);
+  mov(scratch, result);
   shrl(result, Immediate(6));
   xorl(result, scratch);
 
@@ -517,17 +471,17 @@ void Masm::StringHash(Register str, Register result) {
 
   // Mixup
   // result += (result << 3);
-  movq(scratch, result);
+  mov(scratch, result);
   shll(result, Immediate(3));
   addl(result, scratch);
 
   // result ^= (result >> 11);
-  movq(scratch, result);
+  mov(scratch, result);
   shrl(result, Immediate(11));
   xorl(result, scratch);
 
   // result += (result << 15);
-  movq(scratch, result);
+  mov(scratch, result);
   shll(result, Immediate(15));
   addl(result, scratch);
 
@@ -536,7 +490,7 @@ void Masm::StringHash(Register str, Register result) {
   if (!result.is(rcx)) pop(rcx);
 
   // Store hash into a string
-  movq(hash_field, result);
+  mov(hash_field, result);
 
   jmp(&done);
   bind(&call_runtime);
@@ -549,7 +503,7 @@ void Masm::StringHash(Register str, Register result) {
   if (result.is(rax)) {
     pop(scratch);
   } else {
-    movq(result, rax);
+    mov(result, rax);
     pop(rax);
   }
 
@@ -564,7 +518,7 @@ void Masm::CheckGC() {
   Label done(this);
 
   // Check needs_gc flag
-  movq(scratch, gc_flag);
+  mov(scratch, gc_flag);
   cmpb(scratch_op, Immediate(0));
   jmp(kEq, &done);
 
@@ -636,7 +590,7 @@ void Masm::Call(Operand& addr) {
 
 
 void Masm::Call(char* stub) {
-  movq(scratch, reinterpret_cast<uint64_t>(stub));
+  mov(scratch, reinterpret_cast<uint64_t>(stub));
 
   Call(scratch);
 }
@@ -648,8 +602,8 @@ void Masm::CallFunction(Register fn) {
   Operand root_slot(fn, HFunction::kRootOffset);
 
   Label binding(this), done(this);
-  movq(rdi, context_slot);
-  movq(root_reg, root_slot);
+  mov(rdi, context_slot);
+  mov(root_reg, root_slot);
 
   cmpq(rdi, Immediate(Heap::kBindingContextTag));
   jmp(kEq, &binding);
@@ -669,21 +623,21 @@ void Masm::CallFunction(Register fn) {
 
 void Masm::ProbeCPU() {
   push(rbp);
-  movq(rbp, rsp);
+  mov(rbp, rsp);
 
   push(rbx);
   push(rcx);
   push(rdx);
 
-  movq(rax, Immediate(0x01));
+  mov(rax, Immediate(0x01));
   cpuid();
-  movq(rax, rcx);
+  mov(rax, rcx);
 
   pop(rdx);
   pop(rcx);
   pop(rbx);
 
-  movq(rsp, rbp);
+  mov(rsp, rbp);
   pop(rbp);
   ret(0);
 }

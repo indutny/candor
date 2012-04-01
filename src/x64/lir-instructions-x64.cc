@@ -36,7 +36,7 @@ void LIRNop::Generate() {
 
 void LIREntry::Generate() {
   __ push(rbp);
-  __ movq(rbp, rsp);
+  __ mov(rbp, rsp);
 
   __ AllocateSpills();
 }
@@ -45,7 +45,7 @@ void LIREntry::Generate() {
 void LIRReturn::Generate() {
   __ Mov(rax, inputs[0]);
 
-  __ movq(rsp, rbp);
+  __ mov(rsp, rbp);
   __ pop(rbp);
   __ ret(0);
 }
@@ -85,7 +85,7 @@ void LIRStoreProperty::Generate() {
 
   __ Mov(rax, inputs[0]);
   __ Mov(rbx, inputs[1]);
-  __ movq(rcx, Immediate(1));
+  __ mov(rcx, Immediate(1));
   __ Call(masm()->stubs()->GetLookupPropertyStub());
 
   // Make rax look like unboxed number to GC
@@ -100,11 +100,11 @@ void LIRStoreProperty::Generate() {
 
   __ IsNil(rax, NULL, &done);
   Operand qmap(rbx, HObject::kMapOffset);
-  __ movq(rbx, qmap);
+  __ mov(rbx, qmap);
   __ addq(rax, rbx);
 
   Operand slot(rax, 0);
-  __ movq(slot, rcx);
+  __ mov(slot, rcx);
 
   __ bind(&done);
 }
@@ -119,7 +119,7 @@ void LIRLoadRoot::Generate() {
 
   Operand root_slot(root_reg, HContext::GetIndexDisp(slot->index()));
 
-  __ movq(ToRegister(result), root_slot);
+  __ mov(ToRegister(result), root_slot);
 }
 
 
@@ -158,7 +158,7 @@ void LIRAllocateContext::Generate() {
 
 void LIRAllocateFunction::Generate() {
   // Get function's body address by generating relocation info
-  __ movq(ToRegister(scratches[0]), Immediate(0));
+  __ mov(ToRegister(scratches[0]), Immediate(0));
   RelocationInfo* addr = new RelocationInfo(RelocationInfo::kAbsolute,
                                             RelocationInfo::kQuad,
                                             masm()->offset() - 8);
@@ -171,7 +171,7 @@ void LIRAllocateFunction::Generate() {
 
   // Propagate result
   if (!ToRegister(result).is(rax)) {
-    __ movq(ToRegister(result), rax);
+    __ mov(ToRegister(result), rax);
   }
 }
 

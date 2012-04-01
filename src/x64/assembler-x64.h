@@ -279,11 +279,11 @@ class Assembler {
   void testb(Register dst, Immediate src);
   void testl(Register dst, Immediate src);
 
-  void movq(Register dst, Register src);
-  void movq(Register dst, Operand& src);
-  void movq(Operand& dst, Register src);
-  void movq(Register dst, Immediate src);
-  void movq(Operand& dst, Immediate src);
+  void mov(Register dst, Register src);
+  void mov(Register dst, Operand& src);
+  void mov(Operand& dst, Register src);
+  void mov(Register dst, Immediate src);
+  void mov(Operand& dst, Immediate src);
   void movl(Operand& dst, Immediate src);
   void movb(Register dst, Immediate src);
   void movb(Operand& dst, Immediate src);
@@ -324,9 +324,9 @@ class Assembler {
   void callq(Operand& dst);
 
   // Floating point instructions
-  void movqd(DoubleRegister dst, Register src);
-  void movqd(Register dst, DoubleRegister src);
-  void movqd(Operand& dst, DoubleRegister src);
+  void movd(DoubleRegister dst, Register src);
+  void movd(Register dst, DoubleRegister src);
+  void movd(Operand& dst, DoubleRegister src);
   void addqd(DoubleRegister dst, DoubleRegister src);
   void subqd(DoubleRegister dst, DoubleRegister src);
   void mulqd(DoubleRegister dst, DoubleRegister src);

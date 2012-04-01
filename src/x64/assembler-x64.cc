@@ -218,35 +218,35 @@ void Assembler::jmp(Condition cond, Label* label) {
 }
 
 
-void Assembler::movq(Register dst, Register src) {
+void Assembler::mov(Register dst, Register src) {
   emit_rexw(dst, src);
   emitb(0x8B);
   emit_modrm(dst, src);
 }
 
 
-void Assembler::movq(Register dst, Operand& src) {
+void Assembler::mov(Register dst, Operand& src) {
   emit_rexw(dst, src);
   emitb(0x8B);
   emit_modrm(dst, src);
 }
 
 
-void Assembler::movq(Operand& dst, Register src) {
+void Assembler::mov(Operand& dst, Register src) {
   emit_rexw(src, dst);
   emitb(0x89);
   emit_modrm(src, dst);
 }
 
 
-void Assembler::movq(Register dst, Immediate src) {
+void Assembler::mov(Register dst, Immediate src) {
   emit_rexw(rax, dst);
   emitb(0xB8 | dst.low());
   emitq(src.value());
 }
 
 
-void Assembler::movq(Operand& dst, Immediate src) {
+void Assembler::mov(Operand& dst, Immediate src) {
   emit_rexw(dst);
   emitb(0xC7);
   emit_modrm(dst);
@@ -496,7 +496,7 @@ void Assembler::callq(Operand& dst) {
 // Floating point instructions
 
 
-void Assembler::movqd(DoubleRegister dst, Register src) {
+void Assembler::movd(DoubleRegister dst, Register src) {
   emitb(0x66);
   emit_rexw(dst, src);
   emitb(0x0F);
@@ -505,7 +505,7 @@ void Assembler::movqd(DoubleRegister dst, Register src) {
 }
 
 
-void Assembler::movqd(Register dst, DoubleRegister src) {
+void Assembler::movd(Register dst, DoubleRegister src) {
   emitb(0x66);
   emit_rexw(src, dst);
   emitb(0x0F);
@@ -514,7 +514,7 @@ void Assembler::movqd(Register dst, DoubleRegister src) {
 }
 
 
-void Assembler::movqd(Operand& dst, DoubleRegister src) {
+void Assembler::movd(Operand& dst, DoubleRegister src) {
   emitb(0x66);
   emit_rexw(src, dst);
   emitb(0x0F);
