@@ -58,7 +58,7 @@ void HIRBasicBlock::AddPredecessor(HIRBasicBlock* block) {
         phi = new HIRPhi(this, value->slot()->hir());
 
         value->slot()->hir(phi);
-        values()->Push(phi);
+        AddValue(phi);
 
         // Push to block's and global phi list
         phis()->Push(phi);
@@ -68,11 +68,12 @@ void HIRBasicBlock::AddPredecessor(HIRBasicBlock* block) {
 
       phi->inputs()->Push(value);
     } else {
-      // Otherwise put value to the list
-      values()->Push(value);
       // And associated with a current block
       value->current_block(this);
       value->slot()->hir(value);
+
+      // Otherwise put value to the list
+      AddValue(value);
     }
   }
 }

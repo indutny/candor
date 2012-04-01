@@ -39,7 +39,7 @@ TEST_START(hir)
            "[StoreLocal *[0>2 [st:0]] *[1 [imm 0x4]]] "
            "[Goto] [0]>*>[3]]\n"
 
-           "[Block#3 {1,3,3,4} @[2,0]:3 "
+           "[Block#3 {1,3,4} @[2,0]:3 "
            "[LoadLocal *[3 [st:0]]] "
            "[Return *[4 [imm 0x1]]] "
            "[1,2]>*>[]]\n"
@@ -58,7 +58,7 @@ TEST_START(hir)
            "[StoreLocal *[0>2 [st:0]] *[1 [imm 0x4]]] "
            "[Goto] [0]>*>[3]]\n"
 
-           "[Block#3 {1,3,5,5,6} @[2,4]:5 "
+           "[Block#3 {1,3,5,6} @[2,4]:5 "
            "[LoadLocal *[5 [st:0]]] "
            "[Return *[6 [imm 0x1]]] "
            "[1,2]>*>[]]\n"
@@ -80,7 +80,7 @@ TEST_START(hir)
            "[StoreLocal *[0>2 [st:0]] *[1 [imm 0x4]]] "
            "[Goto] [0]>*>[6]]\n"
 
-           "[Block#6 {1,4,6,9,9,10} @[2,8,8]:9 "
+           "[Block#6 {1,4,6,9,10} @[2,8]:9 "
            "[LoadLocal *[9 [st:0]]] "
            "[Return *[10 [imm 0x1]]] "
            "[1,5]>*>[]]\n"
@@ -95,7 +95,7 @@ TEST_START(hir)
            "[StoreLocal *[3>5 [st:0]] *[4 [imm 0x6]]] "
            "[Goto] [2]>*>[5]]\n"
 
-           "[Block#5 {4,6,8,8} @[5,7]:8 "
+           "[Block#5 {4,6,8} @[5,7]:8 "
            "[Goto] [3,4]>*>[6]]\n"
 
            "[Block#4 {6,7} "
