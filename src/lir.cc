@@ -195,7 +195,7 @@ void LIR::SpillActive(Masm* masm,
 
     // Do not spill values that are dead after instruction with side-effect
     // or are just not registers
-    if (value->live_range()->end < hinstr->id() ||
+    if (value->live_range()->end <= hinstr->id() ||
         !value->operand()->is_register()) {
       continue;
     }

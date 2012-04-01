@@ -137,6 +137,23 @@ void LIRLoadContext::Generate() {
 
 
 void LIRBranchBool::Generate() {
+  // NOTE: input is definitely a register here
+  if (!ToRegister(inputs[0]).is(rax)) {
+    __ movq(rax, ToRegister(inputs[0]));
+  }
+
+  // Coerce value to boolean first
+  __ Call(masm()->stubs()->GetCoerceToBooleanStub());
+
+  // Jmp to `right` block if value is `false`
+  Operand bvalue(rax, HBoolean::kValueOffset);
+  __ cmpb(bvalue, Immediate(0));
+  __ jmp(kEq, NULL);
+
+  RelocationInfo* addr = new RelocationInfo(RelocationInfo::kRelative,
+                                            RelocationInfo::kLong,
+                                            masm()->offset() - 4);
+  hir()->right()->successors()[0]->uses()->Push(addr);
 }
 
 

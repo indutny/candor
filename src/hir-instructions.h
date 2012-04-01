@@ -285,6 +285,8 @@ class HIRBranchBool : public HIRBranchBase {
   HIRBranchBool(HIRValue* clause, HIRBasicBlock* left, HIRBasicBlock* right)
       : HIRBranchBase(kBranchBool, clause, left, right) {
   }
+
+  virtual bool HasSideEffects() const { return true; };
 };
 
 class HIRAllocateContext : public HIRStubCall {
