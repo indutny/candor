@@ -66,6 +66,10 @@ class LIR {
   // Calculate values' liveness ranges
   void CalculateLiveness();
 
+  // Prune phis that ain't used anywhere, extend inputs/phi liveness
+  // ranges to include phi/inputs itself.
+  void PrunePhis();
+
   // Generate machine code for `hir`
   void Generate(Masm* masm);
 

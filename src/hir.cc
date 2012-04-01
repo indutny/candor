@@ -60,7 +60,7 @@ void HIRBasicBlock::AddPredecessor(HIRBasicBlock* block) {
         hir()->phis()->Push(phi);
       }
 
-      phi->incoming()->Push(value);
+      phi->inputs()->Push(value);
     } else {
       // Otherwise put value to the list
       values()->Push(value);
@@ -176,13 +176,13 @@ void HIRBasicBlock::Print(PrintBuffer* p) {
 HIRPhi::HIRPhi(HIRBasicBlock* block, HIRValue* value)
     : HIRValue(block, value->slot()) {
   type_ = kPhi;
-  incoming()->Push(value);
+  inputs()->Push(value);
 }
 
 
 void HIRPhi::Print(PrintBuffer* p) {
   p->Print("@[");
-  HIRValueList::Item* item = incoming()->head();
+  HIRValueList::Item* item = inputs()->head();
   while (item != NULL) {
     p->Print("%d", item->value()->id());
     item = item->next();

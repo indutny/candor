@@ -162,9 +162,9 @@ class HIRPhi : public HIRValue {
   static inline HIRPhi* Cast(HIRValue* value) {
     return reinterpret_cast<HIRPhi*>(value);
   }
-  inline HIRValueList* incoming() { return &incoming_; }
+  inline HIRValueList* inputs() { return &inputs_; }
  private:
-  HIRValueList incoming_;
+  HIRValueList inputs_;
 };
 
 // Just a wrapper, see HIR::HIR(...)

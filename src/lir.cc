@@ -22,6 +22,9 @@ LIR::LIR(Heap* heap, HIR* hir) : heap_(heap), hir_(hir), spill_count_(0) {
   // Calculate numeric liveness ranges
   CalculateLiveness();
 
+  // Prune phis that ain't used
+  PrunePhis();
+
   // Put each register to the the list
   for (int i = kLIRRegisterCount - 1; i >= 0; --i) {
     registers()->Release(i);
@@ -51,6 +54,36 @@ void LIR::CalculateLiveness() {
     // Set liveness range
     value->live_range()->start = min;
     value->live_range()->end = max;
+  }
+}
+
+
+void LIR::PrunePhis() {
+  HIRPhiList::Item* item = hir()->phis()->head();
+  for (; item != NULL; item = item->next()) {
+    HIRPhi* value = HIRPhi::Cast(item->value());
+
+    // Skip dead phis
+    int start = value->live_range()->start;
+    if (start == -1) continue;
+
+    HIRValueList::Item* input_item = value->inputs()->head();
+    for (; input_item != NULL; input_item = input_item->next()) {
+      HIRValue* input = input_item->value();
+
+      // Skip dead inputs
+      int input_end = input->live_range()->end;
+      if (input_end == -1) continue;
+
+      // Extend input's liveness range
+      if (input_end < start) input->live_range()->start = start;
+
+      // Extend phi's liveness range
+      int block_end = input->block()->instructions()->tail()->value()->id();
+      if (start > block_end) start = block_end;
+    }
+
+    value->live_range()->start = start;
   }
 }
 
