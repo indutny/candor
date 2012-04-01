@@ -19,7 +19,7 @@ class LIROperand;
 class RelocationInfo;
 
 // Instruction base class
-class HIRInstruction {
+class HIRInstruction : public ZoneObject {
  public:
   enum Type {
     kNone,
@@ -48,6 +48,7 @@ class HIRInstruction {
   };
 
   HIRInstruction(Type type) : type_(type),
+                              id_(-1),
                               block_(NULL),
                               result_(NULL),
                               prev_(NULL),
@@ -105,6 +106,7 @@ class HIRInstruction {
 
  private:
   Type type_;
+  int id_;
   HIRBasicBlock* block_;
 
   ZoneList<HIRValue*> values_;
@@ -113,11 +115,9 @@ class HIRInstruction {
 
   HIRInstruction* prev_;
   HIRInstruction* next_;
-
-  int id_;
 };
 
-class HIRLoadBase : public HIRInstruction, public ZoneObject {
+class HIRLoadBase : public HIRInstruction {
  public:
   HIRLoadBase(Type type, HIRValue* value) : HIRInstruction(type),
                                             value_(value) {
@@ -130,7 +130,7 @@ class HIRLoadBase : public HIRInstruction, public ZoneObject {
   HIRValue* value_;
 };
 
-class HIRStoreBase : public HIRInstruction, public ZoneObject {
+class HIRStoreBase : public HIRInstruction {
  public:
   HIRStoreBase(Type type, HIRValue* lhs, HIRValue* rhs) : HIRInstruction(type),
                                                           lhs_(lhs),
@@ -147,7 +147,7 @@ class HIRStoreBase : public HIRInstruction, public ZoneObject {
   HIRValue* rhs_;
 };
 
-class HIRBranchBase : public HIRInstruction, public ZoneObject {
+class HIRBranchBase : public HIRInstruction {
  public:
   HIRBranchBase(Type type,
                 HIRValue* clause,
@@ -173,7 +173,7 @@ class HIRBranchBase : public HIRInstruction, public ZoneObject {
   HIRBasicBlock* right_;
 };
 
-class HIRStubCall : public HIRInstruction, public ZoneObject {
+class HIRStubCall : public HIRInstruction {
  public:
   HIRStubCall(Type type) : HIRInstruction(type) {
   }
