@@ -34,7 +34,7 @@ void BaseStub::GenerateEpilogue(int args) {
 void EntryStub::Generate() {
   GeneratePrologue();
 
-  __ AllocateSpills(0);
+  __ AllocateSpills();
 
   // Just for alignment
   __ push(Immediate(Heap::kTagNil));
@@ -133,7 +133,7 @@ void EntryStub::Generate() {
   __ pop(rbx);
   __ pop(rbp);
 
-  __ FinalizeSpills();
+  __ FinalizeSpills(0);
 
   GenerateEpilogue(0);
 }
@@ -271,7 +271,7 @@ void CallBindingStub::Generate() {
 void VarArgStub::Generate() {
   GeneratePrologue();
 
-  __ AllocateSpills(0);
+  __ AllocateSpills();
 
   // rax <- interior pointer to arguments
   // rdx <- arguments count (to put into array)
@@ -335,7 +335,7 @@ void VarArgStub::Generate() {
 
   __ CheckGC();
 
-  __ FinalizeSpills();
+  __ FinalizeSpills(0);
 
   GenerateEpilogue(0);
 }
@@ -344,7 +344,7 @@ void VarArgStub::Generate() {
 void PutVarArgStub::Generate() {
   GeneratePrologue();
 
-  __ AllocateSpills(0);
+  __ AllocateSpills();
 
   // rax <- array
   // rbx <- stack offset
@@ -398,7 +398,7 @@ void PutVarArgStub::Generate() {
   __ cmpq(rbx, scratch);
   __ jmp(kLt, &loop_start);
 
-  __ FinalizeSpills();
+  __ FinalizeSpills(0);
 
   GenerateEpilogue(0);
 }
@@ -499,7 +499,7 @@ void KeysofStub::Generate() {
 
 void LookupPropertyStub::Generate() {
   GeneratePrologue();
-  __ AllocateSpills(0);
+  __ AllocateSpills();
 
   Label is_object(masm()), is_array(masm()), cleanup(masm()), slow_case(masm());
   Label non_object_error(masm()), done(masm());
@@ -668,7 +668,7 @@ void LookupPropertyStub::Generate() {
 
   __ bind(&done);
 
-  __ FinalizeSpills();
+  __ FinalizeSpills(0);
   GenerateEpilogue(0);
 }
 
@@ -725,7 +725,7 @@ void CoerceToBooleanStub::Generate() {
 void CloneObjectStub::Generate() {
   GeneratePrologue();
 
-  __ AllocateSpills(0);
+  __ AllocateSpills();
 
   Label non_object(masm()), done(masm());
 
@@ -789,7 +789,7 @@ void CloneObjectStub::Generate() {
 
   __ bind(&done);
 
-  __ FinalizeSpills();
+  __ FinalizeSpills(0);
 
   GenerateEpilogue(0);
 }
@@ -900,7 +900,7 @@ void BinOpStub::Generate() {
   // rbx <- rhs
 
   // Allocate space for spill slots
-  __ AllocateSpills(0);
+  __ AllocateSpills();
 
   Label not_unboxed(masm()), done(masm());
   Label lhs_to_heap(masm()), rhs_to_heap(masm());
@@ -1150,7 +1150,7 @@ void BinOpStub::Generate() {
 
   __ CheckGC();
 
-  __ FinalizeSpills();
+  __ FinalizeSpills(0);
 
   GenerateEpilogue(0);
 }

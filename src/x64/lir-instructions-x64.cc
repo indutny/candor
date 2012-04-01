@@ -48,6 +48,8 @@ void LIRParallelMove::Generate() {
 void LIREntry::Generate() {
   __ push(rbp);
   __ movq(rbp, rsp);
+
+  __ AllocateSpills();
 }
 
 

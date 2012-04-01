@@ -116,7 +116,7 @@ class LIR {
   inline FreeList<int, 128>* registers() { return &registers_; }
   inline FreeList<int, 128>* spills() { return &spills_; }
 
-  // NOTE: spill with id = 0 is reserved as ParallelMove's scratch
+  // NOTE: spill with id = -1 is reserved as ParallelMove's scratch
   inline int spill_count() { return spill_count_; }
   inline void spill_count(int spill_count) { spill_count_ = spill_count; }
   inline int get_new_spill() { return spill_count_++; }

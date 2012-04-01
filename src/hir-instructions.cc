@@ -105,7 +105,7 @@ void HIRParallelMove::Reorder(LIROperand* source, LIROperand* target) {
     if (sitem->value()->being_moved()) {
       // Loop detected - create `scratch` operand
       LIROperand* scratch = new LIROperand(LIROperand::kSpill,
-                                           static_cast<off_t>(0));
+                                           static_cast<off_t>(-1));
 
       // scratch = target
       sources()->Push(target);

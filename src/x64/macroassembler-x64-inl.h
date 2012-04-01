@@ -38,7 +38,8 @@ inline void Masm::Untag(Register src) {
 
 
 inline Operand& Masm::SpillToOperand(int index) {
-  spill_operand_.disp(- 8 * (index + 1));
+  // -1 spill is reserved for ParallelMove's use
+  spill_operand_.disp(- 8 * (index + 2));
   return spill_operand_;
 }
 

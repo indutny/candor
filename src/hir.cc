@@ -1,6 +1,5 @@
 #include "hir.h"
 #include "hir-instructions.h"
-#include "lir.h" // LIROperand
 #include "visitor.h" // Visitor
 #include "ast.h" // AstNode
 #include "utils.h" // List

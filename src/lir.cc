@@ -18,7 +18,7 @@
 namespace candor {
 namespace internal {
 
-LIR::LIR(Heap* heap, HIR* hir) : heap_(heap), hir_(hir), spill_count_(1) {
+LIR::LIR(Heap* heap, HIR* hir) : heap_(heap), hir_(hir), spill_count_(0) {
   // Calculate numeric liveness ranges
   CalculateLiveness();
 
@@ -141,7 +141,6 @@ void LIR::SpillActive(Masm* masm,
   HIRValueList::Item* item = active_values()->head();
   HIRParallelMove* reverse_move = NULL;
 
-  int old_spills = spill_count();
   for (; item != NULL; item = item->next()) {
     HIRValue* value = item->value();
 
@@ -165,13 +164,26 @@ void LIR::SpillActive(Masm* masm,
     reverse_move->AddMove(spill, value->operand());
   }
 
-  // Restore spills, they are not used after restoring
-  spill_count(old_spills);
+  // Restore spills, they are not used after instr with side-effect
+  ZoneList<LIROperand*>::Item* op = reverse_move->raw_sources()->head();
+  while (op != NULL) {
+    spills()->Release(op->value()->value());
+    op = op->next();
+  }
 }
 
 
 void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
   LIRInstruction* linstr = Cast(hinstr);
+
+  // Relocate all block's uses
+  if (hinstr->block()->uses()->length() > 0) {
+    RelocationInfo* block_reloc;
+    while ((block_reloc = hinstr->block()->uses()->Shift()) != NULL) {
+      block_reloc->target(masm->offset());
+      masm->relocation_info_.Push(block_reloc);
+    }
+  }
 
   // Parallel move instruction doesn't need allocation nor generation.
   if (hinstr->type() == HIRInstruction::kParallelMove) {
@@ -284,15 +296,17 @@ void LIR::Generate(Masm* masm) {
   HIRInstruction* hinstr = hir()->first_instruction();
 
   for (; hinstr != NULL; hinstr = hinstr->next()) {
-    // Relocate all block's uses
-    if (hinstr->block()->uses()->length() > 0) {
-      RelocationInfo* block_reloc;
-      while ((block_reloc = hinstr->block()->uses()->Shift()) != NULL) {
-        block_reloc->target(masm->offset());
-        masm->relocation_info_.Push(block_reloc);
-      }
-    }
     GenerateInstruction(masm, hinstr);
+
+    // Each function has separate spill slots.
+    // Finalize previous function's spills (if there was any) and
+    // prepare entering new function
+    if (hinstr->next() == NULL ||
+        hinstr->next()->type() == HIRInstruction::kEntry) {
+      masm->FinalizeSpills(spill_count());
+      spill_count(0);
+      while (!spills()->IsEmpty()) spills()->Get();
+    }
   }
 }
 

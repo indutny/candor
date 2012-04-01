@@ -15,6 +15,7 @@ namespace internal {
 Masm::Masm(CodeSpace* space) : slot_(rax, 0),
                                space_(space),
                                align_(0),
+                               spill_reloc_(NULL),
                                spill_operand_(rbp, 0) {
 }
 
@@ -120,10 +121,7 @@ void Masm::Spill::Unspill() {
 }
 
 
-void Masm::AllocateSpills(uint32_t stack_slots) {
-  spill_offset_ = RoundUp((stack_slots + 1) * 8, 16);
-  spills_ = 0;
-  spill_index_ = 0;
+void Masm::AllocateSpills() {
   subq(rsp, Immediate(0));
   spill_reloc_ = new RelocationInfo(RelocationInfo::kValue,
                                     RelocationInfo::kLong,
@@ -133,8 +131,10 @@ void Masm::AllocateSpills(uint32_t stack_slots) {
 }
 
 
-void Masm::FinalizeSpills() {
-  spill_reloc_->target(spill_offset_ + RoundUp((spills_ + 1) << 3, 16));
+void Masm::FinalizeSpills(int spills_count) {
+  if (spill_reloc_ == NULL) return;
+
+  spill_reloc_->target(8 + RoundUp((spills_count + spills_ + 1) << 3, 16));
 }
 
 

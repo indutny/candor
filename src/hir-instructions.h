@@ -205,6 +205,8 @@ class HIRParallelMove : public HIRInstruction {
 
   inline OperandList* sources() { return &sources_; }
   inline OperandList* targets() { return &targets_; }
+  inline OperandList* raw_sources() { return &raw_sources_; }
+  inline OperandList* raw_targets() { return &raw_targets_; }
 
  private:
   // For recursive reordering
