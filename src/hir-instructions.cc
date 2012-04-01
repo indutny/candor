@@ -52,12 +52,14 @@ void HIRInstruction::Print(PrintBuffer* p) {
 #undef HIR_GEN_SWITCH_CASE
 
   p->Print("[%s", str);
-  ZoneList<HIRValue*>::Item* item = values()->head();
-  if (item != NULL) p->Print(" ");
-  while (item != NULL) {
-    item->value()->Print(p);
-    item = item->next();
+  if (type() != kGoto) {
+    ZoneList<HIRValue*>::Item* item = values()->head();
     if (item != NULL) p->Print(" ");
+    while (item != NULL) {
+      item->value()->Print(p);
+      item = item->next();
+      if (item != NULL) p->Print(" ");
+    }
   }
   p->Print("]");
 }

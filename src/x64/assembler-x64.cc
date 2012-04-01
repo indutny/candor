@@ -13,6 +13,15 @@ void RelocationInfo::Relocate(char* buffer) {
     addr = target_;
   } else {
     addr = target_ - offset_;
+
+    // Add offset
+    switch (size_) {
+     case kByte: addr -= 1; break;
+     case kWord: addr -= 2; break;
+     case kLong: addr -= 4; break;
+     case kQuad: addr -= 8; break;
+     default: UNEXPECTED break;
+    }
   }
 
   switch (size_) {
@@ -29,6 +38,7 @@ void RelocationInfo::Relocate(char* buffer) {
     *reinterpret_cast<uint64_t*>(buffer + offset_) = addr;
     break;
    default:
+    UNEXPECTED
     break;
   }
 }
@@ -180,7 +190,7 @@ void Assembler::testl(Register dst, Immediate src) {
 void Assembler::jmp(Label* label) {
   emitb(0xE9);
   emitl(0x12345678);
-  label->use(offset() - 4);
+  if (label != NULL) label->use(offset() - 4);
 }
 
 
@@ -204,7 +214,7 @@ void Assembler::jmp(Condition cond, Label* label) {
     UNEXPECTED
   }
   emitl(0x12345678);
-  label->use(offset() - 4);
+  if (label != NULL) label->use(offset() - 4);
 }
 
 

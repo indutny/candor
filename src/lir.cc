@@ -41,8 +41,8 @@ void LIR::CalculateLiveness() {
     if (value->live_range()->start != -1) continue;
 
     // Go through all instructions to determine maximum and minimum ids
-    int min = 0;
-    int max = 0;
+    int min = -1;
+    int max = -1;
     HIRInstructionList::Item* instr = value->uses()->head();
     if (instr != NULL) min = instr->value()->id();
     for (; instr != NULL; instr = instr->next()) {
@@ -67,24 +67,35 @@ void LIR::PrunePhis() {
     // Skip dead phis
     if (phi->start == -1) continue;
 
+    // Add phi to predecessor's gotos
+    for (int i = 0; i < value->block()->predecessors_count(); i++) {
+      value->block()->predecessors()[0]->
+          last_instruction()->values()->Push(value);
+    }
+
+    // We'll extend liveness of phi's inputs
+    // to ensure that we can always do movement at the end of blocks that
+    // contains those inputs
     HIRValueList::Item* input_item = value->inputs()->head();
     for (; input_item != NULL; input_item = input_item->next()) {
-      HIRValue::LiveRange* input = input_item->value()->live_range();
+      HIRValue* input = input_item->value();
+      HIRValue::LiveRange* range = input->live_range();
 
       // Skip dead inputs
-      if (input->start == -1) continue;
+      if (range->start == -1) continue;
 
-      // Extend input's liveness range
-      if (input->end < phi->start) input->end = phi->start;
-      if (input->start > phi->end) input->start = phi->end;
+      for (int i = 0; i < 2; i++) {
+        HIRBasicBlock* block = value->block()->predecessors()[i];
+        if (!input->block()->Dominates(block)) continue;
 
-      // Extend phi's liveness range
-      HIRBasicBlock* block = input_item->value()->block();
-      HIRInstruction* first = block->instructions()->head()->value();
-      HIRInstruction* last = block->instructions()->tail()->value();
+        HIRInstruction* last = block->last_instruction();
 
-      if (phi->start > last->id()) phi->start = last->id();
-      if (phi->end < first->id()) phi->end = first->id();
+        if (range->start > last->id()) range->start = last->id();
+        if (range->end < last->id()) range->end = last->id();
+
+        // And push it to the goto
+        last->values()->Push(input_item->value());
+      }
     }
   }
 }
@@ -213,6 +224,38 @@ void LIR::SpillActive(Masm* masm,
 }
 
 
+void LIR::MovePhis(HIRInstruction* hinstr, HIRParallelMove* &move) {
+  HIRBasicBlock* succ = hinstr->block()->successors()[0];
+  HIRPhiList::Item* item = succ->phis()->head();
+
+  // Iterate through phis
+  for (; item != NULL; item = item->next()) {
+    HIRPhi* phi = item->value();
+
+    HIRValueList::Item* value = phi->inputs()->head();
+    for (; value != NULL; value = value->next()) {
+      // Skip non-local and dead inputs
+      if (!value->value()->block()->Dominates(hinstr->block()) ||
+          value->value()->operand() == NULL ||
+          phi->operand() == NULL) {
+        continue;
+      }
+
+      // Lazily create move
+      if (move == NULL) {
+        move = new HIRParallelMove(hinstr, HIRParallelMove::kBefore);
+      }
+
+      // Add movement from hinstr block's input to phi
+      move->AddMove(value->value()->operand(), phi->operand());
+
+      // Only one move per phi
+      break;
+    }
+  }
+}
+
+
 void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
   LIRInstruction* linstr = Cast(hinstr);
 
@@ -300,7 +343,6 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
     assert(item->value()->operand() != NULL);
     linstr->inputs[i++] = item->value()->operand();
   }
-  assert(item == NULL || item->next() == NULL);
 
   // All active registers should be spilled before entering
   // instruction with side effects (like stubs)
@@ -308,6 +350,14 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
   // Though instruction itself should receive arguments in registers
   // (if that's possible)
   if (hinstr->HasSideEffects()) SpillActive(masm, hinstr, move);
+
+  // If instruction is a kGoto to the join block,
+  // add join's phis to the movement
+  if (hinstr->is(HIRInstruction::kGoto) &&
+      hinstr->block()->successors_count() == 1 &&
+      hinstr->block()->successors()[0]->predecessors_count() == 2) {
+    MovePhis(hinstr, move);
+  }
 
   // All registers was allocated, perform move if needed
   if (move != NULL) {

@@ -70,6 +70,19 @@ void LIRReturn::Generate() {
 
 
 void LIRGoto::Generate() {
+  assert(hir()->block()->successors_count() == 1);
+
+  // Zero jumps should be ignored
+  if (hir()->next() == hir()->block()->successors()[0]->first_instruction()) {
+    return;
+  }
+
+  // Generate jmp and add relocation info to block
+  __ jmp(NULL);
+  RelocationInfo* addr = new RelocationInfo(RelocationInfo::kRelative,
+                                            RelocationInfo::kLong,
+                                            masm()->offset() - 4);
+  hir()->block()->successors()[0]->uses()->Push(addr);
 }
 
 

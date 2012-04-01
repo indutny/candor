@@ -42,6 +42,9 @@ class HIRBasicBlock : public ZoneObject {
   void AddSuccessor(HIRBasicBlock* block);
   void Goto(HIRBasicBlock* block);
 
+  // Block relations
+  bool Dominates(HIRBasicBlock* block);
+
   // Debug printing
   void Print(PrintBuffer* p);
 
@@ -50,6 +53,15 @@ class HIRBasicBlock : public ZoneObject {
   inline HIRValueList* values() { return &values_; }
   inline HIRPhiList* phis() { return &phis_; }
   inline HIRInstructionList* instructions() { return &instructions_; }
+  inline HIRInstruction* first_instruction() {
+    if (instructions()->length() == 0) return NULL;
+    return instructions()->head()->value();
+  }
+  inline HIRInstruction* last_instruction() {
+    if (instructions()->length() == 0) return NULL;
+    return instructions()->tail()->value();
+  }
+
   inline HIRBasicBlock** predecessors() { return predecessors_; }
   inline HIRBasicBlock** successors() { return successors_; }
   inline int predecessors_count() { return predecessors_count_; }

@@ -14,6 +14,7 @@ namespace internal {
 // Forward declarations
 class HIRBasicBlock;
 class HIRValue;
+class HIRPhi;
 class LIROperand;
 class RelocationInfo;
 
@@ -162,16 +163,10 @@ class HIRBranchBase : public HIRInstruction, public ZoneObject {
   inline HIRBasicBlock* left() { return left_; }
   inline HIRBasicBlock* right() { return right_; }
 
-  inline RelocationInfo* left_reloc() { return left_reloc_; }
-  inline RelocationInfo* right_reloc() { return right_reloc_; }
-
  private:
   HIRValue* clause_;
   HIRBasicBlock* left_;
   HIRBasicBlock* right_;
-
-  RelocationInfo* left_reloc_;
-  RelocationInfo* right_reloc_;
 };
 
 class HIRStubCall : public HIRInstruction, public ZoneObject {
@@ -239,12 +234,6 @@ class HIRGoto : public HIRInstruction {
  public:
   HIRGoto() : HIRInstruction(kGoto) {
   }
-
-  // Assembly helper for getting address of destination block
-  inline RelocationInfo* destination() { return destination_; }
-
- private:
-  RelocationInfo* destination_;
 };
 
 class HIRLoadRoot : public HIRLoadBase {

@@ -85,12 +85,60 @@ void HIRBasicBlock::Goto(HIRBasicBlock* block) {
   // Connect graph nodes
   AddSuccessor(block);
 
+  // Find previous instruction to
+  // insert Goto in the instructions chain and to
+  // detemine optimal instruction index
+  HIRInstruction* prev = NULL;
+  int id = 0;
+  HIRBasicBlock* current = this;
+  while (current != NULL) {
+    if (current->instructions()->length() > 0) {
+      prev = current->last_instruction();
+      id = prev->id();
+      break;
+    }
+
+    // Go to the predecessor block
+    current = current->predecessors()[0];
+  }
+
   // Add goto instruction and finalize block
   HIRGoto* instr = new HIRGoto();
   instructions()->Push(instr);
-  instr->Init(this, hir()->get_instruction_index());
-
+  instr->Init(this, id);
   finished(true);
+
+  if (prev != NULL) {
+    // Previous instruction found - insert Goto in the linked list
+    instr->prev(prev);
+    instr->next(prev->next());
+
+    if (prev->next() != NULL) prev->next()->prev(instr);
+    prev->next(instr);
+
+    if (prev == hir()->last_instruction()) hir()->last_instruction(instr);
+  } else {
+    // No previous instruction - goto should become the first instruction
+    instr->prev(prev);
+    instr->next(hir()->first_instruction());
+
+    if (hir()->first_instruction() != NULL) {
+      hir()->first_instruction()->prev(instr);
+    }
+    hir()->first_instruction(instr);
+    if (hir()->last_instruction() == NULL) hir()->last_instruction(instr);
+  }
+}
+
+
+bool HIRBasicBlock::Dominates(HIRBasicBlock* block) {
+  while (block != NULL) {
+    if (block == this) return true;
+    if (block->predecessors_count() != 1) return false;
+    block = block->predecessors()[0];
+  }
+
+  return false;
 }
 
 

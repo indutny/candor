@@ -13,7 +13,7 @@ namespace internal {
 inline void Label::relocate(uint32_t offset) {
   // Label should be relocated only once
   assert(pos_ == 0);
-  pos_ = offset - 4;
+  pos_ = offset;
 
   // Iterate through all label's uses and insert correct relocation info
   List<RelocationInfo*, EmptyClass>::Item* item = uses_.head();

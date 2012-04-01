@@ -102,6 +102,9 @@ class LIR {
   // Insert value into sorted spills list
   void AddToSpillCandidates(HIRValue* value);
 
+  // Add phis assignments to movement
+  void MovePhis(HIRInstruction* hinstr, HIRParallelMove* &move);
+
   // Wrapper over spills FreeList and incremental index
   inline LIROperand* GetSpill();
 
