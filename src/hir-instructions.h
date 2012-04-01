@@ -222,6 +222,10 @@ class HIRNop : public HIRInstruction {
  public:
   HIRNop() : HIRInstruction(kNop) {
   }
+
+  HIRNop(HIRValue* result) : HIRInstruction(kNop) {
+    SetResult(result);
+  }
 };
 
 class HIREntry : public HIRInstruction {
@@ -280,11 +284,27 @@ class HIRStoreContext : public HIRStoreBase {
   }
 };
 
-class HIRStoreProperty : public HIRStoreBase {
+class HIRStoreProperty : public HIRInstruction {
  public:
-  HIRStoreProperty(HIRValue* lhs, HIRValue* rhs)
-      : HIRStoreBase(kStoreProperty, lhs, rhs) {
+  HIRStoreProperty(HIRValue* receiver, HIRValue* property, HIRValue* rhs)
+      : HIRInstruction(kStoreProperty),
+        receiver_(receiver),
+        property_(property),
+        rhs_(rhs) {
+    SetInput(receiver);
+    SetInput(property);
+    // Propagate result
+    SetResult(rhs);
   }
+
+  inline HIRValue* receiver() { return receiver_; }
+  inline HIRValue* property() { return property_; }
+  inline HIRValue* rhs() { return rhs_; }
+
+ private:
+  HIRValue* receiver_;
+  HIRValue* property_;
+  HIRValue* rhs_;
 };
 
 class HIRBranchBool : public HIRBranchBase {

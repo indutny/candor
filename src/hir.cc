@@ -8,6 +8,9 @@
 #include <stdint.h> // int64_t
 #include <assert.h> // assert
 
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h> // printf formats for big integers
+
 namespace candor {
 namespace internal {
 
@@ -496,11 +499,15 @@ AstNode* HIR::VisitAssign(AstNode* stmt) {
     } else {
       AddInstruction(new HIRStoreContext(lhs, rhs));
     }
-  } else {
+  } else if (stmt->lhs()->is(AstNode::kMember)) {
     HIRValue* rhs = GetValue(stmt->rhs());
-    HIRValue* lhs = GetValue(stmt->lhs());
+    HIRValue* property = GetValue(stmt->lhs()->rhs());
+    HIRValue* receiver = GetValue(stmt->lhs()->lhs());
 
-    AddInstruction(new HIRStoreProperty(lhs, rhs));
+    AddInstruction(new HIRStoreProperty(receiver, property, rhs));
+  } else {
+    // TODO: Set error! Incorrect lhs
+    abort();
   }
 
   return stmt;
@@ -595,9 +602,57 @@ void HIR::VisitGenericObject(AstNode* node) {
   }
 
   // Create object
-  AddInstruction(new HIRAllocateObject(kind, size));
+  HIRAllocateObject* instr = new HIRAllocateObject(kind, size);
+  AddInstruction(instr);
 
-  // TODO: Put properties into it
+  // Get result
+  HIRValue* result = instr->GetResult();
+
+  // Insert properties
+  switch (node->type()) {
+   case AstNode::kObjectLiteral:
+    {
+      ObjectLiteral* obj = ObjectLiteral::Cast(node);
+
+      assert(obj->keys()->length() == obj->values()->length());
+      AstList::Item* key = obj->keys()->head();
+      AstList::Item* value = obj->values()->head();
+      while (key != NULL) {
+        AddInstruction(new HIRStoreProperty(
+              result,
+              CreateValue(root()->Put(key->value())),
+              GetValue(value->value())));
+
+        key = key->next();
+        value = value->next();
+      }
+    }
+    break;
+   case AstNode::kArrayLiteral:
+    {
+      AstList::Item* item = node->children()->head();
+      uint64_t index = 0;
+      while (item != NULL) {
+        char keystr[32];
+        AstNode* key = new AstNode(AstNode::kNumber, node);
+        key->value(keystr);
+        key->length(snprintf(keystr, sizeof(keystr), "%" PRIu64, index));
+
+        AddInstruction(new HIRStoreProperty(
+              result,
+              CreateValue(root()->Put(key)),
+              GetValue(item->value())));
+
+        item = item->next();
+        index++;
+      }
+    }
+    break;
+   default: UNEXPECTED break;
+  }
+
+  // And return object
+  AddInstruction(new HIRNop(result));
 }
 
 
