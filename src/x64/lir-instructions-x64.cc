@@ -1,8 +1,10 @@
 #include "lir.h"
 #include "lir-instructions-x64.h"
+#include "lir-instructions-x64-inl.h"
 #include "hir.h"
 #include "hir-instructions.h"
-#include "macroassembler.h"
+#include "macroassembler.h" // Masm
+#include "stubs.h" // Stubs
 
 #include "scope.h" // ScopeSlot
 #include "heap.h" // HContext::GetIndexDisp
@@ -26,19 +28,16 @@ void LIRParallelMove::Generate() {
 
     if (source_op->is_register()) {
       if (target_op->is_register()) {
-        __ movq(RegisterByIndex(target_op->value()),
-                RegisterByIndex(source_op->value()));
+        __ movq(ToRegister(target_op), ToRegister(source_op));
       } else {
-        __ movq(masm()->SpillToOperand(target_op->value()),
-                RegisterByIndex(source_op->value()));
+        __ movq(ToOperand(target_op), ToRegister(source_op));
       }
     } else {
       if (target_op->is_register()) {
-        __ movq(RegisterByIndex(target_op->value()),
-                masm()->SpillToOperand(source_op->value()));
+        __ movq(ToRegister(target_op), ToOperand(source_op));
       } else {
-        __ movq(scratch, masm()->SpillToOperand(source_op->value()));
-        __ movq(masm()->SpillToOperand(target_op->value()), scratch);
+        __ movq(scratch, ToOperand(source_op));
+        __ movq(ToOperand(target_op), scratch);
       }
     }
   }
@@ -57,11 +56,11 @@ void LIRReturn::Generate() {
   if (inputs[0]->is_immediate()) {
     __ movq(rax, Immediate(inputs[0]->value()));
   } else if (inputs[0]->is_register()) {
-    if (!RegisterByIndex(inputs[0]->value()).is(rax)) {
-      __ movq(rax, RegisterByIndex(inputs[0]->value()));
+    if (!ToRegister(inputs[0]).is(rax)) {
+      __ movq(rax, ToRegister(inputs[0]));
     }
   } else if (inputs[0]->is_spill()) {
-    __ movq(rax, masm()->SpillToOperand(inputs[0]->value()));
+    __ movq(rax, ToOperand(inputs[0]));
   }
 
   __ movq(rsp, rbp);
@@ -75,19 +74,19 @@ void LIRGoto::Generate() {
 
 
 void LIRStoreLocal::Generate() {
+  // NOTE: Store acts in reverse order - input = result
+  // that's needed for result propagation in chain assignments
   if (inputs[0]->is_register()) {
-    Register slot = RegisterByIndex(inputs[0]->value());
     if (result->is_register()) {
-      __ movq(slot, RegisterByIndex(result->value()));
+      __ movq(ToRegister(inputs[0]), ToRegister(result));
     } else if (result->is_immediate()) {
-      __ movq(slot, Immediate(result->value()));
+      __ movq(ToRegister(inputs[0]), Immediate(result->value()));
     }
   } else if (inputs[0]->is_spill()) {
-    Operand slot = masm()->SpillToOperand(inputs[0]->value());
     if (result->is_register()) {
-      __ movq(slot, RegisterByIndex(result->value()));
+      __ movq(ToOperand(inputs[0]), ToRegister(result));
     } else if (result->is_immediate()) {
-      __ movq(slot, Immediate(result->value()));
+      __ movq(ToOperand(inputs[0]), Immediate(result->value()));
     }
   } else {
     UNEXPECTED
@@ -112,7 +111,7 @@ void LIRLoadRoot::Generate() {
 
   Operand root_slot(root_reg, HContext::GetIndexDisp(slot->index()));
 
-  __ movq(RegisterByIndex(result->value()), root_slot);
+  __ movq(ToRegister(result), root_slot);
 }
 
 
@@ -133,15 +132,16 @@ void LIRAllocateContext::Generate() {
 
 
 void LIRAllocateFunction::Generate() {
-  Register addr_reg = RegisterByIndex(scratches[0]->value());
-
-  __ movq(addr_reg, Immediate(0));
+  // Get function's body address by generating relocation info
+  __ movq(ToRegister(scratches[0]), Immediate(0));
   RelocationInfo* addr = new RelocationInfo(RelocationInfo::kAbsolute,
                                             RelocationInfo::kQuad,
                                             masm()->offset() - 8);
   hir()->body()->uses()->Push(addr);
 
-  __ AllocateFunction(addr_reg, RegisterByIndex(result->value()), hir()->argc());
+  __ AllocateFunction(ToRegister(scratches[0]),
+                      ToRegister(result),
+                      hir()->argc());
 }
 
 

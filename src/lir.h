@@ -16,6 +16,7 @@ class HIRValue;
 class HIRInstruction;
 class HIRParallelMove;
 class LIRInstruction;
+struct Register;
 
 // Operand for LIRInstruction
 class LIROperand : public ZoneObject {

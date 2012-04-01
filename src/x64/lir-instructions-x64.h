@@ -10,6 +10,8 @@ namespace internal {
 class Masm;
 class HIRInstruction;
 class LIROperand;
+struct Register;
+class Operand;
 
 #define LIR_ENUM_INSTRUCTIONS(V)\
     V(ParallelMove)\
@@ -52,6 +54,10 @@ class LIRInstruction : public ZoneObject {
   virtual void Generate() = 0;
 
   virtual Type type() const = 0;
+
+  // Short-hand for converting operand to register
+  inline Register ToRegister(LIROperand* op);
+  inline Operand& ToOperand(LIROperand* op);
 
   inline HIRInstruction* generic_hir() { return hir_; }
   inline void hir(HIRInstruction* hir) { hir_ = hir; }
