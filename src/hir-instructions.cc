@@ -7,6 +7,7 @@ namespace candor {
 namespace internal {
 
 #define HIR_ENUM_STUB_INSTRUCTIONS(V)\
+    V(Call)\
     V(AllocateContext)\
     V(AllocateFunction)\
     V(AllocateObject)
@@ -155,6 +156,12 @@ void HIRStubCall::Init(HIRBasicBlock* block, int id) {
 
   HIRValue* result = block->hir()->CreateValue(block);
   SetResult(result);
+}
+
+
+void HIRCall::AddArg(HIRValue* arg) {
+  Use(arg);
+  args()->Push(arg);
 }
 
 #undef HIR_ENUM_INSTRUCTONS

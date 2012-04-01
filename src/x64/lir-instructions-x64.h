@@ -25,6 +25,7 @@ class Operand;
     V(LoadLocal)\
     V(LoadContext)\
     V(BranchBool)\
+    V(Call)\
     V(AllocateObject)\
     V(AllocateFunction)\
     V(AllocateContext)
@@ -188,6 +189,13 @@ class LIRBranchBool : public LIRControlInstructionTemplate<1, 0> {
   void Generate();
 
   LIR_COMMON_METHODS(BranchBool)
+};
+
+class LIRCall : public LIRInstructionTemplate<0, 1, 0> {
+ public:
+  void Generate();
+
+  LIR_COMMON_METHODS(Call)
 };
 
 class LIRAllocateContext : public LIRInstructionTemplate<0, 1, 0> {

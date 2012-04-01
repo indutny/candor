@@ -32,8 +32,8 @@ TEST_START(functional)
   // after that call.
   FUN_TEST("a=1\nb=2\nc=3\nd=4\ne=5\nf=6\ng=7\nh=8\ni=9\nj=10\nk=11\nl=12\n"
            "x={}\n"
-           "b\nc\nd\ne\nf\ng\nh\ni\nj\nk\nl\nreturn a", {
-    assert(result->As<Number>()->Value() == 1);
+           "b\nc\nd\ne\na\ng\nh\ni\nj\nk\nl\nreturn f", {
+    assert(result->As<Number>()->Value() == 6);
   })
 
   FUN_TEST("return 'abcdef'", {

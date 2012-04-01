@@ -39,6 +39,7 @@ class HIRInstruction {
     kBranchBool,
 
     // Stubs and instructions with side-effects
+    kCall,
     kAllocateContext,
     kAllocateFunction,
     kAllocateObject
@@ -307,6 +308,21 @@ class HIRAllocateContext : public HIRStubCall {
 
  private:
   int size_;
+};
+
+class HIRCall : public HIRStubCall {
+ public:
+  HIRCall(HIRValue* fn) : HIRStubCall(kCall), fn_(fn) {
+  }
+
+  void AddArg(HIRValue* arg);
+
+  inline HIRValue* fn() { return fn_; }
+  inline ZoneList<HIRValue*>* args() { return &args_; }
+
+ private:
+  HIRValue* fn_;
+  ZoneList<HIRValue*> args_;
 };
 
 class HIRAllocateFunction : public HIRStubCall {

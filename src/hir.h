@@ -203,7 +203,9 @@ class HIR : public Visitor {
   // Working with instructions in the current block
   void AddInstruction(HIRInstruction* instr);
   void Finish(HIRInstruction* instr);
-  HIRValue* GetLastInstructionResult();
+
+  // Visit node and get last instruction's result
+  HIRValue* GetValue(AstNode* node);
 
   // Prints CFG into buffer (debug purposes only)
   void Print(char* buffer, uint32_t size);

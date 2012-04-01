@@ -88,6 +88,7 @@ char* CodeSpace::Compile(const char* filename,
   HIR hir(heap(), ast);
 
   /*
+  // TODO: Handle errors (like invalid lhs) in HIR!
   if (hir.has_error()) {
     *error = CreateError(filename,
                          source,

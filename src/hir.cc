@@ -376,7 +376,9 @@ void HIR::Finish(HIRInstruction* instr) {
 }
 
 
-HIRValue* HIR::GetLastInstructionResult() {
+HIRValue* HIR::GetValue(AstNode* node) {
+  Visit(node);
+
   if (current_block() == NULL ||
       current_block()->instructions()->length() == 0) {
     return CreateValue(root()->Put(new AstNode(AstNode::kNil)));
@@ -432,8 +434,7 @@ AstNode* HIR::VisitFunction(AstNode* stmt) {
 
 AstNode* HIR::VisitAssign(AstNode* stmt) {
   if (stmt->lhs()->is(AstNode::kValue)) {
-    Visit(stmt->rhs());
-    HIRValue* rhs = GetLastInstructionResult();
+    HIRValue* rhs = GetValue(stmt->rhs());
 
     AstValue* value = AstValue::Cast(stmt->lhs());
     HIRValue* lhs = CreateValue(value->slot());
@@ -444,11 +445,8 @@ AstNode* HIR::VisitAssign(AstNode* stmt) {
       AddInstruction(new HIRStoreContext(lhs, rhs));
     }
   } else {
-    Visit(stmt->rhs());
-    HIRValue* rhs = GetLastInstructionResult();
-
-    Visit(stmt->lhs());
-    HIRValue* lhs = GetLastInstructionResult();
+    HIRValue* rhs = GetValue(stmt->rhs());
+    HIRValue* lhs = GetValue(stmt->lhs());
 
     AddInstruction(new HIRStoreProperty(lhs, rhs));
   }
@@ -474,13 +472,10 @@ void HIR::VisitRootValue(AstNode* node) {
 
 
 AstNode* HIR::VisitIf(AstNode* node) {
-  // Get value of condition
-  Visit(node->lhs());
-
   HIRBasicBlock* on_true = CreateBlock();
   HIRBasicBlock* on_false = CreateBlock();
   HIRBasicBlock* join = NULL;
-  HIRBranchBool* branch = new HIRBranchBool(GetLastInstructionResult(),
+  HIRBranchBool* branch = new HIRBranchBool(GetValue(node->lhs()),
                                             on_true,
                                             on_false);
   Finish(branch);
@@ -514,6 +509,18 @@ AstNode* HIR::VisitMember(AstNode* node) {
 
 
 AstNode* HIR::VisitCall(AstNode* stmt) {
+  FunctionLiteral* fn = FunctionLiteral::Cast(stmt);
+
+  Visit(fn->variable());
+  HIRCall* call = new HIRCall(GetValue(fn->variable()));
+
+  AstList::Item* item = fn->args()->head();
+  for (; item != NULL; item = item->next()) {
+    call->AddArg(GetValue(item->value()));
+  }
+
+  AddInstruction(call);
+
   return stmt;
 }
 
@@ -540,10 +547,7 @@ void HIR::VisitGenericObject(AstNode* node) {
 
 AstNode* HIR::VisitReturn(AstNode* node) {
   HIRValue* result = NULL;
-  if (node->lhs() != NULL) {
-    Visit(node->lhs());
-    result = GetLastInstructionResult();
-  }
+  if (node->lhs() != NULL) result = GetValue(node->lhs());
 
   if (result == NULL) {
     result = CreateValue(root()->Put(new AstNode(AstNode::kNil)));
