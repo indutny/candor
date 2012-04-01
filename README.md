@@ -259,6 +259,14 @@ Any bug-fixes or feature implementations are always welcome! Only one
 restriction is applied to the code - it should follow
 [Google C++ Style Guide](http://google-styleguide.googlecode.com/svn/trunk/cppguide.xml).
 
+Want to get in, but don't feel like you know a lot about designing compilers?
+No problem at all - I prepared a list of papers that may help you understand
+things going in Candor better:
+[Compiler-papers](https://github.com/indutny/candor/wiki/Compiler-papers).
+
+*Please keep in mind, that at the moment all development is going in
+[feature-ssa](https://github.com/indutny/candor/tree/feature-ssa) branch.*
+
 ## Credits
 
 Special thanks to [creationix](https://github.com/creationix) for suggesting the
