@@ -226,6 +226,35 @@ void AllocateStub::Generate() {
 }
 
 
+void AllocateFunctionStub::Generate() {
+  GeneratePrologue();
+
+  // Arguments
+  Operand argc(rbp, 24);
+  Operand addr(rbp, 16);
+
+  __ Allocate(Heap::kTagFunction, reg_nil, HValue::kPointerSize * 4, rax);
+
+  // Move address of current context to first slot
+  Operand qparent(rax, HFunction::kParentOffset);
+  Operand qaddr(rax, HFunction::kCodeOffset);
+  Operand qroot(rax, HFunction::kRootOffset);
+  Operand qargc(rax, HFunction::kArgcOffset);
+
+  __ movq(qparent, rdi);
+  __ movq(qroot, root_reg);
+
+  // Put addr of code and argc
+  __ movq(scratch, addr);
+  __ movq(qaddr, scratch);
+  __ movq(scratch, argc);
+  __ movq(qargc, scratch);
+
+  __ CheckGC();
+  GenerateEpilogue(2);
+}
+
+
 void CallBindingStub::Generate() {
   GeneratePrologue();
 

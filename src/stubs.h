@@ -15,6 +15,7 @@ namespace internal {
 #define STUBS_LIST(V)\
     V(Entry)\
     V(Allocate)\
+    V(AllocateFunction)\
     V(CallBinding)\
     V(VarArg)\
     V(PutVarArg)\

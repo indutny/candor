@@ -139,9 +139,15 @@ void LIRAllocateFunction::Generate() {
                                             masm()->offset() - 8);
   hir()->body()->uses()->Push(addr);
 
-  __ AllocateFunction(ToRegister(scratches[0]),
-                      ToRegister(result),
-                      hir()->argc());
+  // Call stub
+  __ push(Immediate(hir()->argc()));
+  __ push(ToRegister(scratches[0]));
+  __ Call(masm()->stubs()->GetAllocateFunctionStub());
+
+  // Propagate result
+  if (!ToRegister(result).is(rax)) {
+    __ movq(ToRegister(result), rax);
+  }
 }
 
 
