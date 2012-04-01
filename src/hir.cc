@@ -392,7 +392,8 @@ void HIR::Print(char* buffer, uint32_t size) {
 AstNode* HIR::VisitFunction(AstNode* stmt) {
   FunctionLiteral* fn = FunctionLiteral::Cast(stmt);
 
-  if (current_block() == root_block()) {
+  if (current_block() == root_block() &&
+      current_block()->instructions()->length() == 0) {
     HIRInstruction* entry = new HIREntry();
     if (first_instruction() == NULL) first_instruction(entry);
 

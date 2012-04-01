@@ -42,34 +42,6 @@ TEST_START(functional)
     assert(strncmp(str->Value(), "abcdef", str->Length()) == 0);
   })
 
-  // Prefix
-  FUN_TEST("return typeof nil", {
-    String* str = result->As<String>();
-    assert(str->Length() == 3);
-    assert(strncmp(str->Value(), "nil", str->Length()) == 0);
-  })
-
-  FUN_TEST("return typeof 1", {
-    String* str = result->As<String>();
-    assert(str->Length() == 6);
-    assert(strncmp(str->Value(), "number", str->Length()) == 0);
-  })
-
-  FUN_TEST("return typeof '123'", {
-    String* str = result->As<String>();
-    assert(str->Length() == 6);
-    assert(strncmp(str->Value(), "string", str->Length()) == 0);
-  })
-
-  FUN_TEST("return sizeof '123'", {
-    assert(result->As<Number>()->Value() == 3);
-  })
-
-  FUN_TEST("return keysof { a: 1, b: 2 }", {
-    assert(result->As<Array>()->Length() == 2);
-    assert(result->As<Array>()->Get(1)->Is<String>());
-  })
-
   // Boolean
   FUN_TEST("return true", {
     assert(result->As<Boolean>()->IsTrue());
@@ -148,6 +120,34 @@ TEST_START(functional)
            "})((x) { return 2 * x })()", {
     assert(result->As<Number>()->Value() == 4);
   });
+
+  // Prefix
+  FUN_TEST("return typeof nil", {
+    String* str = result->As<String>();
+    assert(str->Length() == 3);
+    assert(strncmp(str->Value(), "nil", str->Length()) == 0);
+  })
+
+  FUN_TEST("return typeof 1", {
+    String* str = result->As<String>();
+    assert(str->Length() == 6);
+    assert(strncmp(str->Value(), "number", str->Length()) == 0);
+  })
+
+  FUN_TEST("return typeof '123'", {
+    String* str = result->As<String>();
+    assert(str->Length() == 6);
+    assert(strncmp(str->Value(), "string", str->Length()) == 0);
+  })
+
+  FUN_TEST("return sizeof '123'", {
+    assert(result->As<Number>()->Value() == 3);
+  })
+
+  FUN_TEST("return keysof { a: 1, b: 2 }", {
+    assert(result->As<Array>()->Length() == 2);
+    assert(result->As<Array>()->Get(1)->Is<String>());
+  })
 
   // Unary ops
   FUN_TEST("a = 1\nreturn ++a", {

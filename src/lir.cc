@@ -164,11 +164,13 @@ void LIR::SpillActive(Masm* masm,
     reverse_move->AddMove(spill, value->operand());
   }
 
-  // Restore spills, they are not used after instr with side-effect
-  ZoneList<LIROperand*>::Item* op = reverse_move->raw_sources()->head();
-  while (op != NULL) {
-    spills()->Release(op->value()->value());
-    op = op->next();
+  if (reverse_move != NULL) {
+    // Restore spills, they are not used after instr with side-effect
+    ZoneList<LIROperand*>::Item* op = reverse_move->raw_sources()->head();
+    while (op != NULL) {
+      spills()->Release(op->value()->value());
+      op = op->next();
+    }
   }
 }
 
