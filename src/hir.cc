@@ -47,7 +47,8 @@ void HIRBasicBlock::AddPredecessor(HIRBasicBlock* block) {
     if (value == NULL) continue;
 
     // If value is already in current block - insert phi!
-    if (value->slot()->hir()->current_block() == this) {
+    if (value->slot()->hir()->current_block() == this &&
+        value->slot()->hir() != value) {
       HIRPhi* phi = HIRPhi::Cast(value->slot()->hir());
       if (!phi->is_phi()) {
         phi = new HIRPhi(this, value->slot()->hir());
@@ -58,6 +59,7 @@ void HIRBasicBlock::AddPredecessor(HIRBasicBlock* block) {
         // Push to block's and global phi list
         phis()->Push(phi);
         hir()->phis()->Push(phi);
+        hir()->values()->Push(phi);
       }
 
       phi->inputs()->Push(value);

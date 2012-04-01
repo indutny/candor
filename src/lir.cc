@@ -62,28 +62,30 @@ void LIR::PrunePhis() {
   HIRPhiList::Item* item = hir()->phis()->head();
   for (; item != NULL; item = item->next()) {
     HIRPhi* value = HIRPhi::Cast(item->value());
+    HIRValue::LiveRange* phi = value->live_range();
 
     // Skip dead phis
-    int start = value->live_range()->start;
-    if (start == -1) continue;
+    if (phi->start == -1) continue;
 
     HIRValueList::Item* input_item = value->inputs()->head();
     for (; input_item != NULL; input_item = input_item->next()) {
-      HIRValue* input = input_item->value();
+      HIRValue::LiveRange* input = input_item->value()->live_range();
 
       // Skip dead inputs
-      int input_end = input->live_range()->end;
-      if (input_end == -1) continue;
+      if (input->start == -1) continue;
 
       // Extend input's liveness range
-      if (input_end < start) input->live_range()->start = start;
+      if (input->end < phi->start) input->end = phi->start;
+      if (input->start > phi->end) input->start = phi->end;
 
       // Extend phi's liveness range
-      int block_end = input->block()->instructions()->tail()->value()->id();
-      if (start > block_end) start = block_end;
-    }
+      HIRBasicBlock* block = input_item->value()->block();
+      HIRInstruction* first = block->instructions()->head()->value();
+      HIRInstruction* last = block->instructions()->tail()->value();
 
-    value->live_range()->start = start;
+      if (phi->start > last->id()) phi->start = last->id();
+      if (phi->end < first->id()) phi->end = first->id();
+    }
   }
 }
 

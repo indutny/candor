@@ -51,6 +51,35 @@ TEST_START(functional)
     assert(result->As<Boolean>()->IsFalse());
   })
 
+  // If
+  FUN_TEST("if (true) { a = 1 } else { a = 2 }\n return a", {
+    assert(result->As<Number>()->Value() == 1);
+  })
+
+  FUN_TEST("if (false) {\n return 1\n} else {\nreturn 2\n}", {
+    assert(result->As<Number>()->Value() == 2);
+  })
+
+  FUN_TEST("if (1) {\n return 1\n} else {\nreturn 2\n}", {
+    assert(result->As<Number>()->Value() == 1);
+  })
+
+  FUN_TEST("if (0) {\n return 1\n} else {\nreturn 2\n}", {
+    assert(result->As<Number>()->Value() == 2);
+  })
+
+  FUN_TEST("if ('123') {\n return 1\n} else {\nreturn 2\n}", {
+    assert(result->As<Number>()->Value() == 1);
+  })
+
+  FUN_TEST("if ('') {\n return 1\n} else {\nreturn 2\n}", {
+    assert(result->As<Number>()->Value() == 2);
+  })
+
+  FUN_TEST("if (nil) {\n return 1\n} else {\nreturn 2\n}", {
+    assert(result->As<Number>()->Value() == 2);
+  })
+
   // Functions
   FUN_TEST("a() {}\nreturn a", {
     assert(result->Is<Function>());
@@ -251,35 +280,6 @@ TEST_START(functional)
   // Global lookup
   FUN_TEST("global.a = 1\nreturn global.a", {
     assert(result->As<Number>()->Value() == 1);
-  })
-
-  // If
-  FUN_TEST("if (true) {\n return 1\n} else {\nreturn 2\n}", {
-    assert(result->As<Number>()->Value() == 1);
-  })
-
-  FUN_TEST("if (false) {\n return 1\n} else {\nreturn 2\n}", {
-    assert(result->As<Number>()->Value() == 2);
-  })
-
-  FUN_TEST("if (1) {\n return 1\n} else {\nreturn 2\n}", {
-    assert(result->As<Number>()->Value() == 1);
-  })
-
-  FUN_TEST("if (0) {\n return 1\n} else {\nreturn 2\n}", {
-    assert(result->As<Number>()->Value() == 2);
-  })
-
-  FUN_TEST("if ('123') {\n return 1\n} else {\nreturn 2\n}", {
-    assert(result->As<Number>()->Value() == 1);
-  })
-
-  FUN_TEST("if ('') {\n return 1\n} else {\nreturn 2\n}", {
-    assert(result->As<Number>()->Value() == 2);
-  })
-
-  FUN_TEST("if (nil) {\n return 1\n} else {\nreturn 2\n}", {
-    assert(result->As<Number>()->Value() == 2);
   })
 
   // While
