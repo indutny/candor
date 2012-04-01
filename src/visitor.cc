@@ -66,7 +66,7 @@ AstNode* Visitor::Visit(AstNode* node) {
 }
 
 void Visitor::VisitChildren(AstNode* node) {
-  List<AstList::Item*, ZoneObject> blocks_queue;
+  ZoneList<AstList::Item*> blocks_queue;
 
   AstList::Item* child = node->children()->head();
   while (child != NULL) {

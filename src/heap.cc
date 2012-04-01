@@ -19,7 +19,6 @@ Space::Space(Heap* heap, uint32_t page_size) : heap_(heap),
                                                size_(0) {
   // Create the first page
   pages_.Push(new Page(page_size));
-  pages_.allocated = true;
 
   select(pages_.head()->value());
 
@@ -235,7 +234,7 @@ HValue* HValue::CopyTo(Space* old_space, Space* new_space) {
 
 
 char* HContext::New(Heap* heap,
-                    List<char*, ZoneObject>* values) {
+                    ZoneList<char*>* values) {
   char* result = heap->AllocateTagged(Heap::kTagContext,
                                       Heap::kTenureOld,
                                       (2 + values->length()) * kPointerSize);

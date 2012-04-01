@@ -284,6 +284,14 @@ void LIR::Generate(Masm* masm) {
   HIRInstruction* hinstr = hir()->first_instruction();
 
   for (; hinstr != NULL; hinstr = hinstr->next()) {
+    // Relocate all block's uses
+    if (hinstr->block()->uses()->length() > 0) {
+      RelocationInfo* block_reloc;
+      while ((block_reloc = hinstr->block()->uses()->Shift()) != NULL) {
+        block_reloc->target(masm->offset());
+        masm->relocation_info_.Push(block_reloc);
+      }
+    }
     GenerateInstruction(masm, hinstr);
   }
 }

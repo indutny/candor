@@ -148,7 +148,6 @@ void StartRepl() {
   candor::Object* global = CreateGlobal();
 
   List list;
-  list.allocated = true;
 
   bool multiline = false;
 

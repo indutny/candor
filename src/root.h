@@ -15,7 +15,7 @@ class HContext;
 
 class Root {
  public:
-  typedef List<char*, ZoneObject> HValueList;
+  typedef ZoneList<char*> HValueList;
 
   Root(Heap* heap) : heap_(heap) {
   }

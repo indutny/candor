@@ -164,9 +164,6 @@ class Heap {
                              needs_gc_(kGCNone),
                              gc_(this) {
     current_ = this;
-    references_.allocated = true;
-    reloc_references_.allocated = true;
-    weak_references_.allocated = true;
   }
 
   // TODO: Use thread id
@@ -360,7 +357,7 @@ class HNil : public HValue {
 class HContext : public HValue {
  public:
   static char* New(Heap* heap,
-                   List<char*, ZoneObject>* values);
+                   ZoneList<char*>* values);
 
   inline bool HasSlot(uint32_t index);
   inline HValue* GetSlot(uint32_t index);

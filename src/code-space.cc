@@ -19,7 +19,6 @@ namespace candor {
 namespace internal {
 
 CodeSpace::CodeSpace(Heap* heap) : heap_(heap) {
-  pages_.allocated = true;
   stubs_ = new Stubs(this);
   entry_ = stubs()->GetEntryStub();
 }

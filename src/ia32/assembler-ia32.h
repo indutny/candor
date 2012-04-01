@@ -321,7 +321,7 @@ class Assembler {
   uint32_t offset_;
   uint32_t length_;
 
-  List<RelocationInfo*, ZoneObject> relocation_info_;
+  ZoneList<RelocationInfo*> relocation_info_;
 };
 
 } // namespace internal

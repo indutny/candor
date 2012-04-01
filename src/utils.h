@@ -107,8 +107,21 @@ class Stack {
   Item* head_;
 };
 
-template <class T, class ItemParent>
-class List {
+class NopPolicy {
+ public:
+  static inline void Delete(void* value) {}
+};
+
+template <class T>
+class DeletePolicy {
+ public:
+  static inline void Delete(T value) {
+    delete value;
+  }
+};
+
+template <class T, class ItemParent, class Policy>
+class GenericList {
  public:
   class Item : public ItemParent {
    public:
@@ -133,19 +146,15 @@ class List {
     Item* prev_;
     Item* next_;
 
-    friend class List;
+    friend class GenericList;
   };
 
-  List() : allocated(false), head_(NULL), current_(NULL), length_(0) {
+  GenericList() : head_(NULL), current_(NULL), length_(0) {
   }
 
 
-  ~List() {
-    if (allocated) {
-      while (length_ > 0) delete Shift();
-    } else {
-      while (length_ > 0) Shift();
-    }
+  ~GenericList() {
+    while (length() > 0) Policy::Delete(Shift());
   }
 
 
@@ -167,7 +176,7 @@ class List {
   void Remove(Item* item) {
     if (current_ == item) current_ = item->prev_;
     if (head_ == item) head_ = item->next_;
-    if (allocated) delete item->value();
+    Policy::Delete(item->value());
 
     item->remove();
     delete item;
@@ -211,12 +220,16 @@ class List {
   inline Item* tail() { return current_; }
   inline int32_t length() { return length_; }
 
-  bool allocated;
-
  private:
   Item* head_;
   Item* current_;
   int32_t length_;
+};
+
+
+template <class T, class I>
+class List : public GenericList<T, I, DeletePolicy<T> > {
+ public:
 };
 
 
@@ -422,7 +435,6 @@ class AVLTree {
 
   ~AVLTree() {
     List<Item*, EmptyClass> queue;
-    queue.allocated = true;
 
     queue.Push(head());
     Item* item;

@@ -39,7 +39,7 @@ class GC {
     kNewSpace
   };
 
-  typedef List<GCValue*, ZoneObject> GCList;
+  typedef ZoneList<GCValue*> GCList;
 
   GC(Heap* heap) : heap_(heap), gc_type_(kNone) {
   }

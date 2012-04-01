@@ -17,7 +17,7 @@ class AstNode;
 class AstValue;
 
 // Just to simplify future use cases
-typedef List<AstNode*, ZoneObject> AstList;
+typedef ZoneList<AstNode*> AstList;
 
 #define TYPE_MAPPING_NORMAL(V)\
     V(kBlock)\

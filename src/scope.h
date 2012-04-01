@@ -21,7 +21,8 @@ class ScopeAnalyze;
 // After parse end indexes will be allocated
 class ScopeSlot : public ZoneObject {
  public:
-  typedef List<ScopeSlot*, ZoneObject> UseList;
+  typedef ZoneList<ScopeSlot*> UseList;
+
   enum Type {
     kStack,
     kContext,

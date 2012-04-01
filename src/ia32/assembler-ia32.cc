@@ -32,7 +32,7 @@ void RelocationInfo::Relocate(char* buffer) {
 
 
 void Assembler::Relocate(char* buffer) {
-  List<RelocationInfo*, ZoneObject>::Item* item = relocation_info_.head();
+  ZoneList<RelocationInfo*>::Item* item = relocation_info_.head();
   while (item != NULL) {
     item->value()->Relocate(buffer);
     item = item->next();

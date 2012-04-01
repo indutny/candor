@@ -104,12 +104,12 @@ class LIR {
   inline LIRInstruction* Cast(HIRInstruction* instr);
 
   // List of active values sorted by increasing live_range()->start
-  inline List<HIRValue*, ZoneObject>* active_values() {
+  inline ZoneList<HIRValue*>* active_values() {
     return &active_values_;
   }
 
   // List of active values sorted by decrasing live_range()->end
-  inline List<HIRValue*, ZoneObject>* spill_candidates() {
+  inline ZoneList<HIRValue*>* spill_candidates() {
     return &spill_candidates_;
   }
 
@@ -125,8 +125,8 @@ class LIR {
   inline HIR* hir() { return hir_; }
 
  private:
-  List<HIRValue*, ZoneObject> active_values_;
-  List<HIRValue*, ZoneObject> spill_candidates_;
+  ZoneList<HIRValue*> active_values_;
+  ZoneList<HIRValue*> spill_candidates_;
 
   FreeList<int, 128> registers_;
   FreeList<int, 128> spills_;

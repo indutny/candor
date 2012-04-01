@@ -8,6 +8,7 @@ namespace internal {
 
 #define HIR_ENUM_STUB_INSTRUCTIONS(V)\
     V(AllocateContext)\
+    V(AllocateFunction)\
     V(AllocateObject)
 
 #define HIR_ENUM_INSTRUCTIONS(V)\
@@ -50,7 +51,7 @@ void HIRInstruction::Print(PrintBuffer* p) {
 #undef HIR_GEN_SWITCH_CASE
 
   p->Print("[%s", str);
-  List<HIRValue*, ZoneObject>::Item* item = values()->head();
+  ZoneList<HIRValue*>::Item* item = values()->head();
   if (item != NULL) p->Print(" ");
   while (item != NULL) {
     item->value()->Print(p);
@@ -142,26 +143,16 @@ void HIRParallelMove::Reorder() {
 
 
 void HIRBranchBase::Init(HIRBasicBlock* block, int id) {
+  HIRInstruction::Init(block, id);
+
   block->AddSuccessor(left());
   block->AddSuccessor(right());
 }
 
 
-
-HIRStubCall::HIRStubCall(Type type) : HIRInstruction(type) {
-#define HIR_GEN_SWITCH_STUB_CASE(V)\
-  case k##V: stub_ = kStub##V; break;
-
-  switch (type) {
-   HIR_ENUM_STUB_INSTRUCTIONS(HIR_GEN_SWITCH_STUB_CASE)
-   default: UNEXPECTED break;
-  }
-
-#undef HIR_GEN_SWITCH_STUB_CASE
-}
-
-
 void HIRStubCall::Init(HIRBasicBlock* block, int id) {
+  HIRInstruction::Init(block, id);
+
   SetResult(new HIRValue(block));
 }
 

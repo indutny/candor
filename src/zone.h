@@ -51,7 +51,6 @@ class Zone {
     // TODO: this should use thread id
     parent_ = current_;
     current_ = this;
-    blocks_.allocated = true;
 
     page_size_ = GetPageSize();
 
@@ -84,6 +83,11 @@ class ZoneObject {
   inline void operator delete(void*, size_t size) {
     // This may be called in list, just ignore it
   }
+};
+
+template <class T>
+class ZoneList : public GenericList<T, ZoneObject, NopPolicy> {
+ public:
 };
 
 } // namespace internal

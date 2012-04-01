@@ -243,11 +243,13 @@ HIR::HIR(Heap* heap, AstNode* node) : Visitor(kPreorder),
                                       variable_index_(0),
                                       instruction_index_(1),
                                       print_map_(NULL) {
-  work_list_.Push(node);
-  while ((node = work_list_.Shift()) != NULL) {
-    root_block_ = CreateBlock();
-    set_current_block(root_block());
-    Visit(node);
+  work_list_.Push(new HIRFunction(node, CreateBlock()));
+
+  HIRFunction* fn;
+  while ((fn = work_list_.Shift()) != NULL) {
+    root_block_ = fn->block();
+    set_current_block(fn->block());
+    Visit(fn->node());
   }
 }
 
@@ -405,8 +407,10 @@ AstNode* HIR::VisitFunction(AstNode* stmt) {
     AddInstruction(new HIRReturn(CreateValue(
             root()->Put(new AstNode(AstNode::kNil)))));
   } else {
-    work_list_.Push(stmt);
-    // AddInstruction(new HIRAllocateFunction());
+    HIRBasicBlock* block = CreateBlock();
+    AddInstruction(new HIRAllocateFunction(block));
+
+    work_list_.Push(new HIRFunction(stmt, block));
   }
 
   return stmt;

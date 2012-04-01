@@ -33,7 +33,7 @@ namespace candor {
 namespace internal {
 
 Lexer::Token* Lexer::Peek() {
-  List<Token*, ZoneObject>::Item* head = queue()->head();
+  ZoneList<Token*>::Item* head = queue()->head();
   if (head != NULL) return head->value();
 
   Token* result = Consume();

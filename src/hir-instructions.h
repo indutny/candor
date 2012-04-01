@@ -15,6 +15,7 @@ namespace internal {
 class HIRBasicBlock;
 class HIRValue;
 class LIROperand;
+class RelocationInfo;
 
 // Instruction base class
 class HIRInstruction {
@@ -39,6 +40,7 @@ class HIRInstruction {
 
     // Stubs and instructions with side-effects
     kAllocateContext,
+    kAllocateFunction,
     kAllocateObject
   };
 
@@ -83,7 +85,7 @@ class HIRInstruction {
   inline HIRValue* GetResult() { return result_; }
 
   // List of all used values
-  inline List<HIRValue*, ZoneObject>* values() { return &values_; }
+  inline ZoneList<HIRValue*>* values() { return &values_; }
 
   // Links to previous and next instructions
   inline HIRInstruction* prev() { return prev_; }
@@ -101,7 +103,7 @@ class HIRInstruction {
   Type type_;
   HIRBasicBlock* block_;
 
-  List<HIRValue*, ZoneObject> values_;
+  ZoneList<HIRValue*> values_;
 
   HIRValue* result_;
 
@@ -159,33 +161,30 @@ class HIRBranchBase : public HIRInstruction, public ZoneObject {
   inline HIRBasicBlock* left() { return left_; }
   inline HIRBasicBlock* right() { return right_; }
 
+  inline RelocationInfo* left_reloc() { return left_reloc_; }
+  inline RelocationInfo* right_reloc() { return right_reloc_; }
+
  private:
   HIRValue* clause_;
   HIRBasicBlock* left_;
   HIRBasicBlock* right_;
+
+  RelocationInfo* left_reloc_;
+  RelocationInfo* right_reloc_;
 };
 
 class HIRStubCall : public HIRInstruction, public ZoneObject {
  public:
-  enum StubType {
-    kStubAllocateContext,
-    kStubAllocateObject
-  };
-
-  HIRStubCall(Type type);
+  HIRStubCall(Type type) : HIRInstruction(type) {
+  }
 
   void Init(HIRBasicBlock* block, int id);
   virtual bool HasSideEffects() const { return true; };
-
-  inline StubType stub() { return stub_; }
-
- private:
-  StubType stub_;
 };
 
 class HIRParallelMove : public HIRInstruction {
  public:
-  typedef List<LIROperand*, ZoneObject> OperandList;
+  typedef ZoneList<LIROperand*> OperandList;
 
   enum InsertionType {
     kBefore,
@@ -237,6 +236,12 @@ class HIRGoto : public HIRInstruction {
  public:
   HIRGoto() : HIRInstruction(kGoto) {
   }
+
+  // Assembly helper for getting address of destination block
+  inline RelocationInfo* destination() { return destination_; }
+
+ private:
+  RelocationInfo* destination_;
 };
 
 class HIRLoadRoot : public HIRLoadBase {
@@ -300,6 +305,18 @@ class HIRAllocateContext : public HIRStubCall {
 
  private:
   int size_;
+};
+
+class HIRAllocateFunction : public HIRStubCall {
+ public:
+  HIRAllocateFunction(HIRBasicBlock* body) : HIRStubCall(kAllocateFunction),
+                                             body_(body) {
+  }
+
+  inline HIRBasicBlock* body() { return body_; }
+
+ private:
+  HIRBasicBlock* body_;
 };
 
 class HIRAllocateObject : public HIRStubCall {

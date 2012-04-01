@@ -21,10 +21,11 @@ class LIROperand;
 class Heap;
 class ScopeSlot;
 class AstNode;
+class RelocationInfo;
 
-typedef List<HIRValue*, ZoneObject> HIRValueList;
-typedef List<HIRPhi*, ZoneObject> HIRPhiList;
-typedef List<HIRInstruction*, ZoneObject> HIRInstructionList;
+typedef ZoneList<HIRValue*> HIRValueList;
+typedef ZoneList<HIRPhi*> HIRPhiList;
+typedef ZoneList<HIRInstruction*> HIRInstructionList;
 
 // CFG Block
 class HIRBasicBlock : public ZoneObject {
@@ -53,6 +54,10 @@ class HIRBasicBlock : public ZoneObject {
   inline HIRBasicBlock** successors() { return successors_; }
   inline int predecessors_count() { return predecessors_count_; }
   inline int successors_count() { return successors_count_; }
+
+  // List of relocation (JIT assembly helper)
+  inline ZoneList<RelocationInfo*>* uses() { return &uses_; }
+
   inline bool finished() { return finished_; }
   inline void finished(bool finished) { finished_ = finished; }
 
@@ -72,6 +77,8 @@ class HIRBasicBlock : public ZoneObject {
   HIRBasicBlock* successors_[2];
   int predecessors_count_;
   int successors_count_;
+
+  ZoneList<RelocationInfo*> uses_;
 
   bool finished_;
 
@@ -160,6 +167,20 @@ class HIRPhi : public HIRValue {
   HIRValueList incoming_;
 };
 
+// Just a wrapper, see HIR::HIR(...)
+class HIRFunction : public ZoneObject {
+ public:
+  HIRFunction(AstNode* node, HIRBasicBlock* block) : node_(node),
+                                                     block_(block) {
+  }
+
+  inline AstNode* node() { return node_; }
+  inline HIRBasicBlock* block() { return block_; }
+
+ private:
+  AstNode* node_;
+  HIRBasicBlock* block_;
+};
 
 class HIR : public Visitor {
  public:
@@ -293,7 +314,7 @@ class HIR : public Visitor {
   int variable_index_;
   int instruction_index_;
 
-  List<AstNode*, ZoneObject> work_list_;
+  ZoneList<HIRFunction*> work_list_;
 
   PrintMap* print_map_;
 };

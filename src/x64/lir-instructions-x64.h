@@ -24,6 +24,7 @@ class LIROperand;
     V(LoadContext)\
     V(BranchBool)\
     V(AllocateObject)\
+    V(AllocateFunction)\
     V(AllocateContext)
 
 #define LIR_GEN_FORWARD_HIR_DECL(V)\
@@ -188,6 +189,13 @@ class LIRAllocateContext : public LIRInstructionTemplate<0, 1, 0> {
   void Generate();
 
   LIR_COMMON_METHODS(AllocateContext)
+};
+
+class LIRAllocateFunction : public LIRInstructionTemplate<0, 1, 0> {
+ public:
+  void Generate();
+
+  LIR_COMMON_METHODS(AllocateFunction)
 };
 
 class LIRAllocateObject : public LIRInstructionTemplate<0, 1, 0> {

@@ -17,8 +17,8 @@ namespace internal {
 #define __ masm()->
 
 void LIRParallelMove::Generate() {
-  List<LIROperand*, ZoneObject>::Item* source = hir()->sources()->head();
-  List<LIROperand*, ZoneObject>::Item* target = hir()->targets()->head();
+  ZoneList<LIROperand*>::Item* source = hir()->sources()->head();
+  ZoneList<LIROperand*>::Item* target = hir()->targets()->head();
 
   for (; source != NULL; source = source->next(), target = target->next()) {
     LIROperand* source_op = source->value();
@@ -127,6 +127,10 @@ void LIRBranchBool::Generate() {
 
 
 void LIRAllocateContext::Generate() {
+}
+
+
+void LIRAllocateFunction::Generate() {
 }
 
 
