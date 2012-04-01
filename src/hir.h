@@ -191,6 +191,9 @@ class HIR : public Visitor {
   // Creating blocks and values
   HIRValue* FindPredecessorValue(ScopeSlot* slot);
   HIRValue* CreateValue(ScopeSlot* slot);
+  HIRValue* CreateValue(HIRBasicBlock* block, ScopeSlot* slot);
+  HIRValue* CreateValue(HIRBasicBlock* block);
+
   HIRValue* GetValue(ScopeSlot* slot);
   HIRBasicBlock* CreateBlock();
 
@@ -268,6 +271,7 @@ class HIR : public Visitor {
   AstNode* VisitUnOp(AstNode* node);
   AstNode* VisitBinOp(AstNode* node);
 
+  inline ZoneList<HIRBasicBlock*>* roots() { return &roots_; }
   inline HIRBasicBlock* root_block() { return root_block_; }
   inline HIRBasicBlock* current_block() { return current_block_; }
   inline void set_current_block(HIRBasicBlock* block) {
@@ -300,6 +304,8 @@ class HIR : public Visitor {
   inline PrintMap* print_map() { return print_map_; }
 
  private:
+  ZoneList<HIRBasicBlock*> roots_;
+
   HIRBasicBlock* root_block_;
   HIRBasicBlock* current_block_;
   Root root_;

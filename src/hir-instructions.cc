@@ -153,7 +153,8 @@ void HIRBranchBase::Init(HIRBasicBlock* block, int id) {
 void HIRStubCall::Init(HIRBasicBlock* block, int id) {
   HIRInstruction::Init(block, id);
 
-  SetResult(new HIRValue(block));
+  HIRValue* result = block->hir()->CreateValue(block);
+  SetResult(result);
 }
 
 #undef HIR_ENUM_INSTRUCTONS

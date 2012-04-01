@@ -142,34 +142,31 @@ void Masm::Allocate(Heap::HeapTag tag,
                     Register size_reg,
                     uint32_t size,
                     Register result) {
-  Spill rax_s(this, rax);
-
-  // Two arguments
-  ChangeAlign(2);
-  {
-    Align a(this);
-
-    // Add tag size
-    if (size_reg.is(reg_nil)) {
-      movq(rax, Immediate(HNumber::Tag(size + HValue::kPointerSize)));
-    } else {
-      movq(rax, size_reg);
-      Untag(rax);
-      addq(rax, Immediate(HValue::kPointerSize));
-      TagNumber(rax);
-    }
+  if (!result.is(rax)) {
     push(rax);
-    movq(rax, Immediate(HNumber::Tag(tag)));
     push(rax);
-
-    Call(stubs()->GetAllocateStub());
-    // Stub will unwind stack
   }
-  ChangeAlign(-2);
 
+  // Add tag size
+  if (size_reg.is(reg_nil)) {
+    movq(rax, Immediate(HNumber::Tag(size + HValue::kPointerSize)));
+  } else {
+    movq(rax, size_reg);
+    Untag(rax);
+    addq(rax, Immediate(HValue::kPointerSize));
+    TagNumber(rax);
+  }
+  push(rax);
+  movq(rax, Immediate(HNumber::Tag(tag)));
+  push(rax);
+
+  Call(stubs()->GetAllocateStub());
+  // Stub will unwind stack
+  //
   if (!result.is(rax)) {
     movq(result, rax);
-    rax_s.Unspill();
+    pop(rax);
+    pop(rax);
   }
 }
 

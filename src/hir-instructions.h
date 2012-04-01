@@ -311,13 +311,17 @@ class HIRAllocateContext : public HIRStubCall {
 
 class HIRAllocateFunction : public HIRStubCall {
  public:
-  HIRAllocateFunction(HIRBasicBlock* body) : HIRStubCall(kAllocateFunction),
-                                             body_(body) {
+  HIRAllocateFunction(HIRBasicBlock* body, int argc)
+      : HIRStubCall(kAllocateFunction),
+        argc_(argc),
+        body_(body) {
   }
 
+  inline int argc() { return argc_; }
   inline HIRBasicBlock* body() { return body_; }
 
  private:
+  int argc_;
   HIRBasicBlock* body_;
 };
 

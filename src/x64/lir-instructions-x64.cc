@@ -133,6 +133,15 @@ void LIRAllocateContext::Generate() {
 
 
 void LIRAllocateFunction::Generate() {
+  Register addr_reg = RegisterByIndex(scratches[0]->value());
+
+  __ movq(addr_reg, Immediate(0));
+  RelocationInfo* addr = new RelocationInfo(RelocationInfo::kAbsolute,
+                                            RelocationInfo::kQuad,
+                                            masm()->offset() - 8);
+  hir()->body()->uses()->Push(addr);
+
+  __ AllocateFunction(addr_reg, RegisterByIndex(result->value()), hir()->argc());
 }
 
 

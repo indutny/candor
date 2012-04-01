@@ -144,6 +144,9 @@ void LIR::SpillActive(Masm* masm,
   for (; item != NULL; item = item->next()) {
     HIRValue* value = item->value();
 
+    // Do not spill instruction's result
+    if (value == hinstr->GetResult()) continue;
+
     // Do not spill values that are dead after instruction with side-effect
     // or are just not registers
     if (value->live_range()->end < hinstr->id() ||

@@ -191,7 +191,7 @@ class LIRAllocateContext : public LIRInstructionTemplate<0, 1, 0> {
   LIR_COMMON_METHODS(AllocateContext)
 };
 
-class LIRAllocateFunction : public LIRInstructionTemplate<0, 1, 0> {
+class LIRAllocateFunction : public LIRInstructionTemplate<0, 1, 1> {
  public:
   void Generate();
 

@@ -197,8 +197,7 @@ HIRValue::HIRValue(HIRBasicBlock* block) : type_(kNormal),
                                            current_block_(block),
                                            prev_def_(NULL),
                                            operand_(NULL) {
-  slot_ = new ScopeSlot(ScopeSlot::kImmediate);
-  slot_->value(NULL);
+  slot_ = new ScopeSlot(ScopeSlot::kStack);
   Init();
 }
 
@@ -247,6 +246,7 @@ HIR::HIR(Heap* heap, AstNode* node) : Visitor(kPreorder),
   HIRFunction* fn;
   while ((fn = work_list_.Shift()) != NULL) {
     root_block_ = fn->block();
+    roots()->Push(fn->block());
     set_current_block(fn->block());
     Visit(fn->node());
   }
@@ -273,8 +273,8 @@ HIRValue* HIR::FindPredecessorValue(ScopeSlot* slot) {
 }
 
 
-HIRValue* HIR::CreateValue(ScopeSlot* slot) {
-  HIRValue* value = new HIRValue(current_block(), slot);
+HIRValue* HIR::CreateValue(HIRBasicBlock* block, ScopeSlot* slot) {
+  HIRValue* value = new HIRValue(block, slot);
   HIRValue* previous = FindPredecessorValue(slot);
 
   // Link with previous
@@ -289,6 +289,16 @@ HIRValue* HIR::CreateValue(ScopeSlot* slot) {
   values()->Push(value);
 
   return value;
+}
+
+
+HIRValue* HIR::CreateValue(HIRBasicBlock* block) {
+  return CreateValue(block, new ScopeSlot(ScopeSlot::kStack));
+}
+
+
+HIRValue* HIR::CreateValue(ScopeSlot* slot) {
+  return CreateValue(current_block(), slot);
 }
 
 
@@ -379,13 +389,16 @@ HIRValue* HIR::GetLastInstructionResult() {
 void HIR::Print(char* buffer, uint32_t size) {
   PrintMap map;
 
+  PrintBuffer p(buffer, size);
   print_map(&map);
 
-  PrintBuffer p(buffer, size);
-  root_block()->Print(&p);
-  p.Finalize();
+  ZoneList<HIRBasicBlock*>::Item* item = roots()->head();
+  for (; item != NULL; item = item->next()) {
+    item->value()->Print(&p);
+  }
 
   print_map(NULL);
+  p.Finalize();
 }
 
 
@@ -408,7 +421,7 @@ AstNode* HIR::VisitFunction(AstNode* stmt) {
             root()->Put(new AstNode(AstNode::kNil)))));
   } else {
     HIRBasicBlock* block = CreateBlock();
-    AddInstruction(new HIRAllocateFunction(block));
+    AddInstruction(new HIRAllocateFunction(block, fn->args()->length()));
 
     work_list_.Push(new HIRFunction(stmt, block));
   }
