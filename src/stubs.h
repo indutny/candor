@@ -2,6 +2,8 @@
 #define _SRC_STUBS_H_
 
 #include "macroassembler.h" // Masm
+#include "macroassembler-inl.h"
+
 #include "code-space.h" // CodeSpace
 #include "zone.h" // Zone
 #include "ast.h" // BinOpType

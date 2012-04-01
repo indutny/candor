@@ -4,6 +4,7 @@
 #include "hir.h"
 #include "hir-instructions.h"
 #include "macroassembler.h" // Masm
+#include "macroassembler-inl.h"
 #include "stubs.h" // Stubs
 
 #include "scope.h" // ScopeSlot

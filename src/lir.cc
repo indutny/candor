@@ -12,6 +12,7 @@
 #endif
 
 #include "macroassembler.h"
+#include "macroassembler-inl.h"
 
 #include <stdlib.h> // NULL
 

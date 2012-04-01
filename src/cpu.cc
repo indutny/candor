@@ -3,6 +3,7 @@
 #include "code-space.h" // CodeSpace
 
 #include "macroassembler.h"
+#include "macroassembler-inl.h"
 
 #include <stdint.h> // uint32_t
 #include <string.h> // memcpy

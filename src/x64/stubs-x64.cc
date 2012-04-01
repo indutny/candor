@@ -3,6 +3,7 @@
 #include "cpu.h" // CPU
 #include "ast.h" // BinOp
 #include "macroassembler.h" // Masm
+#include "macroassembler-inl.h"
 #include "runtime.h"
 
 namespace candor {

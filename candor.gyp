@@ -33,6 +33,8 @@
       'src/lexer.h',
       'src/lir.cc',
       'src/lir.h',
+      'src/macroassembler.h',
+      'src/macroassembler-inl.h',
       'src/parser.cc',
       'src/parser.h',
       'src/root.cc',
@@ -59,8 +61,6 @@
           'src/x64/lir-instructions-x64.cc',
           'src/x64/lir-instructions-x64.h',
           'src/x64/macroassembler-x64.cc',
-          'src/x64/macroassembler-x64.h',
-          'src/x64/macroassembler-x64-inl.h',
           'src/x64/stubs-x64.cc',
           'src/x64/stubs-x64.h'
         ]
@@ -73,8 +73,6 @@
           'src/ia32/lir-instructions-ia32.cc',
           'src/ia32/lir-instructions-ia32.h',
           'src/ia32/macroassembler-ia32.cc',
-          'src/ia32/macroassembler-ia32.h',
-          'src/ia32/macroassembler-ia32-inl.h',
           'src/ia32/stubs-ia32.cc',
           'src/ia32/stubs-ia32.h'
         ]
