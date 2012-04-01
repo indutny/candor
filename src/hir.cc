@@ -82,6 +82,8 @@ void HIRBasicBlock::AddSuccessor(HIRBasicBlock* block) {
 
 
 void HIRBasicBlock::Goto(HIRBasicBlock* block) {
+  if (finished()) return;
+
   // Connect graph nodes
   AddSuccessor(block);
 

@@ -17,8 +17,7 @@ class Root {
  public:
   typedef ZoneList<char*> HValueList;
 
-  Root(Heap* heap) : heap_(heap) {
-  }
+  Root(Heap* heap);
 
   ScopeSlot* Put(AstNode* node);
   HContext* Allocate();

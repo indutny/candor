@@ -8,6 +8,26 @@
 namespace candor {
 namespace internal {
 
+Root::Root(Heap* heap) : heap_(heap) {
+  // Create a `global` object
+  values()->Push(HObject::NewEmpty(heap));
+
+  // Place some root values
+  values()->Push(HBoolean::New(heap, Heap::kTenureOld, true));
+  values()->Push(HBoolean::New(heap, Heap::kTenureOld, false));
+
+  // Place types
+  values()->Push(HString::New(heap, Heap::kTenureOld, "nil", 3));
+  values()->Push(HString::New(heap, Heap::kTenureOld, "boolean", 7));
+  values()->Push(HString::New(heap, Heap::kTenureOld, "number", 6));
+  values()->Push(HString::New(heap, Heap::kTenureOld, "string", 6));
+  values()->Push(HString::New(heap, Heap::kTenureOld, "object", 6));
+  values()->Push(HString::New(heap, Heap::kTenureOld, "array", 5));
+  values()->Push(HString::New(heap, Heap::kTenureOld, "function", 8));
+  values()->Push(HString::New(heap, Heap::kTenureOld, "cdata", 5));
+}
+
+
 ScopeSlot* Root::Put(AstNode* node) {
   ScopeSlot* slot = new ScopeSlot(ScopeSlot::kContext, -2);
 

@@ -138,8 +138,12 @@ void LIRLoadContext::Generate() {
 
 void LIRBranchBool::Generate() {
   // NOTE: input is definitely a register here
-  if (!ToRegister(inputs[0]).is(rax)) {
-    __ movq(rax, ToRegister(inputs[0]));
+  if (inputs[0]->is_register()) {
+    if (ToRegister(inputs[0]).is(rax)) {
+      __ movq(rax, ToRegister(inputs[0]));
+    }
+  } else if (inputs[0]->is_immediate()) {
+    __ movq(rax, Immediate(inputs[0]->value()));
   }
 
   // Coerce value to boolean first
@@ -153,7 +157,7 @@ void LIRBranchBool::Generate() {
   RelocationInfo* addr = new RelocationInfo(RelocationInfo::kRelative,
                                             RelocationInfo::kLong,
                                             masm()->offset() - 4);
-  hir()->right()->successors()[0]->uses()->Push(addr);
+  hir()->right()->uses()->Push(addr);
 }
 
 
