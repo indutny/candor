@@ -261,7 +261,7 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
   LIRInstruction* linstr = Cast(hinstr);
 
   // Relocate all block's uses
-  if (hinstr->block()->uses()->length() > 0) {
+  if (hinstr->block() != NULL && hinstr->block()->uses()->length() > 0) {
     RelocationInfo* block_reloc;
     while ((block_reloc = hinstr->block()->uses()->Shift()) != NULL) {
       block_reloc->target(masm->offset());
@@ -423,6 +423,9 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
   // Generate instruction itself
   linstr->masm(masm);
   linstr->Generate();
+
+  // Finalize next movement instruction
+  HIRParallelMove::GetAfter(hinstr)->Reorder(this);
 }
 
 

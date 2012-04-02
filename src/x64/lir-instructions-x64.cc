@@ -145,12 +145,18 @@ LIRLoadProperty::LIRLoadProperty() {
 
 
 void LIRLoadProperty::Generate() {
+  __ push(rax);
+  __ push(rax);
+
   // rax <- object
   // rbx <- property
   __ mov(rcx, Immediate(0));
   __ Call(masm()->stubs()->GetLookupPropertyStub());
 
   Label done(masm());
+
+  __ pop(rbx);
+  __ pop(rbx);
 
   __ IsNil(rax, NULL, &done);
   Operand qmap(rbx, HObject::kMapOffset);
