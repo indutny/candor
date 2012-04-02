@@ -325,18 +325,29 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
 
       // Instruction specified inputs restrictions,
       // create movement if needed
-      LIROperand* spill = GetSpill();
+      LIROperand* spill;
 
       HIRParallelMove* move = HIRParallelMove::GetBefore(hinstr);
-      move->AddMove(linstr->inputs[i], spill);
-      move->AddMove(item->value()->operand(), linstr->inputs[i]);
-
       HIRParallelMove* reverse_move = HIRParallelMove::GetAfter(hinstr);
-      reverse_move->AddMove(linstr->inputs[i], item->value()->operand());
-      reverse_move->AddMove(spill, linstr->inputs[i]);
 
-      // Spill should be released after instruction
-      release_list.Push(spill);
+      move->AddMove(item->value()->operand(), linstr->inputs[i]);
+      reverse_move->AddMove(linstr->inputs[i], item->value()->operand());
+
+      // Spill input operand if it's in use
+      if (IsInUse(linstr->inputs[i])) {
+        // Value may be spilled either in register or a spill
+        if (registers()->IsEmpty() || hinstr->HasSideEffects()) {
+          spill = GetSpill();
+        } else {
+          spill = new LIROperand(LIROperand::kRegister, registers()->Get());
+        }
+
+        move->AddMove(linstr->inputs[i], spill);
+        reverse_move->AddMove(spill, linstr->inputs[i]);
+
+        // Spill should be released after instruction
+        release_list.Push(spill);
+      }
     }
 
     i++;

@@ -105,6 +105,9 @@ class LIR {
   // Add phis assignments to movement
   void MovePhis(HIRInstruction* hinstr);
 
+  // Checks if operand is used anywhere
+  inline bool IsInUse(LIROperand* operand);
+
   // Wrapper over spills FreeList and incremental index
   inline LIROperand* GetSpill();
 

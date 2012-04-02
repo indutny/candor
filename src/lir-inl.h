@@ -45,6 +45,11 @@ inline LIRInstruction* LIR::Cast(HIRInstruction* instr) {
 }
 
 
+inline bool LIR::IsInUse(LIROperand* operand) {
+  return (operand->is_register() && !registers()->Has(operand->value())) ||
+         (operand->is_spill() && !spills()->Has(operand->value()));
+}
+
 } // namespace internal
 } // namespace candor
 

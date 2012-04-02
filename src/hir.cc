@@ -632,7 +632,7 @@ void HIR::VisitGenericObject(AstNode* node) {
       while (key != NULL) {
         AddInstruction(new HIRStoreProperty(
               result,
-              CreateValue(root()->Put(key->value())),
+              GetValue(key->value()),
               GetValue(value->value())));
 
         key = key->next();

@@ -610,6 +610,15 @@ class FreeList {
   inline T Get() { return list_[--length_]; }
   inline void Release(T value) { list_[length_++] = value; }
 
+  inline bool Has(T value) {
+    for (int i = 0; i < length_; i++) {
+      // TODO: Use Shape class here
+      if (list_[i] == value) return true;
+    }
+
+    return false;
+  }
+
  private:
   T list_[size];
   int length_;
