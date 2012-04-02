@@ -4,6 +4,7 @@
 #include "ast.h" // BinOp
 #include "macroassembler.h" // Masm
 #include "macroassembler-inl.h"
+#include "hir-instructions.h"
 #include "runtime.h"
 
 namespace candor {
@@ -256,6 +257,25 @@ void AllocateFunctionStub::Generate() {
 }
 
 
+void AllocateObjectStub::Generate() {
+  GeneratePrologue();
+
+  __ AllocateSpills();
+
+  // Arguments
+  Operand size(rbp, 24);
+  Operand tag(rbp, 16);
+
+  __ mov(rcx, tag);
+  __ mov(rbx, size);
+  __ AllocateObjectLiteral(Heap::kTagNil, rcx, rbx, rax);
+
+  __ FinalizeSpills(0);
+
+  GenerateEpilogue(2);
+}
+
+
 void CallBindingStub::Generate() {
   GeneratePrologue();
 
@@ -313,7 +333,7 @@ void VarArgStub::Generate() {
 
   // Allocate array
   __ mov(rcx, Immediate(HNumber::Tag(PowerOfTwo(HArray::kVarArgLength))));
-  __ AllocateObjectLiteral(Heap::kTagArray, rcx, rax);
+  __ AllocateObjectLiteral(Heap::kTagArray, reg_nil, rcx, rax);
 
   // Array index
   __ xorq(rbx, rbx);
@@ -775,7 +795,7 @@ void CloneObjectStub::Generate() {
   __ TagNumber(rcx);
 
   // Allocate new object
-  __ AllocateObjectLiteral(Heap::kTagObject, rcx, rdx);
+  __ AllocateObjectLiteral(Heap::kTagObject, reg_nil, rcx, rdx);
 
   __ mov(rbx, rdx);
 

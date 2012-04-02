@@ -78,7 +78,10 @@ class Masm : public Assembler {
   void AllocateNumber(DoubleRegister value, Register result);
 
   // Allocate object&map
-  void AllocateObjectLiteral(Heap::HeapTag tag, Register size, Register result);
+  void AllocateObjectLiteral(Heap::HeapTag tag,
+                             Register tag_reg,
+                             Register size,
+                             Register result);
 
   // VarArg
   void AllocateVarArgSlots(Spill* vararg, Register argc);
@@ -127,6 +130,7 @@ class Masm : public Assembler {
   // Routines for working with operands
   inline void Push(LIROperand* src);
   inline void Mov(Register dst, LIROperand* src);
+  inline void Mov(LIROperand* dst, Register src);
   inline void Mov(LIROperand* dst, LIROperand* src);
 
   inline void Push(Register src);

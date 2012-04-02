@@ -1,3 +1,16 @@
+HIR/LIR todos:
+* Setting/getting property
+* Binary operations
+* Unary operations
+* While loops
+* Break/continue
+* Clone
+* Delete
+* Typeof, sizeof, keysof
+* Cleanup masm
+* Cleanup stubs
+
+Postponed todos (old):
 * Tail-call elimination
 * On-stack replacement and profile-based optimizations (register allocation too)
 * Incremental GC

@@ -15,6 +15,7 @@ namespace internal {
 Masm::Masm(CodeSpace* space) : space_(space),
                                align_(0),
                                spills_(0),
+                               spill_offset_(8),
                                spill_index_(0),
                                spill_reloc_(NULL),
                                spill_operand_(rbp, 0) {
@@ -212,19 +213,42 @@ void Masm::AllocateNumber(DoubleRegister value, Register result) {
 
 
 void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
+                                 Register tag_reg,
                                  Register size,
                                  Register result) {
-  // mask + map
-  Allocate(tag,
-           reg_nil,
-           (tag == Heap::kTagArray ? 3 : 2) * HValue::kPointerSize,
-           result);
-
   Operand qmask(result, HObject::kMaskOffset);
   Operand qmap(result, HObject::kMapOffset);
 
   // Array only field
   Operand qlength(result, HArray::kLengthOffset);
+
+  if (tag_reg.is(reg_nil)) {
+    // mask + map
+    Allocate(tag,
+             reg_nil,
+             (tag == Heap::kTagArray ? 3 : 2) * HValue::kPointerSize,
+             result);
+
+    // Set length
+    if (tag == Heap::kTagArray) {
+      mov(qlength, Immediate(0));
+    }
+  } else {
+    Label array(this), allocate_map(this);
+
+    cmpq(tag_reg, Immediate(Heap::kTagArray));
+    jmp(kEq, &array);
+
+    Allocate(Heap::kTagObject, reg_nil, 2 * HValue::kPointerSize, result);
+
+    jmp(&allocate_map);
+    bind(&array);
+
+    Allocate(Heap::kTagArray, reg_nil, 3 * HValue::kPointerSize, result);
+    mov(qlength, Immediate(0));
+
+    bind(&allocate_map);
+  }
 
   // Set mask
   mov(scratch, size);
@@ -267,11 +291,6 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
 
   result_s.Unspill();
   size_s.Unspill();
-
-  // Set length
-  if (tag == Heap::kTagArray) {
-    mov(qlength, Immediate(0));
-  }
 
   CheckGC();
 }

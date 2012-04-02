@@ -40,7 +40,7 @@ void Masm::Push(LIROperand* src) {
 }
 
 
-void Masm::Mov(Register dst, LIROperand* src) {
+inline void Masm::Mov(Register dst, LIROperand* src) {
   if (src->is_register()) {
     if (dst.is(RegisterByIndex(src->value()))) return;
 
@@ -53,7 +53,20 @@ void Masm::Mov(Register dst, LIROperand* src) {
 }
 
 
-void Masm::Mov(LIROperand* dst, LIROperand* src) {
+inline void Masm::Mov(LIROperand* dst, Register src) {
+  if (dst->is_register()) {
+    if (!RegisterByIndex(dst->value()).is(src)) {
+      mov(RegisterByIndex(dst->value()), src);
+    }
+  } else if (dst->is_spill()) {
+    mov(SpillToOperand(dst->value()), src);
+  } else {
+    UNEXPECTED
+  }
+}
+
+
+inline void Masm::Mov(LIROperand* dst, LIROperand* src) {
   if (src == dst) return;
 
   if (dst->is_register()) {

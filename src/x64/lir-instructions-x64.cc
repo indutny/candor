@@ -170,13 +170,16 @@ void LIRAllocateFunction::Generate() {
   __ Call(masm()->stubs()->GetAllocateFunctionStub());
 
   // Propagate result
-  if (!ToRegister(result).is(rax)) {
-    __ mov(ToRegister(result), rax);
-  }
+  __ Mov(result, rax);
 }
 
 
 void LIRAllocateObject::Generate() {
+  __ push(Immediate(hir()->size()));
+  __ push(Immediate(hir()->kind()));
+  __ Call(masm()->stubs()->GetAllocateObjectStub());
+
+  __ Mov(result, rax);
 }
 
 } // namespace internal
