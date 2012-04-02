@@ -89,6 +89,8 @@ void LIRStoreProperty::Generate() {
   __ Push(result);
   __ Push(inputs[0]);
 
+  // rax <- object
+  // rbx <- property
   __ mov(rcx, Immediate(1));
   __ Call(masm()->stubs()->GetLookupPropertyStub());
 
