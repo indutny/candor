@@ -61,6 +61,8 @@ class LIROperand : public ZoneObject {
 // LIR class
 class LIR {
  public:
+  typedef ZoneList<LIROperand*> LIROperandList;
+
   LIR(Heap* heap, HIR* hir);
 
   // Calculate values' liveness ranges
@@ -84,8 +86,9 @@ class LIR {
   void GenerateInstruction(Masm* masm, HIRInstruction* hinstr);
 
   // Spill all active (in-use) registers that will be live after hinstr.
-  // Returns reverse movement for restoring original registers values
-  void SpillActive(Masm* masm, HIRInstruction* hinstr);
+  void SpillActive(Masm* masm,
+                   HIRInstruction* hinstr,
+                   LIROperandList* release_list);
 
   // Linear scan methods:
 

@@ -171,7 +171,9 @@ int LIR::AllocateRegister(HIRInstruction* hinstr) {
 }
 
 
-void LIR::SpillActive(Masm* masm, HIRInstruction* hinstr) {
+void LIR::SpillActive(Masm* masm,
+                      HIRInstruction* hinstr,
+                      LIROperandList* release_list) {
   HIRValueList::Item* item = active_values()->head();
   HIRParallelMove* move = NULL;
   HIRParallelMove* reverse_move = NULL;
@@ -196,15 +198,9 @@ void LIR::SpillActive(Masm* masm, HIRInstruction* hinstr) {
     LIROperand* spill = GetSpill();
     move->AddMove(value->operand(), spill);
     reverse_move->AddMove(spill, value->operand());
-  }
 
-  if (reverse_move != NULL) {
-    // Restore spills, they are not used after instr with side-effect
-    ZoneList<LIROperand*>::Item* op = reverse_move->raw_sources()->head();
-    while (op != NULL) {
-      spills()->Release(op->value()->value());
-      op = op->next();
-    }
+    // Spill should be released after instruction
+    release_list->Push(spill);
   }
 }
 
@@ -263,6 +259,9 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
     return;
   }
 
+  // List of operand that should be `released` after instruction
+  LIROperandList release_list;
+
   ExpireOldValues(hinstr);
 
   // Allocate all values used in instruction
@@ -297,6 +296,7 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
   for (i = 0; i < linstr->scratch_count(); i++) {
     int reg = AllocateRegister(hinstr);
     linstr->scratches[i] = new LIROperand(LIROperand::kRegister, reg);
+    release_list.Push(linstr->scratches[i]);
   }
 
   // Allocate result
@@ -334,6 +334,9 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
       HIRParallelMove* reverse_move = HIRParallelMove::GetAfter(hinstr);
       reverse_move->AddMove(linstr->inputs[i], item->value()->operand());
       reverse_move->AddMove(spill, linstr->inputs[i]);
+
+      // Spill should be released after instruction
+      release_list.Push(spill);
     }
 
     i++;
@@ -344,7 +347,7 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
   //
   // Though instruction itself should receive arguments in registers
   // (if that's possible)
-  if (hinstr->HasSideEffects()) SpillActive(masm, hinstr);
+  if (hinstr->HasSideEffects()) SpillActive(masm, hinstr, &release_list);
 
   // If instruction is a kGoto to the join block,
   // add join's phis to the movement
@@ -370,9 +373,13 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
   linstr->masm(masm);
   linstr->Generate();
 
-  // Release scratch registeres
-  for (i = 0; i < linstr->scratch_count(); i++) {
-    registers()->Release(linstr->scratches[i]->value());
+  LIROperand* release_op;
+  while ((release_op = release_list.Shift()) != NULL) {
+    if (release_op->is_register()) {
+      registers()->Release(release_op->value());
+    } else if (release_op->is_spill()) {
+      spills()->Release(release_op->value());
+    }
   }
 }
 
