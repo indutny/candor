@@ -258,7 +258,7 @@ HIR::HIR(Heap* heap, AstNode* node) : Visitor(kPreorder),
                                       last_instruction_(NULL),
                                       block_index_(0),
                                       variable_index_(0),
-                                      instruction_index_(1),
+                                      instruction_index_(0),
                                       print_map_(NULL) {
   work_list_.Push(new HIRFunction(node, CreateBlock()));
 
@@ -400,19 +400,37 @@ void HIR::EnumInstructions() {
     work_list.Push(root->value());
   }
 
-  // And process it
+  // Add first instruction
+  {
+    HIRParallelMove* move = new HIRParallelMove();
+    move->Init(NULL);
+    move->id(get_instruction_index());
+    first_instruction(move);
+    last_instruction(move);
+  }
+
+  // Process worklist
   HIRBasicBlock* current;
   while ((current = work_list.Shift()) != NULL) {
     // Go through all block's instructions, link them together and assign id
     HIRInstructionList::Item* instr = current->instructions()->head();
     for (; instr != NULL; instr = instr->next()) {
-      if (last_instruction() != NULL) last_instruction()->next(instr->value());
+      // Insert instruction into linked list
+      last_instruction()->next(instr->value());
+
       instr->value()->prev(last_instruction());
       instr->value()->id(get_instruction_index());
       last_instruction(instr->value());
 
-      // Lazily set first instruction
-      if (first_instruction() == NULL) first_instruction(instr->value());
+      // Insert parallel move after each instruction
+      HIRParallelMove* move = new HIRParallelMove();
+      move->Init(NULL);
+
+      last_instruction()->next(move);
+
+      move->prev(last_instruction());
+      move->id(get_instruction_index());
+      last_instruction(move);
     }
 
     // Add block's successors to the work list

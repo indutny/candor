@@ -186,13 +186,10 @@ class HIRParallelMove : public HIRInstruction {
  public:
   typedef ZoneList<LIROperand*> OperandList;
 
-  enum InsertionType {
-    kBefore,
-    kAfter
-  };
+  HIRParallelMove() : HIRInstruction(kParallelMove) {
+  }
 
-  HIRParallelMove(HIRInstruction* instr, InsertionType type);
-
+  // Record movement
   void AddMove(LIROperand* source, LIROperand* target);
 
   // Order movements to prevent "overlapping"
@@ -201,6 +198,14 @@ class HIRParallelMove : public HIRInstruction {
   static inline HIRParallelMove* Cast(HIRInstruction* instr) {
     assert(instr->type() == kParallelMove);
     return reinterpret_cast<HIRParallelMove*>(instr);
+  }
+
+  static inline HIRParallelMove* GetBefore(HIRInstruction* instr) {
+    return Cast(instr->prev());
+  }
+
+  static inline HIRParallelMove* GetAfter(HIRInstruction* instr) {
+    return Cast(instr->next());
   }
 
   inline OperandList* sources() { return &sources_; }

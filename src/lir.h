@@ -85,7 +85,7 @@ class LIR {
 
   // Spill all active (in-use) registers that will be live after hinstr.
   // Returns reverse movement for restoring original registers values
-  void SpillActive(Masm* masm, HIRInstruction* hinstr, HIRParallelMove* &move);
+  void SpillActive(Masm* masm, HIRInstruction* hinstr);
 
   // Linear scan methods:
 
@@ -93,17 +93,14 @@ class LIR {
   // Release them and put into freelist
   void ExpireOldValues(HIRInstruction* hinstr);
 
-  // Spill some value (that is in register) and release it's register
-  void SpillAllocated(HIRParallelMove* move);
-
-  // Allocate register for instruction
-  int AllocateRegister(HIRInstruction* hinstr, HIRParallelMove* &move);
+  // Allocate register for instruction (may spill some active values)
+  int AllocateRegister(HIRInstruction* hinstr);
 
   // Insert value into sorted spills list
   void AddToSpillCandidates(HIRValue* value);
 
   // Add phis assignments to movement
-  void MovePhis(HIRInstruction* hinstr, HIRParallelMove* &move);
+  void MovePhis(HIRInstruction* hinstr);
 
   // Wrapper over spills FreeList and incremental index
   inline LIROperand* GetSpill();

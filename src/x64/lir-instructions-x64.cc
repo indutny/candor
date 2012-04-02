@@ -79,12 +79,16 @@ void LIRStoreContext::Generate() {
 }
 
 
+LIRStoreProperty::LIRStoreProperty() {
+  inputs[0] = ToLIROperand(rax);
+  inputs[1] = ToLIROperand(rbx);
+}
+
+
 void LIRStoreProperty::Generate() {
   __ Push(result);
   __ Push(inputs[0]);
 
-  __ Mov(rax, inputs[0]);
-  __ Mov(rbx, inputs[1]);
   __ mov(rcx, Immediate(1));
   __ Call(masm()->stubs()->GetLookupPropertyStub());
 

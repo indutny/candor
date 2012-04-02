@@ -51,6 +51,15 @@ class LIRInstruction : public ZoneObject {
   };
 
   LIRInstruction() : hir_(NULL) {
+    // Nullify all inputs/outputs/scratches
+    inputs[0] = NULL;
+    inputs[1] = NULL;
+    inputs[2] = NULL;
+
+    scratches[0] = NULL;
+    scratches[1] = NULL;
+
+    result = NULL;
   }
 
   virtual void Generate() = 0;
@@ -60,6 +69,7 @@ class LIRInstruction : public ZoneObject {
   // Short-hand for converting operand to register
   inline Register ToRegister(LIROperand* op);
   inline Operand& ToOperand(LIROperand* op);
+  inline LIROperand* ToLIROperand(Register reg);
 
   inline HIRInstruction* generic_hir() { return hir_; }
   inline void hir(HIRInstruction* hir) { hir_ = hir; }
@@ -74,8 +84,8 @@ class LIRInstruction : public ZoneObject {
   virtual int result_count() const = 0;
   virtual int scratch_count() const = 0;
 
-  LIROperand* inputs[5];
-  LIROperand* scratches[3];
+  LIROperand* inputs[3];
+  LIROperand* scratches[2];
   LIROperand* result;
 
  protected:
@@ -166,6 +176,8 @@ class LIRStoreContext : public LIRInstructionTemplate<1, 1, 0> {
 
 class LIRStoreProperty : public LIRInstructionTemplate<2, 1, 0> {
  public:
+  LIRStoreProperty();
+
   void Generate();
 
   LIR_COMMON_METHODS(StoreProperty)

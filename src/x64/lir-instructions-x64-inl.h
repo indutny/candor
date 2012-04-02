@@ -20,6 +20,11 @@ inline Operand& LIRInstruction::ToOperand(LIROperand* op) {
   return masm()->SpillToOperand(op->value());
 }
 
+
+inline LIROperand* LIRInstruction::ToLIROperand(Register reg) {
+  return new LIROperand(LIROperand::kRegister, IndexByRegister(reg));
+}
+
 } // namespace internal
 } // namespace candor
 

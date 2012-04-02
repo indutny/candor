@@ -58,7 +58,7 @@ const Register context_reg = rsi;
 const Register root_reg = rdi;
 const Register scratch = r14;
 
-static Register RegisterByIndex(int index) {
+static inline Register RegisterByIndex(int index) {
   // rsi, rdi, r14, r15 are reserved
   switch (index) {
    case 0: return rax;
@@ -72,6 +72,24 @@ static Register RegisterByIndex(int index) {
    case 8: return r12;
    case 9: return r13;
    default: UNEXPECTED return reg_nil;
+  }
+}
+
+
+static inline int IndexByRegister(Register reg) {
+  // rsi, rdi, r14, r15 are reserved
+  switch (reg.code()) {
+   case 0: return 0;
+   case 1: return 1;
+   case 2: return 2;
+   case 3: return 3;
+   case 8: return 4;
+   case 9: return 5;
+   case 10: return 6;
+   case 11: return 7;
+   case 12: return 8;
+   case 13: return 9;
+   default: UNEXPECTED return -1;
   }
 }
 
