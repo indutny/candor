@@ -29,13 +29,25 @@ inline void Masm::PreservePop(Register src, Register preserve) {
 }
 
 
-void Masm::Push(LIROperand* src) {
+inline void Masm::Push(LIROperand* src) {
   if (src->is_register()) {
     push(RegisterByIndex(src->value()));
   } else if (src->is_immediate()) {
     push(Immediate(src->value()));
   } else {
     push(SpillToOperand(src->value()));
+  }
+}
+
+
+inline void Masm::Pop(LIROperand* dst) {
+  if (dst->is_register()) {
+    pop(RegisterByIndex(dst->value()));
+  } else {
+    pop(scratch);
+    if (dst->is_spill()) {
+      Mov(dst, scratch);
+    }
   }
 }
 

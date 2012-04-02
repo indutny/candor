@@ -102,7 +102,6 @@ void LIRStoreProperty::Generate() {
   Label done(masm());
 
   __ pop(rbx);
-  __ pop(rcx);
 
   __ IsNil(rax, NULL, &done);
   Operand qmap(rbx, HObject::kMapOffset);
@@ -110,9 +109,11 @@ void LIRStoreProperty::Generate() {
   __ addq(rax, rbx);
 
   Operand slot(rax, 0);
-  __ mov(slot, rcx);
+  __ Mov(scratch, result);
+  __ mov(slot, scratch);
 
   __ bind(&done);
+  __ Pop(result);
 }
 
 
@@ -134,6 +135,33 @@ void LIRLoadLocal::Generate() {
 
 
 void LIRLoadContext::Generate() {
+}
+
+
+LIRLoadProperty::LIRLoadProperty() {
+  inputs[0] = ToLIROperand(rax);
+  inputs[1] = ToLIROperand(rbx);
+}
+
+
+void LIRLoadProperty::Generate() {
+  // rax <- object
+  // rbx <- property
+  __ mov(rcx, Immediate(0));
+  __ Call(masm()->stubs()->GetLookupPropertyStub());
+
+  Label done(masm());
+
+  __ IsNil(rax, NULL, &done);
+  Operand qmap(rbx, HObject::kMapOffset);
+  __ mov(rbx, qmap);
+  __ addq(rax, rbx);
+
+  Operand slot(rax, 0);
+  __ mov(rax, slot);
+
+  __ bind(&done);
+  __ Mov(result, rax);
 }
 
 

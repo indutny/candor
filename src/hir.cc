@@ -579,6 +579,11 @@ AstNode* HIR::VisitWhile(AstNode* node) {
 
 
 AstNode* HIR::VisitMember(AstNode* node) {
+  HIRValue* property = GetValue(node->rhs());
+  HIRValue* receiver = GetValue(node->lhs());
+
+  AddInstruction(new HIRLoadProperty(receiver, property));
+
   return node;
 }
 

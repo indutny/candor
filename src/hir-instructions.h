@@ -36,6 +36,7 @@ class HIRInstruction : public ZoneObject {
     kLoadRoot,
     kLoadLocal,
     kLoadContext,
+    kLoadProperty,
 
     // Branching
     kBranchBool,
@@ -276,6 +277,24 @@ class HIRLoadContext : public HIRLoadBase {
  public:
   HIRLoadContext(HIRValue* value) : HIRLoadBase(kLoadContext, value) {
   }
+};
+
+class HIRLoadProperty : public HIRStubCall {
+ public:
+  HIRLoadProperty(HIRValue* receiver, HIRValue* property)
+      : HIRStubCall(kLoadProperty),
+        receiver_(receiver),
+        property_(property) {
+    SetInput(receiver);
+    SetInput(property);
+  }
+
+  inline HIRValue* receiver() { return receiver_; }
+  inline HIRValue* property() { return property_; }
+
+ private:
+  HIRValue* receiver_;
+  HIRValue* property_;
 };
 
 class HIRStoreLocal : public HIRStoreBase {

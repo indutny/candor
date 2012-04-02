@@ -25,6 +25,7 @@ class Operand;
     V(LoadRoot)\
     V(LoadLocal)\
     V(LoadContext)\
+    V(LoadProperty)\
     V(BranchBool)\
     V(Call)\
     V(AllocateObject)\
@@ -202,6 +203,15 @@ class LIRLoadContext : public LIRInstructionTemplate<0, 1, 0> {
   void Generate();
 
   LIR_COMMON_METHODS(LoadContext)
+};
+
+class LIRLoadProperty : public LIRInstructionTemplate<2, 1, 0> {
+ public:
+  LIRLoadProperty();
+
+  void Generate();
+
+  LIR_COMMON_METHODS(LoadProperty)
 };
 
 class LIRBranchBool : public LIRControlInstructionTemplate<1, 0> {
