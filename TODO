@@ -1,5 +1,6 @@
 HIR/LIR todos:
 * Setting/getting property
+* Call
 * Binary operations
 * Unary operations
 * While loops

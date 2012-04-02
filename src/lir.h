@@ -15,6 +15,7 @@ class HIR;
 class HIRValue;
 class HIRInstruction;
 class HIRParallelMove;
+class LIR;
 class LIRInstruction;
 struct Register;
 
@@ -58,11 +59,23 @@ class LIROperand : public ZoneObject {
   bool being_moved_;
 };
 
+// Auto-releasing list
+class LIRReleaseList : public ZoneList<LIROperand*> {
+ public:
+  LIRReleaseList(LIR* lir) : lir_(lir) {
+  }
+
+  ~LIRReleaseList();
+
+  inline LIR* lir() { return lir_; }
+
+ private:
+  LIR* lir_;
+};
+
 // LIR class
 class LIR {
  public:
-  typedef ZoneList<LIROperand*> LIROperandList;
-
   LIR(Heap* heap, HIR* hir);
 
   // Calculate values' liveness ranges
@@ -88,7 +101,7 @@ class LIR {
   // Spill all active (in-use) registers that will be live after hinstr.
   void SpillActive(Masm* masm,
                    HIRInstruction* hinstr,
-                   LIROperandList* release_list);
+                   LIRReleaseList* release_list);
 
   // Linear scan methods:
 

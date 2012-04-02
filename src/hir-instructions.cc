@@ -2,6 +2,7 @@
 #include "hir.h"
 
 #include "lir.h" // LIROperand
+#include "lir-inl.h" // GetSpill
 
 namespace candor {
 namespace internal {
@@ -71,7 +72,10 @@ void HIRParallelMove::AddMove(LIROperand* source, LIROperand* target) {
 }
 
 
-void HIRParallelMove::Reorder(LIROperand* source, LIROperand* target) {
+void HIRParallelMove::Reorder(LIR* lir,
+                              LIRReleaseList* release_list,
+                              LIROperand* source,
+                              LIROperand* target) {
   // Mark source/target pair as `being moved`
   source->being_moved(true);
   target->being_moved(true);
@@ -84,8 +88,8 @@ void HIRParallelMove::Reorder(LIROperand* source, LIROperand* target) {
 
     if (sitem->value()->being_moved()) {
       // Loop detected - create `scratch` operand
-      LIROperand* scratch = new LIROperand(LIROperand::kSpill,
-                                           static_cast<off_t>(-1));
+      LIROperand* scratch = lir->GetSpill();
+      release_list->Push(scratch);
 
       // scratch = target
       sources()->Push(target);
@@ -95,7 +99,7 @@ void HIRParallelMove::Reorder(LIROperand* source, LIROperand* target) {
       sitem->value(scratch);
     } else {
       // Just successor
-      Reorder(sitem->value(), titem->value());
+      Reorder(lir, release_list, sitem->value(), titem->value());
     }
   }
 
@@ -109,7 +113,7 @@ void HIRParallelMove::Reorder(LIROperand* source, LIROperand* target) {
 }
 
 
-void HIRParallelMove::Reorder() {
+void HIRParallelMove::Reorder(LIR* lir, LIRReleaseList* release_list) {
   LIROperand* source;
   LIROperand* target;
   while (raw_sources_.length() > 0) {
@@ -117,7 +121,7 @@ void HIRParallelMove::Reorder() {
     source = raw_sources_.Shift();
     target = raw_targets_.Shift();
 
-    Reorder(source, target);
+    Reorder(lir, release_list, source, target);
   }
 }
 

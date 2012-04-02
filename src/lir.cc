@@ -19,6 +19,18 @@
 namespace candor {
 namespace internal {
 
+LIRReleaseList::~LIRReleaseList() {
+  LIROperand* release_op;
+  while ((release_op = Shift()) != NULL) {
+    if (release_op->is_register()) {
+      lir()->registers()->Release(release_op->value());
+    } else if (release_op->is_spill()) {
+      lir()->spills()->Release(release_op->value());
+    }
+  }
+}
+
+
 LIR::LIR(Heap* heap, HIR* hir) : heap_(heap), hir_(hir), spill_count_(0) {
   // Calculate numeric liveness ranges
   CalculateLiveness();
@@ -173,7 +185,7 @@ int LIR::AllocateRegister(HIRInstruction* hinstr) {
 
 void LIR::SpillActive(Masm* masm,
                       HIRInstruction* hinstr,
-                      LIROperandList* release_list) {
+                      LIRReleaseList* release_list) {
   HIRValueList::Item* item = active_values()->head();
   HIRParallelMove* move = NULL;
   HIRParallelMove* reverse_move = NULL;
@@ -246,21 +258,21 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
     }
   }
 
+  // List of operand that should be `released` after instruction
+  LIRReleaseList release_list(this);
+
   // Parallel move instruction doesn't need allocation nor generation,
   // because it should be generated automatically.
   if (hinstr->type() == HIRInstruction::kParallelMove) {
     // However if it's last instruction - it won't be generated automatically
     if (hinstr->next() == NULL) {
-      HIRParallelMove::Cast(hinstr)->Reorder();
+      HIRParallelMove::Cast(hinstr)->Reorder(this, &release_list);
 
       linstr->masm(masm);
       linstr->Generate();
     }
     return;
   }
-
-  // List of operand that should be `released` after instruction
-  LIROperandList release_list;
 
   ExpireOldValues(hinstr);
 
@@ -387,7 +399,7 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
     LIRInstruction* lmove = Cast(move);
 
     // Order movements (see Parallel Move paper)
-    move->Reorder();
+    move->Reorder(this, &release_list);
 
     lmove->masm(masm);
     lmove->Generate();
@@ -396,15 +408,6 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
   // Generate instruction itself
   linstr->masm(masm);
   linstr->Generate();
-
-  LIROperand* release_op;
-  while ((release_op = release_list.Shift()) != NULL) {
-    if (release_op->is_register()) {
-      registers()->Release(release_op->value());
-    } else if (release_op->is_spill()) {
-      spills()->Release(release_op->value());
-    }
-  }
 }
 
 
