@@ -424,7 +424,7 @@ void HIR::EnumInstructions() {
 
       // Insert parallel move after each instruction
       HIRParallelMove* move = new HIRParallelMove();
-      move->Init(NULL);
+      move->Init(instr->value()->block());
 
       last_instruction()->next(move);
 

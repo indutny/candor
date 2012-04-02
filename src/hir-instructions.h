@@ -16,7 +16,6 @@ class HIRBasicBlock;
 class HIRValue;
 class HIRPhi;
 class LIR;
-class LIRReleaseList;
 class LIROperand;
 class RelocationInfo;
 
@@ -196,7 +195,7 @@ class HIRParallelMove : public HIRInstruction {
   void AddMove(LIROperand* source, LIROperand* target);
 
   // Order movements to prevent "overlapping"
-  void Reorder(LIR* lir, LIRReleaseList* release_list);
+  void Reorder(LIR* lir);
 
   static inline HIRParallelMove* Cast(HIRInstruction* instr) {
     assert(instr->type() == kParallelMove);
@@ -218,10 +217,7 @@ class HIRParallelMove : public HIRInstruction {
 
  private:
   // For recursive reordering
-  void Reorder(LIR* lir,
-               LIRReleaseList* release_list,
-               LIROperand* source,
-               LIROperand* target);
+  void Reorder(LIR* lir, LIROperand* source, LIROperand* target);
 
   // Sources/Targets after reordering
   OperandList sources_;

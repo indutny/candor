@@ -98,10 +98,14 @@ class LIR {
   //
   void GenerateInstruction(Masm* masm, HIRInstruction* hinstr);
 
+  // Put spill used in movements to active_values() list to
+  // release it automatically after reverse instruction
+  void InsertMoveSpill(HIRParallelMove* move,
+                       HIRParallelMove* reverse,
+                       LIROperand* spill);
+
   // Spill all active (in-use) registers that will be live after hinstr.
-  void SpillActive(Masm* masm,
-                   HIRInstruction* hinstr,
-                   LIRReleaseList* release_list);
+  void SpillActive(Masm* masm, HIRInstruction* hinstr);
 
   // Linear scan methods:
 

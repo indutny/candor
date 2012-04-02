@@ -26,6 +26,7 @@ namespace internal {
     V(LoadRoot)\
     V(LoadLocal)\
     V(LoadContext)\
+    V(LoadProperty)\
     V(BranchBool)\
     HIR_ENUM_STUB_INSTRUCTIONS(V)
 
@@ -73,7 +74,6 @@ void HIRParallelMove::AddMove(LIROperand* source, LIROperand* target) {
 
 
 void HIRParallelMove::Reorder(LIR* lir,
-                              LIRReleaseList* release_list,
                               LIROperand* source,
                               LIROperand* target) {
   // Mark source/target pair as `being moved`
@@ -89,7 +89,8 @@ void HIRParallelMove::Reorder(LIR* lir,
     if (sitem->value()->being_moved()) {
       // Loop detected - create `scratch` operand
       LIROperand* scratch = lir->GetSpill();
-      release_list->Push(scratch);
+
+      lir->InsertMoveSpill(this, this, scratch);
 
       // scratch = target
       sources()->Push(target);
@@ -99,7 +100,7 @@ void HIRParallelMove::Reorder(LIR* lir,
       sitem->value(scratch);
     } else {
       // Just successor
-      Reorder(lir, release_list, sitem->value(), titem->value());
+      Reorder(lir, sitem->value(), titem->value());
     }
   }
 
@@ -113,7 +114,7 @@ void HIRParallelMove::Reorder(LIR* lir,
 }
 
 
-void HIRParallelMove::Reorder(LIR* lir, LIRReleaseList* release_list) {
+void HIRParallelMove::Reorder(LIR* lir) {
   LIROperand* source;
   LIROperand* target;
   while (raw_sources_.length() > 0) {
@@ -121,7 +122,7 @@ void HIRParallelMove::Reorder(LIR* lir, LIRReleaseList* release_list) {
     source = raw_sources_.Shift();
     target = raw_targets_.Shift();
 
-    Reorder(lir, release_list, source, target);
+    Reorder(lir, source, target);
   }
 }
 

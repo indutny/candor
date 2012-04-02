@@ -84,6 +84,11 @@ TEST_START(functional)
     assert(result->As<Number>()->Value() == 2);
   })
 
+  // Objects
+  FUN_TEST("a = {a:1,b:2,c:3}\nreturn a.a", {
+    assert(result->As<Number>()->Value() == 1);
+  })
+
   // Functions
   FUN_TEST("a() {}\nreturn a", {
     assert(result->Is<Function>());
