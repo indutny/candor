@@ -311,8 +311,17 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
 
   ExpireOldValues(hinstr);
 
-  // Allocate all values used in instruction
+  // If instruction has input restrictions - ensure that those registers can't
+  // be allocated for spills or anything
   int i;
+  for (i = 0; i < linstr->input_count(); i++) {
+    if (linstr->inputs[i] == NULL) continue;
+    assert(linstr->inputs[i]->is_register());
+
+    registers()->Get(linstr->inputs[i]->value());
+  }
+
+  // Allocate all values used in instruction
   HIRValueList::Item* item = hinstr->values()->head();
   for (i = -1; item != NULL; item = item->next()) {
     HIRValue* value = item->value();
