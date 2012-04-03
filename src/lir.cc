@@ -21,13 +21,7 @@ namespace internal {
 
 LIRReleaseList::~LIRReleaseList() {
   LIROperand* release_op;
-  while ((release_op = Shift()) != NULL) {
-    if (release_op->is_register()) {
-      lir()->registers()->Release(release_op->value());
-    } else if (release_op->is_spill()) {
-      lir()->spills()->Release(release_op->value());
-    }
-  }
+  while ((release_op = Shift()) != NULL) lir()->Release(release_op);
 }
 
 
@@ -122,11 +116,7 @@ void LIR::ExpireOldValues(HIRInstruction* hinstr) {
     if (value->operand() == NULL) continue;
 
     // Return register/spill slot back to freelist
-    if (value->operand()->is_register()) {
-      registers()->Release(value->operand()->value());
-    } else if (value->operand()->is_spill()) {
-      spills()->Release(value->operand()->value());
-    }
+    Release(value->operand());
 
     // Reset operand
     value->operand(NULL);
@@ -161,7 +151,7 @@ void LIR::AddToSpillCandidates(HIRValue* value) {
 }
 
 
-int LIR::AllocateRegister(HIRInstruction* hinstr) {
+LIROperand* LIR::AllocateRegister(HIRInstruction* hinstr) {
   // Get register (spill if all registers are in use).
   if (registers()->IsEmpty()) {
     // Spill some allocated register on failure and try again
@@ -180,7 +170,36 @@ int LIR::AllocateRegister(HIRInstruction* hinstr) {
     value->operand(spill);
   }
 
-  return registers()->Get();
+  return new LIROperand(LIROperand::kRegister, registers()->Get());
+}
+
+
+void LIR::SpillRegister(HIRInstruction* hinstr, LIROperand* reg) {
+  HIRValueList::Item* item = active_values()->head();
+  LIROperand* spill = NULL;
+  for (; item != NULL; item = item->next()) {
+    HIRValue* value = item->value();
+    if (value->operand() == NULL || ! value->operand()->is_equal(reg)) {
+      continue;
+    }
+
+    // Lazily allocate spill
+    if (spill == NULL) {
+      if (registers()->IsEmpty()) {
+        spill = GetSpill();
+      } else {
+        spill = AllocateRegister(hinstr);
+      }
+    }
+
+    // Move value to spill/register
+    value->operand(spill);
+  }
+
+  // If at least one value was moved - insert movement
+  if (spill != NULL) {
+    HIRParallelMove::GetBefore(hinstr)->AddMove(reg, spill);
+  }
 }
 
 
@@ -189,18 +208,23 @@ void LIR::InsertMoveSpill(HIRParallelMove* move,
                           LIROperand* spill) {
   HIRValue* value = new HIRValue(reverse->block());
   value->live_range()->start = move->id();
-  // NOTE: movement is generated only when it's next instruction is.
+  // NOTE: spill is released only when it's next instruction is.
   value->live_range()->end = reverse->id() + 1;
   value->operand(spill);
   active_values()->Push(value);
 }
 
 
-void LIR::SpillActive(Masm* masm,
-                      HIRInstruction* hinstr) {
+void LIR::SpillActive(Masm* masm, HIRInstruction* hinstr) {
   HIRValueList::Item* item = active_values()->head();
-  HIRParallelMove* move = NULL;
-  HIRParallelMove* reverse_move = NULL;
+  HIRParallelMove* move = HIRParallelMove::GetBefore(hinstr);
+  HIRParallelMove* reverse_move = HIRParallelMove::GetAfter(hinstr);
+
+  // Create map of movement
+  LIROperand* spills[kLIRRegisterCount];
+  for (int i = 0; i < kLIRRegisterCount; i++) {
+    spills[i] = NULL;
+  }
 
   for (; item != NULL; item = item->next()) {
     HIRValue* value = item->value();
@@ -215,16 +239,16 @@ void LIR::SpillActive(Masm* masm,
       continue;
     }
 
-    // Lazily allocate move instructions
-    move = HIRParallelMove::GetBefore(hinstr);
-    reverse_move = HIRParallelMove::GetAfter(hinstr);
+    // Skip already spilled registers
+    int reg = value->operand()->value();
+    if (spills[reg] != NULL) continue;
 
-    LIROperand* spill = GetSpill();
-    move->AddMove(value->operand(), spill);
-    reverse_move->AddMove(spill, value->operand());
+    spills[reg] = GetSpill();
+    move->AddMove(value->operand(), spills[reg]);
+    reverse_move->AddMove(spills[reg], value->operand());
 
     // Spill should be released after instruction
-    InsertMoveSpill(move, reverse_move, spill);
+    InsertMoveSpill(move, reverse_move, spills[reg]);
   }
 }
 
@@ -288,9 +312,13 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
   ExpireOldValues(hinstr);
 
   // Allocate all values used in instruction
+  int i;
   HIRValueList::Item* item = hinstr->values()->head();
-  for (; item != NULL; item = item->next()) {
+  for (i = -1; item != NULL; item = item->next()) {
     HIRValue* value = item->value();
+
+    // Increment input index
+    if (value != hinstr->GetResult()) i++;
 
     // Allocate immediate values
     if (value->slot()->is_immediate()) {
@@ -299,26 +327,42 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
       continue;
     }
 
-    // Skip result if it's not immediate
+    // Result will be allocated later
     if (value == hinstr->GetResult()) continue;
 
-    // Skip already allocated values
-    if (value->operand() != NULL) continue;
+    if (linstr->inputs[i] != NULL) {
+      // Instruction requires it's input to reside in some specific register
 
-    int reg = AllocateRegister(hinstr);
-    value->operand(new LIROperand(LIROperand::kRegister, reg));
+      if (value->operand() != NULL) {
+        // If input contains required register operand - skip this value
+        if (value->operand()->is_equal(linstr->inputs[i])) continue;
+
+        // Move value to register
+        HIRParallelMove::GetBefore(hinstr)->AddMove(value->operand(),
+                                                    linstr->inputs[i]);
+        Release(value->operand());
+      }
+
+      // Move all uses of this register into spill/other register
+      SpillRegister(hinstr, linstr->inputs[i]);
+
+      value->operand(linstr->inputs[i]);
+    } else {
+      // Skip already allocated values
+      if (value->operand() != NULL) continue;
+
+      value->operand(AllocateRegister(hinstr));
+
+      AddToSpillCandidates(value);
+    }
 
     // Amend active values and spill candidates
     active_values()->Push(value);
-
-    AddToSpillCandidates(value);
   }
 
   // Allocate scratch registers
-  int i;
   for (i = 0; i < linstr->scratch_count(); i++) {
-    int reg = AllocateRegister(hinstr);
-    linstr->scratches[i] = new LIROperand(LIROperand::kRegister, reg);
+    linstr->scratches[i] = AllocateRegister(hinstr);
     release_list.Push(linstr->scratches[i]);
   }
 
@@ -326,17 +370,12 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
   if (hinstr->GetResult() != NULL) {
     HIRValue* value = hinstr->GetResult();
     if (value->operand() == NULL) {
-      int reg = AllocateRegister(hinstr);
-      value->operand(new LIROperand(LIROperand::kRegister, reg));
+      value->operand(AllocateRegister(hinstr));
       active_values()->Push(value);
       AddToSpillCandidates(value);
     }
     linstr->result = value->operand();
   }
-
-  // Reorder moves, because shuffling inputs may broke order
-  HIRParallelMove::GetBefore(hinstr)->Reorder(this);
-  HIRParallelMove::GetAfter(hinstr)->Reorder(this);
 
   // Set inputs
   item = hinstr->values()->head();
@@ -345,49 +384,7 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
 
     assert(item->value()->operand() != NULL);
     if (linstr->inputs[i] == NULL) {
-      // Instruction hasn't specified inputs restrictions
       linstr->inputs[i] = item->value()->operand();
-    } else if (!linstr->inputs[i]->is_equal(item->value()->operand())) {
-      assert(!linstr->inputs[i]->is_immediate());
-
-      // Instruction specified inputs restrictions,
-      // create movement if needed
-      HIRParallelMove* move = HIRParallelMove::GetBefore(hinstr);
-      HIRParallelMove* reverse_move = HIRParallelMove::GetAfter(hinstr);
-
-      move->AddMove(item->value()->operand(), linstr->inputs[i]);
-      reverse_move->AddMove(linstr->inputs[i], item->value()->operand());
-
-      // Spill input operand if it's in use
-      if (IsInUse(linstr->inputs[i])) {
-        LIROperand* spill;
-
-        // Value may be spilled either in register or a spill
-        if (registers()->IsEmpty() || hinstr->HasSideEffects()) {
-          spill = GetSpill();
-        } else {
-          spill = new LIROperand(LIROperand::kRegister, registers()->Get());
-        }
-
-        move->AddMove(linstr->inputs[i], spill);
-        reverse_move->AddMove(spill, linstr->inputs[i]);
-
-        // Spill should be released after instruction
-        InsertMoveSpill(move, reverse_move, spill);
-
-        // Check if value wasn't a input or result
-        if (linstr->result->is_equal(linstr->inputs[i])) {
-          linstr->result = spill;
-        } else {
-          // Check in previous inputs
-          for (int j = 0; j < i; j++) {
-            if (linstr->inputs[j]->is_equal(linstr->inputs[i])) {
-              linstr->inputs[j] = spill;
-              break;
-            }
-          }
-        }
-      }
     }
 
     i++;

@@ -26,6 +26,15 @@ inline LIROperand* LIR::GetSpill() {
 }
 
 
+inline void LIR::Release(LIROperand* operand) {
+  if (operand->is_register()) {
+    registers()->Release(operand->value());
+  } else if (operand->is_spill()) {
+    spills()->Release(operand->value());
+  }
+}
+
+
 inline LIRInstruction* LIR::Cast(HIRInstruction* instr) {
 #define LIR_GEN_CAST(V)\
   case HIRInstruction::k##V:\

@@ -62,9 +62,9 @@ static inline Register RegisterByIndex(int index) {
   // rsi, rdi, r14, r15 are reserved
   switch (index) {
    case 0: return rax;
-   case 1: return rcx;
-   case 2: return rdx;
-   case 3: return rbx;
+   case 1: return rbx;
+   case 2: return rcx;
+   case 3: return rdx;
    case 4: return r8;
    case 5: return r9;
    case 6: return r10;
@@ -80,9 +80,9 @@ static inline int IndexByRegister(Register reg) {
   // rsi, rdi, r14, r15 are reserved
   switch (reg.code()) {
    case 0: return 0;
-   case 1: return 1;
-   case 2: return 2;
-   case 3: return 3;
+   case 1: return 2;
+   case 2: return 3;
+   case 3: return 1;
    case 8: return 4;
    case 9: return 5;
    case 10: return 6;

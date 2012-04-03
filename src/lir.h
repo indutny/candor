@@ -114,7 +114,10 @@ class LIR {
   void ExpireOldValues(HIRInstruction* hinstr);
 
   // Allocate register for instruction (may spill some active values)
-  int AllocateRegister(HIRInstruction* hinstr);
+  LIROperand* AllocateRegister(HIRInstruction* hinstr);
+
+  // Go through active values and move all uses of register into spill
+  void SpillRegister(HIRInstruction* hinstr, LIROperand* reg);
 
   // Insert value into sorted spills list
   void AddToSpillCandidates(HIRValue* value);
@@ -124,6 +127,9 @@ class LIR {
 
   // Checks if operand is used anywhere
   inline bool IsInUse(LIROperand* operand);
+
+  // Release operand in registers() or spills()
+  inline void Release(LIROperand* operand);
 
   // Wrapper over spills FreeList and incremental index
   inline LIROperand* GetSpill();
