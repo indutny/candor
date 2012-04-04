@@ -58,10 +58,10 @@ class HIRBasicBlock : public ZoneObject {
   inline bool is_enumerated() {
     // Check if node's predecessor is dominated by node
     // (node loops to itself)
-    if (enumerated_ == 1 && predecessors_count() == 2) {
+    if (enumerated_ >= 1 && predecessors_count() == 2) {
       if (predecessors()[1]->Dominates(this) ||
           predecessors()[0]->Dominates(this)) {
-        return true;
+        return enumerated_ == 1;
       }
     }
     return enumerated_ == predecessors_count();

@@ -105,21 +105,23 @@ TEST_START(hir)
 
   // While loop
   HIR_TEST("a = 0\nwhile (true) { a = 2 }\nreturn a",
-           "[Block#0 {0,1,2} [Entry] "
+           "[Block#0 {0,1} [Entry] "
            "[LoadRoot *[0 [imm 0x0]]] "
            "[StoreLocal *[1 [st:0]] *[0 [imm 0x0]]] "
-           "[LoadRoot *[2 [ctx -2:11]]] "
            "[Goto] []>*>[1]]\n"
 
            "[Block#1 {0,2,3,5} @[1,4]:5 "
-           "[BranchBool *[2 [ctx -2:11]]] [0,2]>*>[2,3]]\n"
+           "[LoadRoot *[2 [ctx -2:11]]] [Goto] [0,3]>*>[2]]\n"
 
-           "[Block#2 {0,2,3,4} "
+           "[Block#2 {0,1,2} "
+           "[BranchBool *[2 [ctx -2:11]]] [1]>*>[3,4]]\n"
+
+           "[Block#3 {0,2,3,4} "
            "[LoadRoot *[3 [imm 0x4]]] "
            "[StoreLocal *[1>4 [st:0]] *[3 [imm 0x4]]] "
-           "[Goto] [1]>*>[1]]\n"
+           "[Goto] [2]>*>[1]]\n"
 
-           "[Block#3 {0,1,2,6} "
+           "[Block#4 {0,1,2,6} "
            "[LoadLocal *[5 [st:0]]] "
-           "[Return *[5 [st:0]]] [1]>*>[]]\n")
+           "[Return *[5 [st:0]]] [2]>*>[]]\n")
 TEST_END(hir)

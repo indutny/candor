@@ -639,16 +639,33 @@ AstNode* HIR::VisitIf(AstNode* node) {
 
 AstNode* HIR::VisitWhile(AstNode* node) {
   HIRBasicBlock* cond = CreateBlock();
+  HIRBasicBlock* start = CreateBlock();
   HIRBasicBlock* body = CreateBlock();
   HIRBasicBlock* end = CreateBlock();
-  HIRBasicBlock* join = NULL;
+
+  //   entry
+  //     |
+  //    lhs
+  //     | \
+  //     |  ^
+  //     |  |
+  //     | body
+  //     |  |
+  //     |  ^
+  //     | /
+  //   branch
+  //     |
+  //     |
+  //    end
+
+  // Create new block and insert condition expression into it
+  current_block()->Goto(cond);
+  set_current_block(cond);
   HIRBranchBool* branch = new HIRBranchBool(GetValue(node->lhs()),
                                             body,
                                             end);
-
-  // Create new block and insert branch instruction into it
-  current_block()->Goto(cond);
-  set_current_block(cond);
+  cond->Goto(start);
+  set_current_block(start);
   Finish(branch);
 
   // Generate loop's body

@@ -189,7 +189,7 @@ void Assembler::testl(Register dst, Immediate src) {
 
 void Assembler::jmp(Label* label) {
   emitb(0xE9);
-  emitl(0x12345678);
+  emitl(0x11111111);
   if (label != NULL) label->use(offset() - 4);
 }
 
@@ -213,7 +213,7 @@ void Assembler::jmp(Condition cond, Label* label) {
    default:
     UNEXPECTED
   }
-  emitl(0x12345678);
+  emitl(0x11111111);
   if (label != NULL) label->use(offset() - 4);
 }
 
