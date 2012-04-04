@@ -187,8 +187,7 @@ void LIR::InsertMoveSpill(HIRParallelMove* move,
                           LIROperand* spill) {
   HIRValue* value = new HIRValue(reverse->block());
   value->live_range()->start = move->id();
-  // NOTE: spill is released only when it's next instruction is.
-  value->live_range()->end = reverse->id() + 1;
+  value->live_range()->end = reverse->id();
   value->operand(spill);
   active_values()->InsertSorted<HIRValueEndShape>(value);
 }

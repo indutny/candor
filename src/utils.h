@@ -223,6 +223,9 @@ class GenericList {
     item->prev(insert_node->prev());
     item->next(insert_node);
     insert_node->prev(item);
+
+    // Increase length
+    length_++;
   }
 
 
