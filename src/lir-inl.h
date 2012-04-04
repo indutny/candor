@@ -14,6 +14,12 @@
 namespace candor {
 namespace internal {
 
+inline int HIRValueEndShape::Compare(HIRValue* l, HIRValue* r) {
+  // Normal order (by end)
+  return l->live_range()->end - r->live_range()->end;
+}
+
+
 inline LIROperand* LIR::GetSpill() {
   int spill_index;
   if (spills()->IsEmpty()) {

@@ -87,17 +87,18 @@ void HIRParallelMove::Reorder(LIR* lir,
     if (!sitem->value()->is_equal(target)) continue;
 
     if (sitem->value()->being_moved()) {
-      // Loop detected - create `scratch` operand
-      LIROperand* scratch = lir->GetSpill();
-
-      lir->InsertMoveSpill(this, this, scratch);
+      // Lazily create spill operand
+      if (spill_ == NULL) {
+        spill_ = lir->GetSpill();
+        lir->InsertMoveSpill(this, this, spill_);
+      }
 
       // scratch = target
       sources()->Push(target);
-      targets()->Push(scratch);
+      targets()->Push(spill_);
 
       // And use scratch in this move
-      sitem->value(scratch);
+      sitem->value(spill_);
     } else {
       // Just successor
       Reorder(lir, sitem->value(), titem->value());

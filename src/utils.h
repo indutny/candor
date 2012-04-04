@@ -149,7 +149,7 @@ class GenericList {
     friend class GenericList;
   };
 
-  GenericList() : head_(NULL), current_(NULL), length_(0) {
+  GenericList() : head_(NULL), tail_(NULL), length_(0) {
   }
 
 
@@ -160,21 +160,21 @@ class GenericList {
 
   void Push(T item) {
     Item* next = new Item(item);
-    next->prev_ = current_;
+    next->prev_ = tail_;
 
     if (head_ == NULL) {
       head_ = next;
     } else {
-      current_->next_ = next;
+      tail_->next_ = next;
     }
 
-    current_ = next;
+    tail_ = next;
     length_++;
   }
 
 
   void Remove(Item* item) {
-    if (current_ == item) current_ = item->prev_;
+    if (tail_ == item) tail_ = item->prev_;
     if (head_ == item) head_ = item->next_;
     Policy::Delete(item->value());
 
@@ -194,8 +194,52 @@ class GenericList {
     next->prev_ = NULL;
     next->next_ = head_;
     head_ = next;
-    if (current_ == NULL) current_ = head_;
+    if (tail_ == NULL) tail_ = head_;
     length_++;
+  }
+
+
+  // Sorted insertion
+  template <class Shape>
+  void InsertSorted(T value) {
+    if (head() == NULL) return Push(value);
+
+    Item* current = tail();
+    Item* insert_node = NULL;
+    while (current != NULL && Shape::Compare(value, current->value()) < 0) {
+      insert_node = current;
+      current = current->prev();
+    }
+
+    // `value` is a new tail of list
+    if (insert_node == NULL) return Push(value);
+
+    // `value` is a new head of list
+    if (insert_node->prev() == NULL) return Unshift(value);
+
+    // Insert before `insert_node`
+    Item* item = new Item(value);
+    insert_node->prev()->next(item);
+    item->prev(insert_node->prev());
+    item->next(insert_node);
+    insert_node->prev(item);
+  }
+
+
+  T Pop() {
+    if (tail_ == NULL) return NULL;
+
+    Item* tmp = tail_;
+    T value = tail_->value();
+
+    if (tail_ == head_) head_ = NULL;
+    if (tail_->prev_ != NULL) tail_->prev()->next_ = NULL;
+
+    tail_ = tail_->prev();
+    delete tmp;
+    length_--;
+
+    return value;
   }
 
 
@@ -205,7 +249,7 @@ class GenericList {
     Item* tmp = head_;
     T value = head_->value();
 
-    if (head_ == current_) current_ = NULL;
+    if (head_ == tail_) tail_ = NULL;
     if (head_->next_ != NULL) head_->next()->prev_ = NULL;
 
     head_ = head_->next();
@@ -217,12 +261,12 @@ class GenericList {
 
 
   inline Item* head() { return head_; }
-  inline Item* tail() { return current_; }
+  inline Item* tail() { return tail_; }
   inline int32_t length() { return length_; }
 
  private:
   Item* head_;
-  Item* current_;
+  Item* tail_;
   int32_t length_;
 };
 

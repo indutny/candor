@@ -188,7 +188,7 @@ class HIRParallelMove : public HIRInstruction {
  public:
   typedef ZoneList<LIROperand*> OperandList;
 
-  HIRParallelMove() : HIRInstruction(kParallelMove) {
+  HIRParallelMove() : HIRInstruction(kParallelMove), spill_(NULL) {
   }
 
   // Record movement
@@ -218,6 +218,9 @@ class HIRParallelMove : public HIRInstruction {
  private:
   // For recursive reordering
   void Reorder(LIR* lir, LIROperand* source, LIROperand* target);
+
+  // Only one spill scratch is required (cache it)
+  LIROperand* spill_;
 
   // Sources/Targets after reordering
   OperandList sources_;

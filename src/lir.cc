@@ -108,11 +108,11 @@ void LIR::PrunePhis() {
 }
 
 
-void LIR::ExpireOldValues(HIRInstruction* hinstr) {
+void LIR::ExpireOldValues(HIRInstruction* hinstr, ZoneList<HIRValue*>* list) {
   int current = hinstr->id();
-  while (active_values()->length() > 0 &&
-         current > active_values()->head()->value()->live_range()->end) {
-    HIRValue* value = active_values()->Shift();
+  while (list->length() > 0 &&
+         current > list->head()->value()->live_range()->end) {
+    HIRValue* value = list->Shift();
     if (value->operand() == NULL) continue;
 
     // Return register/spill slot back to freelist
@@ -124,40 +124,13 @@ void LIR::ExpireOldValues(HIRInstruction* hinstr) {
 }
 
 
-void LIR::AddToSpillCandidates(HIRValue* value) {
-  int end = value->live_range()->end;
-  HIRValueList::Item* item = spill_candidates()->head();
-  for (; item != NULL; item = item->next()) {
-    HIRValue* candidate_value = item->value();
-
-    // Some value in the list is less than current
-    // insert before it
-    if (candidate_value->live_range()->end < end) {
-      HIRValueList::Item* new_candidate = new HIRValueList::Item(value);
-
-      if (item->prev() != NULL) item->prev()->next(new_candidate);
-      new_candidate->prev(item->prev());
-      new_candidate->next(item);
-      item->prev(new_candidate);
-
-      break;
-    }
-  }
-
-  // End of list was reached - just push value
-  if (item == NULL) {
-    spill_candidates()->Push(value);
-  }
-}
-
-
 LIROperand* LIR::AllocateRegister(HIRInstruction* hinstr) {
   // Get register (spill if all registers are in use).
   if (registers()->IsEmpty()) {
     // Spill some allocated register on failure and try again
     HIRValue* value;
     do {
-      value = spill_candidates()->Shift();
+      value = spill_values()->Pop();
     } while (value != NULL && !value->operand()->is_register() &&
              value->live_range()->end < hinstr->id());
 
@@ -217,7 +190,7 @@ void LIR::InsertMoveSpill(HIRParallelMove* move,
   // NOTE: spill is released only when it's next instruction is.
   value->live_range()->end = reverse->id() + 1;
   value->operand(spill);
-  active_values()->Push(value);
+  active_values()->InsertSorted<HIRValueEndShape>(value);
 }
 
 
@@ -315,7 +288,8 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
     return;
   }
 
-  ExpireOldValues(hinstr);
+  ExpireOldValues(hinstr, active_values());
+  ExpireOldValues(hinstr, spill_values());
 
   // If instruction has input restrictions - ensure that those registers can't
   // be allocated for spills or anything
@@ -367,12 +341,11 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
       if (value->operand() != NULL) continue;
 
       value->operand(AllocateRegister(hinstr));
-
-      AddToSpillCandidates(value);
+      spill_values()->InsertSorted<HIRValueEndShape>(value);
     }
 
-    // Amend active values and spill candidates
-    active_values()->Push(value);
+    // Amend active values
+    active_values()->InsertSorted<HIRValueEndShape>(value);
   }
 
   // Allocate scratch registers
@@ -386,8 +359,8 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
     HIRValue* value = hinstr->GetResult();
     if (value->operand() == NULL) {
       value->operand(AllocateRegister(hinstr));
-      active_values()->Push(value);
-      AddToSpillCandidates(value);
+      active_values()->InsertSorted<HIRValueEndShape>(value);
+      spill_values()->InsertSorted<HIRValueEndShape>(value);
     }
     linstr->result = value->operand();
   }

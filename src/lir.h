@@ -59,6 +59,12 @@ class LIROperand : public ZoneObject {
   bool being_moved_;
 };
 
+// For sorted insertions
+class HIRValueEndShape {
+ public:
+  static inline int Compare(HIRValue* l, HIRValue* r);
+};
+
 // Auto-releasing list
 class LIRReleaseList : public ZoneList<LIROperand*> {
  public:
@@ -111,16 +117,13 @@ class LIR {
 
   // Find all values that occupy registers/spills, but not used anymore
   // Release them and put into freelist
-  void ExpireOldValues(HIRInstruction* hinstr);
+  void ExpireOldValues(HIRInstruction* hinstr, ZoneList<HIRValue*>* list);
 
   // Allocate register for instruction (may spill some active values)
   LIROperand* AllocateRegister(HIRInstruction* hinstr);
 
   // Go through active values and move all uses of register into spill
   void SpillRegister(HIRInstruction* hinstr, LIROperand* reg);
-
-  // Insert value into sorted spills list
-  void AddToSpillCandidates(HIRValue* value);
 
   // Add phis assignments to movement
   void MovePhis(HIRInstruction* hinstr);
@@ -138,14 +141,9 @@ class LIR {
   inline LIRInstruction* Cast(HIRInstruction* instr);
 
   // List of active values sorted by increasing live_range()->start
-  inline ZoneList<HIRValue*>* active_values() {
-    return &active_values_;
-  }
-
-  // List of active values sorted by decrasing live_range()->end
-  inline ZoneList<HIRValue*>* spill_candidates() {
-    return &spill_candidates_;
-  }
+  inline ZoneList<HIRValue*>* active_values() { return &active_values_; }
+  // List of active values that can be spilled
+  inline ZoneList<HIRValue*>* spill_values() { return &spill_values_; }
 
   inline FreeList<int, 128>* registers() { return &registers_; }
   inline FreeList<int, 128>* spills() { return &spills_; }
@@ -160,7 +158,7 @@ class LIR {
 
  private:
   ZoneList<HIRValue*> active_values_;
-  ZoneList<HIRValue*> spill_candidates_;
+  ZoneList<HIRValue*> spill_values_;
 
   FreeList<int, 128> registers_;
   FreeList<int, 128> spills_;
