@@ -4,7 +4,6 @@ HIR/LIR todos:
 * Break/continue
 * Clone
 * Delete
-* Typeof, sizeof, keysof
 * Vararg arguments (call)
 * Speeding up HIR construction
 * Cleanup masm

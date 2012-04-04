@@ -368,6 +368,39 @@ void LIRCall::Generate() {
 }
 
 
+LIRTypeof::LIRTypeof() {
+  inputs[0] = ToLIROperand(rax);
+}
+
+
+LIRSizeof::LIRSizeof() {
+  inputs[0] = ToLIROperand(rax);
+}
+
+
+LIRKeysof::LIRKeysof() {
+  inputs[0] = ToLIROperand(rax);
+}
+
+
+void LIRTypeof::Generate() {
+  __ Call(masm()->stubs()->GetTypeofStub());
+  __ Mov(result, rax);
+}
+
+
+void LIRSizeof::Generate() {
+  __ Call(masm()->stubs()->GetSizeofStub());
+  __ Mov(result, rax);
+}
+
+
+void LIRKeysof::Generate() {
+  __ Call(masm()->stubs()->GetKeysofStub());
+  __ Mov(result, rax);
+}
+
+
 void LIRAllocateFunction::Generate() {
   // Get function's body address by generating relocation info
   __ mov(ToRegister(scratches[0]), Immediate(0));

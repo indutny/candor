@@ -723,16 +723,19 @@ AstNode* HIR::VisitContinue(AstNode* node) {
 
 
 AstNode* HIR::VisitTypeof(AstNode* node) {
+  AddInstruction(new HIRTypeof(GetValue(node->lhs())));
   return node;
 }
 
 
 AstNode* HIR::VisitSizeof(AstNode* node) {
+  AddInstruction(new HIRSizeof(GetValue(node->lhs())));
   return node;
 }
 
 
 AstNode* HIR::VisitKeysof(AstNode* node) {
+  AddInstruction(new HIRKeysof(GetValue(node->lhs())));
   return node;
 }
 

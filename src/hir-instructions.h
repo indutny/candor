@@ -46,6 +46,9 @@ class HIRInstruction : public ZoneObject {
     kStoreProperty,
     kLoadProperty,
     kBinOp,
+    kTypeof,
+    kSizeof,
+    kKeysof,
     kAllocateFunction,
     kAllocateObject
   };
@@ -183,6 +186,18 @@ class HIRStubCall : public HIRInstruction {
 
   void Init(HIRBasicBlock* block);
   virtual bool HasSideEffects() const { return true; };
+};
+
+class HIRPrefixKeyword : public HIRStubCall {
+ public:
+  HIRPrefixKeyword(Type type, HIRValue* expr) : HIRStubCall(type), expr_(expr) {
+    SetInput(expr);
+  }
+
+  inline HIRValue* expr() { return expr_; }
+
+ private:
+  HIRValue* expr_;
 };
 
 class HIRParallelMove : public HIRInstruction {
@@ -393,6 +408,24 @@ class HIRCall : public HIRStubCall {
  private:
   HIRValue* fn_;
   ZoneList<HIRValue*> args_;
+};
+
+class HIRTypeof : public HIRPrefixKeyword {
+ public:
+  HIRTypeof(HIRValue* expr) : HIRPrefixKeyword(kTypeof, expr) {
+  }
+};
+
+class HIRSizeof : public HIRPrefixKeyword {
+ public:
+  HIRSizeof(HIRValue* expr) : HIRPrefixKeyword(kSizeof, expr) {
+  }
+};
+
+class HIRKeysof : public HIRPrefixKeyword {
+ public:
+  HIRKeysof(HIRValue* expr) : HIRPrefixKeyword(kKeysof, expr) {
+  }
 };
 
 class HIRAllocateFunction : public HIRStubCall {

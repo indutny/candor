@@ -12,6 +12,9 @@ namespace internal {
     V(StoreProperty)\
     V(LoadProperty)\
     V(BinOp)\
+    V(Typeof)\
+    V(Sizeof)\
+    V(Keysof)\
     V(AllocateFunction)\
     V(AllocateObject)
 

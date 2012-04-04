@@ -29,6 +29,9 @@ class Operand;
     V(BranchBool)\
     V(BinOp)\
     V(Call)\
+    V(Typeof)\
+    V(Sizeof)\
+    V(Keysof)\
     V(AllocateObject)\
     V(AllocateFunction)
 
@@ -235,6 +238,33 @@ class LIRCall : public LIRInstructionTemplate<1, 1, 0> {
   void Generate();
 
   LIR_COMMON_METHODS(Call)
+};
+
+class LIRTypeof : public LIRInstructionTemplate<1, 1, 0> {
+ public:
+  LIRTypeof();
+
+  void Generate();
+
+  LIR_COMMON_METHODS(Typeof)
+};
+
+class LIRSizeof : public LIRInstructionTemplate<1, 1, 0> {
+ public:
+  LIRSizeof();
+
+  void Generate();
+
+  LIR_COMMON_METHODS(Sizeof)
+};
+
+class LIRKeysof : public LIRInstructionTemplate<1, 1, 0> {
+ public:
+  LIRKeysof();
+
+  void Generate();
+
+  LIR_COMMON_METHODS(Keysof)
 };
 
 class LIRAllocateFunction : public LIRInstructionTemplate<0, 1, 1> {
