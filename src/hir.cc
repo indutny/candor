@@ -478,7 +478,7 @@ AstNode* HIR::VisitFunction(AstNode* stmt) {
 
   if (current_block() == root_block() &&
       current_block()->instructions()->length() == 0) {
-    HIREntry* entry = new HIREntry();
+    HIREntry* entry = new HIREntry(fn->context_slots());
 
     // Add agruments
     AstList::Item* arg = fn->args()->head();
@@ -487,10 +487,6 @@ AstNode* HIR::VisitFunction(AstNode* stmt) {
     }
 
     AddInstruction(entry);
-    if (fn->context_slots() > 0) {
-      AddInstruction(new HIRAllocateContext(fn->context_slots()));
-    }
-
     VisitChildren(stmt);
 
     AddInstruction(new HIRReturn(CreateValue(

@@ -46,7 +46,6 @@ class HIRInstruction : public ZoneObject {
     kStoreProperty,
     kLoadProperty,
     kBinOp,
-    kAllocateContext,
     kAllocateFunction,
     kAllocateObject
   };
@@ -245,14 +244,17 @@ class HIRNop : public HIRInstruction {
 
 class HIREntry : public HIRInstruction {
  public:
-  HIREntry() : HIRInstruction(kEntry) {
+  HIREntry(int context_slots) : HIRInstruction(kEntry),
+                                context_slots_(context_slots) {
   }
 
   void AddArg(HIRValue* arg);
 
+  inline int context_slots() { return context_slots_; }
   inline ZoneList<HIRValue*>* args() { return &args_; }
 
  private:
+  int context_slots_;
   ZoneList<HIRValue*> args_;
 };
 
@@ -375,18 +377,6 @@ class HIRBranchBool : public HIRBranchBase {
   HIRBranchBool(HIRValue* clause, HIRBasicBlock* left, HIRBasicBlock* right)
       : HIRBranchBase(kBranchBool, clause, left, right) {
   }
-};
-
-class HIRAllocateContext : public HIRStubCall {
- public:
-  HIRAllocateContext(int size) : HIRStubCall(kAllocateContext),
-                                 size_(size) {
-  }
-
-  inline int size() { return size_; }
-
- private:
-  int size_;
 };
 
 class HIRCall : public HIRStubCall {

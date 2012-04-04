@@ -41,27 +41,38 @@ void LIREntry::Generate() {
 
   __ AllocateSpills();
 
-  // Put nil in all args
+  // Allocate context
+  __ AllocateContext(hir()->context_slots());
+
+  // If function has arguments
   HIRValueList::Item* arg = hir()->args()->head();
-  if (arg != NULL) __ mov(scratch, Immediate(Heap::kTagNil));
-  for (int i = 0; arg != NULL; arg = arg->next(), i++) {
-    __ Mov(arg->value()->operand(), scratch);
+  if (arg != NULL) {
+    // Put argc into root register (temporarily)
+    __ push(root_reg);
+    __ mov(root_reg, rax);
+
+    // Put nil in all args
+    __ mov(scratch, Immediate(Heap::kTagNil));
+    for (int i = 0; arg != NULL; arg = arg->next(), i++) {
+      __ Mov(arg->value()->operand(), scratch);
+    }
+
+    // Move args to registers/spills
+    Label args_end(masm());
+
+    arg = hir()->args()->head();
+    for (int i = 0; arg != NULL; arg = arg->next(), i++) {
+      __ cmpq(root_reg, Immediate(HNumber::Tag(i + 1)));
+      __ jmp(kLt, &args_end);
+
+      // Skip return address and previous rbp
+      Operand arg_slot(rbp, (i + 2) * 8);
+      __ Mov(arg->value()->operand(), arg_slot);
+    }
+    __ pop(root_reg);
+
+    __ bind(&args_end);
   }
-
-  // Move args to registers/spills
-  Label args_end(masm());
-
-  arg = hir()->args()->head();
-  for (int i = 0; arg != NULL; arg = arg->next(), i++) {
-    __ cmpq(rsi, Immediate(HNumber::Tag(i + 1)));
-    __ jmp(kLt, &args_end);
-
-    // Skip return address and previous rbp
-    Operand arg_slot(rbp, (i + 2) * 8);
-    __ Mov(arg->value()->operand(), arg_slot);
-  }
-
-  __ bind(&args_end);
 }
 
 
@@ -99,6 +110,20 @@ void LIRStoreLocal::Generate() {
 
 
 void LIRStoreContext::Generate() {
+  ScopeSlot* slot = hir()->lhs()->slot();
+  int depth = slot->depth();
+
+  __ Mov(scratches[0], context_reg);
+
+  // Lookup context
+  while (--depth >= 0) {
+    Operand parent(ToRegister(scratches[0]), HContext::kParentOffset);
+    __ Mov(scratches[0], parent);
+  }
+
+  Operand res(ToRegister(scratches[0]),
+              HContext::GetIndexDisp(slot->index()));
+  __ Mov(res, result);
 }
 
 
@@ -154,10 +179,25 @@ void LIRLoadRoot::Generate() {
 
 
 void LIRLoadLocal::Generate() {
+  // Nop
 }
 
 
 void LIRLoadContext::Generate() {
+  ScopeSlot* slot = hir()->value()->slot();
+  int depth = slot->depth();
+
+  __ Mov(result, context_reg);
+
+  // Lookup context
+  while (--depth >= 0) {
+    Operand parent(ToRegister(result), HContext::kParentOffset);
+    __ Mov(result, parent);
+  }
+
+  Operand res(ToRegister(result),
+              HContext::GetIndexDisp(slot->index()));
+  __ Mov(result, res);
 }
 
 
@@ -298,13 +338,15 @@ void LIRBinOp::Generate() {
 
 
 void LIRCall::Generate() {
-  Masm::Spill rsi_s(masm(), rsi), rdi_s(masm(), rdi), rsp_s(masm(), rsp);
+  Masm::Spill ctx(masm(), context_reg), root(masm(), root_reg);
+  Masm::Spill rsp_s(masm(), rsp);
 
-  __ mov(rsi, Immediate(HNumber::Tag(hir()->args()->length())));
+  __ mov(scratch, Immediate(HNumber::Tag(hir()->args()->length())));
+  Masm::Spill argc_s(masm(), scratch);
 
   // If argc is odd - align stack
   Label even(masm());
-  __ testb(rsi, Immediate(1));
+  __ testb(scratch, Immediate(1));
   __ jmp(kEq, &even);
   __ push(Immediate(Heap::kTagNil));
   __ bind(&even);
@@ -315,16 +357,14 @@ void LIRCall::Generate() {
   }
 
   __ Mov(scratch, inputs[0]);
+  argc_s.Unspill(rax);
+
   __ CallFunction(scratch);
   __ Mov(result, rax);
 
   rsp_s.Unspill();
-  rdi_s.Unspill();
-  rsi_s.Unspill();
-}
-
-
-void LIRAllocateContext::Generate() {
+  root.Unspill();
+  ctx.Unspill();
 }
 
 

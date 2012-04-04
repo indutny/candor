@@ -30,8 +30,7 @@ class Operand;
     V(BinOp)\
     V(Call)\
     V(AllocateObject)\
-    V(AllocateFunction)\
-    V(AllocateContext)
+    V(AllocateFunction)
 
 #define LIR_GEN_FORWARD_HIR_DECL(V)\
     class HIR##V;
@@ -169,7 +168,7 @@ class LIRStoreLocal : public LIRInstructionTemplate<1, 1, 0> {
   LIR_COMMON_METHODS(StoreLocal)
 };
 
-class LIRStoreContext : public LIRInstructionTemplate<1, 1, 0> {
+class LIRStoreContext : public LIRInstructionTemplate<1, 1, 1> {
  public:
   void Generate();
 
@@ -236,13 +235,6 @@ class LIRCall : public LIRInstructionTemplate<1, 1, 0> {
   void Generate();
 
   LIR_COMMON_METHODS(Call)
-};
-
-class LIRAllocateContext : public LIRInstructionTemplate<0, 1, 0> {
- public:
-  void Generate();
-
-  LIR_COMMON_METHODS(AllocateContext)
 };
 
 class LIRAllocateFunction : public LIRInstructionTemplate<0, 1, 1> {

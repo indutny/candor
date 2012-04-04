@@ -12,7 +12,6 @@ namespace internal {
     V(StoreProperty)\
     V(LoadProperty)\
     V(BinOp)\
-    V(AllocateContext)\
     V(AllocateFunction)\
     V(AllocateObject)
 

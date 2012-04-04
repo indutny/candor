@@ -1,5 +1,4 @@
 HIR/LIR todos:
-* Binary operations
 * Unary operations
 * While loops
 * Break/continue

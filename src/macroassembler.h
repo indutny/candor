@@ -131,6 +131,7 @@ class Masm : public Assembler {
   inline void Push(LIROperand* src);
   inline void Pop(LIROperand* dst);
   inline void Mov(Register dst, LIROperand* src);
+  inline void Mov(Operand& dst, LIROperand* src);
   inline void Mov(LIROperand* dst, Register src);
   inline void Mov(LIROperand* dst, Operand& src);
   inline void Mov(LIROperand* dst, LIROperand* src);

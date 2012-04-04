@@ -65,6 +65,18 @@ inline void Masm::Mov(Register dst, LIROperand* src) {
 }
 
 
+inline void Masm::Mov(Operand& dst, LIROperand* src) {
+  if (src->is_register()) {
+    mov(dst, RegisterByIndex(src->value()));
+  } else if (src->is_immediate()) {
+    mov(dst, Immediate(src->value()));
+  } else {
+    mov(scratch, SpillToOperand(src->value()));
+    mov(dst, scratch);
+  }
+}
+
+
 inline void Masm::Mov(LIROperand* dst, Register src) {
   if (dst->is_register()) {
     if (!RegisterByIndex(dst->value()).is(src)) {

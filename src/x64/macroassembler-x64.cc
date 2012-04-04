@@ -181,7 +181,7 @@ void Masm::AllocateContext(uint32_t slots) {
 
   // Move address of current context to first slot
   Operand qparent(rax, HContext::kParentOffset);
-  mov(qparent, rdi);
+  mov(qparent, context_reg);
 
   // Save number of slots
   Operand qslots(rax, HContext::kSlotsOffset);
@@ -195,7 +195,7 @@ void Masm::AllocateContext(uint32_t slots) {
 
   // Replace current context
   // (It'll be restored by caller)
-  mov(rdi, rax);
+  mov(context_reg, rax);
   rax_s.Unspill();
 
   CheckGC();
