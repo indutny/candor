@@ -21,6 +21,7 @@ class LIROperand;
 class Heap;
 class ScopeSlot;
 class AstNode;
+class Masm;
 class RelocationInfo;
 
 typedef ZoneList<HIRValue*> HIRValueList;
@@ -45,12 +46,24 @@ class HIRBasicBlock : public ZoneObject {
   // Block relations
   bool Dominates(HIRBasicBlock* block);
 
+  // Relocation routines
+  void AddUse(RelocationInfo* info);
+  void Relocate(Masm* masm);
+
   // Debug printing
   void Print(PrintBuffer* p);
 
   // Various ancestors
   inline HIR* hir() { return hir_; }
   inline bool is_enumerated() {
+    // Check if node's predecessor is dominated by node
+    // (node loops to itself)
+    if (enumerated_ == 1 && predecessors_count() == 2) {
+      if (predecessors()[1]->Dominates(this) ||
+          predecessors()[0]->Dominates(this)) {
+        return true;
+      }
+    }
     return enumerated_ == predecessors_count();
   }
   inline void enumerate() { ++enumerated_; }
@@ -75,6 +88,9 @@ class HIRBasicBlock : public ZoneObject {
   // List of relocation (JIT assembly helper)
   inline ZoneList<RelocationInfo*>* uses() { return &uses_; }
 
+  inline bool relocated() { return relocated_; }
+  inline void relocated(bool relocated) { relocated_ = relocated; }
+
   inline bool finished() { return finished_; }
   inline void finished(bool finished) { finished_ = finished; }
 
@@ -98,8 +114,11 @@ class HIRBasicBlock : public ZoneObject {
   int predecessors_count_;
   int successors_count_;
 
+  Masm* masm_;
+  int relocation_offset_;
   ZoneList<RelocationInfo*> uses_;
 
+  bool relocated_;
   bool finished_;
 
   int id_;

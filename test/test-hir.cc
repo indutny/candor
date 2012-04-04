@@ -44,7 +44,7 @@ TEST_START(hir)
            "[Return *[4 [imm 0x1]]] "
            "[1,2]>*>[]]\n"
 
-           "[Block#2 {0} [Nop] [Goto] [0]>*>[3]]\n")
+           "[Block#2 {0} [Goto] [0]>*>[3]]\n")
 
   HIR_TEST("if (a) { a = 2 } else { a = 3 }\na",
            "[Block#0 {0} "
@@ -102,4 +102,24 @@ TEST_START(hir)
            "[LoadRoot *[6 [imm 0x8]]] "
            "[StoreLocal *[3>7 [st:0]] *[6 [imm 0x8]]] "
            "[Goto] [2]>*>[5]]\n")
+
+  // While loop
+  HIR_TEST("a = 0\nwhile (true) { a = 2 }\nreturn a",
+           "[Block#0 {0,1,2} [Entry] "
+           "[LoadRoot *[0 [imm 0x0]]] "
+           "[StoreLocal *[1 [st:0]] *[0 [imm 0x0]]] "
+           "[LoadRoot *[2 [ctx -2:11]]] "
+           "[Goto] []>*>[1]]\n"
+
+           "[Block#1 {0,2,3,5} @[1,4]:5 "
+           "[BranchBool *[2 [ctx -2:11]]] [0,2]>*>[2,3]]\n"
+
+           "[Block#2 {0,2,3,4} "
+           "[LoadRoot *[3 [imm 0x4]]] "
+           "[StoreLocal *[1>4 [st:0]] *[3 [imm 0x4]]] "
+           "[Goto] [1]>*>[1]]\n"
+
+           "[Block#3 {0,1,2,6} "
+           "[LoadLocal *[5 [st:0]]] "
+           "[Return *[5 [st:0]]] [1]>*>[]]\n")
 TEST_END(hir)

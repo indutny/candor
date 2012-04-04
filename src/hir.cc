@@ -2,6 +2,7 @@
 #include "hir-instructions.h"
 #include "visitor.h" // Visitor
 #include "ast.h" // AstNode
+#include "macroassembler.h" // Masm, RelocationInfo
 #include "utils.h" // List
 
 #include <stdlib.h> // NULL
@@ -18,6 +19,9 @@ HIRBasicBlock::HIRBasicBlock(HIR* hir) : hir_(hir),
                                          enumerated_(0),
                                          predecessors_count_(0),
                                          successors_count_(0),
+                                         masm_(NULL),
+                                         relocation_offset_(0),
+                                         relocated_(false),
                                          finished_(false),
                                          id_(hir->get_block_index()) {
   predecessors_[0] = NULL;
@@ -43,8 +47,20 @@ void HIRBasicBlock::AddPredecessor(HIRBasicBlock* block) {
   assert(predecessors_count() < 2);
   predecessors()[predecessors_count_++] = block;
 
+  HIRValueList::Item* item;
+  if (predecessors_count_ > 1) {
+    // Mark values propagated from first predecessor
+    item = values()->head();
+    for (; item != NULL; item = item->next()) {
+      if (item->value() == NULL) continue;
+
+      item->value()->current_block(this);
+      item->value()->slot()->hir(item->value());
+    }
+  }
+
   // Propagate used values from predecessor to current block
-  HIRValueList::Item* item = block->values()->head();
+  item = block->values()->head();
   for (; item != NULL; item = item->next()) {
     HIRValue* value = item->value();
 
@@ -103,11 +119,34 @@ void HIRBasicBlock::Goto(HIRBasicBlock* block) {
 bool HIRBasicBlock::Dominates(HIRBasicBlock* block) {
   while (block != NULL) {
     if (block == this) return true;
-    if (block->predecessors_count() != 1) return false;
     block = block->predecessors()[0];
   }
 
   return false;
+}
+
+
+void HIRBasicBlock::AddUse(RelocationInfo* info) {
+  if (relocated()) {
+    info->target(relocation_offset_);
+    masm_->relocation_info_.Push(info);
+    return;
+  }
+  uses()->Push(info);
+}
+
+
+void HIRBasicBlock::Relocate(Masm* masm) {
+  if (relocated()) return;
+  masm_ = masm;
+  relocation_offset_ = masm->offset();
+  relocated(true);
+
+  RelocationInfo* block_reloc;
+  while ((block_reloc = uses()->Shift()) != NULL) {
+    block_reloc->target(masm->offset());
+    masm->relocation_info_.Push(block_reloc);
+  }
 }
 
 
@@ -412,6 +451,12 @@ void HIR::EnumInstructions() {
   // Process worklist
   HIRBasicBlock* current;
   while ((current = work_list.Shift()) != NULL) {
+    // Insert nop instruction in empty blocks
+    if (current->instructions()->length() == 0) {
+      set_current_block(current);
+      AddInstruction(new HIRNop());
+    }
+
     // Go through all block's instructions, link them together and assign id
     HIRInstructionList::Item* instr = current->instructions()->head();
     for (; instr != NULL; instr = instr->next()) {
@@ -582,8 +627,6 @@ AstNode* HIR::VisitIf(AstNode* node) {
   if (else_body != NULL) {
     // Visit else body and create additional `join` block
     Visit(else_body->value());
-  } else {
-    AddInstruction(new HIRNop());
   }
 
   on_false = current_block();
@@ -595,6 +638,29 @@ AstNode* HIR::VisitIf(AstNode* node) {
 
 
 AstNode* HIR::VisitWhile(AstNode* node) {
+  HIRBasicBlock* cond = CreateBlock();
+  HIRBasicBlock* body = CreateBlock();
+  HIRBasicBlock* end = CreateBlock();
+  HIRBasicBlock* join = NULL;
+  HIRBranchBool* branch = new HIRBranchBool(GetValue(node->lhs()),
+                                            body,
+                                            end);
+
+  // Create new block and insert branch instruction into it
+  current_block()->Goto(cond);
+  set_current_block(cond);
+  Finish(branch);
+
+  // Generate loop's body
+  set_current_block(body);
+  Visit(node->rhs());
+
+  // And loop it back to condition
+  body->Goto(cond);
+
+  // Execution will continue in the `end` block
+  set_current_block(end);
+
   return node;
 }
 

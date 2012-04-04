@@ -263,13 +263,7 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
   LIRInstruction* linstr = Cast(hinstr);
 
   // Relocate all block's uses
-  if (hinstr->block() != NULL && hinstr->block()->uses()->length() > 0) {
-    RelocationInfo* block_reloc;
-    while ((block_reloc = hinstr->block()->uses()->Shift()) != NULL) {
-      block_reloc->target(masm->offset());
-      masm->relocation_info_.Push(block_reloc);
-    }
-  }
+  if (hinstr->block() != NULL) hinstr->block()->Relocate(masm);
 
   // List of operand that should be `released` after instruction
   LIRReleaseList release_list(this);
