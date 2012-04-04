@@ -33,17 +33,17 @@ class HIRInstruction : public ZoneObject {
     kGoto,
     kStoreLocal,
     kStoreContext,
-    kStoreProperty,
     kLoadRoot,
     kLoadLocal,
     kLoadContext,
-    kLoadProperty,
 
     // Branching
     kBranchBool,
 
     // Stubs and instructions with side-effects
     kCall,
+    kStoreProperty,
+    kLoadProperty,
     kAllocateContext,
     kAllocateFunction,
     kAllocateObject
@@ -362,6 +362,7 @@ class HIRAllocateContext : public HIRStubCall {
 class HIRCall : public HIRStubCall {
  public:
   HIRCall(HIRValue* fn) : HIRStubCall(kCall), fn_(fn) {
+    SetInput(fn);
   }
 
   void AddArg(HIRValue* arg);

@@ -189,6 +189,9 @@ void LIRBranchBool::Generate() {
 
 
 void LIRCall::Generate() {
+  __ Mov(scratch, inputs[0]);
+  __ CallFunction(scratch);
+  __ Mov(result, rax);
 }
 
 
