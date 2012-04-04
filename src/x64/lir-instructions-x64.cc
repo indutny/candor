@@ -460,7 +460,17 @@ void LIRAllocateFunction::Generate() {
 
 void LIRAllocateObject::Generate() {
   __ push(Immediate(HNumber::Tag(hir()->size())));
-  __ push(Immediate(hir()->kind()));
+  switch (hir()->kind()) {
+   case HIRAllocateObject::kObject:
+    __ push(Immediate(HNumber::Tag(Heap::kTagObject)));
+    break;
+   case HIRAllocateObject::kArray:
+    __ push(Immediate(HNumber::Tag(Heap::kTagArray)));
+    break;
+   default:
+    UNEXPECTED
+    break;
+  }
   __ Call(masm()->stubs()->GetAllocateObjectStub());
 
   __ Mov(result, rax);

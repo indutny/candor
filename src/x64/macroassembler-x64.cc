@@ -236,7 +236,7 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
   } else {
     Label array(this), allocate_map(this);
 
-    cmpq(tag_reg, Immediate(Heap::kTagArray));
+    cmpq(tag_reg, Immediate(HNumber::Tag(Heap::kTagArray)));
     jmp(kEq, &array);
 
     Allocate(Heap::kTagObject, reg_nil, 2 * HValue::kPointerSize, result);
