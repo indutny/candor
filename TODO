@@ -1,5 +1,4 @@
 HIR/LIR todos:
-* Global lookup
 * While loops
 * Break/continue
 * Clone

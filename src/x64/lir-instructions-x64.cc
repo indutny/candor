@@ -113,6 +113,12 @@ void LIRStoreContext::Generate() {
   ScopeSlot* slot = hir()->lhs()->slot();
   int depth = slot->depth();
 
+  if (depth == -1) {
+    // Global can't be changed
+    __ Mov(inputs[0], Immediate(Heap::kTagNil));
+    return;
+  }
+
   __ Mov(scratches[0], context_reg);
 
   // Lookup context
@@ -189,6 +195,13 @@ void LIRLoadLocal::Generate() {
 void LIRLoadContext::Generate() {
   ScopeSlot* slot = hir()->value()->slot();
   int depth = slot->depth();
+
+  if (depth == -1) {
+    // Global object lookup
+    Operand global(root_reg, HContext::GetIndexDisp(Heap::kRootGlobalIndex));
+    __ Mov(result, global);
+    return;
+  }
 
   __ Mov(result, context_reg);
 
