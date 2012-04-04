@@ -102,6 +102,7 @@ void LIR::PrunePhis() {
         HIRInstruction* last = block->last_instruction();
 
         range->Extend(last->id());
+        phi->Extend(last->id());
 
         // And push it to the goto
         last->values()->Push(input_item->value());
