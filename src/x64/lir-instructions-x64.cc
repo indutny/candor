@@ -149,9 +149,13 @@ void LIRStoreProperty::Generate() {
 
   Label done(masm());
 
-  __ pop(rbx);
+  // Result may be rax
+  __ Mov(scratches[0], rax);
 
-  __ IsNil(rax, NULL, &done);
+  __ pop(rbx);
+  __ Pop(result);
+
+  __ IsNil(ToRegister(scratches[0]), NULL, &done);
   Operand qmap(rbx, HObject::kMapOffset);
   __ mov(rbx, qmap);
   __ addq(rax, rbx);
@@ -161,7 +165,6 @@ void LIRStoreProperty::Generate() {
   __ mov(slot, scratch);
 
   __ bind(&done);
-  __ Pop(result);
 }
 
 
@@ -456,7 +459,7 @@ void LIRAllocateFunction::Generate() {
 
 
 void LIRAllocateObject::Generate() {
-  __ push(Immediate(hir()->size()));
+  __ push(Immediate(HNumber::Tag(hir()->size())));
   __ push(Immediate(hir()->kind()));
   __ Call(masm()->stubs()->GetAllocateObjectStub());
 

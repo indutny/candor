@@ -179,7 +179,7 @@ class LIRStoreContext : public LIRInstructionTemplate<1, 1, 1> {
   LIR_COMMON_METHODS(StoreContext)
 };
 
-class LIRStoreProperty : public LIRInstructionTemplate<2, 1, 0> {
+class LIRStoreProperty : public LIRInstructionTemplate<2, 1, 1> {
  public:
   LIRStoreProperty();
 
@@ -209,7 +209,7 @@ class LIRLoadContext : public LIRInstructionTemplate<0, 1, 0> {
   LIR_COMMON_METHODS(LoadContext)
 };
 
-class LIRLoadProperty : public LIRInstructionTemplate<2, 1, 0> {
+class LIRLoadProperty : public LIRInstructionTemplate<2, 1, 1> {
  public:
   LIRLoadProperty();
 
