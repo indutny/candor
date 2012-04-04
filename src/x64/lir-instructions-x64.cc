@@ -189,9 +189,29 @@ void LIRBranchBool::Generate() {
 
 
 void LIRCall::Generate() {
+  Masm::Spill rsi_s(masm(), rsi), rdi_s(masm(), rdi), rsp_s(masm(), rsp);
+
+  __ mov(rsi, Immediate(hir()->args()->length()));
+
+  // If argc is odd - align stack
+  Label even(masm());
+  __ testb(rsi, Immediate(1));
+  __ jmp(kEq, &even);
+  __ push(Immediate(Heap::kTagNil));
+  __ bind(&even);
+
+  HIRValueList::Item* arg = hir()->args()->tail();
+  for (; arg != NULL; arg = arg->prev()) {
+    __ Push(arg->value()->operand());
+  }
+
   __ Mov(scratch, inputs[0]);
   __ CallFunction(scratch);
   __ Mov(result, rax);
+
+  rsp_s.Unspill();
+  rdi_s.Unspill();
+  rsi_s.Unspill();
 }
 
 
