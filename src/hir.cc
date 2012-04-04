@@ -97,13 +97,17 @@ void HIRBasicBlock::AddPredecessor(HIRBasicBlock* block) {
     }
   }
 
-  // If loop detected - add variable uses to the end of loop
+  // If loop detected - add non-local variable uses to the end of loop
   // to ensure that they will be live after the first loop's pass
   if (instructions()->length() != 0) {
+    item = block->values()->head();
     for (; item != NULL; item = item->next()) {
       HIRValue* value = item->value();
 
-      if (value == NULL) continue;
+      if (value == NULL ||
+          (Dominates(value->block()) && value->block() != block)) {
+        continue;
+      }
       value->uses()->Push(block->last_instruction());
     }
   }
@@ -120,14 +124,14 @@ void HIRBasicBlock::AddSuccessor(HIRBasicBlock* block) {
 void HIRBasicBlock::Goto(HIRBasicBlock* block) {
   if (finished()) return;
 
-  // Connect graph nodes
-  AddSuccessor(block);
-
   // Add goto instruction and finalize block
   HIRGoto* instr = new HIRGoto();
   instructions()->Push(instr);
   instr->Init(this);
   finished(true);
+
+  // Connect graph nodes
+  AddSuccessor(block);
 }
 
 
@@ -828,6 +832,8 @@ void HIR::VisitGenericObject(AstNode* node) {
 
   // And return object
   AddInstruction(new HIRNop(result));
+  // Rewrite previous declarations of variable
+  current_block()->AddValue(result);
 }
 
 
@@ -919,6 +925,7 @@ AstNode* HIR::VisitUnOp(AstNode* node) {
 
       // return result
       AddInstruction(new HIRNop(result));
+      current_block()->AddValue(result);
     } else {
       // ++a => a = a + 1
       AstNode* rhs = NULL;

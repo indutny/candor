@@ -89,7 +89,9 @@ void LIRGoto::Generate() {
   assert(hir()->block()->successors_count() == 1);
 
   // Zero jumps should be ignored
-  if (hir()->next() == hir()->block()->successors()[0]->first_instruction()) {
+  // NOTE: Next instruction is a move instruction (skip it)
+  if (hir()->next()->next() ==
+      hir()->block()->successors()[0]->first_instruction()) {
     return;
   }
 
