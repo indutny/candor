@@ -324,8 +324,11 @@ void HIRValue::Print(PrintBuffer* p) {
   } else {
     p->Print("*[%d>%d ", prev_def()->id(), id());
   }
-    slot()->Print(p);
-    p->Print("]");
+  if (live_range()->start != -1) {
+    p->Print("<%d,%d>", live_range()->start, live_range()->end);
+  }
+  slot()->Print(p);
+  p->Print("]");
 }
 
 

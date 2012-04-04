@@ -137,7 +137,13 @@ class HIRValue : public ZoneObject {
     kPhi
   };
 
-  struct LiveRange {
+  class LiveRange {
+   public:
+    inline void Extend(int value) {
+      if (start > value) start = value;
+      if (end < value) end = value;
+    }
+
     int start;
     int end;
   };
