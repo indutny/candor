@@ -41,12 +41,19 @@ void LIREntry::Generate() {
 
   __ AllocateSpills();
 
+  // Put nil in all args
+  HIRValueList::Item* arg = hir()->args()->head();
+  if (arg != NULL) __ mov(scratch, Immediate(Heap::kTagNil));
+  for (int i = 0; arg != NULL; arg = arg->next(), i++) {
+    __ Mov(arg->value()->operand(), scratch);
+  }
+
   // Move args to registers/spills
   Label args_end(masm());
 
-  HIRValueList::Item* arg = hir()->args()->head();
+  arg = hir()->args()->head();
   for (int i = 0; arg != NULL; arg = arg->next(), i++) {
-    __ cmpq(rsi, Immediate(HNumber::Tag(i)));
+    __ cmpq(rsi, Immediate(HNumber::Tag(i + 1)));
     __ jmp(kLt, &args_end);
 
     // Skip return address and previous rbp

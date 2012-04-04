@@ -147,6 +147,10 @@ class Masm : public Assembler {
   inline Heap* heap() { return space_->heap(); }
   inline Stubs* stubs() { return space_->stubs(); }
 
+  inline void spill_offset(uint32_t spill_offset) {
+    spill_offset_ = spill_offset;
+  }
+
  protected:
   CodeSpace* space_;
 

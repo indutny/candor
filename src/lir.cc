@@ -406,6 +406,7 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
 
   // Generate instruction itself
   linstr->masm(masm);
+  masm->spill_offset((spill_count() + 1) * HValue::kPointerSize);
   linstr->Generate();
 
   // Finalize next movement instruction
