@@ -734,6 +734,13 @@ AstNode* HIR::VisitUnOp(AstNode* node) {
 
 
 AstNode* HIR::VisitBinOp(AstNode* node) {
+  BinOp* op = BinOp::Cast(node);
+
+  AddInstruction(new HIRBinOp(
+        op->subtype(),
+        GetValue(node->lhs()),
+        GetValue(node->rhs())));
+
   return node;
 }
 

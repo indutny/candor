@@ -1,6 +1,7 @@
 #ifndef _SRC_HIR_INSTRUCTIONS_H_
 #define _SRC_HIR_INSTRUCTIONS_H_
 
+#include "ast.h" // BinOp
 #include "utils.h" // PowerOfTwo
 #include "zone.h" // ZoneObject
 
@@ -44,6 +45,7 @@ class HIRInstruction : public ZoneObject {
     kCall,
     kStoreProperty,
     kLoadProperty,
+    kBinOp,
     kAllocateContext,
     kAllocateFunction,
     kAllocateObject
@@ -306,6 +308,27 @@ class HIRLoadProperty : public HIRStubCall {
  private:
   HIRValue* receiver_;
   HIRValue* property_;
+};
+
+class HIRBinOp : public HIRStubCall {
+ public:
+  HIRBinOp(BinOp::BinOpType type, HIRValue* lhs, HIRValue* rhs)
+      : HIRStubCall(kBinOp),
+        type_(type),
+        lhs_(lhs),
+        rhs_(rhs) {
+    SetInput(lhs);
+    SetInput(rhs);
+  }
+
+  inline BinOp::BinOpType type() { return type_; }
+  inline HIRValue* lhs() { return lhs_; }
+  inline HIRValue* rhs() { return rhs_; }
+
+ private:
+  BinOp::BinOpType type_;
+  HIRValue* lhs_;
+  HIRValue* rhs_;
 };
 
 class HIRStoreLocal : public HIRStoreBase {

@@ -44,7 +44,7 @@ class LIROperand : public ZoneObject {
   inline bool is_immediate() { return type_ == kImmediate; }
 
   inline bool is_equal(LIROperand* op) {
-    return type() == op->type() && value() == op->value();
+    return !is_immediate() && type() == op->type() && value() == op->value();
   }
 
   // Whether operand is being moved by HIRParallelMove::Reorder, or not

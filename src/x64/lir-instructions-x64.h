@@ -27,6 +27,7 @@ class Operand;
     V(LoadContext)\
     V(LoadProperty)\
     V(BranchBool)\
+    V(BinOp)\
     V(Call)\
     V(AllocateObject)\
     V(AllocateFunction)\
@@ -219,6 +220,15 @@ class LIRBranchBool : public LIRControlInstructionTemplate<1, 0> {
   void Generate();
 
   LIR_COMMON_METHODS(BranchBool)
+};
+
+class LIRBinOp : public LIRInstructionTemplate<1, 2, 0> {
+ public:
+  LIRBinOp();
+
+  void Generate();
+
+  LIR_COMMON_METHODS(BinOp)
 };
 
 class LIRCall : public LIRInstructionTemplate<1, 1, 0> {

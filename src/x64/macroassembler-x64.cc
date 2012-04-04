@@ -136,7 +136,7 @@ void Masm::AllocateSpills() {
 void Masm::FinalizeSpills(int spills_count) {
   if (spill_reloc_ == NULL) return;
 
-  spill_reloc_->target(8 + RoundUp((spills_count + spills_ + 1) << 3, 16));
+  spill_reloc_->target(RoundUp((spills_count + spills_ + 1) << 3, 16));
 }
 
 

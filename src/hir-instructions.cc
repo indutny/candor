@@ -9,6 +9,9 @@ namespace internal {
 
 #define HIR_ENUM_STUB_INSTRUCTIONS(V)\
     V(Call)\
+    V(StoreProperty)\
+    V(LoadProperty)\
+    V(BinOp)\
     V(AllocateContext)\
     V(AllocateFunction)\
     V(AllocateObject)
@@ -22,11 +25,9 @@ namespace internal {
     V(Goto)\
     V(StoreLocal)\
     V(StoreContext)\
-    V(StoreProperty)\
     V(LoadRoot)\
     V(LoadLocal)\
     V(LoadContext)\
-    V(LoadProperty)\
     V(BranchBool)\
     HIR_ENUM_STUB_INSTRUCTIONS(V)
 

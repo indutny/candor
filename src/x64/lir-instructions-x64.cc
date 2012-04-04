@@ -1,6 +1,7 @@
 #include "lir.h"
 #include "lir-instructions-x64.h"
 #include "lir-instructions-x64-inl.h"
+#include "ast.h" // BinOp
 #include "hir.h"
 #include "hir-instructions.h"
 #include "macroassembler.h" // Masm
@@ -200,6 +201,92 @@ void LIRBranchBool::Generate() {
                                             RelocationInfo::kLong,
                                             masm()->offset() - 4);
   hir()->right()->uses()->Push(addr);
+}
+
+
+LIRBinOp::LIRBinOp() {
+  inputs[0] = ToLIROperand(rax);
+  inputs[1] = ToLIROperand(rbx);
+}
+
+
+void LIRBinOp::Generate() {
+  Label call_stub(masm()), done(masm());
+
+  // Fast case : unboxed +/- const
+  if (inputs[1]->is_immediate() &&
+      (hir()->type() == BinOp::kAdd || hir()->type() == BinOp::kSub)) {
+    __ IsUnboxed(rax, &call_stub, NULL);
+
+    int64_t num = inputs[1]->value();
+
+    // addq and subq supports only long immediate (not quad)
+    if (num >= -0x7fffffff && num <= 0x7fffffff) {
+      switch (hir()->type()) {
+       case BinOp::kAdd: __ addq(rax, Immediate(num)); break;
+       case BinOp::kSub: __ subq(rax, Immediate(num)); break;
+       default:
+        UNEXPECTED
+        break;
+      }
+
+      __ jmp(kNoOverflow, &done);
+
+      // Restore on overflow
+      switch (hir()->type()) {
+       case BinOp::kAdd: __ subq(rax, Immediate(num)); break;
+       case BinOp::kSub: __ addq(rax, Immediate(num)); break;
+       default:
+        UNEXPECTED
+        break;
+      }
+    }
+  }
+
+  char* stub = NULL;
+
+#define BINARY_SUB_TYPES(V)\
+    V(Add)\
+    V(Sub)\
+    V(Mul)\
+    V(Div)\
+    V(Mod)\
+    V(BAnd)\
+    V(BOr)\
+    V(BXor)\
+    V(Shl)\
+    V(Shr)\
+    V(UShr)\
+    V(Eq)\
+    V(StrictEq)\
+    V(Ne)\
+    V(StrictNe)\
+    V(Lt)\
+    V(Gt)\
+    V(Le)\
+    V(Ge)\
+    V(LOr)\
+    V(LAnd)
+
+#define BINARY_SUB_ENUM(V)\
+    case BinOp::k##V: stub = masm()->stubs()->GetBinary##V##Stub(); break;
+
+
+  switch (hir()->type()) {
+   BINARY_SUB_TYPES(BINARY_SUB_ENUM)
+   default: __ emitb(0xcc); break;
+  }
+#undef BINARY_SUB_ENUM
+#undef BINARY_SUB_TYPES
+
+  assert(stub != NULL);
+
+  __ bind(&call_stub);
+
+  __ Call(stub);
+
+  __ bind(&done);
+  __ Mov(result, rax);
 }
 
 

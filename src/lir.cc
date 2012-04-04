@@ -312,7 +312,7 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
     if (value->slot()->is_immediate()) {
       value->operand(new LIROperand(LIROperand::kImmediate,
                                     value->slot()->value()));
-      continue;
+      if (linstr->inputs[i] == NULL) continue;
     }
 
     // Result will be allocated later
