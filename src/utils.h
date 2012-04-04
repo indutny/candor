@@ -610,7 +610,7 @@ class FreeList {
   inline T Get() { return list_[--length_]; }
   inline void Release(T value) { list_[length_++] = value; }
 
-  inline void Get(T value) {
+  inline void Remove(T value) {
     for (int i = 0; i < length_; i++) {
       // TODO: Use Shape class here
       if (list_[i] != value) continue;

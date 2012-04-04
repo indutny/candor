@@ -318,7 +318,7 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
     if (linstr->inputs[i] == NULL) continue;
     assert(linstr->inputs[i]->is_register());
 
-    registers()->Get(linstr->inputs[i]->value());
+    registers()->Remove(linstr->inputs[i]->value());
   }
 
   // Allocate all values used in instruction
@@ -354,6 +354,12 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
 
       // Move all uses of this register into spill/other register
       SpillRegister(hinstr, linstr->inputs[i]);
+
+      // Commit movement as swapping registers is not a parallel
+      // move and may introduce conflicts:
+      // eax <-> ebx
+      // ebx <-> ecx
+      HIRParallelMove::GetBefore(hinstr)->Reorder(this);
 
       value->operand(linstr->inputs[i]);
     } else {
