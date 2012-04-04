@@ -73,6 +73,7 @@ void HIRBasicBlock::AddPredecessor(HIRBasicBlock* block) {
       if (!phi->is_phi()) {
         phi = new HIRPhi(this, value->slot()->hir());
 
+        ReplaceVarUse(value->slot()->hir(), phi);
         value->slot()->hir(phi);
         AddValue(phi);
 
@@ -83,6 +84,9 @@ void HIRBasicBlock::AddPredecessor(HIRBasicBlock* block) {
       }
 
       phi->inputs()->Push(value);
+
+      // Replace all var uses if Phi appeared in loop
+      ReplaceVarUse(value, phi);
     } else {
       // And associated with a current block
       value->current_block(this);
@@ -113,6 +117,40 @@ void HIRBasicBlock::Goto(HIRBasicBlock* block) {
   instructions()->Push(instr);
   instr->Init(this);
   finished(true);
+}
+
+
+void HIRBasicBlock::ReplaceVarUse(HIRValue* source, HIRValue* target) {
+  if (instructions()->length() == 0) return;
+
+  ZoneList<HIRBasicBlock*> work_list;
+  ZoneList<HIRBasicBlock*> cleanup_list;
+
+  work_list.Push(this);
+
+  HIRBasicBlock* block;
+  while ((block = work_list.Shift()) != NULL) {
+    cleanup_list.Push(block);
+
+    // Replace value use in each instruction
+    ZoneList<HIRInstruction*>::Item* item = block->instructions()->head();
+    for (; item != NULL; item = item->next()) {
+      item->value()->ReplaceVarUse(source, target);
+    }
+
+    // Add block's successors to the work list
+    for (int i = block->successors_count() - 1; i >= 0; i--) {
+      // Skip processed blocks and join blocks that was visited only once
+      block->successors()[i]->enumerate();
+      if (block->successors()[i]->is_enumerated()) {
+        work_list.Unshift(block->successors()[i]);
+      }
+    }
+  }
+
+  while ((block = cleanup_list.Shift()) != NULL) {
+    block->reset_enumerate();
+  }
 }
 
 

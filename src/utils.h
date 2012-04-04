@@ -199,6 +199,22 @@ class GenericList {
   }
 
 
+  void InsertBefore(Item* next, T value) {
+    Item* item = new Item(value);
+
+    // `value` is a new head of list
+    if (next->prev() == NULL) return Unshift(value);
+
+    next->prev()->next(item);
+    item->prev(next->prev());
+    item->next(next);
+    next->prev(item);
+
+    // Increase length
+    length_++;
+  }
+
+
   // Sorted insertion
   template <class Shape>
   void InsertSorted(T value) {
@@ -214,18 +230,8 @@ class GenericList {
     // `value` is a new tail of list
     if (insert_node == NULL) return Push(value);
 
-    // `value` is a new head of list
-    if (insert_node->prev() == NULL) return Unshift(value);
-
     // Insert before `insert_node`
-    Item* item = new Item(value);
-    insert_node->prev()->next(item);
-    item->prev(insert_node->prev());
-    item->next(insert_node);
-    insert_node->prev(item);
-
-    // Increase length
-    length_++;
+    InsertBefore(insert_node, value);
   }
 
 

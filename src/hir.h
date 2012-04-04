@@ -43,6 +43,10 @@ class HIRBasicBlock : public ZoneObject {
   void AddSuccessor(HIRBasicBlock* block);
   void Goto(HIRBasicBlock* block);
 
+  // Replace all uses (not-definitions!) of variable in
+  // this block and it's successors
+  void ReplaceVarUse(HIRValue* source, HIRValue* target);
+
   // Block relations
   bool Dominates(HIRBasicBlock* block);
 
@@ -67,6 +71,7 @@ class HIRBasicBlock : public ZoneObject {
     return enumerated_ == predecessors_count();
   }
   inline void enumerate() { ++enumerated_; }
+  inline void reset_enumerate() { enumerated_ = 0; }
 
   inline HIRValueList* values() { return &values_; }
   inline HIRPhiList* phis() { return &phis_; }

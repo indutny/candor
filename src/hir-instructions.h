@@ -57,6 +57,7 @@ class HIRInstruction : public ZoneObject {
   HIRInstruction(Type type) : type_(type),
                               id_(-1),
                               block_(NULL),
+                              def_(NULL),
                               result_(NULL),
                               prev_(NULL),
                               next_(NULL) {
@@ -68,6 +69,9 @@ class HIRInstruction : public ZoneObject {
 
   // Wrapper to push into value->uses()
   void Use(HIRValue* value);
+
+  // Replace all uses (not definitions!) of variable
+  void ReplaceVarUse(HIRValue* source, HIRValue* target);
 
   // Type checks
   inline Type type() { return type_; }
@@ -95,6 +99,10 @@ class HIRInstruction : public ZoneObject {
   }
   inline HIRValue* GetResult() { return result_; }
 
+  // Definition
+  inline void SetDef(HIRValue* def) { def_ = def; }
+  inline HIRValue* GetDef() { return def_; }
+
   // List of all used values
   inline ZoneList<HIRValue*>* values() { return &values_; }
 
@@ -118,6 +126,7 @@ class HIRInstruction : public ZoneObject {
 
   ZoneList<HIRValue*> values_;
 
+  HIRValue* def_;
   HIRValue* result_;
 
   HIRInstruction* prev_;
@@ -143,6 +152,7 @@ class HIRStoreBase : public HIRInstruction {
                                                           lhs_(lhs),
                                                           rhs_(rhs) {
     SetInput(lhs);
+    SetDef(lhs);
     SetResult(rhs);
   }
 

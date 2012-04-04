@@ -44,6 +44,23 @@ void HIRInstruction::Use(HIRValue* value) {
 }
 
 
+void HIRInstruction::ReplaceVarUse(HIRValue* source, HIRValue* target) {
+  ZoneList<HIRValue*>::Item* item = values()->head();
+  while (item != NULL) {
+    // Do not replace definitions
+    if (item->value() != GetDef() &&
+        item->value() == source) {
+      ZoneList<HIRValue*>::Item* next = item->next();
+      values()->InsertBefore(item, target);
+      values()->Remove(item);
+      item = next;
+      continue;
+    }
+    item = item->next();
+  }
+}
+
+
 void HIRInstruction::Print(PrintBuffer* p) {
   const char* str;
 
