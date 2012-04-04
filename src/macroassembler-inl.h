@@ -78,6 +78,18 @@ inline void Masm::Mov(LIROperand* dst, Register src) {
 }
 
 
+inline void Masm::Mov(LIROperand* dst, Operand& src) {
+  if (dst->is_register()) {
+    mov(RegisterByIndex(dst->value()), src);
+  } else if (dst->is_spill()) {
+    mov(scratch, src);
+    mov(SpillToOperand(dst->value()), scratch);
+  } else {
+    UNEXPECTED
+  }
+}
+
+
 inline void Masm::Mov(LIROperand* dst, LIROperand* src) {
   if (src == dst) return;
 

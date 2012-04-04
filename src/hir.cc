@@ -478,7 +478,14 @@ AstNode* HIR::VisitFunction(AstNode* stmt) {
 
   if (current_block() == root_block() &&
       current_block()->instructions()->length() == 0) {
-    HIRInstruction* entry = new HIREntry();
+    HIREntry* entry = new HIREntry();
+
+    // Add agruments
+    AstList::Item* arg = fn->args()->head();
+    for (; arg != NULL; arg = arg->next()) {
+      entry->AddArg(GetValue(arg->value()));
+    }
+
     AddInstruction(entry);
     if (fn->context_slots() > 0) {
       AddInstruction(new HIRAllocateContext(fn->context_slots()));

@@ -1,5 +1,4 @@
 HIR/LIR todos:
-* Call
 * Binary operations
 * Unary operations
 * While loops
@@ -7,6 +6,7 @@ HIR/LIR todos:
 * Clone
 * Delete
 * Typeof, sizeof, keysof
+* Vararg arguments (call)
 * Speeding up HIR construction
 * Cleanup masm
 * Cleanup stubs

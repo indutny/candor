@@ -102,6 +102,10 @@ TEST_START(functional)
     assert(result->As<Number>()->Value() == 1);
   })
 
+  FUN_TEST("a(x) { return x }\nreturn a(1)", {
+    assert(result->As<Number>()->Value() == 1);
+  })
+
   // Regression
   FUN_TEST("a() { return 1 }\nreturn a({})", {
     assert(result->As<Number>()->Value() == 1);

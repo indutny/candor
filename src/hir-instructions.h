@@ -245,6 +245,13 @@ class HIREntry : public HIRInstruction {
  public:
   HIREntry() : HIRInstruction(kEntry) {
   }
+
+  void AddArg(HIRValue* arg);
+
+  inline ZoneList<HIRValue*>* args() { return &args_; }
+
+ private:
+  ZoneList<HIRValue*> args_;
 };
 
 class HIRReturn : public HIRInstruction {

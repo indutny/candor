@@ -144,6 +144,12 @@ void HIRStubCall::Init(HIRBasicBlock* block) {
 }
 
 
+void HIREntry::AddArg(HIRValue* arg) {
+  Use(arg);
+  args()->Push(arg);
+}
+
+
 void HIRCall::AddArg(HIRValue* arg) {
   Use(arg);
   args()->Push(arg);

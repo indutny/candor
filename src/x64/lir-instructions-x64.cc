@@ -39,6 +39,21 @@ void LIREntry::Generate() {
   __ mov(rbp, rsp);
 
   __ AllocateSpills();
+
+  // Move args to registers/spills
+  Label args_end(masm());
+
+  HIRValueList::Item* arg = hir()->args()->head();
+  for (int i = 0; arg != NULL; arg = arg->next(), i++) {
+    __ cmpq(rsi, Immediate(HNumber::Tag(i)));
+    __ jmp(kLt, &args_end);
+
+    // Skip return address and previous rbp
+    Operand arg_slot(rbp, (i + 2) * 8);
+    __ Mov(arg->value()->operand(), arg_slot);
+  }
+
+  __ bind(&args_end);
 }
 
 
@@ -191,7 +206,7 @@ void LIRBranchBool::Generate() {
 void LIRCall::Generate() {
   Masm::Spill rsi_s(masm(), rsi), rdi_s(masm(), rdi), rsp_s(masm(), rsp);
 
-  __ mov(rsi, Immediate(hir()->args()->length()));
+  __ mov(rsi, Immediate(HNumber::Tag(hir()->args()->length())));
 
   // If argc is odd - align stack
   Label even(masm());
