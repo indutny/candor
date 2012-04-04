@@ -623,10 +623,10 @@ void Masm::CallFunction(Register fn) {
   Operand root_slot(fn, HFunction::kRootOffset);
 
   Label binding(this), done(this);
-  mov(rdi, context_slot);
+  mov(context_reg, context_slot);
   mov(root_reg, root_slot);
 
-  cmpq(rdi, Immediate(Heap::kBindingContextTag));
+  cmpq(context_reg, Immediate(Heap::kBindingContextTag));
   jmp(kEq, &binding);
 
   Call(code_slot);
@@ -634,7 +634,8 @@ void Masm::CallFunction(Register fn) {
   jmp(&done);
   bind(&binding);
 
-  push(rsi);
+  // Push argc and function
+  push(rax);
   push(fn);
   Call(stubs()->GetCallBindingStub());
 

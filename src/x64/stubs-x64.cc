@@ -243,7 +243,7 @@ void AllocateFunctionStub::Generate() {
   Operand qroot(rax, HFunction::kRootOffset);
   Operand qargc(rax, HFunction::kArgcOffset);
 
-  __ mov(qparent, rdi);
+  __ mov(qparent, context_reg);
   __ mov(qroot, root_reg);
 
   // Put addr of code and argc

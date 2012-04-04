@@ -480,13 +480,26 @@ AstNode* HIR::VisitFunction(AstNode* stmt) {
       current_block()->instructions()->length() == 0) {
     HIREntry* entry = new HIREntry(fn->context_slots());
 
+    AddInstruction(entry);
+
     // Add agruments
     AstList::Item* arg = fn->args()->head();
     for (; arg != NULL; arg = arg->next()) {
-      entry->AddArg(GetValue(arg->value()));
+      AstValue* value = AstValue::Cast(arg->value());
+      HIRValue* hir_value;
+      if (value->slot()->is_context()) {
+        // Create temporary on-stack variable
+        hir_value = CreateValue(current_block());
+
+        // And move it into context
+        AddInstruction(new HIRStoreContext(GetValue(value->slot()),
+                                           hir_value));
+      } else {
+        hir_value = GetValue(value->slot());
+      }
+      entry->AddArg(hir_value);
     }
 
-    AddInstruction(entry);
     VisitChildren(stmt);
 
     AddInstruction(new HIRReturn(CreateValue(
