@@ -156,7 +156,7 @@ void LIR::SpillRegister(HIRInstruction* hinstr, LIROperand* reg) {
   LIROperand* spill = NULL;
   for (; item != NULL; item = item->next()) {
     HIRValue* value = item->value();
-    if (value->operand() == NULL || ! value->operand()->is_equal(reg)) {
+    if (value->operand() == NULL || !value->operand()->is_equal(reg)) {
       continue;
     }
 
@@ -248,13 +248,13 @@ void LIR::MovePhis(HIRInstruction* hinstr) {
       // Skip non-local and dead inputs
       if (!value->value()->block()->Dominates(hinstr->block()) ||
           value->value()->operand() == NULL ||
-          phi->first_operand() == NULL) {
+          phi->operand() == NULL) {
         continue;
       }
 
       // Add movement from hinstr block's input to phi
       HIRParallelMove::GetBefore(hinstr)->
-          AddMove(value->value()->operand(), phi->first_operand());
+          AddMove(value->value()->operand(), phi->operand());
 
       // Only one move per phi
       break;
@@ -326,19 +326,27 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
         // Move value to register
         HIRParallelMove::GetBefore(hinstr)->AddMove(value->operand(),
                                                     linstr->inputs[i]);
-        Release(value->operand());
       }
 
       // Move all uses of this register into spill/other register
       SpillRegister(hinstr, linstr->inputs[i]);
 
-      value->operand(linstr->inputs[i]);
+      // Do not move phi, just copy
+      if (!value->is_phi()) {
+        if (value->operand() != NULL) Release(value->operand());
+        value->operand(linstr->inputs[i]);
+      }
     } else {
       // Skip already allocated values
       if (value->operand() != NULL) continue;
 
-      value->operand(AllocateRegister(hinstr));
-      spill_values()->InsertSorted<HIRValueEndShape>(value);
+      if (value->is_phi()) {
+        // Place phis only in a spill slots to prevent their movement
+        value->operand(GetSpill());
+      } else {
+        value->operand(AllocateRegister(hinstr));
+        spill_values()->InsertSorted<HIRValueEndShape>(value);
+      }
     }
 
     // Amend active values
@@ -355,9 +363,13 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
   if (hinstr->GetResult() != NULL) {
     HIRValue* value = hinstr->GetResult();
     if (value->operand() == NULL) {
-      value->operand(AllocateRegister(hinstr));
+      if (value->is_phi()) {
+        value->operand(GetSpill());
+      } else {
+        value->operand(AllocateRegister(hinstr));
+        spill_values()->InsertSorted<HIRValueEndShape>(value);
+      }
       active_values()->InsertSorted<HIRValueEndShape>(value);
-      spill_values()->InsertSorted<HIRValueEndShape>(value);
     }
     linstr->result = value->operand();
   }
@@ -429,6 +441,10 @@ void LIR::Generate(Masm* masm) {
       while (!spills()->IsEmpty()) spills()->Get();
     }
   }
+
+  char out[5000];
+  hir()->Print(out, sizeof(out));
+  fprintf(stdout, "%s\n", out);
 }
 
 } // namespace internal

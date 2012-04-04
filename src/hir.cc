@@ -64,7 +64,11 @@ void HIRBasicBlock::AddPredecessor(HIRBasicBlock* block) {
   for (; item != NULL; item = item->next()) {
     HIRValue* value = item->value();
 
-    if (value == NULL) continue;
+    // Prune dead variables
+    if (value == NULL ||
+        (!value->is_phi() && value->uses()->length() == 0)) {
+      continue;
+    }
 
     // If value is already in current block - insert phi!
     if (value->slot()->hir()->current_block() == this &&
@@ -307,8 +311,7 @@ HIRValue::HIRValue(HIRBasicBlock* block) : type_(kNormal),
                                            block_(block),
                                            current_block_(block),
                                            prev_def_(NULL),
-                                           operand_(NULL),
-                                           first_operand_(NULL) {
+                                           operand_(NULL) {
   slot_ = new ScopeSlot(ScopeSlot::kStack);
   Init();
 }
@@ -320,7 +323,6 @@ HIRValue::HIRValue(HIRBasicBlock* block, ScopeSlot* slot)
       current_block_(block),
       prev_def_(NULL),
       operand_(NULL),
-      first_operand_(NULL),
       slot_(slot) {
   Init();
 }
