@@ -32,6 +32,7 @@ class Operand;
     V(Typeof)\
     V(Sizeof)\
     V(Keysof)\
+    V(Not)\
     V(AllocateObject)\
     V(AllocateFunction)
 
@@ -219,6 +220,8 @@ class LIRLoadProperty : public LIRInstructionTemplate<2, 1, 0> {
 
 class LIRBranchBool : public LIRControlInstructionTemplate<1, 0> {
  public:
+  LIRBranchBool();
+
   void Generate();
 
   LIR_COMMON_METHODS(BranchBool)
@@ -265,6 +268,15 @@ class LIRKeysof : public LIRInstructionTemplate<1, 1, 0> {
   void Generate();
 
   LIR_COMMON_METHODS(Keysof)
+};
+
+class LIRNot : public LIRInstructionTemplate<1, 1, 0> {
+ public:
+  LIRNot();
+
+  void Generate();
+
+  LIR_COMMON_METHODS(Not)
 };
 
 class LIRAllocateFunction : public LIRInstructionTemplate<0, 1, 1> {

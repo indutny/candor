@@ -49,6 +49,7 @@ class HIRInstruction : public ZoneObject {
     kTypeof,
     kSizeof,
     kKeysof,
+    kNot,
     kAllocateFunction,
     kAllocateObject
   };
@@ -425,6 +426,12 @@ class HIRSizeof : public HIRPrefixKeyword {
 class HIRKeysof : public HIRPrefixKeyword {
  public:
   HIRKeysof(HIRValue* expr) : HIRPrefixKeyword(kKeysof, expr) {
+  }
+};
+
+class HIRNot : public HIRPrefixKeyword {
+ public:
+  HIRNot(HIRValue* expr) : HIRPrefixKeyword(kNot, expr) {
   }
 };
 

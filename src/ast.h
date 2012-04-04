@@ -388,6 +388,9 @@ class UnOp : public AstNode {
     return subtype_ == kPreInc || subtype_ == kPostInc ||
            subtype_ == kPreDec || subtype_ == kPostDec;
   }
+  inline bool is_postfix() {
+    return subtype_ == kPostInc || subtype_ == kPostDec;
+  }
   inline UnOpType subtype() { return subtype_; }
 
  protected:

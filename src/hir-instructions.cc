@@ -15,6 +15,7 @@ namespace internal {
     V(Typeof)\
     V(Sizeof)\
     V(Keysof)\
+    V(Not)\
     V(AllocateFunction)\
     V(AllocateObject)
 

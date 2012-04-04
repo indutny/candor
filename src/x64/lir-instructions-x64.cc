@@ -234,9 +234,13 @@ void LIRLoadProperty::Generate() {
 }
 
 
+LIRBranchBool::LIRBranchBool() {
+  inputs[0] = ToLIROperand(rax);
+}
+
+
 void LIRBranchBool::Generate() {
   // Coerce value to boolean first
-  __ Mov(rax, inputs[0]);
   __ Call(masm()->stubs()->GetCoerceToBooleanStub());
 
   // Jmp to `right` block if value is `false`
@@ -398,6 +402,38 @@ void LIRSizeof::Generate() {
 void LIRKeysof::Generate() {
   __ Call(masm()->stubs()->GetKeysofStub());
   __ Mov(result, rax);
+}
+
+
+LIRNot::LIRNot() {
+  inputs[0] = ToLIROperand(rax);
+}
+
+
+void LIRNot::Generate() {
+  // Coerce value to boolean first
+  __ Call(masm()->stubs()->GetCoerceToBooleanStub());
+
+  Label on_false(masm()), done(masm());
+
+  // Jmp to `right` block if value is `false`
+  Operand bvalue(rax, HBoolean::kValueOffset);
+  __ cmpb(bvalue, Immediate(0));
+  __ jmp(kEq, &on_false);
+
+  Operand truev(root_reg, HContext::GetIndexDisp(Heap::kRootTrueIndex));
+  Operand falsev(root_reg, HContext::GetIndexDisp(Heap::kRootFalseIndex));
+
+  // !true = false
+  __ Mov(result, falsev);
+
+  __ jmp(&done);
+  __ bind(&on_false);
+
+  // !false = true
+  __ Mov(result, truev);
+
+  __ bind(&done);
 }
 
 

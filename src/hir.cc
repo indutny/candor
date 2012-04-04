@@ -452,8 +452,13 @@ HIRValue* HIR::GetValue(AstNode* node) {
       current_block()->instructions()->length() == 0) {
     return CreateValue(root()->Put(new AstNode(AstNode::kNil)));
   } else {
-    return current_block()->instructions()->tail()->value()->GetResult();
+    return GetLastResult();
   }
+}
+
+
+HIRValue* HIR::GetLastResult() {
+  return current_block()->instructions()->tail()->value()->GetResult();
 }
 
 
@@ -741,6 +746,85 @@ AstNode* HIR::VisitKeysof(AstNode* node) {
 
 
 AstNode* HIR::VisitUnOp(AstNode* node) {
+  UnOp* op = UnOp::Cast(node);
+
+  // Changing ops should be translated into another form
+  if (op->is_changing()) {
+    AstNode* one = new AstNode(AstNode::kNumber, node);
+    one->value("1");
+    one->length(1);
+
+    if (op->is_postfix()) {
+      // a++ => t = a, a = t + 1, t
+
+      AstNode* tmp = new AstValue(new ScopeSlot(ScopeSlot::kStack),
+                                  AstValue::Cast(op->lhs())->name());
+      AstNode* init = new AstNode(AstNode::kAssign);
+      init->children()->Push(tmp);
+      init->children()->Push(op->lhs());
+
+      HIRValue* result = GetValue(init);
+
+      AstNode* change = new AstNode(AstNode::kAssign);
+      change->children()->Push(op->lhs());
+      switch (op->subtype()) {
+       case UnOp::kPostInc:
+        change->children()->Push(new BinOp(BinOp::kAdd, tmp, one));
+        break;
+       case UnOp::kPostDec:
+        change->children()->Push(new BinOp(BinOp::kSub, tmp, one));
+        break;
+       default:
+        UNEXPECTED
+        break;
+      }
+      Visit(change);
+
+      // return result
+      AddInstruction(new HIRNop(result));
+    } else {
+      // ++a => a = a + 1
+      AstNode* rhs = NULL;
+      switch (op->subtype()) {
+       case UnOp::kPreInc:
+        rhs = new BinOp(BinOp::kAdd, op->lhs(), one);
+        break;
+       case UnOp::kPreDec:
+        rhs = new BinOp(BinOp::kSub, op->lhs(), one);
+        break;
+       default:
+        UNEXPECTED
+        break;
+      }
+
+      AstNode* assign = new AstNode(AstNode::kAssign, node);
+      assign->children()->Push(op->lhs());
+      assign->children()->Push(rhs);
+
+      Visit(assign);
+    }
+  } else if (op->subtype() == UnOp::kPlus || op->subtype() == UnOp::kMinus) {
+    // +a = 0 + a
+    // -a = 0 - a
+    // TODO: Parser should genereate negative numbers where possible
+
+    AstNode* zero = new AstNode(AstNode::kNumber, node);
+    zero->value("0");
+    zero->length(1);
+
+    AstNode* wrap = new BinOp(
+        op->subtype() == UnOp::kPlus ? BinOp::kAdd : BinOp::kSub,
+        zero,
+        op->lhs());
+
+    Visit(wrap);
+
+  } else if (op->subtype() == UnOp::kNot) {
+    AddInstruction(new HIRNot(GetValue(op->lhs())));
+  } else {
+    UNEXPECTED
+  }
+
   return node;
 }
 

@@ -229,6 +229,7 @@ class HIR : public Visitor {
 
   // Visit node and get last instruction's result
   HIRValue* GetValue(AstNode* node);
+  HIRValue* GetLastResult();
 
   // Prints CFG into buffer (debug purposes only)
   void Print(char* buffer, uint32_t size);
