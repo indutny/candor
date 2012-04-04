@@ -288,6 +288,33 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
   ExpireOldValues(hinstr, active_values());
   ExpireOldValues(hinstr, spill_values());
 
+  // If we're at the loop start
+  HIRValueList::Item* item;
+  if (hinstr->block() != NULL && hinstr->block()->predecessors_count() > 1 &&
+      hinstr->block()->first_instruction() == hinstr) {
+    HIRBasicBlock* loop_cond = NULL;
+    HIRBasicBlock* loop_end = NULL;
+
+    if (hinstr->block()->Dominates(hinstr->block()->predecessors()[0])) {
+      loop_cond = hinstr->block()->predecessors()[1];
+      loop_end = hinstr->block()->predecessors()[0];
+    } else if (hinstr->block()->Dominates(hinstr->block()->predecessors()[1])) {
+      loop_cond = hinstr->block()->predecessors()[0];
+      loop_end = hinstr->block()->predecessors()[1];
+    }
+
+    if (loop_end != NULL) {
+      // Store all `live` variables from condition block
+      item = loop_cond->values()->head();
+      for (; item != NULL; item = item->next()) {
+        if (item->value()->operand() == NULL) continue;
+        loop_end->loop_shuffle()->Push(new HIRBasicBlock::LoopShuffle(
+              item->value(),
+              item->value()->operand()));
+      }
+    }
+  }
+
   // If instruction has input restrictions - ensure that those registers can't
   // be allocated for spills or anything
   int i;
@@ -299,7 +326,7 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
   }
 
   // Allocate all values used in instruction
-  HIRValueList::Item* item = hinstr->values()->head();
+  item = hinstr->values()->head();
   for (i = -1; item != NULL; item = item->next()) {
     HIRValue* value = item->value();
 
@@ -326,27 +353,19 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
         // Move value to register
         HIRParallelMove::GetBefore(hinstr)->AddMove(value->operand(),
                                                     linstr->inputs[i]);
+        Release(value->operand());
       }
 
       // Move all uses of this register into spill/other register
       SpillRegister(hinstr, linstr->inputs[i]);
 
-      // Do not move phi, just copy
-      if (!value->is_phi()) {
-        if (value->operand() != NULL) Release(value->operand());
-        value->operand(linstr->inputs[i]);
-      }
+      value->operand(linstr->inputs[i]);
     } else {
       // Skip already allocated values
       if (value->operand() != NULL) continue;
 
-      if (value->is_phi()) {
-        // Place phis only in a spill slots to prevent their movement
-        value->operand(GetSpill());
-      } else {
-        value->operand(AllocateRegister(hinstr));
-        spill_values()->InsertSorted<HIRValueEndShape>(value);
-      }
+      value->operand(AllocateRegister(hinstr));
+      spill_values()->InsertSorted<HIRValueEndShape>(value);
     }
 
     // Amend active values
@@ -363,12 +382,8 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
   if (hinstr->GetResult() != NULL) {
     HIRValue* value = hinstr->GetResult();
     if (value->operand() == NULL) {
-      if (value->is_phi()) {
-        value->operand(GetSpill());
-      } else {
-        value->operand(AllocateRegister(hinstr));
-        spill_values()->InsertSorted<HIRValueEndShape>(value);
-      }
+      value->operand(AllocateRegister(hinstr));
+      spill_values()->InsertSorted<HIRValueEndShape>(value);
       active_values()->InsertSorted<HIRValueEndShape>(value);
     }
     linstr->result = value->operand();
@@ -400,6 +415,21 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
       hinstr->block()->successors_count() == 1 &&
       hinstr->block()->successors()[0]->predecessors_count() == 2) {
     MovePhis(hinstr);
+
+    // Apply shuffle to preserve loop invariants
+    if (hinstr->block()->loop_shuffle()->length() > 0) {
+      HIRBasicBlock::LoopShuffle* shuffle;
+
+      // Commit previous move changes
+      HIRParallelMove::GetBefore(hinstr)->Reorder(this);
+      while ((shuffle = hinstr->block()->loop_shuffle()->Shift()) != NULL) {
+        // Skip variables with unchanged operand
+        if (shuffle->operand() == shuffle->value()->operand()) continue;
+
+        HIRParallelMove::GetBefore(hinstr)->AddMove(shuffle->value()->operand(),
+                                                    shuffle->operand());
+      }
+    }
   }
 
   // All registers was allocated, perform move if needed
@@ -441,10 +471,6 @@ void LIR::Generate(Masm* masm) {
       while (!spills()->IsEmpty()) spills()->Get();
     }
   }
-
-  char out[5000];
-  hir()->Print(out, sizeof(out));
-  fprintf(stdout, "%s\n", out);
 }
 
 } // namespace internal

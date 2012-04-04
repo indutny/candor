@@ -31,6 +31,20 @@ typedef ZoneList<HIRInstruction*> HIRInstructionList;
 // CFG Block
 class HIRBasicBlock : public ZoneObject {
  public:
+  class LoopShuffle {
+   public:
+    LoopShuffle(HIRValue* value, LIROperand* operand) : value_(value),
+                                                        operand_(operand) {
+    }
+
+    inline HIRValue* value() { return value_; }
+    inline LIROperand* operand() { return operand_; }
+
+   private:
+    HIRValue* value_;
+    LIROperand* operand_;
+  };
+
   HIRBasicBlock(HIR* hir);
 
   // Add value for generating PHIs later
@@ -93,6 +107,9 @@ class HIRBasicBlock : public ZoneObject {
   // List of relocation (JIT assembly helper)
   inline ZoneList<RelocationInfo*>* uses() { return &uses_; }
 
+  // Shuffle to return loop variable invariants back to the start positions
+  inline ZoneList<LoopShuffle*>* loop_shuffle() { return &loop_shuffle_; }
+
   inline bool relocated() { return relocated_; }
   inline void relocated(bool relocated) { relocated_ = relocated; }
 
@@ -122,6 +139,8 @@ class HIRBasicBlock : public ZoneObject {
   Masm* masm_;
   int relocation_offset_;
   ZoneList<RelocationInfo*> uses_;
+
+  ZoneList<LoopShuffle*> loop_shuffle_;
 
   bool relocated_;
   bool finished_;

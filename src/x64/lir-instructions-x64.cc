@@ -36,6 +36,7 @@ void LIRNop::Generate() {
 
 
 void LIREntry::Generate() {
+  __ emitb(0xcc);
   __ push(rbp);
   __ mov(rbp, rsp);
 
