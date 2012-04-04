@@ -199,6 +199,12 @@ void LIR::SpillRegister(HIRInstruction* hinstr, LIROperand* reg) {
   // If at least one value was moved - insert movement
   if (spill != NULL) {
     HIRParallelMove::GetBefore(hinstr)->AddMove(reg, spill);
+
+    // Commit movement as swapping registers is not a parallel
+    // move and may introduce conflicts:
+    // eax <-> ebx
+    // ebx <-> ecx
+    HIRParallelMove::GetBefore(hinstr)->Reorder(this);
   }
 }
 
@@ -354,12 +360,6 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
 
       // Move all uses of this register into spill/other register
       SpillRegister(hinstr, linstr->inputs[i]);
-
-      // Commit movement as swapping registers is not a parallel
-      // move and may introduce conflicts:
-      // eax <-> ebx
-      // ebx <-> ecx
-      HIRParallelMove::GetBefore(hinstr)->Reorder(this);
 
       value->operand(linstr->inputs[i]);
     } else {
