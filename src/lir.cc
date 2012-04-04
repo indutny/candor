@@ -248,13 +248,13 @@ void LIR::MovePhis(HIRInstruction* hinstr) {
       // Skip non-local and dead inputs
       if (!value->value()->block()->Dominates(hinstr->block()) ||
           value->value()->operand() == NULL ||
-          phi->operand() == NULL) {
+          phi->first_operand() == NULL) {
         continue;
       }
 
       // Add movement from hinstr block's input to phi
       HIRParallelMove::GetBefore(hinstr)->
-          AddMove(value->value()->operand(), phi->operand());
+          AddMove(value->value()->operand(), phi->first_operand());
 
       // Only one move per phi
       break;

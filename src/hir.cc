@@ -96,6 +96,17 @@ void HIRBasicBlock::AddPredecessor(HIRBasicBlock* block) {
       AddValue(value);
     }
   }
+
+  // If loop detected - add variable uses to the end of loop
+  // to ensure that they will be live after the first loop's pass
+  if (instructions()->length() != 0) {
+    for (; item != NULL; item = item->next()) {
+      HIRValue* value = item->value();
+
+      if (value == NULL) continue;
+      value->uses()->Push(block->last_instruction());
+    }
+  }
 }
 
 
@@ -292,7 +303,8 @@ HIRValue::HIRValue(HIRBasicBlock* block) : type_(kNormal),
                                            block_(block),
                                            current_block_(block),
                                            prev_def_(NULL),
-                                           operand_(NULL) {
+                                           operand_(NULL),
+                                           first_operand_(NULL) {
   slot_ = new ScopeSlot(ScopeSlot::kStack);
   Init();
 }
@@ -304,6 +316,7 @@ HIRValue::HIRValue(HIRBasicBlock* block, ScopeSlot* slot)
       current_block_(block),
       prev_def_(NULL),
       operand_(NULL),
+      first_operand_(NULL),
       slot_(slot) {
   Init();
 }

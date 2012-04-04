@@ -169,7 +169,12 @@ class HIRValue : public ZoneObject {
   // LIR helpers
   inline LiveRange* live_range() { return &live_range_; }
   inline LIROperand* operand() { return operand_; }
-  inline void operand(LIROperand* operand) { operand_ = operand; }
+  inline void operand(LIROperand* operand) {
+    if (is_phi() && operand_ == NULL) first_operand(operand);
+    operand_ = operand;
+  }
+  inline LIROperand* first_operand() { return first_operand_; }
+  inline void first_operand(LIROperand* operand) { first_operand_ = operand; }
 
   inline ScopeSlot* slot() { return slot_; }
 
@@ -196,6 +201,7 @@ class HIRValue : public ZoneObject {
   // Used in lir.h
   LiveRange live_range_;
   LIROperand* operand_;
+  LIROperand* first_operand_;
 
   ScopeSlot* slot_;
 
