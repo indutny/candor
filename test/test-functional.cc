@@ -305,4 +305,14 @@ TEST_START(functional)
            "return j", {
     assert(result->As<Number>()->Value() == 10);
   })
+
+  FUN_TEST("i = 10\nj = 10\nk = 0\n"
+           "while (i--) {\n"
+           "  while (--j) {\n"
+           "    k = k + 1\n"
+           "  }\n"
+           "}\n"
+           "return k", {
+    assert(result->As<Number>()->Value() == 10);
+  })
 TEST_END(functional)
