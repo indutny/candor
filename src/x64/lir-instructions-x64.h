@@ -78,6 +78,9 @@ class LIRInstruction : public ZoneObject {
   inline Operand& ToOperand(LIROperand* op);
   inline LIROperand* ToLIROperand(Register reg);
 
+  inline LIR* lir() { return lir_; }
+  inline void lir(LIR* lir) { lir_ = lir; }
+
   inline HIRInstruction* generic_hir() { return hir_; }
   inline void hir(HIRInstruction* hir) { hir_ = hir; }
 
@@ -96,6 +99,7 @@ class LIRInstruction : public ZoneObject {
   LIROperand* result;
 
  protected:
+  LIR* lir_;
   HIRInstruction* hir_;
   Masm* masm_;
 

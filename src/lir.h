@@ -112,6 +112,10 @@ class LIR {
   //
   void GenerateInstruction(Masm* masm, HIRInstruction* hinstr);
 
+  // Short-hand for generating after(reverse) movement and reseting it
+  // (used in BranchBool)
+  void GenerateReverseMove(Masm* masm, HIRInstruction* hinstr);
+
   // Put spill used in movements to active_values() list to
   // release it automatically after reverse instruction
   void InsertMoveSpill(HIRParallelMove* move,

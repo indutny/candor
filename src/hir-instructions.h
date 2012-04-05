@@ -226,6 +226,9 @@ class HIRParallelMove : public HIRInstruction {
   // Order movements to prevent "overlapping"
   void Reorder(LIR* lir);
 
+  // Remove all moves
+  void Reset();
+
   static inline HIRParallelMove* Cast(HIRInstruction* instr) {
     assert(instr->type() == kParallelMove);
     return reinterpret_cast<HIRParallelMove*>(instr);

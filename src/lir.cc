@@ -264,6 +264,21 @@ void LIR::MovePhis(HIRInstruction* hinstr) {
 }
 
 
+void LIR::GenerateReverseMove(Masm* masm, HIRInstruction* hinstr) {
+  if (hinstr->next()->type() != HIRInstruction::kParallelMove) return;
+
+  HIRParallelMove* move = HIRParallelMove::Cast(hinstr->next());
+  LIRInstruction* lmove = Cast(move);
+  move->Reorder(this);
+
+  lmove->masm(masm);
+  lmove->Generate();
+
+  // Reset all movements
+  move->Reset();
+}
+
+
 void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
   LIRInstruction* linstr = Cast(hinstr);
 

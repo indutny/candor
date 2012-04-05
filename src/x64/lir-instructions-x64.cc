@@ -272,6 +272,9 @@ void LIRBranchBool::Generate() {
   Operand bvalue(rax, HBoolean::kValueOffset);
   __ cmpb(bvalue, Immediate(0));
 
+  // Generate reverse-movement before jumping
+  lir()->GenerateReverseMove(masm(), hir());
+
   // Jump to the far block
   if (hir()->next() == hir()->block()->successors()[0]->first_instruction()) {
     __ jmp(kNe, NULL);

@@ -45,8 +45,6 @@ inline LIRInstruction* LIR::Cast(HIRInstruction* instr) {
 #define LIR_GEN_CAST(V)\
   case HIRInstruction::k##V:\
     result = new LIR##V();\
-    result->hir(instr);\
-    result->id(instr->id());\
     break;
 
   LIRInstruction* result = NULL;
@@ -54,6 +52,11 @@ inline LIRInstruction* LIR::Cast(HIRInstruction* instr) {
    LIR_ENUM_INSTRUCTIONS(LIR_GEN_CAST)
    default: UNEXPECTED break;
   }
+
+  // Initialize instruction
+  result->hir(instr);
+  result->id(instr->id());
+  result->lir(this);
 
   return result;
 #undef LIR_GEN_CAST

@@ -100,8 +100,8 @@ void HIRParallelMove::AddMove(LIROperand* source, LIROperand* target) {
 
 #ifndef NDEBUG
   // Target should not appear twice in raw list
-  OperandList::Item* sitem = raw_sources_.head();
-  OperandList::Item* titem = raw_targets_.head();
+  OperandList::Item* sitem = raw_sources()->head();
+  OperandList::Item* titem = raw_targets()->head();
   for (; sitem != NULL; sitem = sitem->next(), titem = titem->next()) {
     if (titem->value()->is_equal(target)) {
       assert(0 && "Dublicate target in movement");
@@ -109,8 +109,8 @@ void HIRParallelMove::AddMove(LIROperand* source, LIROperand* target) {
   }
 #endif // NDEBUG
 
-  raw_sources_.Push(source);
-  raw_targets_.Push(target);
+  raw_sources()->Push(source);
+  raw_targets()->Push(target);
 }
 
 
@@ -122,8 +122,8 @@ void HIRParallelMove::Reorder(LIR* lir,
   target->value()->move_status(LIROperand::kBeingMoved);
 
   // Detect successors
-  OperandList::Item* sitem = raw_sources_.head();
-  OperandList::Item* titem = raw_targets_.head();
+  OperandList::Item* sitem = raw_sources()->head();
+  OperandList::Item* titem = raw_targets()->head();
   for (; sitem != NULL; sitem = sitem->next(), titem = titem->next()) {
     if (!sitem->value()->is_equal(target->value())) continue;
 
@@ -166,8 +166,8 @@ void HIRParallelMove::Reorder(LIR* lir,
 
 
 void HIRParallelMove::Reorder(LIR* lir) {
-  OperandList::Item* sitem = raw_sources_.head();
-  OperandList::Item* titem = raw_targets_.head();
+  OperandList::Item* sitem = raw_sources()->head();
+  OperandList::Item* titem = raw_targets()->head();
   for (; sitem != NULL; sitem = sitem->next(), titem = titem->next()) {
     if (sitem->value()->move_status() != LIROperand::kToMove) continue;
     Reorder(lir, sitem, titem);
@@ -175,12 +175,21 @@ void HIRParallelMove::Reorder(LIR* lir) {
 
   // Reset move_status and empty list
   LIROperand* op;
-  while ((op = raw_sources_.Shift()) != NULL) {
+  while ((op = raw_sources()->Shift()) != NULL) {
     op->move_status(LIROperand::kToMove);
   }
-  while ((op = raw_targets_.Shift()) != NULL) {
+  while ((op = raw_targets()->Shift()) != NULL) {
     op->move_status(LIROperand::kToMove);
   }
+}
+
+
+void HIRParallelMove::Reset() {
+  LIROperand* op;
+  while ((op = raw_sources()->Shift()) != NULL) {}
+  while ((op = raw_targets()->Shift()) != NULL) {}
+  while ((op = sources()->Shift()) != NULL) {}
+  while ((op = targets()->Shift()) != NULL) {}
 }
 
 
