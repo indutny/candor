@@ -371,6 +371,13 @@ void LIRBinOp::Generate() {
 
 
 void LIRCall::Generate() {
+  Label not_function(masm()), done(masm());
+
+  __ Mov(scratch, inputs[0]);
+  __ IsUnboxed(scratch, NULL, &not_function);
+  __ IsNil(scratch, NULL, &not_function);
+  __ IsHeapObject(Heap::kTagFunction, scratch, &not_function, NULL);
+
   Masm::Spill ctx(masm(), context_reg), root(masm(), root_reg);
   Masm::Spill rsp_s(masm(), rsp);
 
@@ -398,6 +405,13 @@ void LIRCall::Generate() {
   rsp_s.Unspill();
   root.Unspill();
   ctx.Unspill();
+
+  __ jmp(&done);
+  __ bind(&not_function);
+
+  __ Mov(result, Immediate(Heap::kTagNil));
+
+  __ bind(&done);
 }
 
 

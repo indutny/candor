@@ -107,6 +107,9 @@ void EntryStub::Generate() {
 
   Masm::Spill rsi_s(masm(), rsi);
 
+  // Put argc
+  __ mov(rax, rsi);
+
   // Call code
   __ mov(scratch, rdi);
   __ CallFunction(scratch);
