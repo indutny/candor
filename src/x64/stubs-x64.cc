@@ -96,11 +96,12 @@ void EntryStub::Generate() {
   __ xorq(rbx, rbx);
   __ xorq(rcx, rcx);
   __ xorq(rdx, rdx);
+  // rsi, rdi <- context, root
   __ xorq(r8, r8);
   __ xorq(r9, r9);
-  // r10 is a root register
+  __ xorq(r10, r10);
+  __ xorq(r11, r11);
   __ xorq(r12, r12);
-  // r11 is a scratch register
   __ xorq(r13, r13);
   __ xorq(r14, r14);
   __ xorq(r15, r15);

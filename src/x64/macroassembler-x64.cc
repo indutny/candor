@@ -23,28 +23,35 @@ Masm::Masm(CodeSpace* space) : space_(space),
 
 
 void Masm::Pushad() {
-  // 10 registers to save (10 * 8 = 16 * 5, so stack should be aligned)
+  // 12 registers to save
   push(rax);
   push(rbx);
   push(rcx);
   push(rdx);
-  push(rsi);
-  push(rdi);
+
   push(r8);
   push(r9);
-  // Root register
-  push(root_reg);
+  push(r10);
+  push(r11);
+
   push(r12);
+  push(r13);
+  push(root_reg);
+  push(context_reg);
 }
 
 
 void Masm::Popad(Register preserve) {
-  PreservePop(r12, preserve);
+  PreservePop(context_reg, preserve);
   PreservePop(root_reg, preserve);
+  PreservePop(r13, preserve);
+  PreservePop(r12, preserve);
+
+  PreservePop(r11, preserve);
+  PreservePop(r10, preserve);
   PreservePop(r9, preserve);
   PreservePop(r8, preserve);
-  PreservePop(rdi, preserve);
-  PreservePop(rsi, preserve);
+
   PreservePop(rdx, preserve);
   PreservePop(rcx, preserve);
   PreservePop(rbx, preserve);
@@ -355,13 +362,13 @@ void Masm::Fill(Register start, Register end, Immediate value) {
 
 
 void Masm::FillStackSlots() {
-  mov(rax, rsp);
-  mov(rbx, rbp);
+  mov(r8, rsp);
+  mov(r9, rbp);
   // Skip frame info
-  subq(rbx, Immediate(8));
-  Fill(rax, rbx, Immediate(Heap::kTagNil));
-  xorq(rax, rax);
-  xorq(rbx, rbx);
+  subq(r9, Immediate(8));
+  Fill(r8, r9, Immediate(Heap::kTagNil));
+  xorq(r8, r8);
+  xorq(r9, r9);
 }
 
 

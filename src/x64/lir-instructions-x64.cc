@@ -25,6 +25,12 @@ void LIRParallelMove::Generate() {
   ZoneList<LIROperand*>::Item* target = hir()->targets()->head();
 
   for (; source != NULL; source = source->next(), target = target->next()) {
+    // Fast-case for : reg = 0
+    if (target->value()->is_register() &&
+        source->value()->is_immediate() && source->value()->value() == 0) {
+      __ xorq(ToRegister(target->value()), ToRegister(target->value()));
+      continue;
+    }
     __ Mov(target->value(), source->value());
   }
 }
@@ -40,6 +46,7 @@ void LIREntry::Generate() {
   __ mov(rbp, rsp);
 
   __ AllocateSpills();
+  __ FillStackSlots();
 
   // Allocate context
   __ AllocateContext(hir()->context_slots());

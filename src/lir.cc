@@ -380,6 +380,11 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
   for (i = 0; i < linstr->scratch_count(); i++) {
     linstr->scratches[i] = AllocateRegister(hinstr);
     release_list.Push(linstr->scratches[i]);
+
+    // Cleanup scratch registers after usage
+    HIRParallelMove::GetAfter(hinstr)->AddMove(
+        new LIROperand(LIROperand::kImmediate, static_cast<off_t>(0)),
+        linstr->scratches[i]);
   }
 
   // Allocate result
