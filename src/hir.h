@@ -46,6 +46,11 @@ class HIRBasicBlock : public ZoneObject {
     LIROperand* operand_;
   };
 
+  enum BlockType {
+    kNormal,
+    kLoopStart
+  };
+
   HIRBasicBlock(HIR* hir);
 
   // Add value for generating PHIs later
@@ -74,6 +79,10 @@ class HIRBasicBlock : public ZoneObject {
 
   // Various ancestors
   inline HIR* hir() { return hir_; }
+  inline BlockType type() { return type_; }
+  inline bool is_normal() { return type_ == kNormal; }
+  inline bool is_loop_start() { return type_ == kLoopStart; }
+
   inline bool is_enumerated() {
     // Check if node's predecessor is dominated by node
     // (node loops to itself)
@@ -122,8 +131,9 @@ class HIRBasicBlock : public ZoneObject {
   void MarkPrinted();
   bool IsPrintable();
 
- private:
+ protected:
   HIR* hir_;
+  BlockType type_;
 
   // Whether block was enumerated by EnumInstructions() or not
   int enumerated_;
@@ -147,6 +157,23 @@ class HIRBasicBlock : public ZoneObject {
   bool finished_;
 
   int id_;
+};
+
+class HIRLoopStart : public HIRBasicBlock {
+ public:
+  HIRLoopStart(HIR* hir) : HIRBasicBlock(hir), body_(NULL) {
+    type_ = kLoopStart;
+  }
+
+  static inline HIRLoopStart* Cast(HIRBasicBlock* block) {
+    return reinterpret_cast<HIRLoopStart*>(block);
+  }
+
+  inline void body(HIRBasicBlock* body) { body_ = body; }
+  inline HIRBasicBlock* body() { return body_; }
+
+ private:
+  HIRBasicBlock* body_;
 };
 
 // SSA Value
@@ -268,6 +295,7 @@ class HIR : public Visitor {
 
   HIRValue* GetValue(ScopeSlot* slot);
   HIRBasicBlock* CreateBlock();
+  HIRLoopStart* CreateLoopStart();
 
   // Creates a block
   HIRBasicBlock* CreateJoin(HIRBasicBlock* left, HIRBasicBlock* right);

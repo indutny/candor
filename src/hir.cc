@@ -16,6 +16,7 @@ namespace candor {
 namespace internal {
 
 HIRBasicBlock::HIRBasicBlock(HIR* hir) : hir_(hir),
+                                         type_(kNormal),
                                          enumerated_(0),
                                          predecessors_count_(0),
                                          successors_count_(0),
@@ -32,6 +33,8 @@ HIRBasicBlock::HIRBasicBlock(HIR* hir) : hir_(hir),
 
 
 void HIRBasicBlock::AddValue(HIRValue* value) {
+  if (!value->slot()->is_context() && !value->slot()->is_stack()) return;
+
   // If value is already in values list - remove previous
   HIRValueList::Item* item = values()->head();
   for (; item != NULL; item = item->next()) {
@@ -462,6 +465,11 @@ HIRBasicBlock* HIR::CreateBlock() {
 }
 
 
+HIRLoopStart* HIR::CreateLoopStart() {
+  return new HIRLoopStart(this);
+}
+
+
 HIRBasicBlock* HIR::CreateJoin(HIRBasicBlock* left, HIRBasicBlock* right) {
   HIRBasicBlock* join = CreateBlock();
 
@@ -698,7 +706,7 @@ AstNode* HIR::VisitIf(AstNode* node) {
 
 
 AstNode* HIR::VisitWhile(AstNode* node) {
-  HIRBasicBlock* cond = CreateBlock();
+  HIRLoopStart* cond = CreateLoopStart();
   HIRBasicBlock* start = CreateBlock();
   HIRBasicBlock* body = CreateBlock();
   HIRBasicBlock* end = CreateBlock();
@@ -733,7 +741,8 @@ AstNode* HIR::VisitWhile(AstNode* node) {
   Visit(node->rhs());
 
   // And loop it back to condition
-  body->Goto(cond);
+  current_block()->Goto(cond);
+  cond->body(current_block());
 
   // Execution will continue in the `end` block
   set_current_block(end);

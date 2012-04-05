@@ -291,31 +291,23 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
 
   // If we're at the loop start
   HIRValueList::Item* item;
-  if (hinstr->block() != NULL && hinstr->block()->predecessors_count() > 1 &&
-      hinstr->block()->first_instruction() == hinstr) {
-    HIRBasicBlock* loop_cond = NULL;
-    HIRBasicBlock* loop_end = NULL;
+  if (hinstr->block() != NULL && hinstr->block()->is_loop_start() &&
+      hinstr == hinstr->block()->first_instruction()) {
+    HIRLoopStart* loop_start = HIRLoopStart::Cast(hinstr->block());
+    HIRBasicBlock* loop_body = loop_start->body();
 
-    if (hinstr->block()->Dominates(hinstr->block()->predecessors()[0])) {
-      loop_cond = hinstr->block()->predecessors()[1];
-      loop_end = hinstr->block()->predecessors()[0];
-    } else if (hinstr->block()->Dominates(hinstr->block()->predecessors()[1])) {
-      loop_cond = hinstr->block()->predecessors()[0];
-      loop_end = hinstr->block()->predecessors()[1];
-    }
+    assert(loop_start->predecessors_count() == 2);
 
-    if (loop_end != NULL) {
-      // Store all `live` variables from condition block
-      item = hinstr->block()->values()->head();
-      for (; item != NULL; item = item->next()) {
-        if (item->value()->operand() == NULL ||
-            item->value()->operand()->is_immediate()) {
-          continue;
-        }
-        loop_end->loop_shuffle()->Push(new HIRBasicBlock::LoopShuffle(
-              item->value(),
-              item->value()->operand()));
+    // Store all `live` variables from condition block
+    item = hinstr->block()->values()->head();
+    for (; item != NULL; item = item->next()) {
+      if (item->value()->operand() == NULL ||
+          item->value()->operand()->is_immediate()) {
+        continue;
       }
+      loop_body->loop_shuffle()->Push(new HIRBasicBlock::LoopShuffle(
+            item->value(),
+            item->value()->operand()));
     }
   }
 
@@ -432,8 +424,11 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
       // Commit previous move changes
       HIRParallelMove::GetBefore(hinstr)->Reorder(this);
       while ((shuffle = hinstr->block()->loop_shuffle()->Shift()) != NULL) {
-        // Skip variables with unchanged operand
-        if (shuffle->operand()->is_equal(shuffle->value()->operand())) continue;
+        // Skip dead values or values with unchanged operand
+        assert(shuffle->value()->operand() != NULL);
+        if (shuffle->operand()->is_equal(shuffle->value()->operand())) {
+          continue;
+        }
 
         HIRParallelMove::GetBefore(hinstr)->AddMove(shuffle->value()->operand(),
                                                     shuffle->operand());
