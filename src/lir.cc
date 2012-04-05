@@ -242,26 +242,24 @@ void LIR::MovePhis(HIRInstruction* hinstr) {
   // Iterate through phis
   for (; item != NULL; item = item->next()) {
     HIRPhi* phi = item->value();
+    HIRValue* input;
 
-    HIRValueList::Item* value = phi->inputs()->head();
-    for (; value != NULL; value = value->next()) {
-      // Skip non-local and dead inputs
-      if (!value->value()->block()->Dominates(hinstr->block()) ||
-          value->value()->operand() == NULL ||
-          phi->operand() == NULL) {
-        continue;
-      }
-
-      // Add movement from hinstr block's input to phi
-      HIRParallelMove::GetBefore(hinstr)->
-          AddMove(value->value()->operand(), phi->operand());
-
-      // Remove this input (helps in loops)
-      phi->inputs()->Remove(value);
-
-      // Only one move per phi
-      break;
+    if (hinstr->next()->next() == succ->first_instruction()) {
+      // left input (closer)
+      input = phi->inputs()->head()->value();
+    } else {
+      // Right input
+      input = phi->inputs()->tail()->value();
     }
+
+    // Skip dead phis/inputs
+    if (input->operand() == NULL || phi->operand() == NULL) {
+      continue;
+    }
+
+    // Add movement from hinstr block's input to phi
+    HIRParallelMove::GetBefore(hinstr)->
+        AddMove(input->operand(), phi->operand());
   }
 }
 
