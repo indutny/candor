@@ -256,6 +256,9 @@ void LIR::MovePhis(HIRInstruction* hinstr) {
       HIRParallelMove::GetBefore(hinstr)->
           AddMove(value->value()->operand(), phi->operand());
 
+      // Remove this input (helps in loops)
+      phi->inputs()->Remove(value);
+
       // Only one move per phi
       break;
     }
@@ -432,8 +435,8 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
         HIRParallelMove::GetBefore(hinstr)->AddMove(shuffle->value()->operand(),
                                                     shuffle->operand());
 
-        // Do not allow processing same operands twice
-        shuffle->operand(shuffle->value()->operand());
+        // After loop all values are in the same operands as before the loop
+        shuffle->value()->operand(shuffle->operand());
       }
     }
   }
