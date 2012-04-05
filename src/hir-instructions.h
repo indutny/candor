@@ -244,7 +244,9 @@ class HIRParallelMove : public HIRInstruction {
 
  private:
   // For recursive reordering
-  void Reorder(LIR* lir, LIROperand* source, LIROperand* target);
+  void Reorder(LIR* lir,
+               ZoneList<LIROperand*>::Item* source,
+               ZoneList<LIROperand*>::Item* target);
 
   // Only one spill scratch is required (cache it)
   LIROperand* spill_;

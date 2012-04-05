@@ -31,7 +31,7 @@ typedef ZoneList<HIRInstruction*> HIRInstructionList;
 // CFG Block
 class HIRBasicBlock : public ZoneObject {
  public:
-  class LoopShuffle {
+  class LoopShuffle : public ZoneObject {
    public:
     LoopShuffle(HIRValue* value, LIROperand* operand) : value_(value),
                                                         operand_(operand) {
@@ -39,6 +39,7 @@ class HIRBasicBlock : public ZoneObject {
 
     inline HIRValue* value() { return value_; }
     inline LIROperand* operand() { return operand_; }
+    inline void operand(LIROperand* operand) { operand_ = operand; }
 
    private:
     HIRValue* value_;

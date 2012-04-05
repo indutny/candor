@@ -305,9 +305,12 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
 
     if (loop_end != NULL) {
       // Store all `live` variables from condition block
-      item = loop_cond->values()->head();
+      item = hinstr->block()->values()->head();
       for (; item != NULL; item = item->next()) {
-        if (item->value()->operand() == NULL) continue;
+        if (item->value()->operand() == NULL ||
+            item->value()->operand()->is_immediate()) {
+          continue;
+        }
         loop_end->loop_shuffle()->Push(new HIRBasicBlock::LoopShuffle(
               item->value(),
               item->value()->operand()));
@@ -424,10 +427,13 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
       HIRParallelMove::GetBefore(hinstr)->Reorder(this);
       while ((shuffle = hinstr->block()->loop_shuffle()->Shift()) != NULL) {
         // Skip variables with unchanged operand
-        if (shuffle->operand() == shuffle->value()->operand()) continue;
+        if (shuffle->operand()->is_equal(shuffle->value()->operand())) continue;
 
         HIRParallelMove::GetBefore(hinstr)->AddMove(shuffle->value()->operand(),
                                                     shuffle->operand());
+
+        // Do not allow processing same operands twice
+        shuffle->operand(shuffle->value()->operand());
       }
     }
   }

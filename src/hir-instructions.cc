@@ -95,25 +95,44 @@ void HIRInstruction::Print(PrintBuffer* p) {
 
 
 void HIRParallelMove::AddMove(LIROperand* source, LIROperand* target) {
+  // Skip nop moves
+  if (source->is_equal(target)) return;
+
+#ifndef NDEBUG
+  // Target should not appear twice in raw list
+  OperandList::Item* sitem = raw_sources_.head();
+  OperandList::Item* titem = raw_targets_.head();
+  for (; sitem != NULL; sitem = sitem->next(), titem = titem->next()) {
+    if (titem->value()->is_equal(target)) {
+      assert(0 && "Dublicate target in movement");
+    }
+  }
+#endif // NDEBUG
+
   raw_sources_.Push(source);
   raw_targets_.Push(target);
 }
 
 
 void HIRParallelMove::Reorder(LIR* lir,
-                              LIROperand* source,
-                              LIROperand* target) {
+                              ZoneList<LIROperand*>::Item* source,
+                              ZoneList<LIROperand*>::Item* target) {
   // Mark source/target pair as `being moved`
-  source->being_moved(true);
-  target->being_moved(true);
+  source->value()->move_status(LIROperand::kBeingMoved);
+  target->value()->move_status(LIROperand::kBeingMoved);
 
   // Detect successors
   OperandList::Item* sitem = raw_sources_.head();
   OperandList::Item* titem = raw_targets_.head();
   for (; sitem != NULL; sitem = sitem->next(), titem = titem->next()) {
-    if (!sitem->value()->is_equal(target)) continue;
+    if (!sitem->value()->is_equal(target->value())) continue;
 
-    if (sitem->value()->being_moved()) {
+    switch (sitem->value()->move_status()) {
+     case LIROperand::kToMove:
+      // Just successor
+      Reorder(lir, sitem, titem);
+      break;
+     case LIROperand::kBeingMoved:
       // Lazily create spill operand
       if (spill_ == NULL) {
         spill_ = lir->GetSpill();
@@ -121,36 +140,46 @@ void HIRParallelMove::Reorder(LIR* lir,
       }
 
       // scratch = target
-      sources()->Push(target);
+      sources()->Push(sitem->value());
       targets()->Push(spill_);
 
       // And use scratch in this move
       sitem->value(spill_);
-    } else {
-      // Just successor
-      Reorder(lir, sitem->value(), titem->value());
+      break;
+     case LIROperand::kMoved:
+      // NOP
+      break;
+     default:
+      UNEXPECTED
+      break;
     }
   }
 
-  // Reset marks
-  source->being_moved(false);
-  target->being_moved(false);
-
   // And put pair into resulting list
-  sources()->Push(source);
-  targets()->Push(target);
+  sources()->Push(source->value());
+  targets()->Push(target->value());
+
+  // Finalize status
+  source->value()->move_status(LIROperand::kMoved);
+  target->value()->move_status(LIROperand::kMoved);
 }
 
 
 void HIRParallelMove::Reorder(LIR* lir) {
-  LIROperand* source;
-  LIROperand* target;
-  while (raw_sources_.length() > 0) {
-    // Get source/target pair from work list
-    source = raw_sources_.Shift();
-    target = raw_targets_.Shift();
+  OperandList::Item* sitem = raw_sources_.head();
+  OperandList::Item* titem = raw_targets_.head();
+  for (; sitem != NULL; sitem = sitem->next(), titem = titem->next()) {
+    if (sitem->value()->move_status() != LIROperand::kToMove) continue;
+    Reorder(lir, sitem, titem);
+  }
 
-    Reorder(lir, source, target);
+  // Reset move_status and empty list
+  LIROperand* op;
+  while ((op = raw_sources_.Shift()) != NULL) {
+    op->move_status(LIROperand::kToMove);
+  }
+  while ((op = raw_targets_.Shift()) != NULL) {
+    op->move_status(LIROperand::kToMove);
   }
 }
 
