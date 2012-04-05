@@ -480,6 +480,28 @@ void LIRNot::Generate() {
 }
 
 
+void LIRCollectGarbage::Generate() {
+  __ Call(masm()->stubs()->GetCollectGarbageStub());
+  __ Mov(result, Immediate(Heap::kTagNil));
+}
+
+
+void LIRGetStackTrace::Generate() {
+  uint32_t ip = masm()->offset();
+
+  // Pass ip
+  __ mov(rax, Immediate(0));
+  RelocationInfo* r = new RelocationInfo(RelocationInfo::kAbsolute,
+                                         RelocationInfo::kQuad,
+                                         masm()->offset() - 8);
+  masm()->relocation_info_.Push(r);
+  r->target(ip);
+  __ Call(masm()->stubs()->GetStackTraceStub());
+
+  __ Mov(result, Immediate(Heap::kTagNil));
+}
+
+
 void LIRAllocateFunction::Generate() {
   // Get function's body address by generating relocation info
   __ mov(ToRegister(scratches[0]), Immediate(0));

@@ -755,6 +755,19 @@ AstNode* HIR::VisitMember(AstNode* node) {
 AstNode* HIR::VisitCall(AstNode* stmt) {
   FunctionLiteral* fn = FunctionLiteral::Cast(stmt);
 
+  // handle __$gc() and __$trace() calls
+  if (fn->variable()->is(AstNode::kValue)) {
+    AstNode* name = AstValue::Cast(fn->variable())->name();
+    if (name->length() == 5 && strncmp(name->value(), "__$gc", 5) == 0) {
+      AddInstruction(new HIRCollectGarbage());
+      return stmt;
+    } else if (name->length() == 8 &&
+               strncmp(name->value(), "__$trace", 8) == 0) {
+      AddInstruction(new HIRGetStackTrace());
+      return stmt;
+    }
+  }
+
   Visit(fn->variable());
   HIRCall* call = new HIRCall(GetValue(fn->variable()));
 

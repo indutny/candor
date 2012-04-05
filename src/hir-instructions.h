@@ -50,6 +50,8 @@ class HIRInstruction : public ZoneObject {
     kSizeof,
     kKeysof,
     kNot,
+    kCollectGarbage,
+    kGetStackTrace,
     kAllocateFunction,
     kAllocateObject
   };
@@ -444,6 +446,18 @@ class HIRKeysof : public HIRPrefixKeyword {
 class HIRNot : public HIRPrefixKeyword {
  public:
   HIRNot(HIRValue* expr) : HIRPrefixKeyword(kNot, expr) {
+  }
+};
+
+class HIRCollectGarbage : public HIRStubCall {
+ public:
+  HIRCollectGarbage() : HIRStubCall(kCollectGarbage) {
+  }
+};
+
+class HIRGetStackTrace : public HIRStubCall {
+ public:
+  HIRGetStackTrace() : HIRStubCall(kGetStackTrace) {
   }
 };
 

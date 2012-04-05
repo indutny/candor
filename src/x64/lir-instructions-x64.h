@@ -33,6 +33,8 @@ class Operand;
     V(Sizeof)\
     V(Keysof)\
     V(Not)\
+    V(CollectGarbage)\
+    V(GetStackTrace)\
     V(AllocateObject)\
     V(AllocateFunction)
 
@@ -277,6 +279,20 @@ class LIRNot : public LIRInstructionTemplate<1, 1, 0> {
   void Generate();
 
   LIR_COMMON_METHODS(Not)
+};
+
+class LIRCollectGarbage : public LIRInstructionTemplate<0, 1, 0> {
+ public:
+  void Generate();
+
+  LIR_COMMON_METHODS(CollectGarbage)
+};
+
+class LIRGetStackTrace : public LIRInstructionTemplate<0, 1, 0> {
+ public:
+  void Generate();
+
+  LIR_COMMON_METHODS(GetStackTrace)
 };
 
 class LIRAllocateFunction : public LIRInstructionTemplate<0, 1, 1> {
