@@ -227,7 +227,7 @@ class LIRBranchBool : public LIRControlInstructionTemplate<1, 0> {
   LIR_COMMON_METHODS(BranchBool)
 };
 
-class LIRBinOp : public LIRInstructionTemplate<1, 2, 0> {
+class LIRBinOp : public LIRInstructionTemplate<2, 1, 0> {
  public:
   LIRBinOp();
 
