@@ -296,8 +296,6 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
     HIRLoopStart* loop_start = HIRLoopStart::Cast(hinstr->block());
     HIRBasicBlock* loop_body = loop_start->body();
 
-    assert(loop_start->predecessors_count() == 2);
-
     // Store all `live` variables from condition block
     item = hinstr->block()->values()->head();
     for (; item != NULL; item = item->next()) {
