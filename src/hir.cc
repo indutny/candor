@@ -39,6 +39,9 @@ void HIRBasicBlock::AddValue(HIRValue* value) {
     return;
   }
 
+  // Do not insert values after enumeration
+  if (value->block()->hir()->enumerated()) return;
+
   // If value is already in values list - remove previous
   HIRValueList::Item* item = values()->head();
   for (; item != NULL; item = item->next()) {
@@ -409,6 +412,7 @@ HIR::HIR(Heap* heap, AstNode* node) : Visitor(kPreorder),
                                       block_index_(0),
                                       variable_index_(0),
                                       instruction_index_(0),
+                                      enumerated_(false),
                                       print_map_(NULL) {
   work_list_.Push(new HIRFunction(node, CreateBlock()));
 
@@ -615,6 +619,8 @@ void HIR::EnumInstructions() {
       }
     }
   }
+
+  enumerated(true);
 }
 
 

@@ -408,6 +408,9 @@ class HIR : public Visitor {
 
   inline int get_instruction_index() { return instruction_index_++; }
 
+  inline bool enumerated() { return enumerated_; }
+  inline void enumerated(bool enumerated) { enumerated_ = enumerated; }
+
   inline void print_map(PrintMap* print_map) { print_map_ = print_map; }
   inline PrintMap* print_map() { return print_map_; }
 
@@ -429,6 +432,7 @@ class HIR : public Visitor {
   int instruction_index_;
 
   ZoneList<HIRFunction*> work_list_;
+  bool enumerated_;
 
   PrintMap* print_map_;
 };
