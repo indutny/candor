@@ -279,6 +279,44 @@ void LIR::StoreLoopInvariants(HIRBasicBlock* block,
 }
 
 
+void LIR::ApplyShuffle(HIRInstruction* hinstr, ShuffleDirection direction) {
+  ZoneList<HIRLoopShuffle*>* list;
+  HIRLoopShuffle* shuffle;
+  HIRParallelMove* move;
+
+  if (direction == kShuffleBefore) {
+    list = hinstr->block()->loop_preshuffle();
+    move = HIRParallelMove::GetBefore(hinstr);
+  } else {
+    list = hinstr->block()->loop_postshuffle();
+    move = HIRParallelMove::GetAfter(hinstr);
+  }
+
+  if (list->length() == 0) return;
+
+  if (direction == kShuffleBefore) move->Reorder(this);
+
+  while ((shuffle = list->Shift()) != NULL) {
+    // Skip dead values or values with unchanged operand
+    if (shuffle->value()->operand() == NULL ||
+        shuffle->operand()->is_equal(shuffle->value()->operand())) {
+      continue;
+    }
+
+    if (direction == kShuffleBefore) {
+      move->AddMove(shuffle->value()->operand(), shuffle->operand());
+    } else {
+      // After shuffle should set only live variables
+      if (shuffle->value()->live_range()->end >= hinstr->id() + 1) {
+        move->AddMove(shuffle->operand(), shuffle->value()->operand());
+      }
+    }
+  }
+
+  if (direction == kShuffleAfter) move->Reorder(this);
+}
+
+
 void LIR::GenerateReverseMove(Masm* masm, HIRInstruction* hinstr) {
   if (hinstr->next()->type() != HIRInstruction::kParallelMove) return;
 
@@ -442,34 +480,8 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
     MovePhis(hinstr);
 
     // Apply shuffle to preserve loop invariants
-    if (hinstr->block()->loop_preshuffle()->length() > 0) {
-      HIRLoopShuffle* preshuffle;
-      HIRLoopShuffle* postshuffle;
-
-      // Commit previous move changes
-      HIRParallelMove::GetBefore(hinstr)->Reorder(this);
-      while (hinstr->block()->loop_preshuffle()->length() > 0) {
-        preshuffle = hinstr->block()->loop_preshuffle()->Shift();
-        postshuffle = hinstr->block()->loop_postshuffle()->Shift();
-
-        // Skip dead values or values with unchanged operand
-        assert(preshuffle->value()->operand() != NULL);
-        if (preshuffle->operand()->is_equal(preshuffle->value()->operand())) {
-          continue;
-        }
-
-        HIRParallelMove::GetBefore(hinstr)->AddMove(
-            preshuffle->value()->operand(),
-            preshuffle->operand());
-
-        if (postshuffle->value()->operand() == NULL) continue;
-
-        HIRParallelMove::GetAfter(hinstr)->AddMove(
-            postshuffle->operand(),
-            postshuffle->value()->operand());
-      }
-      HIRParallelMove::GetAfter(hinstr)->Reorder(this);
-    }
+    ApplyShuffle(hinstr, kShuffleBefore);
+    ApplyShuffle(hinstr, kShuffleAfter);
   }
 
   // All registers was allocated, perform move if needed

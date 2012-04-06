@@ -92,6 +92,11 @@ class LIRReleaseList : public ZoneList<LIROperand*> {
 // LIR class
 class LIR {
  public:
+  enum ShuffleDirection {
+    kShuffleBefore,
+    kShuffleAfter
+  };
+
   LIR(Heap* heap, HIR* hir);
 
   // Calculate values' liveness ranges
@@ -121,6 +126,8 @@ class LIR {
   // Stores all values and their operand to shuffle list
   void StoreLoopInvariants(HIRBasicBlock* block,
                            ZoneList<HIRLoopShuffle*>* shuffle);
+
+  void ApplyShuffle(HIRInstruction* hinstr, ShuffleDirection direction);
 
   // Put spill used in movements to active_values() list to
   // release it automatically after reverse instruction
