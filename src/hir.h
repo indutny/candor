@@ -49,6 +49,10 @@ class HIRBasicBlock : public ZoneObject {
   void AddSuccessor(HIRBasicBlock* block);
   void Goto(HIRBasicBlock* block);
 
+  // Lift values from `block` and add phis where needed
+  void LiftValues(HIRBasicBlock* block,
+                  HashMap<NumberKey, int, ZoneObject>* map);
+
   // Replace all uses (not-definitions!) of variable in
   // this block and it's successors
   void ReplaceVarUse(HIRValue* source, HIRValue* target);

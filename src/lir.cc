@@ -257,6 +257,7 @@ void LIR::MovePhis(HIRInstruction* hinstr) {
     }
 
     // Add movement from hinstr block's input to phi
+    HIRParallelMove::GetBefore(hinstr)->Reorder(this);
     HIRParallelMove::GetBefore(hinstr)->
         AddMove(input->operand(), phi->operand());
   }
@@ -523,6 +524,10 @@ void LIR::Generate(Masm* masm) {
       while (!spills()->IsEmpty()) spills()->Get();
     }
   }
+
+  char out[5000];
+  hir()->Print(out, sizeof(out));
+  fprintf(stdout, "%s\n", out);
 }
 
 } // namespace internal

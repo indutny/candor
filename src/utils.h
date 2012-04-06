@@ -421,6 +421,10 @@ class NumberKey {
     return reinterpret_cast<NumberKey*>(value);
   }
 
+  static NumberKey* New(char* value) {
+    return reinterpret_cast<NumberKey*>(value);
+  }
+
   off_t value() {
     return reinterpret_cast<off_t>(this);
   }

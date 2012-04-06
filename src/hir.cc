@@ -54,7 +54,13 @@ void HIRBasicBlock::AddValue(HIRValue* value) {
   // Inputs list contain only first added variable
   item = inputs()->head();
   for (; item != NULL; item = item->next()) {
-    if (item->value()->slot() == value->slot()) break;
+    if (item->value()->slot() == value->slot()) {
+      if (value->is_phi()) {
+        inputs()->Remove(item);
+        item = NULL;
+      }
+      break;
+    }
   }
 
   if (item == NULL) inputs()->Push(value);
@@ -65,8 +71,27 @@ void HIRBasicBlock::AddPredecessor(HIRBasicBlock* block) {
   assert(predecessors_count() < 2);
   predecessors()[predecessors_count_++] = block;
 
+  HashMap<NumberKey, int, ZoneObject> map;
+  LiftValues(block, &map);
+}
+
+
+void HIRBasicBlock::AddSuccessor(HIRBasicBlock* block) {
+  assert(successors_count() < 2);
+  successors()[successors_count_++] = block;
+  block->AddPredecessor(this);
+}
+
+
+void HIRBasicBlock::LiftValues(HIRBasicBlock* block,
+                               HashMap<NumberKey, int, ZoneObject>* map) {
+  // Skip loops
+  if (map->Get(NumberKey::New(reinterpret_cast<char*>(this)))) return;
+  int mark;
+  map->Set(NumberKey::New(reinterpret_cast<char*>(this)), &mark);
+
   HIRValueList::Item* item;
-  if (predecessors_count_ > 1) {
+  if (predecessors_count() > 1) {
     // Mark values propagated from first predecessor
     item = inputs()->head();
     for (; item != NULL; item = item->next()) {
@@ -94,6 +119,7 @@ void HIRBasicBlock::AddPredecessor(HIRBasicBlock* block) {
       HIRPhi* phi = HIRPhi::Cast(value->slot()->hir());
       if (!phi->is_phi()) {
         phi = new HIRPhi(this, value->slot()->hir());
+
         // Replace slot's value
         value->slot()->hir(phi);
       }
@@ -123,13 +149,13 @@ void HIRBasicBlock::AddPredecessor(HIRBasicBlock* block) {
       value->uses()->Push(block->last_instruction());
     }
   }
-}
 
-
-void HIRBasicBlock::AddSuccessor(HIRBasicBlock* block) {
-  assert(successors_count() < 2);
-  successors()[successors_count_++] = block;
-  block->AddPredecessor(this);
+  if (successors_count() > 0) {
+    // If any value was added - propagate them to successors
+    for (int i = 0; i < successors_count(); i++) {
+      successors()[i]->LiftValues(this, map);
+    }
+  }
 }
 
 
@@ -990,8 +1016,8 @@ AstNode* HIR::VisitUnOp(AstNode* node) {
     if (op->is_postfix()) {
       // a++ => t = a, a = t + 1, t
 
-      AstNode* tmp = new AstValue(new ScopeSlot(ScopeSlot::kStack),
-                                  AstValue::Cast(op->lhs())->name());
+      AstValue* tmp = new AstValue(AstValue::Cast(op->lhs())->slot(),
+                                   AstValue::Cast(op->lhs())->name());
       AstNode* init = new AstNode(AstNode::kAssign);
       init->children()->Push(tmp);
       init->children()->Push(op->lhs());
@@ -1015,7 +1041,6 @@ AstNode* HIR::VisitUnOp(AstNode* node) {
 
       // return result
       AddInstruction(new HIRNop(result));
-      current_block()->AddValue(result);
     } else {
       // ++a => a = a + 1
       AstNode* rhs = NULL;
