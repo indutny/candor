@@ -306,13 +306,15 @@ TEST_START(functional)
     assert(result->As<Number>()->Value() == 10);
   })
 
-  FUN_TEST("i = 10\nj = 10\nk = 0\n"
+  FUN_TEST("i = 10\nk = 0\n"
            "while (--i) {\n"
+           "  j = 10\n"
            "  while (--j) {\n"
            "    k = k + 1\n"
            "  }\n"
            "}\n"
            "return k", {
+          fprintf(stdout, "%f\n", result->As<Number>()->Value());
     assert(result->As<Number>()->Value() == 10);
   })
 TEST_END(functional)

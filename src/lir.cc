@@ -80,10 +80,6 @@ void LIR::PrunePhis() {
           last_instruction()->values()->Push(value);
     }
 
-    // Extend liveness of phi to include it's declaration
-    phi->Extend(value->block()->first_instruction()->id());
-    phi->Extend(value->block()->last_instruction()->id());
-
     // We'll extend liveness of phi's inputs
     // to ensure that we can always do movement at the end of blocks that
     // contains those inputs

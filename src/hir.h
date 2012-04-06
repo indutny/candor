@@ -98,6 +98,7 @@ class HIRBasicBlock : public ZoneObject {
   inline void reset_enumerate() { enumerated_ = 0; }
 
   inline HIRValueList* values() { return &values_; }
+  inline HIRValueList* inputs() { return &inputs_; }
   inline HIRPhiList* phis() { return &phis_; }
   inline HIRInstructionList* instructions() { return &instructions_; }
   inline HIRInstruction* first_instruction() {
@@ -139,6 +140,7 @@ class HIRBasicBlock : public ZoneObject {
   int enumerated_;
 
   HIRValueList values_;
+  HIRValueList inputs_;
   HIRPhiList phis_;
   HIRInstructionList instructions_;
 
@@ -197,6 +199,7 @@ class HIRValue : public ZoneObject {
 
   HIRValue(HIRBasicBlock* block);
   HIRValue(HIRBasicBlock* block, ScopeSlot* slot);
+  HIRValue(ValueType type, HIRBasicBlock* block, ScopeSlot* slot);
 
   void Init();
 
@@ -256,6 +259,7 @@ class HIRPhi : public HIRValue {
  public:
   HIRPhi(HIRBasicBlock* block, HIRValue* value);
 
+  void AddInput(HIRValue* input);
   void Print(PrintBuffer* p);
 
   static inline HIRPhi* Cast(HIRValue* value) {

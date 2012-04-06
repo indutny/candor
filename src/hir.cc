@@ -33,7 +33,11 @@ HIRBasicBlock::HIRBasicBlock(HIR* hir) : hir_(hir),
 
 
 void HIRBasicBlock::AddValue(HIRValue* value) {
-  if (!value->slot()->is_context() && !value->slot()->is_stack()) return;
+  // Do not add parasite values: immediate or root values
+  if (value->slot()->is_immediate() ||
+      (value->slot()->is_context() && value->slot()->depth() < 0)) {
+    return;
+  }
 
   // If value is already in values list - remove previous
   HIRValueList::Item* item = values()->head();
@@ -43,6 +47,14 @@ void HIRBasicBlock::AddValue(HIRValue* value) {
     }
   }
   values()->Push(value);
+
+  // Inputs list contain only first added variable
+  item = inputs()->head();
+  for (; item != NULL; item = item->next()) {
+    if (item->value()->slot() == value->slot()) break;
+  }
+
+  if (item == NULL) inputs()->Push(value);
 }
 
 
@@ -53,7 +65,7 @@ void HIRBasicBlock::AddPredecessor(HIRBasicBlock* block) {
   HIRValueList::Item* item;
   if (predecessors_count_ > 1) {
     // Mark values propagated from first predecessor
-    item = values()->head();
+    item = inputs()->head();
     for (; item != NULL; item = item->next()) {
       if (item->value() == NULL) continue;
 
@@ -79,21 +91,11 @@ void HIRBasicBlock::AddPredecessor(HIRBasicBlock* block) {
       HIRPhi* phi = HIRPhi::Cast(value->slot()->hir());
       if (!phi->is_phi()) {
         phi = new HIRPhi(this, value->slot()->hir());
-
-        ReplaceVarUse(value->slot()->hir(), phi);
+        // Replace slot's value
         value->slot()->hir(phi);
-        AddValue(phi);
-
-        // Push to block's and global phi list
-        phis()->Push(phi);
-        hir()->phis()->Push(phi);
-        hir()->values()->Push(phi);
       }
 
-      phi->inputs()->Push(value);
-
-      // Replace all var uses if Phi appeared in loop
-      ReplaceVarUse(value, phi);
+      phi->AddInput(value);
     } else {
       // And associated with a current block
       value->current_block(this);
@@ -229,8 +231,15 @@ void HIRBasicBlock::Print(PrintBuffer* p) {
 
   // Print values
   {
-    HIRValueList::Item* item = values()->head();
+    HIRValueList::Item* item = inputs()->head();
     p->Print("{");
+    while (item != NULL) {
+      p->Print("%d", item->value()->id());
+      item = item->next();
+      if (item != NULL) p->Print(",");
+    }
+    p->Print("||");
+    item = values()->head();
     while (item != NULL) {
       p->Print("%d", item->value()->id());
       item = item->next();
@@ -292,9 +301,37 @@ void HIRBasicBlock::Print(PrintBuffer* p) {
 
 
 HIRPhi::HIRPhi(HIRBasicBlock* block, HIRValue* value)
-    : HIRValue(block, value->slot()) {
+    : HIRValue(kPhi, block, value->slot()) {
   type_ = kPhi;
-  inputs()->Push(value);
+  AddInput(value);
+
+  // Add Phi to block's phis
+  block->phis()->Push(this);
+
+  // Extend global lists
+  block->hir()->phis()->Push(this);
+  block->hir()->values()->Push(this);
+}
+
+
+void HIRPhi::AddInput(HIRValue* input) {
+  // Remove excessive inputs, use only last redifinition of value
+  // (Useful in loop's start block)
+  while (inputs()->length() > 1) inputs()->Pop();
+
+  // Ignore duplicate inputs
+  if (inputs()->length() == 1 && inputs()->head()->value() == input) {
+    return;
+  }
+  inputs()->Push(input);
+
+  if (inputs()->length() > 1) {
+    // Replace all input's uses if Phi appeared in loop
+    HIRValueList::Item* item = inputs()->head();
+    for (; item != NULL; item = item->next()) {
+      block()->ReplaceVarUse(item->value(), this);
+    }
+  }
 }
 
 
@@ -322,6 +359,17 @@ HIRValue::HIRValue(HIRBasicBlock* block) : type_(kNormal),
 
 HIRValue::HIRValue(HIRBasicBlock* block, ScopeSlot* slot)
     : type_(kNormal),
+      block_(block),
+      current_block_(block),
+      prev_def_(NULL),
+      operand_(NULL),
+      slot_(slot) {
+  Init();
+}
+
+
+HIRValue::HIRValue(ValueType type, HIRBasicBlock* block, ScopeSlot* slot)
+    : type_(type),
       block_(block),
       current_block_(block),
       prev_def_(NULL),
@@ -523,6 +571,18 @@ void HIR::EnumInstructions() {
     if (current->instructions()->length() == 0) {
       set_current_block(current);
       AddInstruction(new HIRNop());
+    }
+
+    // Prune phis with less than 2 inputs
+    HIRPhiList::Item* item = current->phis()->head();
+    while (item != NULL) {
+      if (item->value()->inputs()->length() < 2) {
+        HIRPhiList::Item* next = item->next();
+        current->phis()->Remove(item);
+        item = next;
+      } else {
+        item = item->next();
+      }
     }
 
     // Go through all block's instructions, link them together and assign id
