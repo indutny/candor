@@ -83,26 +83,29 @@ void LIR::PrunePhis() {
     // We'll extend liveness of phi's inputs
     // to ensure that we can always do movement at the end of blocks that
     // contains those inputs
-    HIRValueList::Item* input_item = value->inputs()->head();
-    for (; input_item != NULL; input_item = input_item->next()) {
-      HIRValue* input = input_item->value();
+    for (int i = 0; i < 2; i++) {
+      HIRBasicBlock* block = value->block()->predecessors()[i];
+      HIRInstruction* last = block->last_instruction();
+
+      HIRValue* input;
+      if (last->next()->next() == value->block()->first_instruction()) {
+        // left input (closer)
+        input = value->inputs()->head()->value();
+      } else {
+        // Right input
+        input = value->inputs()->tail()->value();
+      }
+
       HIRValue::LiveRange* range = input->live_range();
 
       // Skip dead inputs
       if (range->start == -1) continue;
 
-      for (int i = 0; i < 2; i++) {
-        HIRBasicBlock* block = value->block()->predecessors()[i];
-        if (!input->block()->Dominates(block)) continue;
+      range->Extend(last->id());
+      phi->Extend(last->id());
 
-        HIRInstruction* last = block->last_instruction();
-
-        range->Extend(last->id());
-        phi->Extend(last->id());
-
-        // And push it to the goto
-        last->values()->Push(input_item->value());
-      }
+      // And push it to the goto
+      last->values()->Push(input);
     }
   }
 }
@@ -260,6 +263,22 @@ void LIR::MovePhis(HIRInstruction* hinstr) {
 }
 
 
+void LIR::StoreLoopInvariants(HIRBasicBlock* block,
+                              ZoneList<HIRLoopShuffle*>* shuffle) {
+  // Store all `live` variables from condition block
+  ZoneList<HIRValue*>::Item* item = block->values()->head();
+  for (; item != NULL; item = item->next()) {
+    if (item->value()->operand() == NULL ||
+        item->value()->operand()->is_immediate()) {
+      continue;
+    }
+
+    shuffle->Push(new HIRLoopShuffle(item->value(),
+                                     item->value()->operand()));
+  }
+}
+
+
 void LIR::GenerateReverseMove(Masm* masm, HIRInstruction* hinstr) {
   if (hinstr->next()->type() != HIRInstruction::kParallelMove) return;
 
@@ -300,24 +319,12 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
   ExpireOldValues(hinstr, active_values());
   ExpireOldValues(hinstr, spill_values());
 
-  // If we're at the loop start
-  HIRValueList::Item* item;
+  // If we're at the loop start - record preshuffle values
   if (hinstr->block() != NULL && hinstr->block()->is_loop_start() &&
       hinstr == hinstr->block()->first_instruction()) {
     HIRLoopStart* loop_start = HIRLoopStart::Cast(hinstr->block());
     HIRBasicBlock* loop_body = loop_start->body();
-
-    // Store all `live` variables from condition block
-    item = hinstr->block()->values()->head();
-    for (; item != NULL; item = item->next()) {
-      if (item->value()->operand() == NULL ||
-          item->value()->operand()->is_immediate()) {
-        continue;
-      }
-      loop_body->loop_shuffle()->Push(new HIRBasicBlock::LoopShuffle(
-            item->value(),
-            item->value()->operand()));
-    }
+    StoreLoopInvariants(loop_start, loop_body->loop_preshuffle());
   }
 
   // If instruction has input restrictions - ensure that those registers can't
@@ -331,7 +338,7 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
   }
 
   // Allocate all values used in instruction
-  item = hinstr->values()->head();
+  HIRValueList::Item* item = hinstr->values()->head();
   for (i = -1; item != NULL; item = item->next()) {
     HIRValue* value = item->value();
 
@@ -412,6 +419,14 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
     i++;
   }
 
+  // If we're at loop's branch instruction - record postshuffle
+  if (hinstr->block() != NULL && hinstr->block()->is_loop_start() &&
+      hinstr == hinstr->block()->last_instruction()) {
+    HIRLoopStart* loop_start = HIRLoopStart::Cast(hinstr->block());
+    HIRBasicBlock* loop_body = loop_start->body();
+    StoreLoopInvariants(loop_start, loop_body->loop_postshuffle());
+  }
+
   // All active registers should be spilled before entering
   // instruction with side effects (like stubs)
   //
@@ -427,24 +442,33 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
     MovePhis(hinstr);
 
     // Apply shuffle to preserve loop invariants
-    if (hinstr->block()->loop_shuffle()->length() > 0) {
-      HIRBasicBlock::LoopShuffle* shuffle;
+    if (hinstr->block()->loop_preshuffle()->length() > 0) {
+      HIRLoopShuffle* preshuffle;
+      HIRLoopShuffle* postshuffle;
 
       // Commit previous move changes
       HIRParallelMove::GetBefore(hinstr)->Reorder(this);
-      while ((shuffle = hinstr->block()->loop_shuffle()->Shift()) != NULL) {
+      while (hinstr->block()->loop_preshuffle()->length() > 0) {
+        preshuffle = hinstr->block()->loop_preshuffle()->Shift();
+        postshuffle = hinstr->block()->loop_postshuffle()->Shift();
+
         // Skip dead values or values with unchanged operand
-        assert(shuffle->value()->operand() != NULL);
-        if (shuffle->operand()->is_equal(shuffle->value()->operand())) {
+        assert(preshuffle->value()->operand() != NULL);
+        if (preshuffle->operand()->is_equal(preshuffle->value()->operand())) {
           continue;
         }
 
-        HIRParallelMove::GetBefore(hinstr)->AddMove(shuffle->value()->operand(),
-                                                    shuffle->operand());
+        HIRParallelMove::GetBefore(hinstr)->AddMove(
+            preshuffle->value()->operand(),
+            preshuffle->operand());
 
-        // After loop all values are in the same operands as before the loop
-        shuffle->value()->operand(shuffle->operand());
+        if (postshuffle->value()->operand() == NULL) continue;
+
+        HIRParallelMove::GetAfter(hinstr)->AddMove(
+            postshuffle->operand(),
+            postshuffle->value()->operand());
       }
+      HIRParallelMove::GetAfter(hinstr)->Reorder(this);
     }
   }
 

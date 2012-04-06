@@ -62,6 +62,19 @@ void HIRInstruction::ReplaceVarUse(HIRValue* source, HIRValue* target) {
   }
 
   if (found) {
+    // Remove instr from source uses
+    ZoneList<HIRInstruction*>::Item* instr = source->uses()->head();
+    while (instr != NULL) {
+      if (instr->value() == this) {
+        ZoneList<HIRInstruction*>::Item* next = instr->next();
+        source->uses()->Remove(instr);
+        instr = next;
+        continue;
+      }
+      instr = instr->next();
+    }
+
+    // Add instr to target uses
     target->uses()->Push(this);
   }
 }

@@ -17,6 +17,7 @@ namespace internal {
 class HIR;
 class HIRPhi;
 class HIRValue;
+class HIRLoopShuffle;
 class LIROperand;
 class Heap;
 class ScopeSlot;
@@ -31,21 +32,6 @@ typedef ZoneList<HIRInstruction*> HIRInstructionList;
 // CFG Block
 class HIRBasicBlock : public ZoneObject {
  public:
-  class LoopShuffle : public ZoneObject {
-   public:
-    LoopShuffle(HIRValue* value, LIROperand* operand) : value_(value),
-                                                        operand_(operand) {
-    }
-
-    inline HIRValue* value() { return value_; }
-    inline LIROperand* operand() { return operand_; }
-    inline void operand(LIROperand* operand) { operand_ = operand; }
-
-   private:
-    HIRValue* value_;
-    LIROperand* operand_;
-  };
-
   enum BlockType {
     kNormal,
     kLoopStart
@@ -119,7 +105,12 @@ class HIRBasicBlock : public ZoneObject {
   inline ZoneList<RelocationInfo*>* uses() { return &uses_; }
 
   // Shuffle to return loop variable invariants back to the start positions
-  inline ZoneList<LoopShuffle*>* loop_shuffle() { return &loop_shuffle_; }
+  inline ZoneList<HIRLoopShuffle*>* loop_preshuffle() {
+    return &loop_preshuffle_;
+  }
+  inline ZoneList<HIRLoopShuffle*>* loop_postshuffle() {
+    return &loop_postshuffle_;
+  }
 
   inline bool relocated() { return relocated_; }
   inline void relocated(bool relocated) { relocated_ = relocated; }
@@ -153,12 +144,28 @@ class HIRBasicBlock : public ZoneObject {
   int relocation_offset_;
   ZoneList<RelocationInfo*> uses_;
 
-  ZoneList<LoopShuffle*> loop_shuffle_;
+  ZoneList<HIRLoopShuffle*> loop_preshuffle_;
+  ZoneList<HIRLoopShuffle*> loop_postshuffle_;
 
   bool relocated_;
   bool finished_;
 
   int id_;
+};
+
+class HIRLoopShuffle : public ZoneObject {
+ public:
+  HIRLoopShuffle(HIRValue* value, LIROperand* operand) : value_(value),
+                                                         operand_(operand) {
+  }
+
+  inline HIRValue* value() { return value_; }
+  inline LIROperand* operand() { return operand_; }
+  inline void operand(LIROperand* operand) { operand_ = operand; }
+
+ private:
+  HIRValue* value_;
+  LIROperand* operand_;
 };
 
 class HIRLoopStart : public HIRBasicBlock {
