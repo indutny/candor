@@ -346,7 +346,7 @@ HIRPhi::HIRPhi(HIRBasicBlock* block, HIRValue* value)
 void HIRPhi::AddInput(HIRValue* input) {
   // Remove excessive inputs, use only last redifinition of value
   // (Useful in loop's start block)
-  while (inputs()->length() > 1) inputs()->Pop();
+  while (inputs()->length() > 1) inputs()->Shift();
 
   // Ignore duplicate inputs
   if (inputs()->length() == 1 && inputs()->head()->value() == input) {

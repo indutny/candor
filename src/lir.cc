@@ -76,7 +76,7 @@ void LIR::PrunePhis() {
 
     // Add phi to predecessor's gotos
     for (int i = 0; i < value->block()->predecessors_count(); i++) {
-      value->block()->predecessors()[0]->
+      value->block()->predecessors()[i]->
           last_instruction()->values()->Push(value);
     }
 
@@ -392,8 +392,7 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
 
     // Result will be allocated later
     if (value == hinstr->GetResult()) continue;
-
-    if (linstr->inputs[i] != NULL) {
+    if (i < linstr->input_count() && linstr->inputs[i] != NULL) {
       // Instruction requires it's input to reside in some specific register
 
       if (value->operand() != NULL) {
