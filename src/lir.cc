@@ -257,7 +257,6 @@ void LIR::MovePhis(HIRInstruction* hinstr) {
     }
 
     // Add movement from hinstr block's input to phi
-    HIRParallelMove::GetBefore(hinstr)->Reorder(this);
     HIRParallelMove::GetBefore(hinstr)->
         AddMove(input->operand(), phi->operand());
   }
