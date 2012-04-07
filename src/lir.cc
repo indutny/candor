@@ -522,10 +522,6 @@ void LIR::Generate(Masm* masm) {
       while (!spills()->IsEmpty()) spills()->Get();
     }
   }
-
-  char out[5000];
-  hir()->Print(out, sizeof(out));
-  fprintf(stdout, "%s\n", out);
 }
 
 } // namespace internal

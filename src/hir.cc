@@ -185,10 +185,12 @@ void HIRBasicBlock::ReplaceVarUse(HIRValue* source, HIRValue* target) {
   while ((block = work_list.Shift()) != NULL) {
     cleanup_list.Push(block);
 
-    // Replace value use in each instruction
-    ZoneList<HIRInstruction*>::Item* item = block->instructions()->head();
-    for (; item != NULL; item = item->next()) {
-      item->value()->ReplaceVarUse(source, target);
+    if (target->block()->Dominates(block)) {
+      // Replace value use in each instruction
+      ZoneList<HIRInstruction*>::Item* item = block->instructions()->head();
+      for (; item != NULL; item = item->next()) {
+        item->value()->ReplaceVarUse(source, target);
+      }
     }
 
     // Add block's successors to the work list
@@ -348,9 +350,9 @@ void HIRPhi::AddInput(HIRValue* input) {
   // (Useful in loop's start block)
   while (inputs()->length() > 1) inputs()->Shift();
 
-  // Ignore duplicate inputs
-  if (inputs()->length() == 1 && inputs()->head()->value() == input) {
-    return;
+  if (inputs()->length() == 1) {
+    // Ignore duplicate inputs
+    if (inputs()->head()->value() == input) return;
   }
   inputs()->Push(input);
 
