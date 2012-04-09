@@ -23,7 +23,6 @@ class Operand;
     V(StoreContext)\
     V(StoreProperty)\
     V(LoadRoot)\
-    V(LoadLocal)\
     V(LoadContext)\
     V(LoadProperty)\
     V(BranchBool)\
@@ -185,7 +184,7 @@ class LIRStoreContext : public LIRInstructionTemplate<1, 1, 1> {
   LIR_COMMON_METHODS(StoreContext)
 };
 
-class LIRStoreProperty : public LIRInstructionTemplate<2, 1, 1> {
+class LIRStoreProperty : public LIRInstructionTemplate<3, 0, 1> {
  public:
   LIRStoreProperty();
 
@@ -199,13 +198,6 @@ class LIRLoadRoot : public LIRInstructionTemplate<0, 1, 0> {
   void Generate();
 
   LIR_COMMON_METHODS(LoadRoot)
-};
-
-class LIRLoadLocal : public LIRInstructionTemplate<0, 1, 0> {
- public:
-  void Generate();
-
-  LIR_COMMON_METHODS(LoadLocal)
 };
 
 class LIRLoadContext : public LIRInstructionTemplate<0, 1, 0> {

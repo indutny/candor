@@ -37,7 +37,6 @@ void LIRParallelMove::Generate() {
 
 
 void LIRNop::Generate() {
-  __ nop();
 }
 
 
@@ -114,7 +113,7 @@ void LIRGoto::Generate() {
 void LIRStoreLocal::Generate() {
   // NOTE: Store acts in reverse order - input = result
   // that's needed for result propagation in chain assignments
-  __ Mov(inputs[0], result);
+  __ Mov(result, inputs[0]);
 }
 
 
@@ -123,8 +122,6 @@ void LIRStoreContext::Generate() {
   int depth = slot->depth();
 
   if (depth == -1) {
-    // Global can't be changed
-    __ Mov(inputs[0], Immediate(Heap::kTagNil));
     return;
   }
 
@@ -138,7 +135,7 @@ void LIRStoreContext::Generate() {
 
   Operand res(ToRegister(scratches[0]),
               HContext::GetIndexDisp(slot->index()));
-  __ Mov(res, result);
+  __ Mov(res, inputs[0]);
 }
 
 
@@ -149,7 +146,7 @@ LIRStoreProperty::LIRStoreProperty() {
 
 
 void LIRStoreProperty::Generate() {
-  __ Push(result);
+  __ Push(inputs[2]);
   __ Push(inputs[0]);
 
   // rax <- object
@@ -168,7 +165,7 @@ void LIRStoreProperty::Generate() {
   __ Mov(scratches[0], rax);
 
   __ pop(rbx);
-  __ Pop(result);
+  __ Pop(inputs[2]);
 
   __ IsNil(ToRegister(scratches[0]), NULL, &done);
   Operand qmap(rbx, HObject::kMapOffset);
@@ -176,7 +173,7 @@ void LIRStoreProperty::Generate() {
   __ addq(rax, rbx);
 
   Operand slot(rax, 0);
-  __ Mov(scratch, result);
+  __ Mov(scratch, inputs[2]);
   __ mov(slot, scratch);
 
   __ bind(&done);
@@ -193,11 +190,6 @@ void LIRLoadRoot::Generate() {
   Operand root_slot(root_reg, HContext::GetIndexDisp(slot->index()));
 
   __ mov(ToRegister(result), root_slot);
-}
-
-
-void LIRLoadLocal::Generate() {
-  // Nop
 }
 
 

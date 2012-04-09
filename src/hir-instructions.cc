@@ -29,7 +29,6 @@ namespace internal {
     V(StoreLocal)\
     V(StoreContext)\
     V(LoadRoot)\
-    V(LoadLocal)\
     V(LoadContext)\
     V(BranchBool)\
     HIR_ENUM_STUB_INSTRUCTIONS(V)
@@ -49,7 +48,7 @@ void HIRInstruction::ReplaceVarUse(HIRValue* source, HIRValue* target) {
   bool found = false;
   while (item != NULL) {
     // Do not replace definitions
-    if (item->value() != GetDef() &&
+    if (item->value() != GetResult() &&
         item->value() == source) {
       ZoneList<HIRValue*>::Item* next = item->next();
       values()->InsertBefore(item, target);
@@ -98,6 +97,13 @@ void HIRInstruction::Print(PrintBuffer* p) {
 
 #undef HIR_GEN_SWITCH_CASE
 
+  p->Print("%d: ", id());
+
+  if (GetResult() != NULL) {
+    GetResult()->Print(p);
+    p->Print(" = ");
+  }
+
   p->Print("[%s", str);
   if (type() != kGoto) {
     ZoneList<HIRValue*>::Item* item = values()->head();
@@ -108,7 +114,7 @@ void HIRInstruction::Print(PrintBuffer* p) {
       if (item != NULL) p->Print(" ");
     }
   }
-  p->Print("]");
+  p->Print("]\n");
 }
 
 

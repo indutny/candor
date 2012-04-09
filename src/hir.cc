@@ -258,44 +258,26 @@ void HIRBasicBlock::Print(PrintBuffer* p) {
   // Avoid loops and double prints
   MarkPrinted();
 
-  p->Print("[Block#%d ", id());
-
-  // Print values
-  {
-    HIRValueList::Item* item = inputs()->head();
-    p->Print("{");
-    while (item != NULL) {
-      p->Print("%d", item->value()->id());
-      item = item->next();
-      if (item != NULL) p->Print(",");
-    }
-    p->Print("||");
-    item = values()->head();
-    while (item != NULL) {
-      p->Print("%d", item->value()->id());
-      item = item->next();
-      if (item != NULL) p->Print(",");
-    }
-    p->Print("} ");
-  }
+  p->Print("[Block#%d", id());
 
   // Print phis
   {
     HIRPhiList::Item* item = phis()->head();
+    if (item != NULL) p->Print(" ");
     while (item != NULL) {
       item->value()->Print(p);
       item = item->next();
-      p->Print(" ");
+      if (item != NULL) p->Print(" ");
     }
   }
 
   // Print instructions
   {
     HIRInstructionList::Item* item = instructions()->head();
-    while (item != NULL) {
+    if (item != NULL) p->Print("\n");
+    for (; item != NULL; item = item->next()) {
+      if (item->value()->type() == HIRInstruction::kNop) continue;
       item->value()->Print(p);
-      item = item->next();
-      p->Print(" ");
     }
   }
 
@@ -319,7 +301,7 @@ void HIRBasicBlock::Print(PrintBuffer* p) {
     p->Print("[]");
   }
 
-  p->Print("]\n");
+  p->Print("]\n\n");
 
   // Print successors
   if (successors_count() == 2) {
@@ -420,11 +402,7 @@ void HIRValue::Init() {
 
 
 void HIRValue::Print(PrintBuffer* p) {
-  if (prev_def() == NULL) {
-    p->Print("*[%d ", id());
-  } else {
-    p->Print("*[%d>%d ", prev_def()->id(), id());
-  }
+  p->Print("*[%d ", id());
   if (live_range()->start != -1) {
     p->Print("<%d,%d>", live_range()->start, live_range()->end);
   }
@@ -739,12 +717,18 @@ AstNode* HIR::VisitAssign(AstNode* stmt) {
     } else {
       AddInstruction(new HIRStoreContext(lhs, rhs));
     }
+
+    // Propagate result
+    AddInstruction(new HIRNop(rhs));
   } else if (stmt->lhs()->is(AstNode::kMember)) {
     HIRValue* rhs = GetValue(stmt->rhs());
     HIRValue* property = GetValue(stmt->lhs()->rhs());
     HIRValue* receiver = GetValue(stmt->lhs()->lhs());
 
     AddInstruction(new HIRStoreProperty(receiver, property, rhs));
+
+    // Propagate result
+    AddInstruction(new HIRNop(rhs));
   } else {
     // TODO: Set error! Incorrect lhs
     abort();
@@ -757,7 +741,7 @@ AstNode* HIR::VisitAssign(AstNode* stmt) {
 AstNode* HIR::VisitValue(AstNode* node) {
   AstValue* value = AstValue::Cast(node);
   if (value->slot()->is_stack()) {
-    AddInstruction(new HIRLoadLocal(GetValue(value->slot())));
+    AddInstruction(new HIRNop(GetValue(value->slot())));
   } else {
     AddInstruction(new HIRLoadContext(GetValue(value->slot())));
   }
@@ -801,7 +785,6 @@ AstNode* HIR::VisitIf(AstNode* node) {
 
 AstNode* HIR::VisitWhile(AstNode* node) {
   HIRLoopStart* cond = CreateLoopStart();
-  HIRBasicBlock* start = CreateBlock();
   HIRBasicBlock* body = CreateBlock();
   HIRBasicBlock* end = CreateBlock();
 
@@ -826,8 +809,6 @@ AstNode* HIR::VisitWhile(AstNode* node) {
   HIRBranchBool* branch = new HIRBranchBool(GetValue(node->lhs()),
                                             body,
                                             end);
-  cond->Goto(start);
-  set_current_block(start);
   Finish(branch);
 
   // Generate loop's body

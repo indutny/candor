@@ -35,7 +35,6 @@ class HIRInstruction : public ZoneObject {
     kStoreLocal,
     kStoreContext,
     kLoadRoot,
-    kLoadLocal,
     kLoadContext,
 
     // Branching
@@ -96,14 +95,9 @@ class HIRInstruction : public ZoneObject {
     assert(result_ == NULL);
 
     Use(result);
-    values()->Push(result);
     result_ = result;
   }
   inline HIRValue* GetResult() { return result_; }
-
-  // Definition
-  inline void SetDef(HIRValue* def) { def_ = def; }
-  inline HIRValue* GetDef() { return def_; }
 
   // List of all used values
   inline ZoneList<HIRValue*>* values() { return &values_; }
@@ -153,9 +147,8 @@ class HIRStoreBase : public HIRInstruction {
   HIRStoreBase(Type type, HIRValue* lhs, HIRValue* rhs) : HIRInstruction(type),
                                                           lhs_(lhs),
                                                           rhs_(rhs) {
-    SetInput(lhs);
-    SetDef(lhs);
-    SetResult(rhs);
+    SetResult(lhs);
+    SetInput(rhs);
   }
 
   inline HIRValue* lhs() { return lhs_; }
@@ -315,12 +308,6 @@ class HIRLoadRoot : public HIRLoadBase {
   HIRValue* value_;
 };
 
-class HIRLoadLocal : public HIRLoadBase {
- public:
-  HIRLoadLocal(HIRValue* value) : HIRLoadBase(kLoadLocal, value) {
-  }
-};
-
 class HIRLoadContext : public HIRLoadBase {
  public:
   HIRLoadContext(HIRValue* value) : HIRLoadBase(kLoadContext, value) {
@@ -389,8 +376,7 @@ class HIRStoreProperty : public HIRInstruction {
         rhs_(rhs) {
     SetInput(receiver);
     SetInput(property);
-    // Propagate result
-    SetResult(rhs);
+    SetInput(rhs);
   }
 
   virtual bool HasSideEffects() const { return true; };

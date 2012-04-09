@@ -131,13 +131,9 @@ LIROperand* LIR::AllocateRegister(HIRInstruction* hinstr) {
   // Get register (spill if all registers are in use).
   if (registers()->IsEmpty()) {
     // Spill some allocated register on failure and try again
-    HIRValue* value;
-    do {
-      value = spill_values()->Pop();
-    } while (value != NULL && !value->operand()->is_register() &&
-             value->live_range()->end < hinstr->id());
-
+    HIRValue* value = spill_values()->Pop();
     assert(value != NULL);
+    assert(value->operand()->is_register());
 
     LIROperand* spill = GetSpill();
     HIRParallelMove::GetBefore(hinstr)->AddMove(value->operand(), spill);
@@ -341,6 +337,9 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
   // List of operand that should be `released` after instruction
   LIRReleaseList release_list(this);
 
+  ExpireOldValues(hinstr, active_values());
+  ExpireOldValues(hinstr, spill_values());
+
   // Parallel move instruction doesn't need allocation nor generation,
   // because it should be generated automatically.
   if (hinstr->type() == HIRInstruction::kParallelMove) {
@@ -353,9 +352,6 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
     }
     return;
   }
-
-  ExpireOldValues(hinstr, active_values());
-  ExpireOldValues(hinstr, spill_values());
 
   // If we're at the loop start - record preshuffle values
   if (hinstr->block() != NULL && hinstr->block()->is_loop_start() &&
@@ -377,11 +373,8 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
 
   // Allocate all values used in instruction
   HIRValueList::Item* item = hinstr->values()->head();
-  for (i = -1; item != NULL; item = item->next()) {
+  for (i = 0; item != NULL; item = item->next(), i++) {
     HIRValue* value = item->value();
-
-    // Increment input index
-    if (value != hinstr->GetResult()) i++;
 
     // Allocate immediate values
     if (value->slot()->is_immediate()) {
@@ -390,8 +383,6 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
       if (linstr->inputs[i] == NULL) continue;
     }
 
-    // Result will be allocated later
-    if (value == hinstr->GetResult()) continue;
     if (i < linstr->input_count() && linstr->inputs[i] != NULL) {
       // Instruction requires it's input to reside in some specific register
 
@@ -409,16 +400,15 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
       SpillRegister(hinstr, linstr->inputs[i]);
 
       value->operand(linstr->inputs[i]);
+      active_values()->InsertSorted<HIRValueEndShape>(value);
     } else {
       // Skip already allocated values
       if (value->operand() != NULL) continue;
 
       value->operand(AllocateRegister(hinstr));
       spill_values()->InsertSorted<HIRValueEndShape>(value);
+      active_values()->InsertSorted<HIRValueEndShape>(value);
     }
-
-    // Amend active values
-    active_values()->InsertSorted<HIRValueEndShape>(value);
   }
 
   // Allocate scratch registers
@@ -435,7 +425,10 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
   // Allocate result
   if (hinstr->GetResult() != NULL) {
     HIRValue* value = hinstr->GetResult();
-    if (value->operand() == NULL) {
+    if (value->slot()->is_immediate()) {
+      value->operand(new LIROperand(LIROperand::kImmediate,
+                                    value->slot()->value()));
+    } else if (value->operand() == NULL) {
       value->operand(AllocateRegister(hinstr));
       spill_values()->InsertSorted<HIRValueEndShape>(value);
       active_values()->InsertSorted<HIRValueEndShape>(value);
@@ -445,15 +438,11 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
 
   // Set inputs
   item = hinstr->values()->head();
-  for (i = 0; i < linstr->input_count(); item = item->next()) {
-    if (item->value() == hinstr->GetResult()) continue;
-
+  for (i = 0; i < linstr->input_count(); item = item->next(), i++) {
     assert(item->value()->operand() != NULL);
     if (linstr->inputs[i] == NULL) {
       linstr->inputs[i] = item->value()->operand();
     }
-
-    i++;
   }
 
   // If we're at loop's branch instruction - record postshuffle
