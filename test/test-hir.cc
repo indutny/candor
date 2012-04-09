@@ -121,7 +121,7 @@ TEST_START(hir)
            "[Block#2\n"
            "17: *[3 [st:1]] = [StoreLocal *[6 [st:0]]]\n"
            "21: *[4 [imm 0x4]] = [LoadRoot]\n"
-           "23: *[6 [st:0]] = [StoreLocal *[4 [imm 0x4]]]\n"
+           "23: *[5 [st:0]] = [StoreLocal *[4 [imm 0x4]]]\n"
            "27: [Goto]\n"
            "[1]>*>[1]]\n\n"
 
@@ -140,7 +140,7 @@ TEST_START(hir)
            "[Block#1 @[1,4]:5\n"
            "13: *[2 [imm 0x2]] = [LoadRoot]\n"
            "15: *[3 [st:-1]] = [BinOp *[5 [st:0]] *[2 [imm 0x2]]]\n"
-           "17: *[5 [st:0]] = [StoreLocal *[3 [st:-1]]]\n"
+           "17: *[4 [st:0]] = [StoreLocal *[3 [st:-1]]]\n"
            "21: [BranchBool *[3 [st:-1]]]\n"
            "[0,2]>*>[2,3]]\n\n"
 
@@ -211,7 +211,7 @@ TEST_START(hir)
            "[Block#5\n"
            "23: *[4 [imm 0x2]] = [LoadRoot]\n"
            "25: *[5 [st:-1]] = [BinOp *[7 [st:0]] *[4 [imm 0x2]]]\n"
-           "27: *[7 [st:0]] = [StoreLocal *[5 [st:-1]]]\n"
+           "27: *[6 [st:0]] = [StoreLocal *[5 [st:-1]]]\n"
            "31: [Goto]\n"
            "[4]>*>[4]]\n\n"
 

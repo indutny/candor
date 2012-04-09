@@ -706,8 +706,9 @@ AstNode* HIR::VisitFunction(AstNode* stmt) {
 
 
 AstNode* HIR::VisitAssign(AstNode* stmt) {
+  HIRValue* rhs;
   if (stmt->lhs()->is(AstNode::kValue)) {
-    HIRValue* rhs = GetValue(stmt->rhs());
+    rhs = GetValue(stmt->rhs());
 
     AstValue* value = AstValue::Cast(stmt->lhs());
     HIRValue* lhs = CreateValue(value->slot());
@@ -717,22 +718,19 @@ AstNode* HIR::VisitAssign(AstNode* stmt) {
     } else {
       AddInstruction(new HIRStoreContext(lhs, rhs));
     }
-
-    // Propagate result
-    AddInstruction(new HIRNop(rhs));
   } else if (stmt->lhs()->is(AstNode::kMember)) {
-    HIRValue* rhs = GetValue(stmt->rhs());
+    rhs = GetValue(stmt->rhs());
     HIRValue* property = GetValue(stmt->lhs()->rhs());
     HIRValue* receiver = GetValue(stmt->lhs()->lhs());
 
     AddInstruction(new HIRStoreProperty(receiver, property, rhs));
-
-    // Propagate result
-    AddInstruction(new HIRNop(rhs));
   } else {
     // TODO: Set error! Incorrect lhs
     abort();
   }
+
+  // Propagate result
+  AddInstruction(new HIRNop(rhs));
 
   return stmt;
 }
