@@ -247,7 +247,7 @@ void Assembler::mov(Register dst, Immediate src) {
 
 
 void Assembler::mov(Operand& dst, Immediate src) {
-  emit_rexw(dst);
+  emit_rexw(rax, dst);
   emitb(0xC7);
   emit_modrm(dst);
   emitl(src.value());

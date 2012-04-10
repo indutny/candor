@@ -20,18 +20,6 @@ inline int HIRValueEndShape::Compare(HIRValue* l, HIRValue* r) {
 }
 
 
-inline LIROperand* LIR::GetSpill() {
-  int spill_index;
-  if (spills()->IsEmpty()) {
-    spill_index = get_new_spill();
-  } else {
-    spill_index = spills()->Get();
-  }
-
-  return new LIROperand(LIROperand::kSpill, spill_index);
-}
-
-
 inline void LIR::Release(LIROperand* operand) {
   if (operand->is_register()) {
     registers()->Release(operand->value());
@@ -40,6 +28,16 @@ inline void LIR::Release(LIROperand* operand) {
   }
 }
 
+inline void LIR::ChangeOperand(HIRInstruction* hinstr,
+                               HIRValue* value,
+                               LIROperand* operand) {
+  if (value->operand() != NULL &&
+      !value->operand()->is_equal(operand)) {
+    Release(value->operand());
+    HIRParallelMove::GetBefore(hinstr)->AddMove(value->operand(), operand);
+  }
+  value->operand(operand);
+}
 
 inline LIRInstruction* LIR::Cast(HIRInstruction* instr) {
 #define LIR_GEN_CAST(V)\

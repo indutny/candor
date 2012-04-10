@@ -75,13 +75,14 @@ class HIRValueEndShape {
   static inline int Compare(HIRValue* l, HIRValue* r);
 };
 
-// Auto-releasing list
-class LIRReleaseList : public ZoneList<LIROperand*> {
+// Auto-releasing list,
+// puts all operands in spill_values()
+class LIRSpillList : public ZoneList<HIRValue*> {
  public:
-  LIRReleaseList(LIR* lir) : lir_(lir) {
+  LIRSpillList(LIR* lir) : lir_(lir) {
   }
 
-  ~LIRReleaseList();
+  ~LIRSpillList();
 
   inline LIR* lir() { return lir_; }
 
@@ -145,7 +146,15 @@ class LIR {
   void ExpireOldValues(HIRInstruction* hinstr, ZoneList<HIRValue*>* list);
 
   // Allocate register for instruction (may spill some active values)
-  LIROperand* AllocateRegister(HIRInstruction* hinstr);
+  LIROperand* GetRegister(HIRInstruction* hinstr);
+  LIROperand* GetRegister(HIRInstruction* hinstr, HIRValue* value);
+  LIROperand* GetRegister(HIRInstruction* hinstr,
+                          HIRValue* value,
+                          LIROperand* reg);
+
+  // Wrapper over spills FreeList and incremental index
+  LIROperand* GetSpill();
+  LIROperand* GetSpill(HIRInstruction* hinstr, HIRValue* value);
 
   // Go through active values and move all uses of register into spill
   void SpillRegister(HIRInstruction* hinstr, LIROperand* reg);
@@ -153,14 +162,16 @@ class LIR {
   // Add phis assignments to movement
   void MovePhis(HIRInstruction* hinstr);
 
+  // Changes value's operand and creates move if needed
+  inline void ChangeOperand(HIRInstruction* hinstr,
+                            HIRValue* value,
+                            LIROperand* operand);
+
   // Checks if operand is used anywhere
   inline bool IsInUse(LIROperand* operand);
 
   // Release operand in registers() or spills()
   inline void Release(LIROperand* operand);
-
-  // Wrapper over spills FreeList and incremental index
-  inline LIROperand* GetSpill();
 
   // Convert HIR instruction into LIR instruction
   inline LIRInstruction* Cast(HIRInstruction* instr);
@@ -169,6 +180,11 @@ class LIR {
   inline ZoneList<HIRValue*>* active_values() { return &active_values_; }
   // List of active values that can be spilled
   inline ZoneList<HIRValue*>* spill_values() { return &spill_values_; }
+
+  // List of spills that should be commited to spill_values() only after
+  // instruction will be generated
+  inline LIRSpillList* spill_list() { return spill_list_; }
+  inline void spill_list(LIRSpillList* spill_list) { spill_list_ = spill_list; }
 
   inline FreeList<int, 128>* registers() { return &registers_; }
   inline FreeList<int, 128>* spills() { return &spills_; }
@@ -184,6 +200,7 @@ class LIR {
  private:
   ZoneList<HIRValue*> active_values_;
   ZoneList<HIRValue*> spill_values_;
+  LIRSpillList* spill_list_;
 
   FreeList<int, 128> registers_;
   FreeList<int, 128> spills_;

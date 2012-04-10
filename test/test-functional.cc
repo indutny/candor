@@ -314,7 +314,6 @@ TEST_START(functional)
            "  }\n"
            "}\n"
            "return k", {
-          fprintf(stdout, "%f\n", result->As<Number>()->Value());
     assert(result->As<Number>()->Value() == 10);
   })
 TEST_END(functional)
