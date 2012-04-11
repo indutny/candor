@@ -436,8 +436,8 @@ void Masm::StringHash(Register str, Register result) {
   Label call_runtime(this), done(this);
 
   // Check if hash was already calculated
-  mov(scratch, hash_field);
-  cmpq(scratch, Immediate(0));
+  mov(result, hash_field);
+  cmpq(result, Immediate(0));
   jmp(kNe, &done);
 
   // Check if string is a cons string
