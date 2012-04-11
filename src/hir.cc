@@ -350,7 +350,7 @@ void HIRPhi::AddInput(HIRValue* input) {
     HIRValue* left = inputs()->head()->value();
     HIRValue* right = inputs()->tail()->value();
 
-    if (!left->block()->Dominates(block()) &&
+    if ((!left->block()->Dominates(block()) || left->block() == block()) &&
         right->block()->Dominates(block())) {
       inputs()->Push(inputs()->Shift());
     }
