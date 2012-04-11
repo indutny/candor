@@ -28,7 +28,10 @@ LIRSpillList::~LIRSpillList() {
 }
 
 
-LIR::LIR(Heap* heap, HIR* hir) : heap_(heap), hir_(hir), spill_count_(0) {
+LIR::LIR(Heap* heap, HIR* hir) : heap_(heap),
+                                 hir_(hir),
+                                 spill_count_(0),
+                                 tmp_spill_(GetSpill()) {
   // Calculate numeric liveness ranges
   CalculateLiveness();
 
@@ -222,6 +225,7 @@ void LIR::InsertMoveSpill(HIRParallelMove* move,
 
 void LIR::SpillActive(Masm* masm, HIRInstruction* hinstr) {
   HIRValueList::Item* item = active_values()->head();
+
   HIRParallelMove::GetBefore(hinstr)->Reorder(this);
 
   for (; item != NULL; item = item->next()) {
@@ -504,7 +508,8 @@ void LIR::Generate(Masm* masm) {
     if (hinstr->next() == NULL ||
         hinstr->next()->type() == HIRInstruction::kEntry) {
       masm->FinalizeSpills(spill_count());
-      spill_count(0);
+      // One spill is always present (tmp spill for parallel move)!
+      spill_count(1);
       while (!spills()->IsEmpty()) spills()->Get();
     }
   }

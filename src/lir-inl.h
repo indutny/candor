@@ -9,6 +9,8 @@
 #include "ia32/lir-instructions-ia32.h"
 #endif
 
+#include "macroassembler.h"
+
 #include <sys/types.h> // off_t
 
 namespace candor {
@@ -17,6 +19,17 @@ namespace internal {
 inline int HIRValueEndShape::Compare(HIRValue* l, HIRValue* r) {
   // Normal order (by end)
   return l->live_range()->end - r->live_range()->end;
+}
+
+
+inline void LIROperand::Print(PrintBuffer* p) {
+  if (is_register()) {
+    p->Print("%%%s", RegisterNameByIndex(value()));
+  } else if (is_spill()) {
+    p->Print("[%llu]", value());
+  } else {
+    p->Print("%llu", value());
+  }
 }
 
 
@@ -38,6 +51,9 @@ inline void LIR::ChangeOperand(HIRInstruction* hinstr,
     // If value wasn't just created and immediately moved -
     // create movement from previous value to new
     HIRParallelMove::GetBefore(hinstr)->AddMove(value->operand(), operand);
+
+    // Commit movement
+    HIRParallelMove::GetBefore(hinstr)->Reorder(this);
   }
   value->operand(operand);
 }

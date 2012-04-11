@@ -217,7 +217,7 @@ class HIRParallelMove : public HIRInstruction {
  public:
   typedef ZoneList<LIROperand*> OperandList;
 
-  HIRParallelMove() : HIRInstruction(kParallelMove), spill_(NULL) {
+  HIRParallelMove() : HIRInstruction(kParallelMove) {
   }
 
   // Record movement
@@ -228,6 +228,9 @@ class HIRParallelMove : public HIRInstruction {
 
   // Remove all moves
   void Reset();
+
+  // Debug printing
+  void Print(char* buffer, uint32_t size);
 
   static inline HIRParallelMove* Cast(HIRInstruction* instr) {
     assert(instr->type() == kParallelMove);
@@ -252,9 +255,6 @@ class HIRParallelMove : public HIRInstruction {
   void Reorder(LIR* lir,
                ZoneList<LIROperand*>::Item* source,
                ZoneList<LIROperand*>::Item* target);
-
-  // Only one spill scratch is required (cache it)
-  LIROperand* spill_;
 
   // Sources/Targets after reordering
   OperandList sources_;

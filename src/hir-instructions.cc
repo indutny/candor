@@ -143,7 +143,6 @@ void HIRParallelMove::Reorder(LIR* lir,
                               ZoneList<LIROperand*>::Item* target) {
   // Mark source/target pair as `being moved`
   source->value()->move_status(LIROperand::kBeingMoved);
-  target->value()->move_status(LIROperand::kBeingMoved);
 
   // Detect successors
   OperandList::Item* sitem = raw_sources()->head();
@@ -157,18 +156,12 @@ void HIRParallelMove::Reorder(LIR* lir,
       Reorder(lir, sitem, titem);
       break;
      case LIROperand::kBeingMoved:
-      // Lazily create spill operand
-      if (spill_ == NULL) {
-        spill_ = lir->GetSpill();
-        lir->InsertMoveSpill(this, this, spill_);
-      }
-
       // scratch = target
       sources()->Push(sitem->value());
-      targets()->Push(spill_);
+      targets()->Push(lir->tmp_spill());
 
       // And use scratch in this move
-      sitem->value(spill_);
+      sitem->value(lir->tmp_spill());
       break;
      case LIROperand::kMoved:
       // NOP
@@ -185,7 +178,6 @@ void HIRParallelMove::Reorder(LIR* lir,
 
   // Finalize status
   source->value()->move_status(LIROperand::kMoved);
-  target->value()->move_status(LIROperand::kMoved);
 }
 
 
@@ -214,6 +206,28 @@ void HIRParallelMove::Reset() {
   while ((op = raw_targets()->Shift()) != NULL) {}
   while ((op = sources()->Shift()) != NULL) {}
   while ((op = targets()->Shift()) != NULL) {}
+}
+
+
+void HIRParallelMove::Print(char* buffer, uint32_t size) {
+  PrintBuffer p(buffer, size);
+
+  OperandList* s[2] = { raw_sources(), sources() };
+  OperandList* t[2] = { raw_targets(), targets() };
+
+  for (int i = 0; i < 2; i++) {
+    OperandList::Item* sitem = s[i]->head();
+    OperandList::Item* titem = t[i]->head();
+    for (; sitem != NULL; sitem = sitem->next(), titem = titem->next()) {
+      sitem->value()->Print(&p);
+      p.Print(" => ");
+      titem->value()->Print(&p);
+      p.Print("\n");
+    }
+    if (i == 0) p.Print("----\n");
+  }
+
+  p.Finalize();
 }
 
 

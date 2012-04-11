@@ -46,6 +46,9 @@ class LIROperand : public ZoneObject {
     value_ = reinterpret_cast<off_t>(value);
   }
 
+  // Debug printing
+  inline void Print(PrintBuffer* p);
+
   inline Type type() { return type_; }
   inline bool is_register() { return type_ == kRegister; }
   inline bool is_spill() { return type_ == kSpill; }
@@ -194,6 +197,10 @@ class LIR {
   inline void spill_count(int spill_count) { spill_count_ = spill_count; }
   inline int get_new_spill() { return spill_count_++; }
 
+  // Temporary spill for movements
+  inline LIROperand* tmp_spill() { return tmp_spill_; }
+  inline void tmp_spill(LIROperand* tmp_spill) { tmp_spill_ = tmp_spill; }
+
   inline Heap* heap() { return heap_; }
   inline HIR* hir() { return hir_; }
 
@@ -205,6 +212,8 @@ class LIR {
   FreeList<int, 128> registers_;
   FreeList<int, 128> spills_;
   int spill_count_;
+
+  LIROperand* tmp_spill_;
 
   Heap* heap_;
   HIR* hir_;
