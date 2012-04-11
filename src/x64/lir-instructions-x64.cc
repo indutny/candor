@@ -402,6 +402,19 @@ void LIRCall::Generate() {
   argc_s.Unspill(rax);
 
   __ CallFunction(scratch);
+
+  // Reset all registers to nil
+  __ mov(scratch, Immediate(Heap::kTagNil));
+  __ mov(rbx, scratch);
+  __ mov(rcx, scratch);
+  __ mov(rdx, scratch);
+  __ mov(r8, scratch);
+  __ mov(r9, scratch);
+  __ mov(r10, scratch);
+  __ mov(r11, scratch);
+  __ mov(r12, scratch);
+
+  // Store result
   __ Mov(result, rax);
 
   rsp_s.Unspill();
