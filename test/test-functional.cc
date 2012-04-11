@@ -342,4 +342,15 @@ TEST_START(functional)
            "return l", {
     assert(result->As<Number>()->Value() == 729);
   })
+
+  FUN_TEST("i = 3\na = 0\n"
+           "while (--i) {\n"
+           "  j = 3\n"
+           "  while (--j) {\n"
+           "    a = { x : { y : a } }\n"
+           "  }\n"
+           "}\n"
+           "return a.x.y", {
+    assert(result->Is<Object>());
+  })
 TEST_END(functional)
