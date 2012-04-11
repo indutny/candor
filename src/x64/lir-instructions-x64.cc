@@ -388,7 +388,7 @@ void LIRCall::Generate() {
 
   // If argc is odd - align stack
   Label even(masm());
-  __ testb(scratch, Immediate(1));
+  __ testb(scratch, Immediate(HNumber::Tag(1)));
   __ jmp(kEq, &even);
   __ push(Immediate(Heap::kTagNil));
   __ bind(&even);
