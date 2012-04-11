@@ -413,6 +413,7 @@ void LIRCall::Generate() {
   __ mov(r10, scratch);
   __ mov(r11, scratch);
   __ mov(r12, scratch);
+  __ mov(r13, scratch);
 
   // Store result
   __ Mov(result, rax);
