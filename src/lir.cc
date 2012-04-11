@@ -437,6 +437,13 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
     linstr->result = value->operand();
   }
 
+  // All active registers should be spilled before entering
+  // instruction with side effects (like stubs)
+  //
+  // Though instruction itself should receive arguments in registers
+  // (if that's possible)
+  if (hinstr->HasSideEffects()) SpillActive(masm, hinstr);
+
   // If we're at loop's branch instruction - record postshuffle
   if (hinstr->block() != NULL && hinstr->block()->is_loop_start() &&
       hinstr == hinstr->block()->last_instruction()) {
@@ -444,13 +451,6 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
     HIRBasicBlock* loop_body = loop_start->body();
     StoreLoopInvariants(loop_start, loop_body->loop_postshuffle());
   }
-
-  // All active registers should be spilled before entering
-  // instruction with side effects (like stubs)
-  //
-  // Though instruction itself should receive arguments in registers
-  // (if that's possible)
-  if (hinstr->HasSideEffects()) SpillActive(masm, hinstr);
 
   // If instruction is a kGoto to the join block,
   // add join's phis to the movement

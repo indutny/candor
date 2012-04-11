@@ -300,6 +300,12 @@ TEST_START(functional)
   })
 
   // While
+  FUN_TEST("i = 10\n"
+           "while (i--) {}\n"
+           "return i", {
+    assert(result->As<Number>()->Value() == -1);
+  })
+
   FUN_TEST("i = 10\nj = 0\n"
            "while (i--) { j = j + 1\n}\n"
            "return j", {
