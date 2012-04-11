@@ -50,7 +50,7 @@ using namespace internal;
       AstNode* ast = p.Execute();\
       assert(!p.has_error());\
       Scope::Analyze(ast);\
-      p.Print(out, 1000);\
+      p.Print(out, sizeof(out));\
       assert(ast != NULL);\
       assert(strcmp(expected, out) == 0);\
       ast = NULL;\
@@ -59,7 +59,7 @@ using namespace internal;
 #define HIR_TEST(code, expected)\
     {\
       Zone z;\
-      char out[1024];\
+      char out[10024];\
       Heap heap(2 * 1024 * 1024);\
       Parser p(code, strlen(code));\
       AstNode* ast = p.Execute();\
@@ -67,7 +67,7 @@ using namespace internal;
       Scope::Analyze(ast);\
       assert(ast != NULL);\
       HIR hir(&heap, ast);\
-      hir.Print(out, 1000);\
+      hir.Print(out, sizeof(out));\
       assert(strcmp(expected, out) == 0);\
       ast = NULL;\
     }

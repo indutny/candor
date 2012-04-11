@@ -37,10 +37,10 @@
         }
       },
       'Release': {
-        'cflags': [ '-O3' ],
+        'cflags': [ '-g', '-O3' ],
         'defines': [ 'NDEBUG' ],
         'xcode_settings': {
-          'OTHER_CFLAGS': [ '-O3' ]
+          'OTHER_CFLAGS': [ '-g', '-O3' ]
         }
       }
     }

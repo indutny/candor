@@ -191,7 +191,7 @@ LIROperand* LIR::GetSpill() {
     spill_index = spills()->Get();
   }
 
-  LIROperand* spill = new LIROperand(LIROperand::kSpill, spill_index);
+  return new LIROperand(LIROperand::kSpill, spill_index);
 }
 
 
