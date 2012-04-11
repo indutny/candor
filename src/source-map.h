@@ -17,6 +17,7 @@ class SourceMap : SourceMapBase {
 
   SourceMap() {
     // SourceInfo should be 'delete'ed on destruction
+    allocated = true;
   }
 
   void Push(const uint32_t jit_offset,  const uint32_t offset);
