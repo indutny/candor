@@ -336,6 +336,7 @@ void HIRPhi::AddInput(HIRValue* input) {
     // Ignore duplicate inputs
     if (inputs()->head()->value() == input) return;
   }
+
   inputs()->Push(input);
 
   if (inputs()->length() > 1) {
@@ -343,6 +344,15 @@ void HIRPhi::AddInput(HIRValue* input) {
     HIRValueList::Item* item = inputs()->head();
     for (; item != NULL; item = item->next()) {
       block()->ReplaceVarUse(item->value(), this);
+    }
+
+    // Ensure that phis are in correct order
+    HIRValue* left = inputs()->head()->value();
+    HIRValue* right = inputs()->tail()->value();
+
+    if (!left->block()->Dominates(block()) &&
+        right->block()->Dominates(block())) {
+      inputs()->Push(inputs()->Shift());
     }
   }
 }

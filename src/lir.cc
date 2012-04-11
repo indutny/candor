@@ -90,7 +90,7 @@ void LIR::PrunePhis() {
       HIRInstruction* last = block->last_instruction();
 
       HIRValue* input;
-      if (last->next()->next() == value->block()->first_instruction()) {
+      if (i == 0) {
         // left input (closer)
         input = value->inputs()->head()->value();
       } else {

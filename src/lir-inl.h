@@ -34,6 +34,9 @@ inline void LIR::ChangeOperand(HIRInstruction* hinstr,
   if (value->operand() != NULL &&
       !value->operand()->is_equal(operand)) {
     Release(value->operand());
+
+    // If value wasn't just created and immediately moved -
+    // create movement from previous value to new
     HIRParallelMove::GetBefore(hinstr)->AddMove(value->operand(), operand);
   }
   value->operand(operand);

@@ -203,7 +203,7 @@ TEST_START(hir)
            "15: [Goto]\n"
            "[1]>*>[4]]\n\n"
 
-           "[Block#4 @[6,8]:7\n"
+           "[Block#4 @[8,6]:7\n"
            "17: *[3 [imm 0x1]] = [LoadRoot]\n"
            "19: [BranchBool *[3 [imm 0x1]]]\n"
            "[2,5]>*>[5,6]]\n\n"
