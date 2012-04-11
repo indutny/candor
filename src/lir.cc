@@ -13,6 +13,7 @@
 
 #include "macroassembler.h"
 #include "macroassembler-inl.h"
+#include "source-map.h" // SourceMap
 
 #include <stdlib.h> // NULL
 
@@ -491,6 +492,10 @@ void LIR::Generate(Masm* masm) {
   HIRInstruction* hinstr = hir()->first_instruction();
 
   for (; hinstr != NULL; hinstr = hinstr->next()) {
+    if (hinstr->ast() != NULL && hinstr->ast()->offset() != -1) {
+      heap()->source_map()->Push(masm->offset(), hinstr->ast()->offset());
+    }
+
     GenerateInstruction(masm, hinstr);
 
     // Each function has separate spill slots.

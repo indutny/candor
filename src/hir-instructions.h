@@ -19,6 +19,7 @@ class HIRPhi;
 class LIR;
 class LIROperand;
 class RelocationInfo;
+class AstNode;
 
 // Instruction base class
 class HIRInstruction : public ZoneObject {
@@ -58,6 +59,7 @@ class HIRInstruction : public ZoneObject {
   HIRInstruction(Type type) : type_(type),
                               id_(-1),
                               block_(NULL),
+                              ast_(NULL),
                               def_(NULL),
                               result_(NULL),
                               prev_(NULL),
@@ -80,6 +82,10 @@ class HIRInstruction : public ZoneObject {
 
   // Block in which this instruction is located
   inline HIRBasicBlock* block() { return block_; }
+
+  // AST node for source mapping
+  inline AstNode* ast() { return ast_; }
+  inline void ast(AstNode* ast) { ast_ = ast; }
 
   // Instruction with side
   virtual bool HasSideEffects() const { return false; };
@@ -119,6 +125,7 @@ class HIRInstruction : public ZoneObject {
   Type type_;
   int id_;
   HIRBasicBlock* block_;
+  AstNode* ast_;
 
   ZoneList<HIRValue*> values_;
 

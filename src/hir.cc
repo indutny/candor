@@ -566,6 +566,7 @@ HIRBasicBlock* HIR::CreateJoin(HIRBasicBlock* left, HIRBasicBlock* right) {
 void HIR::AddInstruction(HIRInstruction* instr) {
   assert(current_block() != NULL);
   instr->Init(current_block());
+  instr->ast(current_node());
 
   if (current_block()->finished()) return;
 
