@@ -327,4 +327,19 @@ TEST_START(functional)
            "return k", {
     assert(result->As<Number>()->Value() == 81);
   })
+
+  FUN_TEST("i = 10\nj = 0\nk = 0\nl = 0\n"
+           "while (--i) {\n"
+           "  j = 10\n"
+           "  k = 0\n"
+           "  while (--j) {\n"
+           "    k = 10\n"
+           "    while (--k) {\n"
+          "       l = l + 1\n"
+          "     }\n"
+           "  }\n"
+           "}\n"
+           "return l", {
+    assert(result->As<Number>()->Value() == 729);
+  })
 TEST_END(functional)

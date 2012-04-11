@@ -328,9 +328,24 @@ HIRPhi::HIRPhi(HIRBasicBlock* block, HIRValue* value)
 
 
 void HIRPhi::AddInput(HIRValue* input) {
-  // Remove excessive inputs, use only last redifinition of value
-  // (Useful in loop's start block)
-  while (inputs()->length() > 1) inputs()->Shift();
+  if (inputs()->length() > 1) {
+    HIRValue* left = inputs()->head()->value();
+
+    // XXX: Some sort of black magic here, I need to understand how it works
+    if (input->is_phi()) {
+      HIRPhi* phi_input = HIRPhi::Cast(input);
+      if (phi_input->inputs()->length() != 0 &&
+          left != phi_input->inputs()->head()->value() &&
+          left != phi_input->inputs()->tail()->value()) {
+        block()->ReplaceVarUse(input, this);
+        return;
+      }
+    }
+
+    // Remove excessive inputs, use only last redifinition of value
+    // (Useful in loop's start block)
+    inputs()->Shift();
+  }
 
   if (inputs()->length() == 1) {
     // Ignore duplicate inputs
