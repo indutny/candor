@@ -514,7 +514,7 @@ void LIRGetStackTrace::Generate() {
   r->target(ip);
   __ Call(masm()->stubs()->GetStackTraceStub());
 
-  __ Mov(result, Immediate(Heap::kTagNil));
+  __ Mov(result, rax);
 }
 
 
