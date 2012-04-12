@@ -45,11 +45,13 @@ class HIRInstruction : public ZoneObject {
     kCall,
     kStoreProperty,
     kLoadProperty,
+    kDeleteProperty,
     kBinOp,
     kTypeof,
     kSizeof,
     kKeysof,
     kNot,
+    kCloneObject,
     kCollectGarbage,
     kGetStackTrace,
     kAllocateFunction,
@@ -398,6 +400,24 @@ class HIRStoreProperty : public HIRInstruction {
   HIRValue* rhs_;
 };
 
+class HIRDeleteProperty : public HIRStubCall {
+ public:
+  HIRDeleteProperty(HIRValue* receiver, HIRValue* property)
+      : HIRStubCall(kDeleteProperty),
+        receiver_(receiver),
+        property_(property) {
+    SetInput(receiver);
+    SetInput(property);
+  }
+
+  inline HIRValue* receiver() { return receiver_; }
+  inline HIRValue* property() { return property_; }
+
+ private:
+  HIRValue* receiver_;
+  HIRValue* property_;
+};
+
 class HIRBranchBool : public HIRBranchBase {
  public:
   HIRBranchBool(HIRValue* clause, HIRBasicBlock* left, HIRBasicBlock* right)
@@ -442,6 +462,12 @@ class HIRKeysof : public HIRPrefixKeyword {
 class HIRNot : public HIRPrefixKeyword {
  public:
   HIRNot(HIRValue* expr) : HIRPrefixKeyword(kNot, expr) {
+  }
+};
+
+class HIRCloneObject : public HIRPrefixKeyword {
+ public:
+  HIRCloneObject(HIRValue* obj) : HIRPrefixKeyword(kCloneObject, obj) {
   }
 };
 

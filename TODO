@@ -1,7 +1,5 @@
 HIR/LIR todos:
 * Break/continue
-* Clone
-* Delete
 * Vararg arguments (call)
 * Speeding up HIR construction
 * Cleanup masm

@@ -25,6 +25,7 @@ class Operand;
     V(LoadRoot)\
     V(LoadContext)\
     V(LoadProperty)\
+    V(DeleteProperty)\
     V(BranchBool)\
     V(BinOp)\
     V(Call)\
@@ -32,6 +33,7 @@ class Operand;
     V(Sizeof)\
     V(Keysof)\
     V(Not)\
+    V(CloneObject)\
     V(CollectGarbage)\
     V(GetStackTrace)\
     V(AllocateObject)\
@@ -216,6 +218,15 @@ class LIRLoadProperty : public LIRInstructionTemplate<2, 1, 1> {
   LIR_COMMON_METHODS(LoadProperty)
 };
 
+class LIRDeleteProperty : public LIRInstructionTemplate<2, 1, 0> {
+ public:
+  LIRDeleteProperty();
+
+  void Generate();
+
+  LIR_COMMON_METHODS(DeleteProperty)
+};
+
 class LIRBranchBool : public LIRControlInstructionTemplate<1, 0> {
  public:
   LIRBranchBool();
@@ -275,6 +286,13 @@ class LIRNot : public LIRInstructionTemplate<1, 1, 0> {
   void Generate();
 
   LIR_COMMON_METHODS(Not)
+};
+
+class LIRCloneObject : public LIRInstructionTemplate<1, 1, 0> {
+ public:
+  void Generate();
+
+  LIR_COMMON_METHODS(CloneObject)
 };
 
 class LIRCollectGarbage : public LIRInstructionTemplate<0, 1, 0> {

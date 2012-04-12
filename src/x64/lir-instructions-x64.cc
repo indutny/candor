@@ -251,6 +251,18 @@ void LIRLoadProperty::Generate() {
 }
 
 
+LIRDeleteProperty::LIRDeleteProperty() {
+  inputs[0] = ToLIROperand(rax);
+  inputs[1] = ToLIROperand(rbx);
+}
+
+
+void LIRDeleteProperty::Generate() {
+  __ Call(masm()->stubs()->GetDeletePropertyStub());
+  __ Mov(result, Immediate(Heap::kTagNil));
+}
+
+
 LIRBranchBool::LIRBranchBool() {
   inputs[0] = ToLIROperand(rax);
 }
@@ -493,6 +505,13 @@ void LIRNot::Generate() {
   __ Mov(result, truev);
 
   __ bind(&done);
+}
+
+
+void LIRCloneObject::Generate() {
+  __ Mov(rax, inputs[0]);
+  __ Call(masm()->stubs()->GetCloneObjectStub());
+  __ Mov(result, rax);
 }
 
 

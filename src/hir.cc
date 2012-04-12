@@ -993,11 +993,21 @@ AstNode* HIR::VisitReturn(AstNode* node) {
 
 
 AstNode* HIR::VisitClone(AstNode* node) {
+  AddInstruction(new HIRCloneObject(GetValue(node->lhs())));
+
   return node;
 }
 
 
 AstNode* HIR::VisitDelete(AstNode* node) {
+  // TODO: Set error
+  assert(node->lhs()->is(AstNode::kMember));
+
+  HIRValue* property = GetValue(node->lhs()->rhs());
+  HIRValue* receiver = GetValue(node->lhs()->lhs());
+
+  AddInstruction(new HIRDeleteProperty(receiver, property));
+
   return node;
 }
 

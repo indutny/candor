@@ -11,11 +11,13 @@ namespace internal {
     V(Call)\
     V(StoreProperty)\
     V(LoadProperty)\
+    V(DeleteProperty)\
     V(BinOp)\
     V(Typeof)\
     V(Sizeof)\
     V(Keysof)\
     V(Not)\
+    V(CloneObject)\
     V(AllocateFunction)\
     V(AllocateObject)
 
