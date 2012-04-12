@@ -689,7 +689,12 @@ HIRValue* HIR::GetValue(AstNode* node) {
 
 
 HIRValue* HIR::GetLastResult() {
-  return current_block()->instructions()->tail()->value()->GetResult();
+  HIRValue* res = current_block()->instructions()->tail()->value()->GetResult();
+  if (res == NULL) {
+    return CreateValue(root()->Put(new AstNode(AstNode::kNil)));
+  } else {
+    return res;
+  }
 }
 
 
