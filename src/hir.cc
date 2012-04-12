@@ -135,25 +135,44 @@ void HIRBasicBlock::LiftValues(HIRBasicBlock* block,
     }
   }
 
-  // If loop detected - add non-local variable uses to the end of loop
-  // to ensure that they will be live after the first loop's pass
-  if (instructions()->length() != 0) {
-    item = block->values()->head();
-    for (; item != NULL; item = item->next()) {
-      HIRValue* value = item->value();
-
-      if (value == NULL ||
-          (Dominates(value->block()) && value->block() != block)) {
-        continue;
-      }
-      value->uses()->Push(block->last_instruction());
-    }
-  }
-
   if (successors_count() > 0) {
     // If any value was added - propagate them to successors
     for (int i = 0; i < successors_count(); i++) {
       successors()[i]->LiftValues(this, map);
+    }
+  }
+
+  // If loop detected and there're phis those inputs are defined in this block
+  // (i.e. in loop header) - use them as values
+  if (instructions()->length() != 0) {
+    // Add non-local variable uses to the end of loop
+    // to ensure that they will be live after the first loop's pass
+    if (instructions()->length() != 0) {
+      item = block->values()->head();
+      for (; item != NULL; item = item->next()) {
+        HIRValue* value = item->value();
+
+        if (value == NULL ||
+            (Dominates(value->block()) && value->block() != block)) {
+          continue;
+        }
+        value->uses()->Push(block->last_instruction());
+      }
+    }
+
+    HIRPhiList::Item* item = phis()->head();
+    for (; item != NULL; item = item->next()) {
+      HIRPhi* phi = item->value();
+
+      HIRValue* inputs[2] = { phi->inputs()->head()->value(),
+                              phi->inputs()->tail()->value() };
+      for (int i = 0; i < 2; i++) {
+        if (inputs[i]->block() == this) {
+          inputs[i]->current_block(this);
+          inputs[i]->slot()->hir(inputs[i]);
+          break;
+        }
+      }
     }
   }
 }

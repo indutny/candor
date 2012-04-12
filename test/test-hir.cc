@@ -149,7 +149,7 @@ TEST_START(hir)
            "[1]>*>[1]]\n\n"
 
            "[Block#3\n"
-           "27: [Return *[5 [st:0]]]\n"
+           "27: [Return *[4 [st:0]]]\n"
            "[1]>*>[]]\n\n")
 
   // Nested while
