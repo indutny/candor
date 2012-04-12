@@ -75,9 +75,9 @@ void LIREntry::Generate() {
       Operand arg_slot(rbp, (i + 2) * 8);
       __ Mov(arg->value()->operand(), arg_slot);
     }
-    __ pop(root_reg);
 
     __ bind(&args_end);
+    __ pop(root_reg);
   }
 }
 
