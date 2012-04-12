@@ -394,13 +394,30 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
     HIRValue* value = item->value();
 
     // Allocate immediate values
-    if (value->slot()->is_immediate()) {
+    if (value->slot()->is_immediate() && value->operand() == NULL) {
       value->operand(new LIROperand(LIROperand::kImmediate,
                                     value->slot()->value()));
     }
 
     if (i < linstr->input_count()) {
       if (linstr->inputs[i] != NULL) {
+        // there may be a situation where the same value is used in multiple
+        // inputs with predefined registers - just insert movement in non-first
+        // inputs then.
+        if (value->operand() != NULL) {
+          int j;
+          for (j = 0; j < i; j++) {
+            if (linstr->inputs[j] != NULL &&
+                linstr->inputs[j]->is_equal(value->operand())) {
+              HIRParallelMove::GetBefore(hinstr)->
+                  AddMove(linstr->inputs[j], linstr->inputs[i]);
+              HIRParallelMove::GetBefore(hinstr)->Reorder(this);
+              break;
+            }
+          }
+          if (j != i) continue;
+        }
+
         // Instruction requires it's input to reside in some specific register
         GetRegister(hinstr, value, linstr->inputs[i]);
       } else if (value->operand() != NULL && value->operand()->is_immediate()) {

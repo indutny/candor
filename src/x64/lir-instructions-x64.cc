@@ -142,12 +142,13 @@ void LIRStoreContext::Generate() {
 LIRStoreProperty::LIRStoreProperty() {
   inputs[0] = ToLIROperand(rax);
   inputs[1] = ToLIROperand(rbx);
+  inputs[2] = ToLIROperand(rcx);
 }
 
 
 void LIRStoreProperty::Generate() {
-  __ Push(inputs[2]);
-  __ Push(inputs[0]);
+  __ push(rcx);
+  __ push(rax);
 
   // rax <- object
   // rbx <- property
@@ -164,8 +165,8 @@ void LIRStoreProperty::Generate() {
   // Result may be rax
   __ Mov(scratches[0], rax);
 
-  __ pop(rbx);
-  __ Pop(inputs[2]);
+  __ Pop(rbx);
+  __ Pop(rcx);
 
   __ IsNil(ToRegister(scratches[0]), NULL, &done);
   Operand qmap(rbx, HObject::kMapOffset);

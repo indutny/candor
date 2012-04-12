@@ -142,8 +142,6 @@ void HIRBasicBlock::LiftValues(HIRBasicBlock* block,
     }
   }
 
-  // If loop detected and there're phis those inputs are defined in this block
-  // (i.e. in loop header) - use them as values
   if (instructions()->length() != 0) {
     // Add non-local variable uses to the end of loop
     // to ensure that they will be live after the first loop's pass
@@ -160,6 +158,8 @@ void HIRBasicBlock::LiftValues(HIRBasicBlock* block,
       }
     }
 
+    // If loop detected and there're phis those inputs are defined in this block
+    // (i.e. in loop header) - use them as values
     HIRPhiList::Item* item = phis()->head();
     for (; item != NULL; item = item->next()) {
       HIRPhi* phi = item->value();
@@ -377,6 +377,7 @@ void HIRPhi::AddInput(HIRValue* input) {
     // Replace all input's uses if Phi appeared in loop
     HIRValueList::Item* item = inputs()->head();
     for (; item != NULL; item = item->next()) {
+      if (item->value()->block() == block()) continue;
       block()->ReplaceVarUse(item->value(), this);
     }
 
