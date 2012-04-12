@@ -420,7 +420,7 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
 
         // Instruction requires it's input to reside in some specific register
         GetRegister(hinstr, value, linstr->inputs[i]);
-      } else if (value->operand() != NULL && value->operand()->is_immediate()) {
+      } else if (value->operand() != NULL && !value->operand()->is_spill()) {
         linstr->inputs[i] = value->operand();
       } else {
         LIROperand* op = GetRegister(hinstr, value);

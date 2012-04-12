@@ -896,12 +896,30 @@ AstNode* HIR::VisitCall(AstNode* stmt) {
     }
   }
 
-  Visit(fn->variable());
-  HIRCall* call = new HIRCall(GetValue(fn->variable()));
+  HIRValue* var;
+  HIRValue* receiver = NULL;
+  if (fn->args()->length() > 0 &&
+      fn->args()->head()->value()->is(AstNode::kSelf)) {
+    assert(fn->variable()->is(AstNode::kMember));
+
+    receiver = GetValue(fn->variable()->lhs());
+    HIRValue* property = GetValue(fn->variable()->rhs());
+
+    AddInstruction(new HIRLoadProperty(receiver, property));
+    var = GetLastResult();
+  } else {
+    var = GetValue(fn->variable());
+  }
+  HIRCall* call = new HIRCall(var);
 
   AstList::Item* item = fn->args()->head();
   for (; item != NULL; item = item->next()) {
-    call->AddArg(GetValue(item->value()));
+    if (item->value()->is(AstNode::kSelf)) {
+      assert(receiver != NULL);
+      call->AddArg(receiver);
+    } else {
+      call->AddArg(GetValue(item->value()));
+    }
   }
 
   AddInstruction(call);
