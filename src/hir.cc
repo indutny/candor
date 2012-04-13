@@ -833,6 +833,8 @@ AstNode* HIR::VisitIf(AstNode* node) {
 
 
 AstNode* HIR::VisitWhile(AstNode* node) {
+  HIRBreakContinueInfo b(node);
+
   HIRLoopStart* cond = CreateLoopStart();
   HIRBasicBlock* body = CreateBlock();
   HIRBasicBlock* end = CreateBlock();

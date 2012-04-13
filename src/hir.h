@@ -296,6 +296,41 @@ class HIRFunction : public ZoneObject {
   HIRBasicBlock* block_;
 };
 
+class HIRBreakContinueInfo : public Visitor {
+ public:
+  HIRBreakContinueInfo(AstNode* node) : Visitor(kPreorder),
+                                        break_count_(0),
+                                        continue_count_(0) {
+    VisitChildren(node);
+  }
+
+  inline AstNode* VisitWhile(AstNode* fn) {
+    // Do not count break/continue in child loops
+    return fn;
+  }
+
+  inline AstNode* VisitFunction(AstNode* fn) {
+    // Do not recurse deeper on functions
+    return fn;
+  }
+
+  inline AstNode* VisitBreak(AstNode* fn) {
+    break_count_++;
+    return fn;
+  }
+
+  inline AstNode* VisitContinue(AstNode* fn) {
+    continue_count_++;
+    return fn;
+  }
+
+  inline int break_count() { return break_count_; }
+  inline int continue_count() { return continue_count_; }
+ private:
+  int break_count_;
+  int continue_count_;
+};
+
 class HIR : public Visitor {
  public:
   typedef HashMap<NumberKey, int, ZoneObject> PrintMap;
