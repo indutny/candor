@@ -309,11 +309,11 @@ void LIRBinOp::Generate() {
   Label call_stub(masm()), done(masm());
 
   // Fast case : unboxed +/- const
-  if (inputs[1]->is_immediate() &&
+  if (inputs[1]->has_immediate_value() &&
       (hir()->type() == BinOp::kAdd || hir()->type() == BinOp::kSub)) {
     __ IsUnboxed(rax, &call_stub, NULL);
 
-    int64_t num = inputs[1]->value();
+    int64_t num = inputs[1]->immediate_value();
 
     // addq and subq supports only long immediate (not quad)
     if (num >= -0x7fffffff && num <= 0x7fffffff) {

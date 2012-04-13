@@ -54,6 +54,11 @@ inline void LIR::ChangeOperand(HIRInstruction* hinstr,
 
     // Commit movement
     HIRParallelMove::GetBefore(hinstr)->Reorder(this);
+
+    // imm -> reg
+    if (value->operand()->is_immediate()) {
+      operand->immediate_value(value->operand()->value());
+    }
   }
   value->operand(operand);
 }

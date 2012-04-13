@@ -38,10 +38,14 @@ class LIROperand : public ZoneObject {
 
   LIROperand(Type type, off_t value) : type_(type),
                                        value_(value),
+                                       has_immediate_value_(false),
+                                       immediate_value_(0),
                                        move_status_(kToMove) {
   }
 
   LIROperand(Type type, char* value) : type_(type),
+                                       has_immediate_value_(false),
+                                       immediate_value_(0),
                                        move_status_(kToMove) {
     value_ = reinterpret_cast<off_t>(value);
   }
@@ -53,6 +57,13 @@ class LIROperand : public ZoneObject {
   inline bool is_register() { return type_ == kRegister; }
   inline bool is_spill() { return type_ == kSpill; }
   inline bool is_immediate() { return type_ == kImmediate; }
+
+  inline bool has_immediate_value() { return has_immediate_value_; }
+  inline off_t immediate_value() { return immediate_value_; }
+  inline void immediate_value(off_t immediate_value) {
+    has_immediate_value_ = true;
+    immediate_value_ = immediate_value;
+  }
 
   inline bool is_equal(LIROperand* op) {
     return !is_immediate() && type() == op->type() && value() == op->value();
@@ -69,6 +80,8 @@ class LIROperand : public ZoneObject {
  private:
   Type type_;
   off_t value_;
+  bool has_immediate_value_;
+  off_t immediate_value_;
   MoveStatus move_status_;
 };
 
