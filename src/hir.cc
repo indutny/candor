@@ -456,8 +456,38 @@ void HIRValue::Print(PrintBuffer* p) {
 }
 
 
+HIRBreakContinueInfo::HIRBreakContinueInfo(HIR* hir, AstNode* node)
+    : Visitor(kPreorder),
+      hir_(hir),
+      previous_(hir->break_continue_info()),
+      break_count_(0),
+      continue_count_(0) {
+  continue_blocks()->Push(hir->current_block());
+  break_blocks()->Push(hir->CreateBlock());
+
+  hir->break_continue_info(this);
+
+  VisitChildren(node);
+}
+
+
+HIRBreakContinueInfo::~HIRBreakContinueInfo() {
+  hir()->break_continue_info(previous_);
+}
+
+
+void HIRBreakContinueInfo::AddBlock(ZoneList<HIRBasicBlock*>* list) {
+  HIRBasicBlock* block = hir()->CreateBlock();
+  list->tail()->value()->Goto(block);
+  list->Push(block);
+
+  if (list == continue_blocks()) hir()->set_current_block(block);
+}
+
+
 HIR::HIR(Heap* heap, AstNode* node) : Visitor(kPreorder),
                                       root_(heap),
+                                      break_continue_info_(NULL),
                                       first_instruction_(NULL),
                                       last_instruction_(NULL),
                                       block_index_(0),
@@ -833,11 +863,10 @@ AstNode* HIR::VisitIf(AstNode* node) {
 
 
 AstNode* HIR::VisitWhile(AstNode* node) {
-  HIRBreakContinueInfo b(node);
+  HIRBreakContinueInfo b(this, node);
 
   HIRLoopStart* cond = CreateLoopStart();
   HIRBasicBlock* body = CreateBlock();
-  HIRBasicBlock* end = CreateBlock();
 
   //   entry
   //     |
@@ -859,7 +888,7 @@ AstNode* HIR::VisitWhile(AstNode* node) {
   set_current_block(cond);
   HIRBranchBool* branch = new HIRBranchBool(GetValue(node->lhs()),
                                             body,
-                                            end);
+                                            b.first_break_block());
   Finish(branch);
 
   // Generate loop's body
@@ -871,7 +900,7 @@ AstNode* HIR::VisitWhile(AstNode* node) {
   cond->body(current_block());
 
   // Execution will continue in the `end` block
-  set_current_block(end);
+  set_current_block(b.last_break_block());
 
   return node;
 }
@@ -1039,11 +1068,21 @@ AstNode* HIR::VisitDelete(AstNode* node) {
 
 
 AstNode* HIR::VisitBreak(AstNode* node) {
+  // TODO: Set error
+  assert(break_continue_info() != NULL);
+
+  current_block()->Goto(break_continue_info()->break_blocks()->Shift());
+
   return node;
 }
 
 
 AstNode* HIR::VisitContinue(AstNode* node) {
+  // TODO: Set error
+  assert(break_continue_info() != NULL);
+
+  current_block()->Goto(break_continue_info()->continue_blocks()->Pop());
+
   return node;
 }
 

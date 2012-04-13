@@ -298,11 +298,8 @@ class HIRFunction : public ZoneObject {
 
 class HIRBreakContinueInfo : public Visitor {
  public:
-  HIRBreakContinueInfo(AstNode* node) : Visitor(kPreorder),
-                                        break_count_(0),
-                                        continue_count_(0) {
-    VisitChildren(node);
-  }
+  HIRBreakContinueInfo(HIR* hir, AstNode* node);
+  ~HIRBreakContinueInfo();
 
   inline AstNode* VisitWhile(AstNode* fn) {
     // Do not count break/continue in child loops
@@ -314,21 +311,45 @@ class HIRBreakContinueInfo : public Visitor {
     return fn;
   }
 
+  void AddBlock(ZoneList<HIRBasicBlock*>* list);
+
   inline AstNode* VisitBreak(AstNode* fn) {
     break_count_++;
+    AddBlock(break_blocks());
     return fn;
   }
 
   inline AstNode* VisitContinue(AstNode* fn) {
     continue_count_++;
+    AddBlock(continue_blocks());
     return fn;
   }
 
+  inline HIR* hir() { return hir_; }
+
   inline int break_count() { return break_count_; }
   inline int continue_count() { return continue_count_; }
+
+  inline HIRBasicBlock* first_break_block() {
+    return break_blocks()->head()->value();
+  }
+  inline HIRBasicBlock* last_break_block() {
+    return break_blocks()->tail()->value();
+  }
+
+  inline ZoneList<HIRBasicBlock*>* continue_blocks() {
+    return &continue_blocks_;
+  }
+  inline ZoneList<HIRBasicBlock*>* break_blocks() { return &break_blocks_; }
  private:
+  HIR* hir_;
+  HIRBreakContinueInfo* previous_;
+
   int break_count_;
   int continue_count_;
+
+  ZoneList<HIRBasicBlock*> continue_blocks_;
+  ZoneList<HIRBasicBlock*> break_blocks_;
 };
 
 class HIR : public Visitor {
@@ -436,6 +457,13 @@ class HIR : public Visitor {
 
   inline Root* root() { return &root_; }
 
+  inline HIRBreakContinueInfo* break_continue_info() {
+    return break_continue_info_;
+  }
+  inline void break_continue_info(HIRBreakContinueInfo* info) {
+    break_continue_info_ = info;
+  }
+
   inline HIRValueList* values() { return &values_; }
   inline HIRPhiList* phis() { return &phis_; }
 
@@ -466,6 +494,9 @@ class HIR : public Visitor {
   HIRBasicBlock* root_block_;
   HIRBasicBlock* current_block_;
   Root root_;
+
+  // Current loop information
+  HIRBreakContinueInfo* break_continue_info_;
 
   HIRValueList values_;
   HIRPhiList phis_;
