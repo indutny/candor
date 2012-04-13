@@ -126,46 +126,44 @@ void HIRParallelMove::AddMove(LIROperand* source, LIROperand* target) {
 
 #ifndef NDEBUG
   // Target should not appear twice in raw list
-  OperandList::Item* sitem = raw_sources()->head();
-  OperandList::Item* titem = raw_targets()->head();
-  for (; sitem != NULL; sitem = sitem->next(), titem = titem->next()) {
-    if (titem->value()->is_equal(target)) {
+  MoveList::Item* item = raw_moves()->head();
+  for (; item != NULL; item = item->next()) {
+    MoveItem* move = item->value();
+    if (move->target()->is_equal(target)) {
       assert(0 && "Dublicate target in movement");
     }
   }
 #endif // NDEBUG
 
-  raw_sources()->Push(source);
-  raw_targets()->Push(target);
+  moves()->Push(new MoveItem(source, target));
 }
 
 
-void HIRParallelMove::Reorder(LIR* lir,
-                              ZoneList<LIROperand*>::Item* source,
-                              ZoneList<LIROperand*>::Item* target) {
+void HIRParallelMove::Reorder(LIR* lir, MoveItem* move) {
   // Mark source/target pair as `being moved`
-  source->value()->move_status(LIROperand::kBeingMoved);
+  move->move_status(kBeingMoved);
 
   // Detect successors
-  OperandList::Item* sitem = raw_sources()->head();
-  OperandList::Item* titem = raw_targets()->head();
-  for (; sitem != NULL; sitem = sitem->next(), titem = titem->next()) {
-    if (!sitem->value()->is_equal(target->value())) continue;
+  MoveList::Item* item = raw_moves()->head();
+  for (; item != NULL; item = item->next()) {
+    if (move->source()->is_equal(move->target())) break;
 
-    switch (sitem->value()->move_status()) {
-     case LIROperand::kToMove:
+    MoveItem* next = item->value();
+    if (!next->source()->is_equal(move->target())) continue;
+
+    switch (next->move_status()) {
+     case kToMove:
       // Just successor
-      Reorder(lir, sitem, titem);
+      Reorder(lir, next);
       break;
-     case LIROperand::kBeingMoved:
+     case kBeingMoved:
       // scratch = target
-      sources()->Push(sitem->value());
-      targets()->Push(lir->tmp_spill());
+      moves()->Push(new MoveItem(next->source(), lir->tmp_spill()));
 
       // And use scratch in this move
-      sitem->value(lir->tmp_spill());
+      next->source(lir->tmp_spill());
       break;
-     case LIROperand::kMoved:
+     case kMoved:
       // NOP
       break;
      default:
@@ -175,55 +173,48 @@ void HIRParallelMove::Reorder(LIR* lir,
   }
 
   // And put pair into resulting list
-  sources()->Push(source->value());
-  targets()->Push(target->value());
+  moves()->Push(move);
 
   // Finalize status
-  source->value()->move_status(LIROperand::kMoved);
+  move->move_status(kMoved);
 }
 
 
 void HIRParallelMove::Reorder(LIR* lir) {
-  OperandList::Item* sitem = raw_sources()->head();
-  OperandList::Item* titem = raw_targets()->head();
-  for (; sitem != NULL; sitem = sitem->next(), titem = titem->next()) {
-    if (sitem->value()->move_status() != LIROperand::kToMove) continue;
-    Reorder(lir, sitem, titem);
+  MoveList::Item* item = raw_moves()->head();
+  for (; item != NULL; item = item->next()) {
+    if (item->value()->move_status() != kToMove) continue;
+    Reorder(lir, item->value());
   }
 
   // Reset move_status and empty list
-  LIROperand* op;
-  while ((op = raw_sources()->Shift()) != NULL) {
-    op->move_status(LIROperand::kToMove);
-  }
-  while ((op = raw_targets()->Shift()) != NULL) {
-    op->move_status(LIROperand::kToMove);
+  MoveItem* move;
+  while ((move = raw_moves()->Shift()) != NULL) {
+    move->move_status(kToMove);
   }
 }
 
 
 void HIRParallelMove::Reset() {
-  LIROperand* op;
-  while ((op = raw_sources()->Shift()) != NULL) {}
-  while ((op = raw_targets()->Shift()) != NULL) {}
-  while ((op = sources()->Shift()) != NULL) {}
-  while ((op = targets()->Shift()) != NULL) {}
+  MoveItem* move;
+  while ((move = raw_moves()->Shift()) != NULL) {}
+  while ((move = moves()->Shift()) != NULL) {}
 }
 
 
 void HIRParallelMove::Print(char* buffer, uint32_t size) {
   PrintBuffer p(buffer, size);
 
-  OperandList* s[2] = { raw_sources(), sources() };
-  OperandList* t[2] = { raw_targets(), targets() };
+  MoveList* m[2] = { raw_moves(), moves() };
 
   for (int i = 0; i < 2; i++) {
-    OperandList::Item* sitem = s[i]->head();
-    OperandList::Item* titem = t[i]->head();
-    for (; sitem != NULL; sitem = sitem->next(), titem = titem->next()) {
-      sitem->value()->Print(&p);
+    MoveList::Item* item = m[i]->head();
+    for (; item != NULL; item = item->next()) {
+      MoveItem* move = item->value();
+
+      move->source()->Print(&p);
       p.Print(" => ");
-      titem->value()->Print(&p);
+      move->target()->Print(&p);
       p.Print("\n");
     }
     if (i == 0) p.Print("----\n");

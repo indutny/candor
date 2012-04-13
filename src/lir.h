@@ -30,23 +30,15 @@ class LIROperand : public ZoneObject {
     kImmediate
   };
 
-  enum MoveStatus {
-    kToMove,
-    kBeingMoved,
-    kMoved
-  };
-
   LIROperand(Type type, off_t value) : type_(type),
                                        value_(value),
                                        has_immediate_value_(false),
-                                       immediate_value_(0),
-                                       move_status_(kToMove) {
+                                       immediate_value_(0) {
   }
 
   LIROperand(Type type, char* value) : type_(type),
                                        has_immediate_value_(false),
-                                       immediate_value_(0),
-                                       move_status_(kToMove) {
+                                       immediate_value_(0) {
     value_ = reinterpret_cast<off_t>(value);
   }
 
@@ -69,12 +61,6 @@ class LIROperand : public ZoneObject {
     return !is_immediate() && type() == op->type() && value() == op->value();
   }
 
-  // Whether operand is being moved by HIRParallelMove::Reorder, or not
-  inline MoveStatus move_status() { return move_status_; }
-  inline void move_status(MoveStatus move_status) {
-    move_status_ = move_status;
-  }
-
   inline off_t value() { return value_; }
 
  private:
@@ -82,7 +68,6 @@ class LIROperand : public ZoneObject {
   off_t value_;
   bool has_immediate_value_;
   off_t immediate_value_;
-  MoveStatus move_status_;
 };
 
 // For sorted insertions

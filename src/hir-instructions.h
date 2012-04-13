@@ -217,7 +217,36 @@ class HIRPrefixKeyword : public HIRStubCall {
 
 class HIRParallelMove : public HIRInstruction {
  public:
-  typedef ZoneList<LIROperand*> OperandList;
+  enum MoveStatus {
+    kToMove,
+    kBeingMoved,
+    kMoved
+  };
+
+  class MoveItem : public ZoneObject {
+   public:
+    MoveItem(LIROperand* source, LIROperand* target) : source_(source),
+                                                       target_(target),
+                                                       move_status_(kToMove) {
+    }
+
+    inline LIROperand* source() { return source_; }
+    inline LIROperand* target() { return target_; }
+    inline void source(LIROperand* source) { source_ = source; }
+    inline void target(LIROperand* target) { target_ = target; }
+
+    inline MoveStatus move_status() { return move_status_; }
+    inline void move_status(MoveStatus move_status) {
+      move_status_ = move_status;
+    }
+
+   private:
+    LIROperand* source_;
+    LIROperand* target_;
+    MoveStatus move_status_;
+  };
+
+  typedef ZoneList<MoveItem*> MoveList;
 
   HIRParallelMove() : HIRInstruction(kParallelMove) {
   }
@@ -247,24 +276,18 @@ class HIRParallelMove : public HIRInstruction {
     return Cast(instr->next());
   }
 
-  inline OperandList* sources() { return &sources_; }
-  inline OperandList* targets() { return &targets_; }
-  inline OperandList* raw_sources() { return &raw_sources_; }
-  inline OperandList* raw_targets() { return &raw_targets_; }
+  inline MoveList* moves() { return &moves_; }
+  inline MoveList* raw_moves() { return &raw_moves_; }
 
  private:
   // For recursive reordering
-  void Reorder(LIR* lir,
-               ZoneList<LIROperand*>::Item* source,
-               ZoneList<LIROperand*>::Item* target);
+  void Reorder(LIR* lir, MoveItem* item);
 
   // Sources/Targets after reordering
-  OperandList sources_;
-  OperandList targets_;
+  MoveList moves_;
 
   // Sources/Targets before reordering (because it's cheaper to leave it here)
-  OperandList raw_sources_;
-  OperandList raw_targets_;
+  MoveList raw_moves_;
 };
 
 class HIRNop : public HIRInstruction {

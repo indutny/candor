@@ -21,17 +21,18 @@ namespace internal {
 #define __ masm()->
 
 void LIRParallelMove::Generate() {
-  ZoneList<LIROperand*>::Item* source = hir()->sources()->head();
-  ZoneList<LIROperand*>::Item* target = hir()->targets()->head();
+  ZoneList<HIRParallelMove::MoveItem*>::Item* item = hir()->moves()->head();
 
-  for (; source != NULL; source = source->next(), target = target->next()) {
+  for (; item != NULL; item = item->next()) {
+    HIRParallelMove::MoveItem* move = item->value();
+
     // Fast-case for : reg = 0
-    if (target->value()->is_register() &&
-        source->value()->is_immediate() && source->value()->value() == 0) {
-      __ xorq(ToRegister(target->value()), ToRegister(target->value()));
+    if (move->target()->is_register() &&
+        move->source()->is_immediate() && move->source()->value() == 0) {
+      __ xorq(ToRegister(move->target()), ToRegister(move->target()));
       continue;
     }
-    __ Mov(target->value(), source->value());
+    __ Mov(move->target(), move->source());
   }
 }
 
