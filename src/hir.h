@@ -18,6 +18,7 @@ class HIR;
 class HIRPhi;
 class HIRValue;
 class HIRLoopShuffle;
+class HIRLoopStart;
 class LIROperand;
 class Heap;
 class ScopeSlot;
@@ -109,12 +110,22 @@ class HIRBasicBlock : public ZoneObject {
   inline ZoneList<RelocationInfo*>* uses() { return &uses_; }
 
   // Shuffle to return loop variable invariants back to the start positions
-  inline ZoneList<HIRLoopShuffle*>* loop_preshuffle() {
-    return &loop_preshuffle_;
+  inline ZoneList<HIRLoopShuffle*>* preshuffle() {
+    return preshuffle_;
   }
-  inline ZoneList<HIRLoopShuffle*>* loop_postshuffle() {
-    return &loop_postshuffle_;
+  inline ZoneList<HIRLoopShuffle*>* postshuffle() {
+    return postshuffle_;
   }
+  inline void preshuffle(ZoneList<HIRLoopShuffle*>* preshuffle) {
+    preshuffle_ = preshuffle;
+  }
+  inline void postshuffle(ZoneList<HIRLoopShuffle*>* postshuffle) {
+    postshuffle_ = postshuffle;
+  }
+
+  // Loop associated with current block (for break/continue blocks)
+  inline HIRLoopStart* loop_start() { return loop_start_; }
+  inline void loop_start(HIRLoopStart* loop_start) { loop_start_ = loop_start; }
 
   inline bool relocated() { return relocated_; }
   inline void relocated(bool relocated) { relocated_ = relocated; }
@@ -148,8 +159,10 @@ class HIRBasicBlock : public ZoneObject {
   int relocation_offset_;
   ZoneList<RelocationInfo*> uses_;
 
-  ZoneList<HIRLoopShuffle*> loop_preshuffle_;
-  ZoneList<HIRLoopShuffle*> loop_postshuffle_;
+  HIRLoopStart* loop_start_;
+
+  ZoneList<HIRLoopShuffle*>* preshuffle_;
+  ZoneList<HIRLoopShuffle*>* postshuffle_;
 
   bool relocated_;
   bool finished_;
@@ -176,13 +189,19 @@ class HIRLoopStart : public HIRBasicBlock {
  public:
   HIRLoopStart(HIR* hir) : HIRBasicBlock(hir), body_(NULL) {
     type_ = kLoopStart;
+    preshuffle(new ZoneList<HIRLoopShuffle*>());
+    postshuffle(new ZoneList<HIRLoopShuffle*>());
   }
 
   static inline HIRLoopStart* Cast(HIRBasicBlock* block) {
     return reinterpret_cast<HIRLoopStart*>(block);
   }
 
-  inline void body(HIRBasicBlock* body) { body_ = body; }
+  inline void body(HIRBasicBlock* body) {
+    body_ = body;
+    body->preshuffle(preshuffle());
+    body->postshuffle(postshuffle());
+  }
   inline HIRBasicBlock* body() { return body_; }
 
  private:
@@ -298,7 +317,7 @@ class HIRFunction : public ZoneObject {
 
 class HIRBreakContinueInfo : public Visitor {
  public:
-  HIRBreakContinueInfo(HIR* hir, AstNode* node);
+  HIRBreakContinueInfo(HIR* hir, AstNode* node, HIRLoopStart* ls);
   ~HIRBreakContinueInfo();
 
   inline AstNode* VisitWhile(AstNode* fn) {

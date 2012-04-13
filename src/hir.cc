@@ -22,6 +22,9 @@ HIRBasicBlock::HIRBasicBlock(HIR* hir) : hir_(hir),
                                          successors_count_(0),
                                          masm_(NULL),
                                          relocation_offset_(0),
+                                         loop_start_(NULL),
+                                         preshuffle_(NULL),
+                                         postshuffle_(NULL),
                                          relocated_(false),
                                          finished_(false),
                                          id_(hir->get_block_index()) {
@@ -456,7 +459,9 @@ void HIRValue::Print(PrintBuffer* p) {
 }
 
 
-HIRBreakContinueInfo::HIRBreakContinueInfo(HIR* hir, AstNode* node)
+HIRBreakContinueInfo::HIRBreakContinueInfo(HIR* hir,
+                                           AstNode* node,
+                                           HIRLoopStart* ls)
     : Visitor(kPreorder),
       hir_(hir),
       previous_(hir->break_continue_info()),
@@ -468,6 +473,16 @@ HIRBreakContinueInfo::HIRBreakContinueInfo(HIR* hir, AstNode* node)
   hir->break_continue_info(this);
 
   VisitChildren(node);
+
+  ZoneList<HIRBasicBlock*>::Item* item;
+
+  // Associate loop start with each used block
+  for (item = continue_blocks()->head(); item != NULL; item = item->next()) {
+    item->value()->preshuffle(ls->preshuffle());
+  }
+  for (item = break_blocks()->head(); item != NULL; item = item->next()) {
+    item->value()->preshuffle(ls->postshuffle());
+  }
 }
 
 
@@ -863,9 +878,9 @@ AstNode* HIR::VisitIf(AstNode* node) {
 
 
 AstNode* HIR::VisitWhile(AstNode* node) {
-  HIRBreakContinueInfo b(this, node);
-
   HIRLoopStart* cond = CreateLoopStart();
+
+  HIRBreakContinueInfo b(this, node, cond);
   HIRBasicBlock* body = CreateBlock();
 
   //   entry
