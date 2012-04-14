@@ -362,7 +362,7 @@ void HIRPhi::AddInput(HIRValue* input) {
     // Replace all input's uses if Phi appeared in loop
     HIRValueList::Item* item = inputs()->head();
     for (; item != NULL; item = item->next()) {
-      if (item->value()->block() == block()) continue;
+      if (block()->Dominates(item->value()->block())) continue;
       block()->ReplaceVarUse(item->value(), this);
     }
 
