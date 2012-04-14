@@ -187,7 +187,7 @@ class HIRLoopShuffle : public ZoneObject {
 
 class HIRLoopStart : public HIRBasicBlock {
  public:
-  HIRLoopStart(HIR* hir) : HIRBasicBlock(hir), body_(NULL) {
+  HIRLoopStart(HIR* hir) : HIRBasicBlock(hir), body_(NULL), end_(NULL) {
     type_ = kLoopStart;
     preshuffle(new ZoneList<HIRLoopShuffle*>());
     postshuffle(new ZoneList<HIRLoopShuffle*>());
@@ -204,8 +204,12 @@ class HIRLoopStart : public HIRBasicBlock {
   }
   inline HIRBasicBlock* body() { return body_; }
 
+  inline void end(HIRBasicBlock* end) { end_ = end; }
+  inline HIRBasicBlock* end() { return end_; }
+
  private:
   HIRBasicBlock* body_;
+  HIRBasicBlock* end_;
 };
 
 // SSA Value
@@ -218,9 +222,25 @@ class HIRValue : public ZoneObject {
 
   class LiveRange {
    public:
-    inline void Extend(int value) {
-      if (start > value) start = value;
-      if (end < value) end = value;
+    inline bool Extend(int value) {
+      bool changed = false;
+
+      if (start == -1) {
+        start = value;
+        end = value;
+        return true;
+      }
+
+      if (start > value) {
+        changed = true;
+        start = value;
+      }
+      if (end < value) {
+        changed = true;
+        end = value;
+      }
+
+      return changed;
     }
 
     int start;

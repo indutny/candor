@@ -111,10 +111,7 @@ void HIRBasicBlock::LiftValues(HIRBasicBlock* block,
     HIRValue* value = item->value();
 
     // Prune dead variables
-    if (value == NULL ||
-        (!value->is_phi() && value->uses()->length() == 0)) {
-      continue;
-    }
+    if (value == NULL) continue;
 
     // If value is already in current block - insert phi!
     if (value->slot()->hir()->current_block() == this &&
@@ -146,21 +143,6 @@ void HIRBasicBlock::LiftValues(HIRBasicBlock* block,
   }
 
   if (instructions()->length() != 0) {
-    // Add non-local variable uses to the end of loop
-    // to ensure that they will be live after the first loop's pass
-    if (instructions()->length() != 0) {
-      item = block->values()->head();
-      for (; item != NULL; item = item->next()) {
-        HIRValue* value = item->value();
-
-        if (value == NULL ||
-            (Dominates(value->block()) && value->block() != block)) {
-          continue;
-        }
-        value->uses()->Push(block->last_instruction());
-      }
-    }
-
     // If loop detected and there're phis those inputs are defined in this block
     // (i.e. in loop header) - use them as values
     HIRPhiList::Item* item = phis()->head();
@@ -916,6 +898,7 @@ AstNode* HIR::VisitWhile(AstNode* node) {
 
   // Execution will continue in the `end` block
   set_current_block(b.last_break_block());
+  cond->end(current_block());
 
   return node;
 }

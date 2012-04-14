@@ -67,7 +67,47 @@ void LIR::CalculateLiveness() {
     // Set liveness range
     value->live_range()->start = min;
     value->live_range()->end = max;
+
+    // Extend phi's and it's inputs liveness
+    if (value->is_phi() && max != -1) {
+      ZoneList<HIRPhi*> work_list;
+      work_list.Push(HIRPhi::Cast(value));
+
+      HIRPhi* phi;
+      while ((phi = work_list.Shift()) != NULL) {
+        int id = phi->block()->first_instruction()->id();
+        if (phi->live_range()->Extend(id)) {
+          if (phi->inputs()->head()->value()->is_phi()) {
+            work_list.Push(HIRPhi::Cast(phi->inputs()->head()->value()));
+          }
+          if (phi->inputs()->tail()->value()->is_phi()) {
+            work_list.Push(HIRPhi::Cast(phi->inputs()->tail()->value()));
+          }
+        }
+      }
+    }
   }
+
+  // Add non-local variable uses to the end of loop
+  // to ensure that they will be live after the first loop's pass
+  HIRInstruction* hinstr = hir()->first_instruction();
+  for (; hinstr != NULL; hinstr = hinstr->next()) {
+    if (hinstr->block() == NULL || !hinstr->block()->is_loop_start() ||
+        hinstr != hinstr->block()->first_instruction()) {
+      continue;
+    }
+    HIRBasicBlock* end = HIRLoopStart::Cast(hinstr->block())->end();
+
+    item = hinstr->block()->values()->head();
+    for (; item != NULL; item = item->next()) {
+      HIRValue* value = item->value();
+
+      if (value == NULL || value->live_range()->start == -1) continue;
+
+      value->live_range()->Extend(end->last_instruction()->id());
+    }
+  }
+
 }
 
 

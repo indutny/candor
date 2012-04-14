@@ -135,7 +135,7 @@ void HIRParallelMove::AddMove(LIROperand* source, LIROperand* target) {
   }
 #endif // NDEBUG
 
-  moves()->Push(new MoveItem(source, target));
+  raw_moves()->Push(new MoveItem(source, target));
 }
 
 
