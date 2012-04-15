@@ -137,6 +137,8 @@ void Masm::AllocateSpills() {
                                     offset() - 4);
 
   relocation_info_.Push(spill_reloc_);
+
+  FillStackSlots();
 }
 
 
@@ -362,13 +364,19 @@ void Masm::Fill(Register start, Register end, Immediate value) {
 
 
 void Masm::FillStackSlots() {
+  push(scratch);
+  push(r8);
+  push(r9);
   mov(r8, rsp);
   mov(r9, rbp);
+  // Skip r8/r9/scratch
+  addq(r8, Immediate(8 * 3));
   // Skip frame info
-  subq(r9, Immediate(8));
+  subq(r9, Immediate(8 * 1));
   Fill(r8, r9, Immediate(Heap::kTagNil));
-  xorq(r8, r8);
-  xorq(r9, r9);
+  pop(r9);
+  pop(r8);
+  pop(scratch);
 }
 
 

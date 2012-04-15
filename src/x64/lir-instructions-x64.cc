@@ -46,7 +46,6 @@ void LIREntry::Generate() {
   __ mov(rbp, rsp);
 
   __ AllocateSpills();
-  __ FillStackSlots();
 
   // Allocate context
   __ AllocateContext(hir()->context_slots());
