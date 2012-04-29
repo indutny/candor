@@ -1,4 +1,7 @@
 HIR/LIR todos:
+* Move context variables get/set to instructions (with index as imm arg)
+  (No values for them, as they may be changed by side-effect instructions)
+* Insert phis everywhere, not just in join points (different phi algorithm)
 * Break/continue
 * Vararg arguments (call)
 * Speeding up HIR construction
