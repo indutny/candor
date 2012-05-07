@@ -190,8 +190,8 @@ class HIRLoopStart : public HIRBasicBlock {
  public:
   HIRLoopStart(HIR* hir) : HIRBasicBlock(hir), body_(NULL), end_(NULL) {
     type_ = kLoopStart;
-    preshuffle(new ZoneList<HIRLoopShuffle*>());
-    postshuffle(new ZoneList<HIRLoopShuffle*>());
+    preshuffle(&loop_pre_);
+    postshuffle(&loop_post_);
   }
 
   static inline HIRLoopStart* Cast(HIRBasicBlock* block) {
@@ -209,6 +209,9 @@ class HIRLoopStart : public HIRBasicBlock {
   inline HIRBasicBlock* end() { return end_; }
 
  private:
+  ZoneList<HIRLoopShuffle*> loop_pre_;
+  ZoneList<HIRLoopShuffle*> loop_post_;
+
   HIRBasicBlock* body_;
   HIRBasicBlock* end_;
 };
