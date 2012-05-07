@@ -295,8 +295,8 @@ class HIRNop : public HIRInstruction {
   HIRNop() : HIRInstruction(kNop) {
   }
 
-  HIRNop(HIRValue* result) : HIRInstruction(kNop) {
-    SetResult(result);
+  HIRNop(HIRValue* value) : HIRInstruction(kNop) {
+    SetInput(value);
   }
 };
 

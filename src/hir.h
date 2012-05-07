@@ -134,6 +134,7 @@ class HIRBasicBlock : public ZoneObject {
   inline void finished(bool finished) { finished_ = finished; }
 
   inline int id() { return id_; }
+  inline void id(int id) { id_ = id; }
 
   void MarkPrinted();
   bool IsPrintable();
@@ -142,7 +143,7 @@ class HIRBasicBlock : public ZoneObject {
   HIR* hir_;
   BlockType type_;
 
-  // Whether block was enumerated by EnumInstructions() or not
+  // Whether block was enumerated by Enumerate() or not
   int enumerated_;
 
   HIRValueList values_;
@@ -375,6 +376,9 @@ class HIRBreakContinueInfo : public Visitor {
   inline HIRBasicBlock* last_break_block() {
     return break_blocks()->tail()->value();
   }
+  inline HIRBasicBlock* first_continue_block() {
+    return continue_blocks()->head()->value();
+  }
 
   inline ZoneList<HIRBasicBlock*>* continue_blocks() {
     return &continue_blocks_;
@@ -415,7 +419,7 @@ class HIR : public Visitor {
   void Finish(HIRInstruction* instr);
 
   // Go through all blocks in pre-order and enum/link instructions
-  void EnumInstructions();
+  void Enumerate();
 
   // Visit node and get last instruction's result
   HIRValue* GetValue(AstNode* node);
@@ -516,7 +520,6 @@ class HIR : public Visitor {
     last_instruction_ = last_instruction;
   }
 
-  inline int get_block_index() { return block_index_++; }
   inline int get_variable_index() { return variable_index_++; }
 
   inline int get_instruction_index() { return instruction_index_++; }
@@ -543,7 +546,6 @@ class HIR : public Visitor {
   HIRInstruction* last_instruction_;
 
   // debugging indexes (and for liveness-range calculations)
-  int block_index_;
   int variable_index_;
   int instruction_index_;
 

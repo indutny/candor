@@ -27,7 +27,7 @@ HIRBasicBlock::HIRBasicBlock(HIR* hir) : hir_(hir),
                                          postshuffle_(NULL),
                                          relocated_(false),
                                          finished_(false),
-                                         id_(hir->get_block_index()) {
+                                         id_(-1) {
   predecessors_[0] = NULL;
   predecessors_[1] = NULL;
   successors_[0] = NULL;
@@ -450,6 +450,8 @@ HIRBreakContinueInfo::HIRBreakContinueInfo(HIR* hir,
       break_count_(0),
       continue_count_(0) {
   continue_blocks()->Push(hir->current_block());
+  AddBlock(continue_blocks());
+  continue_blocks()->Shift();
   break_blocks()->Push(hir->CreateBlock());
 
   hir->break_continue_info(this);
@@ -487,7 +489,6 @@ HIR::HIR(Heap* heap, AstNode* node) : Visitor(kPreorder),
                                       break_continue_info_(NULL),
                                       first_instruction_(NULL),
                                       last_instruction_(NULL),
-                                      block_index_(0),
                                       variable_index_(0),
                                       instruction_index_(0),
                                       enumerated_(false),
@@ -502,7 +503,7 @@ HIR::HIR(Heap* heap, AstNode* node) : Visitor(kPreorder),
     Visit(fn->node());
   }
 
-  EnumInstructions();
+  Enumerate();
 }
 
 
@@ -628,7 +629,7 @@ void HIR::Finish(HIRInstruction* instr) {
 }
 
 
-void HIR::EnumInstructions() {
+void HIR::Enumerate() {
   ZoneList<HIRBasicBlock*>::Item* root = roots()->head();
   ZoneList<HIRBasicBlock*> work_list;
 
@@ -646,6 +647,8 @@ void HIR::EnumInstructions() {
     first_instruction(move);
     last_instruction(move);
   }
+
+  int block_id = 0;
 
   // Process worklist
   HIRBasicBlock* current;
@@ -668,6 +671,10 @@ void HIR::EnumInstructions() {
       }
     }
 
+    if (current->id() == -1) {
+      current->id(block_id++);
+    }
+
     // Go through all block's instructions, link them together and assign id
     HIRInstructionList::Item* instr = current->instructions()->head();
     for (; instr != NULL; instr = instr->next()) {
@@ -687,6 +694,12 @@ void HIR::EnumInstructions() {
       move->prev(last_instruction());
       move->id(get_instruction_index());
       last_instruction(move);
+    }
+
+    for (int i = 0; i < current->successors_count(); i++) {
+      if (current->successors()[i]->id() == -1) {
+        current->successors()[i]->id(block_id++);
+      }
     }
 
     // Add block's successors to the work list
@@ -716,7 +729,13 @@ HIRValue* HIR::GetValue(AstNode* node) {
 
 
 HIRValue* HIR::GetLastResult() {
-  HIRValue* res = current_block()->instructions()->tail()->value()->GetResult();
+  HIRInstruction* instr = current_block()->instructions()->tail()->value();
+
+  HIRValue* res = instr->is(HIRInstruction::kNop) ?
+      instr->values()->head()->value()
+      :
+      instr->GetResult();
+
   if (res == NULL) {
     return CreateValue(root()->Put(new AstNode(AstNode::kNil)));
   } else {
@@ -893,7 +912,7 @@ AstNode* HIR::VisitWhile(AstNode* node) {
   Visit(node->rhs());
 
   // And loop it back to condition
-  current_block()->Goto(cond);
+  current_block()->Goto(b.first_continue_block());
   cond->body(current_block());
 
   // Execution will continue in the `end` block

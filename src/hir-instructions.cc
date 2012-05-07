@@ -60,13 +60,6 @@ void HIRInstruction::ReplaceVarUse(HIRValue* source, HIRValue* target) {
     item = item->next();
   }
 
-  // Nop's return value doesn't define anything
-  // TODO: Use something better to represent use-def
-  if (type() == HIRInstruction::kNop && GetResult() == source) {
-    result_ = target;
-    found = true;
-  }
-
   if (found) {
     // Remove instr from source uses
     ZoneList<HIRInstruction*>::Item* instr = source->uses()->head();
