@@ -53,20 +53,6 @@ void HIRBasicBlock::AddValue(HIRValue* value) {
     }
   }
   values()->Push(value);
-
-  // Inputs list contain only first added variable
-  item = inputs()->head();
-  for (; item != NULL; item = item->next()) {
-    if (item->value()->slot() == value->slot()) {
-      if (value->is_phi()) {
-        inputs()->Remove(item);
-        item = NULL;
-      }
-      break;
-    }
-  }
-
-  if (item == NULL) inputs()->Push(value);
 }
 
 
@@ -74,30 +60,11 @@ void HIRBasicBlock::AddPredecessor(HIRBasicBlock* block) {
   assert(predecessors_count() < 2);
   predecessors()[predecessors_count_++] = block;
 
-  HashMap<NumberKey, int, ZoneObject> map;
-  LiftValues(block, &map);
-}
-
-
-void HIRBasicBlock::AddSuccessor(HIRBasicBlock* block) {
-  assert(successors_count() < 2);
-  successors()[successors_count_++] = block;
-  block->AddPredecessor(this);
-}
-
-
-void HIRBasicBlock::LiftValues(HIRBasicBlock* block,
-                               HashMap<NumberKey, int, ZoneObject>* map) {
-  // Skip loops
-  if (map->Get(NumberKey::New(reinterpret_cast<char*>(this)))) return;
-  int mark;
-  map->Set(NumberKey::New(reinterpret_cast<char*>(this)), &mark);
-
   HIRValueList::Item* item;
+
+  // Mark values propagated from first predecessor
   if (predecessors_count() > 1) {
-    // Mark values propagated from first predecessor
-    item = inputs()->head();
-    for (; item != NULL; item = item->next()) {
+    for (item = values()->head(); item != NULL; item = item->next()) {
       if (item->value() == NULL) continue;
 
       item->value()->current_block(this);
@@ -105,61 +72,44 @@ void HIRBasicBlock::LiftValues(HIRBasicBlock* block,
     }
   }
 
-  // Propagate used values from predecessor to current block
-  item = block->values()->head();
-  for (; item != NULL; item = item->next()) {
+  // Lift values from new predecessor
+  for (item = block->values()->head(); item != NULL; item = item->next()) {
     HIRValue* value = item->value();
+    HIRPhi* phi;
+    assert(value->slot()->hir() != NULL);
 
-    // Prune dead variables
-    if (value == NULL) continue;
-
-    // If value is already in current block - insert phi!
-    if (value->slot()->hir()->current_block() == this &&
-        value->slot()->hir() != value) {
-      HIRPhi* phi = HIRPhi::Cast(value->slot()->hir());
-      if (!phi->is_phi()) {
+    // Value is already in values() list
+    if (value->slot()->hir()->current_block() == this) {
+      if (is_loop_start()) {
+        // Only phis are in the values list for loop start
+        phi = HIRPhi::Cast(value->slot()->hir());
+      } else {
         phi = new HIRPhi(this, value->slot()->hir());
-
-        // Replace slot's value
         value->slot()->hir(phi);
       }
 
       phi->AddInput(value);
     } else {
-      // And associated with a current block
-      value->current_block(this);
-      value->slot()->hir(value);
-
-      // Otherwise put value to the list
-      AddValue(value);
-    }
-  }
-
-  if (successors_count() > 0) {
-    // If any value was added - propagate them to successors
-    for (int i = 0; i < successors_count(); i++) {
-      successors()[i]->LiftValues(this, map);
-    }
-  }
-
-  if (instructions()->length() != 0) {
-    // If loop detected and there're phis those inputs are defined in this block
-    // (i.e. in loop header) - use them as values
-    HIRPhiList::Item* item = phis()->head();
-    for (; item != NULL; item = item->next()) {
-      HIRPhi* phi = item->value();
-
-      HIRValue* inputs[2] = { phi->inputs()->head()->value(),
-                              phi->inputs()->tail()->value() };
-      for (int i = 0; i < 2; i++) {
-        if (inputs[i]->block() == this) {
-          inputs[i]->current_block(this);
-          inputs[i]->slot()->hir(inputs[i]);
-          break;
-        }
+      if (is_loop_start()) {
+        // Insert phi for every local variable in loop start
+        phi = new HIRPhi(this, value);
+        AddValue(phi);
+        value->slot()->hir(phi);
+      } else {
+        // Just put value into the list
+        AddValue(value);
+        value->current_block(this);
+        value->slot()->hir(value);
       }
     }
   }
+}
+
+
+void HIRBasicBlock::AddSuccessor(HIRBasicBlock* block) {
+  assert(successors_count() < 2);
+  successors()[successors_count_++] = block;
+  block->AddPredecessor(this);
 }
 
 
@@ -174,42 +124,6 @@ void HIRBasicBlock::Goto(HIRBasicBlock* block) {
 
   // Connect graph nodes
   AddSuccessor(block);
-}
-
-
-void HIRBasicBlock::ReplaceVarUse(HIRValue* source, HIRValue* target) {
-  if (instructions()->length() == 0) return;
-
-  ZoneList<HIRBasicBlock*> work_list;
-  ZoneList<HIRBasicBlock*> cleanup_list;
-
-  work_list.Push(this);
-
-  HIRBasicBlock* block;
-  while ((block = work_list.Shift()) != NULL) {
-    cleanup_list.Push(block);
-
-    if (target->block()->Dominates(block)) {
-      // Replace value use in each instruction
-      ZoneList<HIRInstruction*>::Item* item = block->instructions()->head();
-      for (; item != NULL; item = item->next()) {
-        item->value()->ReplaceVarUse(source, target);
-      }
-    }
-
-    // Add block's successors to the work list
-    for (int i = block->successors_count() - 1; i >= 0; i--) {
-      // Skip processed blocks and join blocks that was visited only once
-      block->successors()[i]->enumerate();
-      if (block->successors()[i]->is_enumerated()) {
-        work_list.Unshift(block->successors()[i]);
-      }
-    }
-  }
-
-  while ((block = cleanup_list.Shift()) != NULL) {
-    block->reset_enumerate();
-  }
 }
 
 
@@ -332,48 +246,16 @@ HIRPhi::HIRPhi(HIRBasicBlock* block, HIRValue* value)
 
 
 void HIRPhi::AddInput(HIRValue* input) {
-  if (inputs()->length() > 1) {
-    HIRValue* left = inputs()->head()->value();
-
-    // XXX: Some sort of black magic here, I need to understand how it works
-    if (input->is_phi()) {
-      HIRPhi* phi_input = HIRPhi::Cast(input);
-      if (phi_input->inputs()->length() != 0 &&
-          left != phi_input->inputs()->head()->value() &&
-          left != phi_input->inputs()->tail()->value()) {
-        block()->ReplaceVarUse(input, this);
-        return;
-      }
-    }
-
-    // Remove excessive inputs, use only last redifinition of value
-    // (Useful in loop's start block)
-    inputs()->Shift();
-  }
-
-  if (inputs()->length() == 1) {
-    // Ignore duplicate inputs
-    if (inputs()->head()->value() == input) return;
-  }
-
+  assert(inputs()->length() < 2);
   inputs()->Push(input);
+  input->phi_uses()->Push(this);
+}
 
-  if (inputs()->length() > 1) {
-    // Replace all input's uses if Phi appeared in loop
-    HIRValueList::Item* item = inputs()->head();
-    for (; item != NULL; item = item->next()) {
-      if (block()->Dominates(item->value()->block())) continue;
-      block()->ReplaceVarUse(item->value(), this);
-    }
 
-    // Ensure that phis are in correct order
-    HIRValue* left = inputs()->head()->value();
-    HIRValue* right = inputs()->tail()->value();
-
-    if ((!left->block()->Dominates(block()) || left->block() == block()) &&
-        right->block()->Dominates(block())) {
-      inputs()->Push(inputs()->Shift());
-    }
+void HIRPhi::ReplaceVarUse(HIRValue* source, HIRValue* target) {
+  HIRValueList::Item* item;
+  for (item = inputs()->head(); item != NULL; item = item->next()) {
+    if (item->value() == source) item->value(target);
   }
 }
 
@@ -441,32 +323,38 @@ void HIRValue::Print(PrintBuffer* p) {
 }
 
 
-HIRBreakContinueInfo::HIRBreakContinueInfo(HIR* hir,
-                                           AstNode* node,
-                                           HIRLoopStart* ls)
+void HIRValue::Replace(HIRValue* target) {
+  {
+    HIRInstructionList::Item* item;
+    for (item = uses()->head(); item != NULL; item = item->next()) {
+      item->value()->ReplaceVarUse(this, target);
+    }
+  }
+
+  {
+    HIRPhiList::Item* item;
+    for (item = phi_uses()->head(); item != NULL; item = item->next()) {
+      item->value()->ReplaceVarUse(this, target);
+    }
+  }
+}
+
+
+HIRBreakContinueInfo::HIRBreakContinueInfo(HIR* hir,  AstNode* node)
     : Visitor(kPreorder),
       hir_(hir),
       previous_(hir->break_continue_info()),
-      break_count_(0),
       continue_count_(0) {
+
   continue_blocks()->Push(hir->current_block());
-  AddBlock(continue_blocks());
+  AddBlock(kContinueBlocks);
   continue_blocks()->Shift();
-  break_blocks()->Push(hir->CreateBlock());
+
+  AddBlock(kBreakBlocks);
 
   hir->break_continue_info(this);
 
   VisitChildren(node);
-
-  ZoneList<HIRBasicBlock*>::Item* item;
-
-  // Associate loop start with each used block
-  for (item = continue_blocks()->head(); item != NULL; item = item->next()) {
-    item->value()->preshuffle(ls->preshuffle());
-  }
-  for (item = break_blocks()->head(); item != NULL; item = item->next()) {
-    item->value()->preshuffle(ls->postshuffle());
-  }
 }
 
 
@@ -475,12 +363,23 @@ HIRBreakContinueInfo::~HIRBreakContinueInfo() {
 }
 
 
-void HIRBreakContinueInfo::AddBlock(ZoneList<HIRBasicBlock*>* list) {
-  HIRBasicBlock* block = hir()->CreateBlock();
-  list->tail()->value()->Goto(block);
+HIRBasicBlock* HIRBreakContinueInfo::AddBlock(ListKind kind) {
+  HIRBasicBlock* block;
+  ZoneList<HIRBasicBlock*>* list;
+
+  if (kind == kContinueBlocks) {
+    block = hir()->CreateLoopStart();
+    list = continue_blocks();
+    hir()->set_current_block(block);
+  } else {
+    block = hir()->CreateBlock();
+    list = break_blocks();
+  }
+
+  if (list->tail() != NULL) list->tail()->value()->Goto(block);
   list->Push(block);
 
-  if (list == continue_blocks()) hir()->set_current_block(block);
+  return block;
 }
 
 
@@ -662,8 +561,11 @@ void HIR::Enumerate() {
     // Prune phis with less than 2 inputs
     HIRPhiList::Item* item = current->phis()->head();
     while (item != NULL) {
+      HIRPhi* phi = item->value();
       if (item->value()->inputs()->length() < 2) {
         HIRPhiList::Item* next = item->next();
+        phi->Replace(phi->inputs()->head()->value());
+
         current->phis()->Remove(item);
         item = next;
       } else {
@@ -879,25 +781,25 @@ AstNode* HIR::VisitIf(AstNode* node) {
 
 
 AstNode* HIR::VisitWhile(AstNode* node) {
-  HIRLoopStart* cond = CreateLoopStart();
-
-  HIRBreakContinueInfo b(this, node, cond);
+  HIRBreakContinueInfo b(this, node);
   HIRBasicBlock* body = CreateBlock();
+  HIRLoopStart* cond = CreateLoopStart();
 
   //   entry
   //     |
-  //    lhs
-  //     | \
-  //     |  ^
-  //     |  |
-  //     | body
-  //     |  |
-  //     |  ^
-  //     | /
-  //   branch
+  // [continue blocks]
+  //  /  |
+  // |  cond
+  // |/  |
+  // ^   |
+  //  \  |
+  //    body
+  //     |  \
+  //     |   |
+  //     |  /
+  //   [break blocks]
   //     |
-  //     |
-  //    end
+  //   [end]
 
   // Create new block and insert condition expression into it
   current_block()->Goto(cond);
@@ -913,11 +815,13 @@ AstNode* HIR::VisitWhile(AstNode* node) {
 
   // And loop it back to condition
   current_block()->Goto(b.first_continue_block());
-  cond->body(current_block());
+
+  // Associate pre/post shuffle with first break block
+  cond->pre_end(b.first_break_block());
+  cond->post_end(b.first_break_block());
 
   // Execution will continue in the `end` block
   set_current_block(b.last_break_block());
-  cond->end(current_block());
 
   return node;
 }
@@ -1088,7 +992,12 @@ AstNode* HIR::VisitBreak(AstNode* node) {
   // TODO: Set error
   assert(break_continue_info() != NULL);
 
-  current_block()->Goto(break_continue_info()->break_blocks()->Shift());
+  HIRBasicBlock* b = break_continue_info()->AddBlock(
+      HIRBreakContinueInfo::kBreakBlocks);
+  current_block()->Goto(b);
+
+  // XXX: Cleanup post/pre shuffle mess
+  b->postshuffle(current_block()->postshuffle());
 
   return node;
 }
@@ -1098,7 +1007,10 @@ AstNode* HIR::VisitContinue(AstNode* node) {
   // TODO: Set error
   assert(break_continue_info() != NULL);
 
-  current_block()->Goto(break_continue_info()->continue_blocks()->Pop());
+  HIRBasicBlock* block = break_continue_info()->continue_blocks()->Pop();
+  current_block()->Goto(block);
+
+  HIRLoopStart::Cast(block)->pre_end(current_block());
 
   return node;
 }

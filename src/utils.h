@@ -164,7 +164,7 @@ class GenericList {
 
     if (head_ == NULL) {
       head_ = next;
-    } else {
+    } else if (tail_ != NULL) {
       tail_->next_ = next;
     }
 

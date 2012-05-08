@@ -50,14 +50,6 @@ class HIRBasicBlock : public ZoneObject {
   void AddSuccessor(HIRBasicBlock* block);
   void Goto(HIRBasicBlock* block);
 
-  // Lift values from `block` and add phis where needed
-  void LiftValues(HIRBasicBlock* block,
-                  HashMap<NumberKey, int, ZoneObject>* map);
-
-  // Replace all uses (not-definitions!) of variable in
-  // this block and it's successors
-  void ReplaceVarUse(HIRValue* source, HIRValue* target);
-
   // Block relations
   bool Dominates(HIRBasicBlock* block);
 
@@ -89,7 +81,6 @@ class HIRBasicBlock : public ZoneObject {
   inline void reset_enumerate() { enumerated_ = 0; }
 
   inline HIRValueList* values() { return &values_; }
-  inline HIRValueList* inputs() { return &inputs_; }
   inline HIRPhiList* phis() { return &phis_; }
   inline HIRInstructionList* instructions() { return &instructions_; }
   inline HIRInstruction* first_instruction() {
@@ -147,7 +138,6 @@ class HIRBasicBlock : public ZoneObject {
   int enumerated_;
 
   HIRValueList values_;
-  HIRValueList inputs_;
   HIRPhiList phis_;
   HIRInstructionList instructions_;
 
@@ -188,7 +178,7 @@ class HIRLoopShuffle : public ZoneObject {
 
 class HIRLoopStart : public HIRBasicBlock {
  public:
-  HIRLoopStart(HIR* hir) : HIRBasicBlock(hir), body_(NULL), end_(NULL) {
+  HIRLoopStart(HIR* hir) : HIRBasicBlock(hir), end_(NULL) {
     type_ = kLoopStart;
     preshuffle(&loop_pre_);
     postshuffle(&loop_post_);
@@ -198,21 +188,22 @@ class HIRLoopStart : public HIRBasicBlock {
     return reinterpret_cast<HIRLoopStart*>(block);
   }
 
-  inline void body(HIRBasicBlock* body) {
-    body_ = body;
-    body->preshuffle(preshuffle());
-    body->postshuffle(postshuffle());
+  inline void pre_end(HIRBasicBlock* end) {
+    assert(end_ == NULL || end_ == end);
+    end_ = end;
+    end->preshuffle(preshuffle());
   }
-  inline HIRBasicBlock* body() { return body_; }
-
-  inline void end(HIRBasicBlock* end) { end_ = end; }
+  inline void post_end(HIRBasicBlock* end) {
+    assert(end_ == NULL || end_ == end);
+    end_ = end;
+    end->postshuffle(preshuffle());
+  }
   inline HIRBasicBlock* end() { return end_; }
 
  private:
   ZoneList<HIRLoopShuffle*> loop_pre_;
   ZoneList<HIRLoopShuffle*> loop_post_;
 
-  HIRBasicBlock* body_;
   HIRBasicBlock* end_;
 };
 
@@ -257,10 +248,14 @@ class HIRValue : public ZoneObject {
 
   void Init();
 
+  // Replace all uses (not-definitions!) of variable
+  void Replace(HIRValue* target);
+
   inline bool is_phi() { return type_ == kPhi; }
 
   inline HIRBasicBlock* block() { return block_; }
   inline HIRInstructionList* uses() { return &uses_; }
+  inline HIRPhiList* phi_uses() { return &phi_uses_; }
   inline HIRBasicBlock* current_block() { return current_block_; }
   inline void current_block(HIRBasicBlock* current_block) {
     current_block_ = current_block;
@@ -292,6 +287,7 @@ class HIRValue : public ZoneObject {
 
   // Variable uses
   HIRInstructionList uses_;
+  HIRPhiList phi_uses_;
 
   // Block where it is used now (needed for Phi construction)
   HIRBasicBlock* current_block_;
@@ -314,6 +310,7 @@ class HIRPhi : public HIRValue {
   HIRPhi(HIRBasicBlock* block, HIRValue* value);
 
   void AddInput(HIRValue* input);
+  void ReplaceVarUse(HIRValue* source, HIRValue* target);
   void Print(PrintBuffer* p);
 
   static inline HIRPhi* Cast(HIRValue* value) {
@@ -341,8 +338,15 @@ class HIRFunction : public ZoneObject {
 
 class HIRBreakContinueInfo : public Visitor {
  public:
-  HIRBreakContinueInfo(HIR* hir, AstNode* node, HIRLoopStart* ls);
+  HIRBreakContinueInfo(HIR* hir, AstNode* node);
   ~HIRBreakContinueInfo();
+
+  enum ListKind {
+    kBreakBlocks,
+    kContinueBlocks
+  };
+
+  HIRBasicBlock* AddBlock(ListKind kind);
 
   inline AstNode* VisitWhile(AstNode* fn) {
     // Do not count break/continue in child loops
@@ -354,23 +358,14 @@ class HIRBreakContinueInfo : public Visitor {
     return fn;
   }
 
-  void AddBlock(ZoneList<HIRBasicBlock*>* list);
-
-  inline AstNode* VisitBreak(AstNode* fn) {
-    break_count_++;
-    AddBlock(break_blocks());
-    return fn;
-  }
-
   inline AstNode* VisitContinue(AstNode* fn) {
     continue_count_++;
-    AddBlock(continue_blocks());
+    AddBlock(kContinueBlocks);
     return fn;
   }
 
   inline HIR* hir() { return hir_; }
 
-  inline int break_count() { return break_count_; }
   inline int continue_count() { return continue_count_; }
 
   inline HIRBasicBlock* first_break_block() {
@@ -379,19 +374,22 @@ class HIRBreakContinueInfo : public Visitor {
   inline HIRBasicBlock* last_break_block() {
     return break_blocks()->tail()->value();
   }
-  inline HIRBasicBlock* first_continue_block() {
-    return continue_blocks()->head()->value();
+  inline HIRLoopStart* first_continue_block() {
+    return HIRLoopStart::Cast(continue_blocks()->head()->value());
+  }
+  inline HIRLoopStart* last_continue_block() {
+    return HIRLoopStart::Cast(continue_blocks()->tail()->value());
   }
 
   inline ZoneList<HIRBasicBlock*>* continue_blocks() {
     return &continue_blocks_;
   }
   inline ZoneList<HIRBasicBlock*>* break_blocks() { return &break_blocks_; }
+
  private:
   HIR* hir_;
   HIRBreakContinueInfo* previous_;
 
-  int break_count_;
   int continue_count_;
 
   ZoneList<HIRBasicBlock*> continue_blocks_;
