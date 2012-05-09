@@ -1,5 +1,7 @@
 # Candor
 
+![Logo](https://raw.github.com/indutny/candor/master/logo/logo.png)
+
 Candor is a language inspired by javascript, but with less features and,
 therefore, less complexity. So no semicolons, no exceptions and simplified
 anonymous function syntax (dart-like).
@@ -269,8 +271,12 @@ things going in Candor better:
 
 ## Credits
 
-Special thanks to [creationix](https://github.com/creationix) for suggesting the
-name of this project!
+Special thanks to:
+* [creationix](https://github.com/creationix) for suggesting the name of thi
+  project!
+* [hij1nx](https://github.com/hij1nx) for contributing awesome logo!
+
+
 
 #### LICENSE
 
