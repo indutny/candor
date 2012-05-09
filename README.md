@@ -1,6 +1,4 @@
-# Candor
-
-![Logo](https://raw.github.com/indutny/candor/master/logo/logo.png)
+![Candor](https://raw.github.com/indutny/candor/master/logo/logo.png)
 
 Candor is a language inspired by javascript, but with less features and,
 therefore, less complexity. So no semicolons, no exceptions and simplified
