@@ -315,60 +315,6 @@ void LIR::MovePhis(HIRInstruction* hinstr) {
 }
 
 
-void LIR::StoreLoopInvariants(HIRBasicBlock* block,
-                              ZoneList<HIRLoopShuffle*>* shuffle) {
-  // Store all `live` variables from condition block
-  ZoneList<HIRValue*>::Item* item = block->values()->head();
-  for (; item != NULL; item = item->next()) {
-    if (item->value()->operand() == NULL ||
-        item->value()->operand()->is_immediate()) {
-      continue;
-    }
-
-    shuffle->Push(new HIRLoopShuffle(item->value(),
-                                     item->value()->operand()));
-  }
-}
-
-
-void LIR::ApplyShuffle(HIRInstruction* hinstr, ShuffleDirection direction) {
-  ZoneList<HIRLoopShuffle*>* list;
-  HIRLoopShuffle* shuffle;
-  HIRParallelMove* move;
-
-  if (direction == kShuffleBefore) {
-    list = hinstr->block()->preshuffle();
-    move = HIRParallelMove::GetBefore(hinstr);
-  } else {
-    list = hinstr->block()->postshuffle();
-    move = HIRParallelMove::GetAfter(hinstr);
-  }
-
-  if (list == NULL || list->length() == 0) return;
-
-  if (direction == kShuffleBefore) move->Reorder(this);
-
-  while ((shuffle = list->Shift()) != NULL) {
-    // Skip dead values or values with unchanged operand
-    if (shuffle->value()->operand() == NULL ||
-        shuffle->operand()->is_equal(shuffle->value()->operand())) {
-      continue;
-    }
-
-    if (direction == kShuffleBefore) {
-      move->AddMove(shuffle->value()->operand(), shuffle->operand());
-    } else {
-      // After shuffle should set only live variables
-      if (shuffle->value()->live_range()->end >= hinstr->id() + 1) {
-        move->AddMove(shuffle->operand(), shuffle->value()->operand());
-      }
-    }
-  }
-
-  if (direction == kShuffleAfter) move->Reorder(this);
-}
-
-
 void LIR::GenerateReverseMove(Masm* masm, HIRInstruction* hinstr) {
   if (hinstr->next()->type() != HIRInstruction::kParallelMove) return;
 
@@ -408,13 +354,6 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
       linstr->Generate();
     }
     return;
-  }
-
-  // If we're at the loop start - record preshuffle values
-  if (hinstr->block() != NULL && hinstr->block()->is_loop_start() &&
-      hinstr == hinstr->block()->first_instruction()) {
-    HIRLoopStart* loop_start = HIRLoopStart::Cast(hinstr->block());
-    StoreLoopInvariants(loop_start, loop_start->preshuffle());
   }
 
   // If instruction has input restrictions - ensure that those registers can't
@@ -500,13 +439,6 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
   // (if that's possible)
   if (hinstr->HasSideEffects()) SpillActive(masm, hinstr);
 
-  // If we're at loop's branch instruction - record postshuffle
-  if (hinstr->block() != NULL && hinstr->block()->is_loop_start() &&
-      hinstr == hinstr->block()->last_instruction()) {
-    HIRLoopStart* loop_start = HIRLoopStart::Cast(hinstr->block());
-    StoreLoopInvariants(loop_start, loop_start->postshuffle());
-  }
-
   // If instruction is a kGoto to the join block,
   // add join's phis to the movement
   if (hinstr->is(HIRInstruction::kGoto)) {
@@ -514,10 +446,6 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
         hinstr->block()->successors()[0]->predecessors_count() == 2) {
       MovePhis(hinstr);
     }
-
-    // Apply shuffle to preserve loop invariants
-    ApplyShuffle(hinstr, kShuffleBefore);
-    ApplyShuffle(hinstr, kShuffleAfter);
   }
 
   // All registers was allocated, perform move if needed

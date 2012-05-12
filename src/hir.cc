@@ -23,8 +23,6 @@ HIRBasicBlock::HIRBasicBlock(HIR* hir) : hir_(hir),
                                          masm_(NULL),
                                          relocation_offset_(0),
                                          loop_start_(NULL),
-                                         preshuffle_(NULL),
-                                         postshuffle_(NULL),
                                          relocated_(false),
                                          finished_(false),
                                          id_(-1) {
@@ -783,7 +781,7 @@ AstNode* HIR::VisitIf(AstNode* node) {
 AstNode* HIR::VisitWhile(AstNode* node) {
   HIRBreakContinueInfo b(this, node);
   HIRBasicBlock* body = CreateBlock();
-  HIRLoopStart* cond = CreateLoopStart();
+  HIRBasicBlock* cond = CreateBlock();
 
   //   entry
   //     |
@@ -816,9 +814,7 @@ AstNode* HIR::VisitWhile(AstNode* node) {
   // And loop it back to condition
   current_block()->Goto(b.first_continue_block());
 
-  // Associate pre/post shuffle with first break block
-  cond->pre_end(b.first_break_block());
-  cond->post_end(b.first_break_block());
+  b.first_continue_block()->end(b.first_break_block());
 
   // Execution will continue in the `end` block
   set_current_block(b.last_break_block());
@@ -996,9 +992,6 @@ AstNode* HIR::VisitBreak(AstNode* node) {
       HIRBreakContinueInfo::kBreakBlocks);
   current_block()->Goto(b);
 
-  // XXX: Cleanup post/pre shuffle mess
-  b->postshuffle(current_block()->postshuffle());
-
   return node;
 }
 
@@ -1010,7 +1003,7 @@ AstNode* HIR::VisitContinue(AstNode* node) {
   HIRBasicBlock* block = break_continue_info()->continue_blocks()->Pop();
   current_block()->Goto(block);
 
-  HIRLoopStart::Cast(block)->pre_end(current_block());
+  HIRLoopStart::Cast(block)->end(current_block());
 
   return node;
 }

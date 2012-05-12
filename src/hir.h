@@ -17,7 +17,6 @@ namespace internal {
 class HIR;
 class HIRPhi;
 class HIRValue;
-class HIRLoopShuffle;
 class HIRLoopStart;
 class LIROperand;
 class Heap;
@@ -100,20 +99,6 @@ class HIRBasicBlock : public ZoneObject {
   // List of relocation (JIT assembly helper)
   inline ZoneList<RelocationInfo*>* uses() { return &uses_; }
 
-  // Shuffle to return loop variable invariants back to the start positions
-  inline ZoneList<HIRLoopShuffle*>* preshuffle() {
-    return preshuffle_;
-  }
-  inline ZoneList<HIRLoopShuffle*>* postshuffle() {
-    return postshuffle_;
-  }
-  inline void preshuffle(ZoneList<HIRLoopShuffle*>* preshuffle) {
-    preshuffle_ = preshuffle;
-  }
-  inline void postshuffle(ZoneList<HIRLoopShuffle*>* postshuffle) {
-    postshuffle_ = postshuffle;
-  }
-
   // Loop associated with current block (for break/continue blocks)
   inline HIRLoopStart* loop_start() { return loop_start_; }
   inline void loop_start(HIRLoopStart* loop_start) { loop_start_ = loop_start; }
@@ -152,58 +137,29 @@ class HIRBasicBlock : public ZoneObject {
 
   HIRLoopStart* loop_start_;
 
-  ZoneList<HIRLoopShuffle*>* preshuffle_;
-  ZoneList<HIRLoopShuffle*>* postshuffle_;
-
   bool relocated_;
   bool finished_;
 
   int id_;
 };
 
-class HIRLoopShuffle : public ZoneObject {
- public:
-  HIRLoopShuffle(HIRValue* value, LIROperand* operand) : value_(value),
-                                                         operand_(operand) {
-  }
-
-  inline HIRValue* value() { return value_; }
-  inline LIROperand* operand() { return operand_; }
-  inline void operand(LIROperand* operand) { operand_ = operand; }
-
- private:
-  HIRValue* value_;
-  LIROperand* operand_;
-};
-
 class HIRLoopStart : public HIRBasicBlock {
  public:
   HIRLoopStart(HIR* hir) : HIRBasicBlock(hir), end_(NULL) {
     type_ = kLoopStart;
-    preshuffle(&loop_pre_);
-    postshuffle(&loop_post_);
   }
 
   static inline HIRLoopStart* Cast(HIRBasicBlock* block) {
     return reinterpret_cast<HIRLoopStart*>(block);
   }
 
-  inline void pre_end(HIRBasicBlock* end) {
+  inline void end(HIRBasicBlock* end) {
     assert(end_ == NULL || end_ == end);
     end_ = end;
-    end->preshuffle(preshuffle());
-  }
-  inline void post_end(HIRBasicBlock* end) {
-    assert(end_ == NULL || end_ == end);
-    end_ = end;
-    end->postshuffle(preshuffle());
   }
   inline HIRBasicBlock* end() { return end_; }
 
  private:
-  ZoneList<HIRLoopShuffle*> loop_pre_;
-  ZoneList<HIRLoopShuffle*> loop_post_;
-
   HIRBasicBlock* end_;
 };
 
@@ -314,6 +270,7 @@ class HIRPhi : public HIRValue {
   void Print(PrintBuffer* p);
 
   static inline HIRPhi* Cast(HIRValue* value) {
+    assert(value->is_phi());
     return reinterpret_cast<HIRPhi*>(value);
   }
   inline HIRValueList* inputs() { return &inputs_; }

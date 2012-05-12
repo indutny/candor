@@ -16,7 +16,6 @@ class HIRValue;
 class HIRInstruction;
 class HIRParallelMove;
 class HIRBasicBlock;
-class HIRLoopShuffle;
 class LIR;
 class LIRInstruction;
 struct Register;
@@ -94,11 +93,6 @@ class LIRSpillList : public ZoneList<HIRValue*> {
 // LIR class
 class LIR {
  public:
-  enum ShuffleDirection {
-    kShuffleBefore,
-    kShuffleAfter
-  };
-
   LIR(Heap* heap, HIR* hir);
 
   // Calculate values' liveness ranges
@@ -124,12 +118,6 @@ class LIR {
   // Short-hand for generating after(reverse) movement and reseting it
   // (used in BranchBool)
   void GenerateReverseMove(Masm* masm, HIRInstruction* hinstr);
-
-  // Stores all values and their operand to shuffle list
-  void StoreLoopInvariants(HIRBasicBlock* block,
-                           ZoneList<HIRLoopShuffle*>* shuffle);
-
-  void ApplyShuffle(HIRInstruction* hinstr, ShuffleDirection direction);
 
   // Put spill used in movements to active_values() list to
   // release it automatically after reverse instruction
