@@ -1,4 +1,5 @@
 #include "hir.h"
+#include "hir-inl.h"
 #include "hir-instructions.h"
 #include "visitor.h" // Visitor
 #include "ast.h" // AstNode

@@ -32,12 +32,14 @@ class LIROperand : public ZoneObject {
   LIROperand(Type type, off_t value) : type_(type),
                                        value_(value),
                                        has_immediate_value_(false),
-                                       immediate_value_(0) {
+                                       immediate_value_(0),
+                                       hir_(NULL) {
   }
 
   LIROperand(Type type, char* value) : type_(type),
                                        has_immediate_value_(false),
-                                       immediate_value_(0) {
+                                       immediate_value_(0),
+                                       hir_(NULL) {
     value_ = reinterpret_cast<off_t>(value);
   }
 
@@ -62,11 +64,16 @@ class LIROperand : public ZoneObject {
 
   inline off_t value() { return value_; }
 
+  inline HIRValue* hir() { return hir_; }
+  inline void hir(HIRValue* hir) { hir_ = hir; }
+
  private:
   Type type_;
   off_t value_;
   bool has_immediate_value_;
   off_t immediate_value_;
+
+  HIRValue* hir_;
 };
 
 // For sorted insertions

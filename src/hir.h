@@ -81,7 +81,14 @@ class HIRBasicBlock : public ZoneObject {
 
   inline HIRValueList* values() { return &values_; }
   inline HIRPhiList* phis() { return &phis_; }
+  inline ZoneList<LIROperand*>* incoming_operands() {
+    return &incoming_operands_;
+  }
+  inline ZoneList<LIROperand*>* outcoming_operands() {
+    return &outcoming_operands_;
+  }
   inline HIRInstructionList* instructions() { return &instructions_; }
+
   inline HIRInstruction* first_instruction() {
     if (instructions()->length() == 0) return NULL;
     return instructions()->head()->value();
@@ -124,6 +131,8 @@ class HIRBasicBlock : public ZoneObject {
 
   HIRValueList values_;
   HIRPhiList phis_;
+  ZoneList<LIROperand*> incoming_operands_;
+  ZoneList<LIROperand*> outcoming_operands_;
   HIRInstructionList instructions_;
 
   HIRBasicBlock* predecessors_[2];
@@ -224,9 +233,7 @@ class HIRValue : public ZoneObject {
   // LIR helpers
   inline LiveRange* live_range() { return &live_range_; }
   inline LIROperand* operand() { return operand_; }
-  inline void operand(LIROperand* operand) {
-    operand_ = operand;
-  }
+  inline void operand(LIROperand* operand);
 
   inline ScopeSlot* slot() { return slot_; }
 

@@ -3,6 +3,7 @@
 #include "utils.h"
 
 #include "hir.h"
+#include "hir-inl.h"
 #include "hir-instructions.h"
 
 #if CANDOR_ARCH_x64
