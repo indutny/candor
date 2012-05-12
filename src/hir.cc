@@ -1,6 +1,7 @@
 #include "hir.h"
 #include "hir-inl.h"
 #include "hir-instructions.h"
+#include "lir.h"
 #include "visitor.h" // Visitor
 #include "ast.h" // AstNode
 #include "macroassembler.h" // Masm, RelocationInfo
@@ -133,6 +134,19 @@ bool HIRBasicBlock::Dominates(HIRBasicBlock* block) {
   }
 
   return false;
+}
+
+
+void HIRBasicBlock::RecordOperands(OperandsOrder order) {
+  ZoneList<LIROperand*>* list = order == kIncoming ?
+      incoming_operands()
+      :
+      outcoming_operands();
+
+  HIRValueList::Item* item = values()->head();
+  for (; item != NULL; item = item->next()) {
+    if (item->value()->operand() != NULL) list->Push(item->value()->operand());
+  }
 }
 
 

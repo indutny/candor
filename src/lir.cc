@@ -334,9 +334,6 @@ void LIR::GenerateReverseMove(Masm* masm, HIRInstruction* hinstr) {
 void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
   LIRInstruction* linstr = Cast(hinstr);
 
-  // Relocate all block's uses
-  if (hinstr->block() != NULL) hinstr->block()->Relocate(masm);
-
   // List of operand that should be `released` after instruction
   LIRSpillList sl(this);
   spill_list(&sl);
@@ -485,7 +482,22 @@ void LIR::Generate(Masm* masm) {
       heap()->source_map()->Push(masm->offset(), hinstr->ast()->offset());
     }
 
+    // Relocate all block's uses
+    if (hinstr->block() != NULL) {
+      hinstr->block()->Relocate(masm);
+
+      if (hinstr->block()->first_instruction() == hinstr) {
+        hinstr->block()->RecordOperands(HIRBasicBlock::kIncoming);
+      }
+    }
+
     GenerateInstruction(masm, hinstr);
+
+    if (hinstr->block() != NULL) {
+      if (hinstr->block()->last_instruction() == hinstr) {
+        hinstr->block()->RecordOperands(HIRBasicBlock::kOutcoming);
+      }
+    }
 
     // Each function has separate spill slots.
     // Finalize previous function's spills (if there was any) and

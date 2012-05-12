@@ -37,6 +37,11 @@ class HIRBasicBlock : public ZoneObject {
     kLoopStart
   };
 
+  enum OperandsOrder {
+    kIncoming,
+    kOutcoming
+  };
+
   HIRBasicBlock(HIR* hir);
 
   // Add value for generating PHIs later
@@ -51,6 +56,9 @@ class HIRBasicBlock : public ZoneObject {
 
   // Block relations
   bool Dominates(HIRBasicBlock* block);
+
+  // Operands
+  void RecordOperands(OperandsOrder order);
 
   // Relocation routines
   void AddUse(RelocationInfo* info);
