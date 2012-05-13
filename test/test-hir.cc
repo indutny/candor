@@ -39,13 +39,14 @@ TEST_START(hir)
            "13: [Goto]\n"
            "[0]>*>[3]]\n\n"
 
-           "[Block#3 @[2,0]:3\n"
-           "17: [Return *[4 [imm 0x1]]]\n"
-           "[1,2]>*>[]]\n\n"
-
            "[Block#2\n"
-           "19: [Goto]\n"
-           "[0]>*>[3]]\n\n")
+           "15: [Goto]\n"
+           "[0]>*>[3]]\n\n"
+
+           "[Block#3 @[2,0]:3\n"
+           "19: [Return *[4 [imm 0x1]]]\n"
+           "[1,2]>*>[]]\n\n")
+
 
   HIR_TEST("if (a) { a = 2 } else { a = 3 }\na",
            "[Block#0\n"
@@ -59,15 +60,15 @@ TEST_START(hir)
            "13: [Goto]\n"
            "[0]>*>[3]]\n\n"
 
-           "[Block#3 @[2,4]:5\n"
-           "17: [Return *[6 [imm 0x1]]]\n"
-           "[1,2]>*>[]]\n\n"
-
            "[Block#2\n"
-           "19: *[3 [imm 0x6]] = [LoadRoot]\n"
-           "21: *[4 [st:0]] = [StoreLocal *[3 [imm 0x6]]]\n"
-           "25: [Goto]\n"
-           "[0]>*>[3]]\n\n")
+           "15: *[3 [imm 0x6]] = [LoadRoot]\n"
+           "17: *[4 [st:0]] = [StoreLocal *[3 [imm 0x6]]]\n"
+           "21: [Goto]\n"
+           "[0]>*>[3]]\n\n"
+
+           "[Block#3 @[2,4]:5\n"
+           "25: [Return *[6 [imm 0x1]]]\n"
+           "[1,2]>*>[]]\n\n")
 
   HIR_TEST("if (a) { a = 2 } else { if (a) { a = 3 } else { a = 4 } }\na",
            "[Block#0\n"
@@ -81,29 +82,29 @@ TEST_START(hir)
            "13: [Goto]\n"
            "[0]>*>[3]]\n\n"
 
-           "[Block#3 @[2,8]:9\n"
-           "17: [Return *[10 [imm 0x1]]]\n"
-           "[1,6]>*>[]]\n\n"
-
            "[Block#2\n"
-           "21: [BranchBool *[3 [st:0]]]\n"
+           "17: [BranchBool *[3 [st:0]]]\n"
            "[0]>*>[4,5]]\n\n"
 
            "[Block#4\n"
-           "23: *[4 [imm 0x6]] = [LoadRoot]\n"
-           "25: *[5 [st:0]] = [StoreLocal *[4 [imm 0x6]]]\n"
-           "29: [Goto]\n"
+           "19: *[4 [imm 0x6]] = [LoadRoot]\n"
+           "21: *[5 [st:0]] = [StoreLocal *[4 [imm 0x6]]]\n"
+           "25: [Goto]\n"
+           "[2]>*>[6]]\n\n"
+
+           "[Block#5\n"
+           "27: *[6 [imm 0x8]] = [LoadRoot]\n"
+           "29: *[7 [st:0]] = [StoreLocal *[6 [imm 0x8]]]\n"
+           "33: [Goto]\n"
            "[2]>*>[6]]\n\n"
 
            "[Block#6 @[5,7]:8\n"
-           "31: [Goto]\n"
+           "35: [Goto]\n"
            "[4,5]>*>[3]]\n\n"
 
-           "[Block#5\n"
-           "33: *[6 [imm 0x8]] = [LoadRoot]\n"
-           "35: *[7 [st:0]] = [StoreLocal *[6 [imm 0x8]]]\n"
-           "39: [Goto]\n"
-           "[2]>*>[6]]\n\n")
+           "[Block#3 @[2,8]:9\n"
+           "39: [Return *[10 [imm 0x1]]]\n"
+           "[1,6]>*>[]]\n\n")
 
   // While loop
   HIR_TEST("a = 0\nwhile (true) { b = a\na = 2 }\nreturn a",
@@ -307,22 +308,22 @@ TEST_START(hir)
            "51: [Goto]\n"
            "[8]>*>[11]]\n\n"
 
-           "[Block#11 @[3,12]:14\n"
-           "55: [Return *[2 [st:0]]]\n"
-           "[5,9]>*>[]]\n\n"
-
            "[Block#10\n"
-           "57: [Goto]\n"
+           "53: [Goto]\n"
            "[8]>*>[12]]\n\n"
 
            "[Block#12\n"
-           "61: *[15 [imm 0x8]] = [LoadRoot]\n"
-           "63: *[16 [st:-1]] = [BinOp *[12 [st:0]] *[15 [imm 0x8]]]\n"
-           "65: *[17 [st:0]] = [StoreLocal *[16 [st:-1]]]\n"
-           "69: [Goto]\n"
+           "57: *[15 [imm 0x8]] = [LoadRoot]\n"
+           "59: *[16 [st:-1]] = [BinOp *[12 [st:0]] *[15 [imm 0x8]]]\n"
+           "61: *[17 [st:0]] = [StoreLocal *[16 [st:-1]]]\n"
+           "65: [Goto]\n"
            "[10]>*>[1]]\n\n"
 
            "[Block#5\n"
-           "71: [Goto]\n"
-           "[3]>*>[11]]\n\n")
+           "67: [Goto]\n"
+           "[3]>*>[11]]\n\n"
+
+           "[Block#11 @[3,12]:14\n"
+           "71: [Return *[14 [st:0]]]\n"
+           "[5,9]>*>[]]\n\n")
 TEST_END(hir)

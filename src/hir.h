@@ -8,6 +8,8 @@
 #include "zone.h" // ZoneObject
 #include "utils.h" // List
 
+#include <sys/types.h> // off_t
+
 // High-level intermediate representation of source code
 
 namespace candor {
@@ -77,8 +79,8 @@ class HIRBasicBlock : public ZoneObject {
     // Check if node's predecessor is dominated by node
     // (node loops to itself)
     if (enumerated_ >= 1 && predecessors_count() == 2) {
-      if (predecessors()[1]->Dominates(this) ||
-          predecessors()[0]->Dominates(this)) {
+      if (this->Dominates(predecessors()[1]) ||
+          this->Dominates(predecessors()[0])) {
         return enumerated_ == 1;
       }
     }
@@ -127,7 +129,7 @@ class HIRBasicBlock : public ZoneObject {
   inline int id() { return id_; }
   inline void id(int id) { id_ = id; }
 
-  void MarkPrinted();
+  off_t MarkPrinted();
   bool IsPrintable();
 
  protected:

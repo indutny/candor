@@ -482,18 +482,31 @@ void LIR::Generate(Masm* masm) {
       heap()->source_map()->Push(masm->offset(), hinstr->ast()->offset());
     }
 
-    // Relocate all block's uses
-    if (hinstr->block() != NULL) {
-      hinstr->block()->Relocate(masm);
+    // Blocks structure:
+    //   [previous block end]
+    //   [block start]
+    //   [jmp :skip_move]
+    //   [move]
+    //   [:skip_move]
+    //   [instructions]
+    //   [block end]
 
+    if (hinstr->block() != NULL) {
+      // Record incoming operands
       if (hinstr->block()->first_instruction() == hinstr) {
         hinstr->block()->RecordOperands(HIRBasicBlock::kIncoming);
       }
+
+      // Insert movements on mismatch
+
+      // Relocate all block's uses
+      hinstr->block()->Relocate(masm);
     }
 
     GenerateInstruction(masm, hinstr);
 
     if (hinstr->block() != NULL) {
+      // Record outcoming operands
       if (hinstr->block()->last_instruction() == hinstr) {
         hinstr->block()->RecordOperands(HIRBasicBlock::kOutcoming);
       }

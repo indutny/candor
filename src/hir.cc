@@ -9,6 +9,7 @@
 
 #include <stdlib.h> // NULL
 #include <stdint.h> // int64_t
+#include <sys/types.h> // off_t
 #include <assert.h> // assert
 
 #define __STDC_FORMAT_MACROS
@@ -175,20 +176,28 @@ void HIRBasicBlock::Relocate(Masm* masm) {
 
 
 bool HIRBasicBlock::IsPrintable() {
-  return hir()->print_map()->Get(NumberKey::New(id())) == NULL;
+  off_t value = MarkPrinted();
+
+  if (predecessors_count() == 2 &&
+      (Dominates(predecessors()[0]) || Dominates(predecessors()[1]))) {
+    return value == 1;
+  }
+  if (value == predecessors_count()) return true;
+
+  return false;
 }
 
 
-void HIRBasicBlock::MarkPrinted() {
-  int value;
-  hir()->print_map()->Set(NumberKey::New(id()), &value);
+off_t HIRBasicBlock::MarkPrinted() {
+  off_t value = reinterpret_cast<off_t>(
+      hir()->print_map()->Get(NumberKey::New(id()))) + 1;
+  hir()->print_map()->Set(NumberKey::New(id()),
+                          reinterpret_cast<int*>(value));
+  return value;
 }
 
 
 void HIRBasicBlock::Print(PrintBuffer* p) {
-  // Avoid loops and double prints
-  MarkPrinted();
-
   p->Print("[Block#%d", id());
 
   // Print phis
