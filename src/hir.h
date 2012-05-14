@@ -248,10 +248,6 @@ class HIRValue : public ZoneObject {
     current_block_ = current_block;
   }
 
-  inline HIRValue* prev_def() { return prev_def_; };
-  inline void prev_def(HIRValue* prev_def) { prev_def_ = prev_def; };
-  inline HIRValueList* next_defs() { return &next_defs_; };
-
   // LIR helpers
   inline LiveRange* live_range() { return &live_range_; }
   inline LIROperand* operand() { return operand_; }
@@ -276,9 +272,6 @@ class HIRValue : public ZoneObject {
 
   // Block where it is used now (needed for Phi construction)
   HIRBasicBlock* current_block_;
-
-  HIRValue* prev_def_;
-  HIRValueList next_defs_;
 
   // Used in lir.h
   LiveRange live_range_;

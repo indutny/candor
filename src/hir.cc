@@ -106,6 +106,7 @@ void HIRBasicBlock::AddPredecessor(HIRBasicBlock* block) {
         phi = HIRPhi::Cast(value->slot()->hir());
       } else {
         phi = new HIRPhi(this, value->slot()->hir());
+        AddValue(phi);
         value->slot()->hir(phi);
       }
 
@@ -220,10 +221,6 @@ off_t HIRBasicBlock::MarkPrinted() {
 void HIRBasicBlock::Print(PrintBuffer* p) {
   p->Print("[Block#%d", id());
 
-  if (dominator() != NULL) {
-    p->Print(" (%d)", dominator()->id());
-  }
-
   // Print phis
   {
     HIRPhiList::Item* item = phis()->head();
@@ -321,7 +318,6 @@ void HIRPhi::Print(PrintBuffer* p) {
 HIRValue::HIRValue(HIRBasicBlock* block) : type_(kNormal),
                                            block_(block),
                                            current_block_(block),
-                                           prev_def_(NULL),
                                            operand_(NULL) {
   slot_ = new ScopeSlot(ScopeSlot::kStack);
   Init();
@@ -332,7 +328,6 @@ HIRValue::HIRValue(HIRBasicBlock* block, ScopeSlot* slot)
     : type_(kNormal),
       block_(block),
       current_block_(block),
-      prev_def_(NULL),
       operand_(NULL),
       slot_(slot) {
   Init();
@@ -343,7 +338,6 @@ HIRValue::HIRValue(ValueType type, HIRBasicBlock* block, ScopeSlot* slot)
     : type_(type),
       block_(block),
       current_block_(block),
-      prev_def_(NULL),
       operand_(NULL),
       slot_(slot) {
   Init();
@@ -455,6 +449,18 @@ HIR::HIR(Heap* heap, AstNode* node) : Visitor(kPreorder),
 HIRValue* HIR::FindPredecessorValue(ScopeSlot* slot) {
   assert(current_block() != NULL);
 
+  HIRBasicBlock* block = current_block();
+  while (block != NULL) {
+    HIRValueList::Item* item = block->values()->head();
+    for (; item != NULL; item = item->next()) {
+      if (item->value()->slot() == slot) {
+        return item->value();
+      }
+    }
+
+    block = block->dominator();
+  }
+
   return NULL;
 }
 
@@ -462,12 +468,6 @@ HIRValue* HIR::FindPredecessorValue(ScopeSlot* slot) {
 HIRValue* HIR::CreateValue(HIRBasicBlock* block, ScopeSlot* slot) {
   HIRValue* value = new HIRValue(block, slot);
   HIRValue* previous = FindPredecessorValue(slot);
-
-  // Link with previous
-  if (previous != NULL) {
-    value->prev_def(previous);
-    previous->next_defs()->Push(value);
-  }
 
   slot->hir(value);
 
@@ -500,23 +500,8 @@ HIRValue* HIR::GetValue(ScopeSlot* slot) {
     // Insert new one HIRValue in the current block
     CreateValue(slot);
   } else {
-    if (previous != slot->hir()) {
-      // Create slot and link variables
-      HIRValue* value = new HIRValue(current_block(), slot);
-
-      // Link with previous
-      if (slot->hir() != NULL) {
-        value->prev_def(previous);
-        previous->next_defs()->Push(value);
-      }
-
-      slot->hir(value);
-
-      // Push value to the values list
-      values()->Push(value);
-    } else {
-      slot->hir()->current_block(current_block());
-    }
+    slot->hir(previous);
+    slot->hir()->current_block(current_block());
   }
 
   return slot->hir();

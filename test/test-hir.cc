@@ -70,7 +70,8 @@ TEST_START(hir)
            "25: [Return *[6 [imm 0x1]]]\n"
            "[1,2]>*>[]]\n\n")
 
-  HIR_TEST("if (a) { a = 2 } else { if (a) { a = 3 } else { a = 4 } }\na",
+  HIR_TEST("if (a) { a = 2 } else { if (a) { a = 3 } else { a = 4 } }\n"
+           "return a",
            "[Block#0\n"
            "1: [Entry]\n"
            "5: [BranchBool *[0 [st:0]]]\n"
@@ -83,27 +84,27 @@ TEST_START(hir)
            "[0]>*>[3]]\n\n"
 
            "[Block#2\n"
-           "17: [BranchBool *[3 [st:0]]]\n"
+           "17: [BranchBool *[0 [st:0]]]\n"
            "[0]>*>[4,5]]\n\n"
 
            "[Block#4\n"
-           "19: *[4 [imm 0x6]] = [LoadRoot]\n"
-           "21: *[5 [st:0]] = [StoreLocal *[4 [imm 0x6]]]\n"
+           "19: *[3 [imm 0x6]] = [LoadRoot]\n"
+           "21: *[4 [st:0]] = [StoreLocal *[3 [imm 0x6]]]\n"
            "25: [Goto]\n"
            "[2]>*>[6]]\n\n"
 
            "[Block#5\n"
-           "27: *[6 [imm 0x8]] = [LoadRoot]\n"
-           "29: *[7 [st:0]] = [StoreLocal *[6 [imm 0x8]]]\n"
+           "27: *[5 [imm 0x8]] = [LoadRoot]\n"
+           "29: *[6 [st:0]] = [StoreLocal *[5 [imm 0x8]]]\n"
            "33: [Goto]\n"
            "[2]>*>[6]]\n\n"
 
-           "[Block#6 @[5,7]:8\n"
+           "[Block#6 @[4,6]:7\n"
            "35: [Goto]\n"
            "[4,5]>*>[3]]\n\n"
 
-           "[Block#3 @[2,8]:9\n"
-           "39: [Return *[10 [imm 0x1]]]\n"
+           "[Block#3 @[2,7]:8\n"
+           "39: [Return *[8 [st:0]]]\n"
            "[1,6]>*>[]]\n\n")
 
   // While loop
@@ -159,7 +160,7 @@ TEST_START(hir)
            "[2]>*>[1]]\n\n"
 
            "[Block#4\n"
-           "29: [Return *[2 [st:0]]]\n"
+           "29: [Return *[5 [st:0]]]\n"
            "[2]>*>[]]\n\n")
 
   // Nested while
