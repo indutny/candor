@@ -21,6 +21,7 @@ namespace internal {
 HIRBasicBlock::HIRBasicBlock(HIR* hir) : hir_(hir),
                                          type_(kNormal),
                                          enumerated_(0),
+                                         dominator_(NULL),
                                          predecessors_count_(0),
                                          successors_count_(0),
                                          masm_(NULL),
@@ -57,11 +58,30 @@ void HIRBasicBlock::AddValue(HIRValue* value) {
 }
 
 
+void HIRBasicBlock::AssignDominator(HIRBasicBlock* block) {
+  if (dominator() == NULL) {
+    dominator(block);
+    return;
+  }
+
+  HIRBasicBlock* d = dominator();
+  while (!d->Dominates(block)) {
+    assert(d->predecessors_count() > 0);
+    d = d->predecessors()[0];
+  }
+
+  dominator(d);
+}
+
+
 void HIRBasicBlock::AddPredecessor(HIRBasicBlock* block) {
   assert(predecessors_count() < 2);
   predecessors()[predecessors_count_++] = block;
 
   HIRValueList::Item* item;
+
+  // Assign dominator
+  AssignDominator(block);
 
   // Mark values propagated from first predecessor
   if (predecessors_count() > 1) {
@@ -129,12 +149,12 @@ void HIRBasicBlock::Goto(HIRBasicBlock* block) {
 
 
 bool HIRBasicBlock::Dominates(HIRBasicBlock* block) {
-  while (block != NULL) {
-    if (block == this) return true;
-    block = block->predecessors()[0];
+  HIRBasicBlock* d = block;
+  while (d != NULL && d != this) {
+    d = d->dominator();
   }
 
-  return false;
+  return d != NULL;
 }
 
 
@@ -199,6 +219,10 @@ off_t HIRBasicBlock::MarkPrinted() {
 
 void HIRBasicBlock::Print(PrintBuffer* p) {
   p->Print("[Block#%d", id());
+
+  if (dominator() != NULL) {
+    p->Print(" (%d)", dominator()->id());
+  }
 
   // Print phis
   {
@@ -387,7 +411,7 @@ HIRBreakContinueInfo::~HIRBreakContinueInfo() {
 
 HIRBasicBlock* HIRBreakContinueInfo::AddBlock(ListKind kind) {
   HIRBasicBlock* block;
-  ZoneList<HIRBasicBlock*>* list;
+  HIRBasicBlockList* list;
 
   if (kind == kContinueBlocks) {
     block = hir()->CreateLoopStart();
@@ -431,20 +455,7 @@ HIR::HIR(Heap* heap, AstNode* node) : Visitor(kPreorder),
 HIRValue* HIR::FindPredecessorValue(ScopeSlot* slot) {
   assert(current_block() != NULL);
 
-  // Find appropriate value
-  HIRValue* previous = slot->hir();
-  while (previous != NULL) {
-    // Traverse blocks to the root, to check
-    // if variable was used in predecessor
-    HIRBasicBlock* block = current_block();
-    while (block != NULL && previous->block() != block) {
-      block = block->predecessors()[0];
-    }
-    if (block != NULL) break;
-    previous = previous->prev_def();
-  }
-
-  return previous;
+  return NULL;
 }
 
 
@@ -551,8 +562,8 @@ void HIR::Finish(HIRInstruction* instr) {
 
 
 void HIR::Enumerate() {
-  ZoneList<HIRBasicBlock*>::Item* root = roots()->head();
-  ZoneList<HIRBasicBlock*> work_list;
+  HIRBasicBlockList::Item* root = roots()->head();
+  HIRBasicBlockList work_list;
 
   // Add roots to worklist
   for (; root != NULL; root = root->next()) {
@@ -674,7 +685,7 @@ void HIR::Print(char* buffer, uint32_t size) {
   PrintBuffer p(buffer, size);
   print_map(&map);
 
-  ZoneList<HIRBasicBlock*>::Item* item = roots()->head();
+  HIRBasicBlockList::Item* item = roots()->head();
   for (; item != NULL; item = item->next()) {
     item->value()->Print(&p);
   }

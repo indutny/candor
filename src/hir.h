@@ -17,6 +17,7 @@ namespace internal {
 
 // Forward declarations
 class HIR;
+class HIRBasicBlock;
 class HIRPhi;
 class HIRValue;
 class HIRLoopStart;
@@ -30,6 +31,7 @@ class RelocationInfo;
 typedef ZoneList<HIRValue*> HIRValueList;
 typedef ZoneList<HIRPhi*> HIRPhiList;
 typedef ZoneList<HIRInstruction*> HIRInstructionList;
+typedef ZoneList<HIRBasicBlock*> HIRBasicBlockList;
 
 // CFG Block
 class HIRBasicBlock : public ZoneObject {
@@ -48,6 +50,9 @@ class HIRBasicBlock : public ZoneObject {
 
   // Add value for generating PHIs later
   void AddValue(HIRValue* value);
+
+  // Assigns new dominator or finds closest common of current one and block
+  void AssignDominator(HIRBasicBlock* block);
 
   // NOTE: Called automatically, do not call by-hand!
   void AddPredecessor(HIRBasicBlock* block);
@@ -74,6 +79,10 @@ class HIRBasicBlock : public ZoneObject {
   inline BlockType type() { return type_; }
   inline bool is_normal() { return type_ == kNormal; }
   inline bool is_loop_start() { return type_ == kLoopStart; }
+
+  inline HIRBasicBlock* dominator() { return dominator_; }
+  inline void dominator(HIRBasicBlock* dominator) { dominator_ = dominator; }
+  inline HIRBasicBlockList* dominates() { return &dominates_; }
 
   inline bool is_enumerated() {
     // Check if node's predecessor is dominated by node
@@ -138,6 +147,9 @@ class HIRBasicBlock : public ZoneObject {
 
   // Whether block was enumerated by Enumerate() or not
   int enumerated_;
+
+  HIRBasicBlock* dominator_;
+  HIRBasicBlockList dominates_;
 
   HIRValueList values_;
   HIRPhiList phis_;
@@ -355,10 +367,10 @@ class HIRBreakContinueInfo : public Visitor {
     return HIRLoopStart::Cast(continue_blocks()->tail()->value());
   }
 
-  inline ZoneList<HIRBasicBlock*>* continue_blocks() {
+  inline HIRBasicBlockList* continue_blocks() {
     return &continue_blocks_;
   }
-  inline ZoneList<HIRBasicBlock*>* break_blocks() { return &break_blocks_; }
+  inline HIRBasicBlockList* break_blocks() { return &break_blocks_; }
 
  private:
   HIR* hir_;
@@ -366,8 +378,8 @@ class HIRBreakContinueInfo : public Visitor {
 
   int continue_count_;
 
-  ZoneList<HIRBasicBlock*> continue_blocks_;
-  ZoneList<HIRBasicBlock*> break_blocks_;
+  HIRBasicBlockList continue_blocks_;
+  HIRBasicBlockList break_blocks_;
 };
 
 class HIR : public Visitor {
@@ -466,7 +478,7 @@ class HIR : public Visitor {
   AstNode* VisitUnOp(AstNode* node);
   AstNode* VisitBinOp(AstNode* node);
 
-  inline ZoneList<HIRBasicBlock*>* roots() { return &roots_; }
+  inline HIRBasicBlockList* roots() { return &roots_; }
   inline HIRBasicBlock* root_block() { return root_block_; }
   inline HIRBasicBlock* current_block() { return current_block_; }
   inline void set_current_block(HIRBasicBlock* block) {
@@ -506,7 +518,7 @@ class HIR : public Visitor {
   inline PrintMap* print_map() { return print_map_; }
 
  private:
-  ZoneList<HIRBasicBlock*> roots_;
+  HIRBasicBlockList roots_;
 
   HIRBasicBlock* root_block_;
   HIRBasicBlock* current_block_;
