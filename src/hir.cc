@@ -1,5 +1,4 @@
 #include "hir.h"
-#include "hir-inl.h"
 #include "hir-instructions.h"
 #include "lir.h"
 #include "visitor.h" // Visitor

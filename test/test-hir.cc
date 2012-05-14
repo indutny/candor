@@ -2,7 +2,6 @@
 #include <parser.h>
 #include <ast.h>
 #include <hir.h>
-#include <hir-inl.h>
 #include <lir.h>
 
 TEST_START(hir)
@@ -48,7 +47,7 @@ TEST_START(hir)
            "[1,2]>*>[]]\n\n")
 
 
-  HIR_TEST("if (a) { a = 2 } else { a = 3 }\na",
+  HIR_TEST("if (a) { a = 2 } else { a = 3 }\nreturn a",
            "[Block#0\n"
            "1: [Entry]\n"
            "5: [BranchBool *[0 [st:0]]]\n"
@@ -67,7 +66,7 @@ TEST_START(hir)
            "[0]>*>[3]]\n\n"
 
            "[Block#3 @[2,4]:5\n"
-           "25: [Return *[6 [imm 0x1]]]\n"
+           "25: [Return *[5 [st:0]]]\n"
            "[1,2]>*>[]]\n\n")
 
   HIR_TEST("if (a) { a = 2 } else { if (a) { a = 3 } else { a = 4 } }\n"

@@ -1,6 +1,5 @@
 #include "hir-instructions.h"
 #include "hir.h"
-#include "hir-inl.h"
 
 #include "lir.h" // LIROperand
 #include "lir-inl.h" // GetSpill
