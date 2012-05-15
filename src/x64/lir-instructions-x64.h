@@ -2,6 +2,7 @@
 #define _SRC_LIR_INSTRUCTIONS_X64_H_
 
 #include "lir-instructions.h"
+#include "lir-instructions-inl.h"
 #include "zone.h"
 
 namespace candor {

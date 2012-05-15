@@ -1,7 +1,7 @@
-#ifndef _SRC_LIR_INSTRUCTIONS_X64_INL_H_
-#define _SRC_LIR_INSTRUCTIONS_X64_INL_H_
+#ifndef _SRC_LIR_INSTRUCTIONS_INL_H_
+#define _SRC_LIR_INSTRUCTIONS_INL_H_
 
-#include "lir-instructions-x64.h"
+#include "lir-instructions.h"
 #include "lir.h"
 #include "macroassembler.h"
 #include "macroassembler-inl.h"
@@ -28,4 +28,4 @@ inline LIROperand* LIRInstruction::ToLIROperand(Register reg) {
 } // namespace internal
 } // namespace candor
 
-#endif // _SRC_LIR_INSTRUCTIONS_X64_INL_H_
+#endif // _SRC_LIR_INSTRUCTIONS_INL_H_

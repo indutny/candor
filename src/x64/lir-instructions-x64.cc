@@ -1,6 +1,5 @@
 #include "lir.h"
 #include "lir-instructions-x64.h"
-#include "lir-instructions-x64-inl.h"
 #include "ast.h" // BinOp
 #include "hir.h"
 #include "hir-instructions.h"
