@@ -9,9 +9,11 @@ namespace internal {
 // Forward declarations
 class Masm;
 class HIRInstruction;
+class LIR;
 class LIROperand;
 struct Register;
 class Operand;
+class RelocationInfo;
 
 #define LIR_ENUM_INSTRUCTIONS(V)\
     V(Nop)\
@@ -56,7 +58,13 @@ class LIRInstruction : public ZoneObject {
     kNone
   };
 
-  LIRInstruction() : hir_(NULL) {
+  LIRInstruction() : hir_(NULL),
+                     masm_(NULL),
+                     prev_(NULL),
+                     next_(NULL),
+                     relocated_(false),
+                     relocation_offset_(0),
+                     id_(-1) {
     // Nullify all inputs/outputs/scratches
     inputs[0] = NULL;
     inputs[1] = NULL;
@@ -68,9 +76,17 @@ class LIRInstruction : public ZoneObject {
     result = NULL;
   }
 
+  // Relocation routines
+  void AddUse(RelocationInfo* info);
+  void Relocate(Masm* masm);
+
   virtual void Generate() = 0;
 
   virtual Type type() const = 0;
+
+  virtual int input_count() const = 0;
+  virtual int result_count() const = 0;
+  virtual int scratch_count() const = 0;
 
   // Short-hand for converting operand to register
   inline Register ToRegister(LIROperand* op);
@@ -86,12 +102,14 @@ class LIRInstruction : public ZoneObject {
   inline Masm* masm() { return masm_; }
   inline void masm(Masm* masm) { masm_ = masm; }
 
+  inline bool relocated() { return relocated_; }
+  inline void relocated(bool relocated) { relocated_ = relocated; }
+
+  // List of relocation (JIT assembly helper)
+  inline ZoneList<RelocationInfo*>* uses() { return &uses_; }
+
   inline int id() { return id_; }
   inline void id(int id) { id_ = id; }
-
-  virtual int input_count() const = 0;
-  virtual int result_count() const = 0;
-  virtual int scratch_count() const = 0;
 
   LIROperand* inputs[3];
   LIROperand* scratches[2];
@@ -101,6 +119,13 @@ class LIRInstruction : public ZoneObject {
   LIR* lir_;
   HIRInstruction* hir_;
   Masm* masm_;
+
+  bool relocated_;
+  int relocation_offset_;
+  ZoneList<RelocationInfo*> uses_;
+
+  LIRInstruction* next_;
+  LIRInstruction* prev_;
 
   int id_;
 };

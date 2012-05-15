@@ -26,7 +26,6 @@ class Heap;
 class ScopeSlot;
 class AstNode;
 class Masm;
-class RelocationInfo;
 
 typedef ZoneList<HIRValue*> HIRValueList;
 typedef ZoneList<HIRPhi*> HIRPhiList;
@@ -66,10 +65,6 @@ class HIRBasicBlock : public ZoneObject {
 
   // Operands
   void RecordOperands(OperandsOrder order);
-
-  // Relocation routines
-  void AddUse(RelocationInfo* info);
-  void Relocate(Masm* masm);
 
   // Debug printing
   void Print(PrintBuffer* p);
@@ -122,15 +117,9 @@ class HIRBasicBlock : public ZoneObject {
   inline int predecessors_count() { return predecessors_count_; }
   inline int successors_count() { return successors_count_; }
 
-  // List of relocation (JIT assembly helper)
-  inline ZoneList<RelocationInfo*>* uses() { return &uses_; }
-
   // Loop associated with current block (for break/continue blocks)
   inline HIRLoopStart* loop_start() { return loop_start_; }
   inline void loop_start(HIRLoopStart* loop_start) { loop_start_ = loop_start; }
-
-  inline bool relocated() { return relocated_; }
-  inline void relocated(bool relocated) { relocated_ = relocated; }
 
   inline bool finished() { return finished_; }
   inline void finished(bool finished) { finished_ = finished; }
@@ -163,8 +152,6 @@ class HIRBasicBlock : public ZoneObject {
   int successors_count_;
 
   Masm* masm_;
-  int relocation_offset_;
-  ZoneList<RelocationInfo*> uses_;
 
   HIRLoopStart* loop_start_;
 

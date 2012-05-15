@@ -499,7 +499,7 @@ void LIR::Generate(Masm* masm) {
       // Insert movements on mismatch
 
       // Relocate all block's uses
-      hinstr->block()->Relocate(masm);
+      // hinstr->block()->Relocate(masm);
     }
 
     GenerateInstruction(masm, hinstr);

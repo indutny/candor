@@ -105,7 +105,7 @@ void LIRGoto::Generate() {
   RelocationInfo* addr = new RelocationInfo(RelocationInfo::kRelative,
                                             RelocationInfo::kLong,
                                             masm()->offset() - 4);
-  hir()->block()->successors()[0]->AddUse(addr);
+  // hir()->block()->successors()[0]->AddUse(addr);
 }
 
 
@@ -286,14 +286,14 @@ void LIRBranchBool::Generate() {
     RelocationInfo* addr = new RelocationInfo(RelocationInfo::kRelative,
                                               RelocationInfo::kLong,
                                               masm()->offset() - 4);
-    hir()->left()->AddUse(addr);
+    // hir()->left()->AddUse(addr);
   } else {
     __ jmp(kEq, NULL);
 
     RelocationInfo* addr = new RelocationInfo(RelocationInfo::kRelative,
                                               RelocationInfo::kLong,
                                               masm()->offset() - 4);
-    hir()->right()->AddUse(addr);
+    // hir()->right()->AddUse(addr);
   }
 }
 
@@ -543,7 +543,7 @@ void LIRAllocateFunction::Generate() {
   RelocationInfo* addr = new RelocationInfo(RelocationInfo::kAbsolute,
                                             RelocationInfo::kQuad,
                                             masm()->offset() - 8);
-  hir()->body()->AddUse(addr);
+  // hir()->body()->AddUse(addr);
 
   // Call stub
   __ push(Immediate(hir()->argc()));

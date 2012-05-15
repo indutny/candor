@@ -24,9 +24,7 @@ HIRBasicBlock::HIRBasicBlock(HIR* hir) : hir_(hir),
                                          predecessors_count_(0),
                                          successors_count_(0),
                                          masm_(NULL),
-                                         relocation_offset_(0),
                                          loop_start_(NULL),
-                                         relocated_(false),
                                          finished_(false),
                                          id_(-1) {
   predecessors_[0] = NULL;
@@ -167,30 +165,6 @@ void HIRBasicBlock::RecordOperands(OperandsOrder order) {
   HIRValueList::Item* item = values()->head();
   for (; item != NULL; item = item->next()) {
     if (item->value()->operand() != NULL) list->Push(item->value()->operand());
-  }
-}
-
-
-void HIRBasicBlock::AddUse(RelocationInfo* info) {
-  if (relocated()) {
-    info->target(relocation_offset_);
-    masm_->relocation_info_.Push(info);
-    return;
-  }
-  uses()->Push(info);
-}
-
-
-void HIRBasicBlock::Relocate(Masm* masm) {
-  if (relocated()) return;
-  masm_ = masm;
-  relocation_offset_ = masm->offset();
-  relocated(true);
-
-  RelocationInfo* block_reloc;
-  while ((block_reloc = uses()->Shift()) != NULL) {
-    block_reloc->target(masm->offset());
-    masm->relocation_info_.Push(block_reloc);
   }
 }
 
