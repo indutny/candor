@@ -79,6 +79,15 @@ void HIRInstruction::ReplaceVarUse(HIRValue* source, HIRValue* target) {
 }
 
 
+LIRInstruction* HIRInstruction::lir(LIR* l) {
+  if (lir_ == NULL) {
+    lir_ = l->Cast(this);
+  }
+
+  return lir_;
+}
+
+
 void HIRInstruction::Print(PrintBuffer* p) {
   const char* str;
 

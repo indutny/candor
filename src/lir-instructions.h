@@ -108,6 +108,12 @@ class LIRInstruction : public ZoneObject {
   // List of relocation (JIT assembly helper)
   inline ZoneList<RelocationInfo*>* uses() { return &uses_; }
 
+  inline LIRInstruction* next() { return next_; }
+  inline void next(LIRInstruction* next) { next_ = next; }
+
+  inline LIRInstruction* prev() { return prev_; }
+  inline void prev(LIRInstruction* prev) { prev_ = prev; }
+
   inline int id() { return id_; }
   inline void id(int id) { id_ = id; }
 

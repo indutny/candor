@@ -85,6 +85,18 @@ inline LIRInstruction* LIR::Cast(HIRInstruction* instr) {
 }
 
 
+inline void LIR::AddInstruction(LIRInstruction* instr) {
+  if (last_instruction_ != NULL) {
+    last_instruction_->next(instr);
+    instr->prev(last_instruction_);
+  } else {
+    first_instruction_ = instr;
+  }
+
+  last_instruction_ = instr;
+}
+
+
 inline bool LIR::IsInUse(LIROperand* operand) {
   return (operand->is_register() && !registers()->Has(operand->value())) ||
          (operand->is_spill() && !spills()->Has(operand->value()));

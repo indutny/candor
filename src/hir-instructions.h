@@ -17,6 +17,7 @@ class HIRBasicBlock;
 class HIRValue;
 class HIRPhi;
 class LIR;
+class LIRInstruction;
 class LIROperand;
 class RelocationInfo;
 class AstNode;
@@ -65,7 +66,8 @@ class HIRInstruction : public ZoneObject {
                               def_(NULL),
                               result_(NULL),
                               prev_(NULL),
-                              next_(NULL) {
+                              next_(NULL),
+                              lir_(NULL) {
   }
 
   // Called by HIR to associate instruction with block and to
@@ -77,6 +79,9 @@ class HIRInstruction : public ZoneObject {
 
   // Replace all uses (not definitions!) of variable
   void ReplaceVarUse(HIRValue* source, HIRValue* target);
+
+  // Returns LIR companion of this instruction
+  LIRInstruction* lir(LIR* l);
 
   // Type checks
   inline Type type() { return type_; }
@@ -136,6 +141,8 @@ class HIRInstruction : public ZoneObject {
 
   HIRInstruction* prev_;
   HIRInstruction* next_;
+
+  LIRInstruction* lir_;
 };
 
 class HIRLoadBase : public HIRInstruction {

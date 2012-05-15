@@ -100,7 +100,7 @@ class LIRSpillList : public ZoneList<HIRValue*> {
 // LIR class
 class LIR {
  public:
-  LIR(Heap* heap, HIR* hir);
+  LIR(Heap* heap, HIR* hir, Masm* masm);
 
   // Calculate values' liveness ranges
   void CalculateLiveness();
@@ -109,7 +109,10 @@ class LIR {
   // ranges to include phi/inputs itself.
   void PrunePhis();
 
-  // Generate machine code for `hir`
+  // Generate linked-list of instruction for `hir`
+  void Translate(Masm* masm);
+
+  // Generate machine code for linked-list of instructions
   void Generate(Masm* masm);
 
   // Generate machine code for a specific instruction
@@ -172,6 +175,9 @@ class LIR {
   // Convert HIR instruction into LIR instruction
   inline LIRInstruction* Cast(HIRInstruction* instr);
 
+  // Adds instruction to linked list
+  inline void AddInstruction(LIRInstruction* instr);
+
   // List of active values sorted by increasing live_range()->start
   inline ZoneList<HIRValue*>* active_values() { return &active_values_; }
   // List of active values that can be spilled
@@ -207,6 +213,8 @@ class LIR {
   int spill_count_;
 
   LIROperand* tmp_spill_;
+  LIRInstruction* first_instruction_;
+  LIRInstruction* last_instruction_;
 
   Heap* heap_;
   HIR* hir_;

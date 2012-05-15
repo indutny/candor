@@ -103,10 +103,9 @@ char* CodeSpace::Compile(const char* filename,
   *root = hir.root()->Allocate()->addr();
 
   // Generate low-level representation
-  LIR lir(heap(), &hir);
-
   Masm masm(this);
-  lir.Generate(&masm);
+  LIR lir(heap(), &hir, &masm);
+
   char* addr = Put(&masm);
 
   // Relocate source map

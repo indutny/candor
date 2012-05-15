@@ -28,10 +28,12 @@ LIRSpillList::~LIRSpillList() {
 }
 
 
-LIR::LIR(Heap* heap, HIR* hir) : heap_(heap),
-                                 hir_(hir),
-                                 spill_count_(0),
-                                 tmp_spill_(GetSpill()) {
+LIR::LIR(Heap* heap, HIR* hir, Masm* masm) : heap_(heap),
+                                             hir_(hir),
+                                             spill_count_(0),
+                                             tmp_spill_(GetSpill()),
+                                             first_instruction_(NULL),
+                                             last_instruction_(NULL) {
   // Calculate numeric liveness ranges
   CalculateLiveness();
 
@@ -42,6 +44,9 @@ LIR::LIR(Heap* heap, HIR* hir) : heap_(heap),
   for (int i = kLIRRegisterCount - 1; i >= 0; --i) {
     registers()->Release(i);
   }
+
+  Translate(masm);
+  Generate(masm);
 }
 
 
@@ -322,8 +327,7 @@ void LIR::GenerateReverseMove(Masm* masm, HIRInstruction* hinstr) {
   LIRInstruction* lmove = Cast(move);
   move->Reorder(this);
 
-  lmove->masm(masm);
-  lmove->Generate();
+  AddInstruction(lmove);
 
   // Reset all movements
   move->Reset();
@@ -331,7 +335,7 @@ void LIR::GenerateReverseMove(Masm* masm, HIRInstruction* hinstr) {
 
 
 void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
-  LIRInstruction* linstr = Cast(hinstr);
+  LIRInstruction* linstr = hinstr->lir(this);
 
   // List of operand that should be `released` after instruction
   LIRSpillList sl(this);
@@ -347,8 +351,7 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
     if (hinstr->next() == NULL) {
       HIRParallelMove::Cast(hinstr)->Reorder(this);
 
-      linstr->masm(masm);
-      linstr->Generate();
+      AddInstruction(linstr);
     }
     return;
   }
@@ -453,14 +456,12 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
     // Order movements (see Parallel Move paper)
     move->Reorder(this);
 
-    lmove->masm(masm);
-    lmove->Generate();
+    AddInstruction(lmove);
   }
 
   // Generate instruction itself
-  linstr->masm(masm);
   masm->spill_offset((spill_count() + 1) * HValue::kPointerSize);
-  linstr->Generate();
+  AddInstruction(linstr);
 
   // Release scratches
   for (i = 0; i < linstr->scratch_count(); i++) {
@@ -472,23 +473,14 @@ void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
 }
 
 
-void LIR::Generate(Masm* masm) {
-  // Visit all instructions
+void LIR::Translate(Masm* masm) {
+  // Visit all instructions and create LIR graph
   HIRInstruction* hinstr = hir()->first_instruction();
 
   for (; hinstr != NULL; hinstr = hinstr->next()) {
     if (hinstr->ast() != NULL && hinstr->ast()->offset() != -1) {
       heap()->source_map()->Push(masm->offset(), hinstr->ast()->offset());
     }
-
-    // Blocks structure:
-    //   [previous block end]
-    //   [block start]
-    //   [jmp :skip_move]
-    //   [move]
-    //   [:skip_move]
-    //   [instructions]
-    //   [block end]
 
     if (hinstr->block() != NULL) {
       // Record incoming operands
@@ -521,6 +513,17 @@ void LIR::Generate(Masm* masm) {
       spill_count(1);
       while (!spills()->IsEmpty()) spills()->Get();
     }
+  }
+}
+
+
+void LIR::Generate(Masm* masm) {
+  LIRInstruction* instr = first_instruction_;
+
+  while (instr != NULL) {
+    instr->masm(masm);
+    instr->Generate();
+    instr = instr->next();
   }
 }
 
