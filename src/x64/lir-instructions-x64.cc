@@ -105,7 +105,8 @@ void LIRGoto::Generate() {
   RelocationInfo* addr = new RelocationInfo(RelocationInfo::kRelative,
                                             RelocationInfo::kLong,
                                             masm()->offset() - 4);
-  // hir()->block()->successors()[0]->AddUse(addr);
+  hir()->block()->successors()[0]->
+      first_instruction()->lir(lir())->AddUse(addr);
 }
 
 
@@ -276,9 +277,6 @@ void LIRBranchBool::Generate() {
   Operand bvalue(rax, HBoolean::kValueOffset);
   __ cmpb(bvalue, Immediate(0));
 
-  // Generate reverse-movement before jumping
-  lir()->GenerateReverseMove(masm(), hir());
-
   // Jump to the far block
   if (hir()->next() == hir()->block()->successors()[0]->first_instruction()) {
     __ jmp(kNe, NULL);
@@ -286,14 +284,14 @@ void LIRBranchBool::Generate() {
     RelocationInfo* addr = new RelocationInfo(RelocationInfo::kRelative,
                                               RelocationInfo::kLong,
                                               masm()->offset() - 4);
-    // hir()->left()->AddUse(addr);
+    hir()->left()->first_instruction()->lir(lir())->AddUse(addr);
   } else {
     __ jmp(kEq, NULL);
 
     RelocationInfo* addr = new RelocationInfo(RelocationInfo::kRelative,
                                               RelocationInfo::kLong,
                                               masm()->offset() - 4);
-    // hir()->right()->AddUse(addr);
+    hir()->right()->first_instruction()->lir(lir())->AddUse(addr);
   }
 }
 
@@ -543,7 +541,7 @@ void LIRAllocateFunction::Generate() {
   RelocationInfo* addr = new RelocationInfo(RelocationInfo::kAbsolute,
                                             RelocationInfo::kQuad,
                                             masm()->offset() - 8);
-  // hir()->body()->AddUse(addr);
+  hir()->body()->first_instruction()->lir(lir())->AddUse(addr);
 
   // Call stub
   __ push(Immediate(hir()->argc()));

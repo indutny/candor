@@ -115,7 +115,8 @@ class LIR {
   // Generate machine code for linked-list of instructions
   void Generate(Masm* masm);
 
-  // Generate machine code for a specific instruction
+  // Translate specific instruction into LIR representation
+  // (including register allocation, spilling/unspilling)
   //
   // First of all, instruction's values will be placed in registers/spills.
   // Then scratch registers will be created, and only after it - the result
@@ -124,10 +125,6 @@ class LIR {
   // After instruction, scratch registers will be put back into FreeList
   //
   void GenerateInstruction(Masm* masm, HIRInstruction* hinstr);
-
-  // Short-hand for generating after(reverse) movement and reseting it
-  // (used in BranchBool)
-  void GenerateReverseMove(Masm* masm, HIRInstruction* hinstr);
 
   // Put spill used in movements to active_values() list to
   // release it automatically after reverse instruction

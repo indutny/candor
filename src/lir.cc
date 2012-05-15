@@ -320,20 +320,6 @@ void LIR::MovePhis(HIRInstruction* hinstr) {
 }
 
 
-void LIR::GenerateReverseMove(Masm* masm, HIRInstruction* hinstr) {
-  if (hinstr->next()->type() != HIRInstruction::kParallelMove) return;
-
-  HIRParallelMove* move = HIRParallelMove::Cast(hinstr->next());
-  LIRInstruction* lmove = Cast(move);
-  move->Reorder(this);
-
-  AddInstruction(lmove);
-
-  // Reset all movements
-  move->Reset();
-}
-
-
 void LIR::GenerateInstruction(Masm* masm, HIRInstruction* hinstr) {
   LIRInstruction* linstr = hinstr->lir(this);
 
@@ -489,9 +475,6 @@ void LIR::Translate(Masm* masm) {
       }
 
       // Insert movements on mismatch
-
-      // Relocate all block's uses
-      // hinstr->block()->Relocate(masm);
     }
 
     GenerateInstruction(masm, hinstr);
@@ -521,6 +504,10 @@ void LIR::Generate(Masm* masm) {
   LIRInstruction* instr = first_instruction_;
 
   while (instr != NULL) {
+    // relocate all instruction' uses
+    instr->Relocate(masm);
+
+    // generate instruction itself
     instr->masm(masm);
     instr->Generate();
     instr = instr->next();
