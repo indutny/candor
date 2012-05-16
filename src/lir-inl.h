@@ -94,6 +94,15 @@ inline void LIR::AddInstruction(LIRInstruction* instr) {
   }
 
   last_instruction_ = instr;
+
+  // Store active values
+  HIRValueList::Item* item = active_values()->head();
+  for (; item != NULL; item = item->next()) {
+    if (item->value()->operand() != NULL) {
+      item->value()->operand()->hir(item->value());
+      instr->operands()->Push(item->value()->operand());
+    }
+  }
 }
 
 

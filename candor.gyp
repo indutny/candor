@@ -26,7 +26,6 @@
       'src/heap.h',
       'src/hir.cc',
       'src/hir.h',
-      'src/hir-inl.h',
       'src/hir-instructions.cc',
       'src/hir-instructions.h',
       'src/heap-inl.h',

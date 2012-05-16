@@ -9,6 +9,7 @@ namespace internal {
 // Forward declarations
 class Masm;
 class HIRInstruction;
+class HIRValue;
 class LIR;
 class LIROperand;
 struct Register;
@@ -108,6 +109,9 @@ class LIRInstruction : public ZoneObject {
   // List of relocation (JIT assembly helper)
   inline ZoneList<RelocationInfo*>* uses() { return &uses_; }
 
+  // List of operands for generating shuffles in jump instructions
+  inline ZoneList<LIROperand*>* operands() { return &operands_; }
+
   inline LIRInstruction* next() { return next_; }
   inline void next(LIRInstruction* next) { next_ = next; }
 
@@ -129,6 +133,8 @@ class LIRInstruction : public ZoneObject {
   bool relocated_;
   int relocation_offset_;
   ZoneList<RelocationInfo*> uses_;
+
+  ZoneList<LIROperand*> operands_;
 
   LIRInstruction* next_;
   LIRInstruction* prev_;
