@@ -1,6 +1,7 @@
 #ifndef _SRC_LIR_INSTRUCTIONS_H_
 #define _SRC_LIR_INSTRUCTIONS_H_
 
+#include "lir.h"
 #include "zone.h"
 
 namespace candor {
@@ -81,6 +82,10 @@ class LIRInstruction : public ZoneObject {
   void AddUse(RelocationInfo* info);
   void Relocate(Masm* masm);
 
+  // Generates jump (and adds relocation info)
+  void JumpTo(HIRBasicBlock* instr);
+  void JumpTo(int skip_condition, HIRBasicBlock* instr);
+
   virtual void Generate() = 0;
 
   virtual Type type() const = 0;
@@ -110,7 +115,7 @@ class LIRInstruction : public ZoneObject {
   inline ZoneList<RelocationInfo*>* uses() { return &uses_; }
 
   // List of operands for generating shuffles in jump instructions
-  inline ZoneList<LIROperand*>* operands() { return &operands_; }
+  inline LIROperandList* operands() { return &operands_; }
 
   inline LIRInstruction* next() { return next_; }
   inline void next(LIRInstruction* next) { next_ = next; }
@@ -134,7 +139,7 @@ class LIRInstruction : public ZoneObject {
   int relocation_offset_;
   ZoneList<RelocationInfo*> uses_;
 
-  ZoneList<LIROperand*> operands_;
+  LIROperandList operands_;
 
   LIRInstruction* next_;
   LIRInstruction* prev_;

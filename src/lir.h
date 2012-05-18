@@ -17,8 +17,11 @@ class HIRInstruction;
 class HIRParallelMove;
 class HIRBasicBlock;
 class LIR;
+class LIROperand;
 class LIRInstruction;
 struct Register;
+
+typedef ZoneList<LIROperand*> LIROperandList;
 
 // Operand for LIRInstruction
 class LIROperand : public ZoneObject {
@@ -115,6 +118,9 @@ class LIR {
   // Generate machine code for linked-list of instructions
   void Generate(Masm* masm);
 
+  // Generate shuffle for jumping between instructions
+  void GenerateShuffle(Masm* masm, LIRInstruction* from, LIRInstruction* to);
+
   // Translate specific instruction into LIR representation
   // (including register allocation, spilling/unspilling)
   //
@@ -124,7 +130,7 @@ class LIR {
   //
   // After instruction, scratch registers will be put back into FreeList
   //
-  void GenerateInstruction(Masm* masm, HIRInstruction* hinstr);
+  void TranslateInstruction(Masm* masm, HIRInstruction* hinstr);
 
   // Put spill used in movements to active_values() list to
   // release it automatically after reverse instruction
@@ -154,9 +160,6 @@ class LIR {
 
   // Go through active values and move all uses of register into spill
   void SpillRegister(HIRInstruction* hinstr, LIROperand* reg);
-
-  // Add phis assignments to movement
-  void MovePhis(HIRInstruction* hinstr);
 
   // Changes value's operand and creates move if needed
   inline void ChangeOperand(HIRInstruction* hinstr,

@@ -40,11 +40,6 @@ class HIRBasicBlock : public ZoneObject {
     kLoopStart
   };
 
-  enum OperandsOrder {
-    kIncoming,
-    kOutcoming
-  };
-
   HIRBasicBlock(HIR* hir);
 
   // Add value for generating PHIs later
@@ -62,9 +57,6 @@ class HIRBasicBlock : public ZoneObject {
 
   // Block relations
   bool Dominates(HIRBasicBlock* block);
-
-  // Operands
-  void RecordOperands(OperandsOrder order);
 
   // Debug printing
   void Print(PrintBuffer* p);
@@ -95,12 +87,6 @@ class HIRBasicBlock : public ZoneObject {
 
   inline HIRValueList* values() { return &values_; }
   inline HIRPhiList* phis() { return &phis_; }
-  inline ZoneList<LIROperand*>* incoming_operands() {
-    return &incoming_operands_;
-  }
-  inline ZoneList<LIROperand*>* outcoming_operands() {
-    return &outcoming_operands_;
-  }
   inline HIRInstructionList* instructions() { return &instructions_; }
 
   inline HIRInstruction* first_instruction() {
@@ -142,8 +128,6 @@ class HIRBasicBlock : public ZoneObject {
 
   HIRValueList values_;
   HIRPhiList phis_;
-  ZoneList<LIROperand*> incoming_operands_;
-  ZoneList<LIROperand*> outcoming_operands_;
   HIRInstructionList instructions_;
 
   HIRBasicBlock* predecessors_[2];

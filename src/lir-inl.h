@@ -47,18 +47,6 @@ inline void LIR::ChangeOperand(HIRInstruction* hinstr,
   if (value->operand() != NULL &&
       !value->operand()->is_equal(operand)) {
     Release(value->operand());
-
-    // If value wasn't just created and immediately moved -
-    // create movement from previous value to new
-    HIRParallelMove::GetBefore(hinstr)->AddMove(value->operand(), operand);
-
-    // Commit movement
-    HIRParallelMove::GetBefore(hinstr)->Reorder(this);
-
-    // imm -> reg
-    if (value->operand()->is_immediate()) {
-      operand->immediate_value(value->operand()->value());
-    }
   }
   value->operand(operand);
 }
@@ -100,6 +88,15 @@ inline void LIR::AddInstruction(LIRInstruction* instr) {
   for (; item != NULL; item = item->next()) {
     if (item->value()->operand() != NULL) {
       item->value()->operand()->hir(item->value());
+
+      // Start searching from tail for duplicate
+      LIROperandList::Item* op = instr->operands()->tail();
+      for (; op != NULL; op = op->prev()) {
+        if (op->value() == item->value()->operand()) break;
+      }
+
+      // Do not push duplicate operand
+      if (op != NULL) continue;
       instr->operands()->Push(item->value()->operand());
     }
   }

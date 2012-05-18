@@ -19,7 +19,35 @@ namespace internal {
 
 #define __ masm()->
 
+
+void LIRInstruction::JumpTo(HIRBasicBlock* block) {
+  LIRInstruction* instr = block->first_instruction()->lir(lir());
+
+  lir()->GenerateShuffle(masm(), this, instr);
+
+  __ jmp(NULL);
+
+  RelocationInfo* addr = new RelocationInfo(RelocationInfo::kRelative,
+                                            RelocationInfo::kLong,
+                                            masm()->offset() - 4);
+  instr->AddUse(addr);
+}
+
+
+void LIRInstruction::JumpTo(int skip_condition, HIRBasicBlock* instr) {
+  Label skip(masm());
+
+  __ jmp(static_cast<Condition>(skip_condition), &skip);
+
+  JumpTo(instr);
+
+  __ bind(&skip);
+}
+
+
 void LIRParallelMove::Generate() {
+  hir()->Reorder(lir());
+
   ZoneList<HIRParallelMove::MoveItem*>::Item* item = hir()->moves()->head();
 
   for (; item != NULL; item = item->next()) {
@@ -100,13 +128,7 @@ void LIRGoto::Generate() {
     return;
   }
 
-  // Generate jmp and add relocation info to block
-  __ jmp(NULL);
-  RelocationInfo* addr = new RelocationInfo(RelocationInfo::kRelative,
-                                            RelocationInfo::kLong,
-                                            masm()->offset() - 4);
-  hir()->block()->successors()[0]->
-      first_instruction()->lir(lir())->AddUse(addr);
+  JumpTo(hir()->block()->successors()[0]);
 }
 
 
@@ -279,19 +301,9 @@ void LIRBranchBool::Generate() {
 
   // Jump to the far block
   if (hir()->next() == hir()->block()->successors()[0]->first_instruction()) {
-    __ jmp(kNe, NULL);
-
-    RelocationInfo* addr = new RelocationInfo(RelocationInfo::kRelative,
-                                              RelocationInfo::kLong,
-                                              masm()->offset() - 4);
-    hir()->left()->first_instruction()->lir(lir())->AddUse(addr);
+    JumpTo(kEq, hir()->left());
   } else {
-    __ jmp(kEq, NULL);
-
-    RelocationInfo* addr = new RelocationInfo(RelocationInfo::kRelative,
-                                              RelocationInfo::kLong,
-                                              masm()->offset() - 4);
-    hir()->right()->first_instruction()->lir(lir())->AddUse(addr);
+    JumpTo(kNe, hir()->right());
   }
 }
 

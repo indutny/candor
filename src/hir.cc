@@ -156,19 +156,6 @@ bool HIRBasicBlock::Dominates(HIRBasicBlock* block) {
 }
 
 
-void HIRBasicBlock::RecordOperands(OperandsOrder order) {
-  ZoneList<LIROperand*>* list = order == kIncoming ?
-      incoming_operands()
-      :
-      outcoming_operands();
-
-  HIRValueList::Item* item = values()->head();
-  for (; item != NULL; item = item->next()) {
-    if (item->value()->operand() != NULL) list->Push(item->value()->operand());
-  }
-}
-
-
 bool HIRBasicBlock::IsPrintable() {
   off_t value = MarkPrinted();
 
