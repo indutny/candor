@@ -391,8 +391,6 @@ void LIR::TranslateInstruction(Masm* masm, HIRInstruction* hinstr) {
     linstr->result = value->operand();
   }
 
-  HIRParallelMove::GetBefore(hinstr)->Reorder(this);
-
   AddInstruction(linstr);
 
   // Store LIR arguments
@@ -424,7 +422,6 @@ void LIR::TranslateInstruction(Masm* masm, HIRInstruction* hinstr) {
     Release(linstr->scratches[i]);
   }
 
-  // Finalize next movement instruction
   HIRParallelMove::GetAfter(hinstr)->Reorder(this);
 }
 
@@ -476,8 +473,14 @@ void LIR::Translate(Masm* masm) {
 void LIR::GenerateShuffle(Masm* masm,
                           LIRInstruction* from,
                           LIRInstruction* to) {
-  HIRParallelMove* move = new HIRParallelMove();
-  move->Init(NULL);
+  HIRParallelMove* move;
+
+  if (to->type() == LIRInstruction::kParallelMove) {
+    move = new HIRParallelMove();
+    move->Init(NULL);
+  } else {
+    move = HIRParallelMove::GetBefore(to->generic_hir());
+  }
 
   LIROperandList::Item* i;
   for (i = to->operands()->head(); i != NULL; i = i->next()) {
@@ -513,17 +516,20 @@ void LIR::Generate(Masm* masm) {
     // relocate all instruction' uses
     instr->Relocate(masm);
 
-    // generate instruction itself
-    masm->spill_offset(instr->spill_offset() * HValue::kPointerSize);
-    instr->masm(masm);
-    instr->Generate();
+    if (instr->type() != LIRInstruction::kParallelMove) {
+      // generate instruction itself
+      masm->spill_offset(instr->spill_offset() * HValue::kPointerSize);
+      instr->masm(masm);
+      instr->Generate();
+    }
 
     if (instr->next() != NULL) GenerateShuffle(masm, instr, instr->next());
 
     // prepare entering new function
-    if ((instr->next() == NULL ||
-        instr->next()->type() == LIRInstruction::kEntry) &&
-        instr->prev() != NULL) {
+    if (instr->next() == NULL) {
+      masm->FinalizeSpills(instr->spill_offset() - 1);
+    } else if (instr->next()->type() == LIRInstruction::kEntry &&
+               instr->prev() != NULL) {
       masm->FinalizeSpills(instr->prev()->spill_offset() - 1);
     }
   }
