@@ -275,6 +275,9 @@ void LIR::SpillActive(Masm* masm, HIRInstruction* hinstr) {
   for (; item != NULL; item = item->next()) {
     HIRValue* value = item->value();
 
+    // Do not spill immediate values
+    if (value->slot()->is_immediate()) continue;
+
     // Do not spill instruction's result
     if (value == hinstr->GetResult()) continue;
 

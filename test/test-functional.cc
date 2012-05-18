@@ -234,6 +234,10 @@ TEST_START(functional)
     assert(result->As<Number>()->Value() == 28);
   })
 
+  FUN_TEST("a = {}\na.x = 1\nreturn a.x", {
+    assert(result->As<Number>()->Value() == 1);
+  })
+
   // Nil slot lookup
   FUN_TEST("a.x = 1", {
     assert(result->Is<Nil>());
