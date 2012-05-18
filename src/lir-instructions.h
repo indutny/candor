@@ -114,6 +114,9 @@ class LIRInstruction : public ZoneObject {
   // List of relocation (JIT assembly helper)
   inline ZoneList<RelocationInfo*>* uses() { return &uses_; }
 
+  // `Entry`'s arguments
+  inline LIROperandList* args() { return &args_; }
+
   // List of operands for generating shuffles in jump instructions
   inline LIROperandList* operands() { return &operands_; }
 
@@ -139,6 +142,7 @@ class LIRInstruction : public ZoneObject {
   int relocation_offset_;
   ZoneList<RelocationInfo*> uses_;
 
+  LIROperandList args_;
   LIROperandList operands_;
 
   LIRInstruction* next_;

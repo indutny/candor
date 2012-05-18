@@ -153,7 +153,7 @@ void LIR::PrunePhis() {
       if (range->start == -1) continue;
 
       // Input should be available in last block's instruction
-      range->Extend(last->id() + 1);
+      range->Extend(last->id());
       phi->Extend(last->id());
 
       // And push it to the goto
@@ -395,6 +395,21 @@ void LIR::TranslateInstruction(Masm* masm, HIRInstruction* hinstr) {
 
   AddInstruction(linstr);
 
+  // Store LIR arguments
+  {
+    HIRValueList::Item* item = NULL;
+
+    if (hinstr->type() == HIRInstruction::kEntry) {
+      item = reinterpret_cast<HIREntry*>(hinstr)->args()->head();
+    } else if (hinstr->type() == HIRInstruction::kCall) {
+      item = reinterpret_cast<HIRCall*>(hinstr)->args()->head();
+    }
+
+    for (; item != NULL; item = item->next()) {
+      linstr->args()->Push(item->value()->operand());
+    }
+  }
+
   // All active registers should be spilled before entering
   // instruction with side effects (like stubs)
   //
@@ -452,7 +467,7 @@ void LIR::Translate(Masm* masm) {
 
   char out[5000];
   hir()->Print(out, sizeof(out));
-  fprintf(stdout, "%s\n", out);
+  fprintf(stdout, "---------------------------------\n%s\n", out);
 }
 
 

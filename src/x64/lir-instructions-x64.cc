@@ -78,7 +78,7 @@ void LIREntry::Generate() {
   __ AllocateContext(hir()->context_slots());
 
   // If function has arguments
-  HIRValueList::Item* arg = hir()->args()->head();
+  LIROperandList::Item* arg = args()->head();
   if (arg != NULL) {
     // Put argc into root register (temporarily)
     __ push(root_reg);
@@ -87,20 +87,20 @@ void LIREntry::Generate() {
     // Put nil in all args
     __ mov(scratch, Immediate(Heap::kTagNil));
     for (int i = 0; arg != NULL; arg = arg->next(), i++) {
-      __ Mov(arg->value()->operand(), scratch);
+      __ Mov(arg->value(), scratch);
     }
 
     // Move args to registers/spills
     Label args_end(masm());
 
-    arg = hir()->args()->head();
+    arg = args()->head();
     for (int i = 0; arg != NULL; arg = arg->next(), i++) {
       __ cmpq(root_reg, Immediate(HNumber::Tag(i + 1)));
       __ jmp(kLt, &args_end);
 
       // Skip return address and previous rbp
       Operand arg_slot(rbp, (i + 2) * 8);
-      __ Mov(arg->value()->operand(), arg_slot);
+      __ Mov(arg->value(), arg_slot);
     }
 
     __ bind(&args_end);
@@ -415,9 +415,9 @@ void LIRCall::Generate() {
   __ push(Immediate(Heap::kTagNil));
   __ bind(&even);
 
-  HIRValueList::Item* arg = hir()->args()->tail();
+  LIROperandList::Item* arg = args()->tail();
   for (; arg != NULL; arg = arg->prev()) {
-    __ Push(arg->value()->operand());
+    __ Push(arg->value());
   }
 
   __ Mov(scratch, inputs[0]);
