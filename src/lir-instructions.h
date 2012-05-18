@@ -66,6 +66,7 @@ class LIRInstruction : public ZoneObject {
                      next_(NULL),
                      relocated_(false),
                      relocation_offset_(0),
+                     spill_offset_(0),
                      id_(-1) {
     // Nullify all inputs/outputs/scratches
     inputs[0] = NULL;
@@ -126,6 +127,9 @@ class LIRInstruction : public ZoneObject {
   inline LIRInstruction* prev() { return prev_; }
   inline void prev(LIRInstruction* prev) { prev_ = prev; }
 
+  inline int spill_offset() { return spill_offset_; }
+  inline void spill_offset(int spill_offset) { spill_offset_ = spill_offset; }
+
   inline int id() { return id_; }
   inline void id(int id) { id_ = id; }
 
@@ -147,6 +151,8 @@ class LIRInstruction : public ZoneObject {
 
   LIRInstruction* next_;
   LIRInstruction* prev_;
+
+  int spill_offset_;
 
   int id_;
 };

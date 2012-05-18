@@ -417,6 +417,8 @@ void LIR::TranslateInstruction(Masm* masm, HIRInstruction* hinstr) {
   // (if that's possible)
   if (hinstr->HasSideEffects()) SpillActive(masm, hinstr);
 
+  linstr->spill_offset(spill_count() + 1);
+
   // Release scratches
   for (i = 0; i < linstr->scratch_count(); i++) {
     Release(linstr->scratches[i]);
@@ -507,20 +509,22 @@ void LIR::GenerateShuffle(Masm* masm,
 void LIR::Generate(Masm* masm) {
   LIRInstruction* instr = first_instruction_;
 
-  while (instr != NULL) {
+  for (; instr != NULL; instr = instr->next()) {
     // relocate all instruction' uses
     instr->Relocate(masm);
 
     // generate instruction itself
+    masm->spill_offset(instr->spill_offset() * HValue::kPointerSize);
     instr->masm(masm);
     instr->Generate();
 
     if (instr->next() != NULL) GenerateShuffle(masm, instr, instr->next());
-    instr = instr->next();
 
     // prepare entering new function
-    if (instr == NULL || instr->type() == LIRInstruction::kEntry) {
-      masm->FinalizeSpills(spill_count());
+    if ((instr->next() == NULL ||
+        instr->next()->type() == LIRInstruction::kEntry) &&
+        instr->prev() != NULL) {
+      masm->FinalizeSpills(instr->prev()->spill_offset() - 1);
     }
   }
 }
