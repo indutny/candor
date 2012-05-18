@@ -28,5 +28,17 @@ void LIRInstruction::Relocate(Masm* masm) {
   }
 }
 
+
+void LIRInstruction::AddOperand(LIROperand* operand) {
+  // Remove operands with same HIRValue
+  LIROperandList::Item* op = operands()->tail();
+  for (; op != NULL; op = op->prev()) {
+    if (op->value()->hir() == operand->hir()) operands()->Remove(op);
+  }
+
+  // Push new one
+  operands()->Push(operand);
+}
+
 } // namespace internal
 } // namespace candor

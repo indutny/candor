@@ -83,22 +83,12 @@ inline void LIR::AddInstruction(LIRInstruction* instr) {
 
   last_instruction_ = instr;
 
-  // Store active values
+  // Store active values' operands into `operands` list
   HIRValueList::Item* item = active_values()->head();
   for (; item != NULL; item = item->next()) {
-    if (item->value()->operand() != NULL) {
-      item->value()->operand()->hir(item->value());
-
-      // Start searching from tail for duplicate
-      LIROperandList::Item* op = instr->operands()->tail();
-      for (; op != NULL; op = op->prev()) {
-        if (op->value() == item->value()->operand()) break;
-      }
-
-      // Do not push duplicate operand
-      if (op != NULL) continue;
-      instr->operands()->Push(item->value()->operand());
-    }
+    if (item->value()->operand() == NULL) continue;
+    item->value()->operand()->hir(item->value());
+    instr->AddOperand(item->value()->operand());
   }
 }
 

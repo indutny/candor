@@ -87,6 +87,9 @@ class LIRInstruction : public ZoneObject {
   void JumpTo(HIRBasicBlock* instr);
   void JumpTo(int skip_condition, HIRBasicBlock* instr);
 
+  // Adds operand to the list
+  void AddOperand(LIROperand* operand);
+
   virtual void Generate() = 0;
 
   virtual Type type() const = 0;

@@ -289,16 +289,18 @@ void LIR::SpillActive(Masm* masm, HIRInstruction* hinstr) {
     }
 
     LIRInstruction* linstr = hinstr->lir(this);
-    LIROperandList::Item* op = linstr->operands()->head();
-    for (; op != NULL; op = op->next()) {
-      if (op->value()->hir() == value) linstr->operands()->Remove(op);
-    }
 
     LIROperand* from = value->operand();
     LIROperand* to = GetSpill(hinstr, value);
 
+    to->hir(value);
+    linstr->AddOperand(to);
+
+    // Check following case:
+    // a -> b gets changed (after spilling) to a -> a
+    // in such case we should insert a -> b movement
     if (linstr->prev() != NULL) {
-      op = linstr->prev()->operands()->head();
+      LIROperandList::Item* op = linstr->prev()->operands()->head();
       while (op != NULL && op->value()->hir() != value) {
         op = op->next();
       }
@@ -309,7 +311,6 @@ void LIR::SpillActive(Masm* masm, HIRInstruction* hinstr) {
             from);
       }
     }
-    hinstr->lir(this)->operands()->Push(GetSpill(hinstr, value));
   }
 }
 
@@ -451,7 +452,7 @@ void LIR::Translate(Masm* masm) {
           LIROperand* op = new LIROperand(*phi->operand());
           op->hir(val_item->value());
 
-          hinstr->lir(this)->operands()->Push(op);
+          hinstr->lir(this)->AddOperand(op);
         }
       }
     }
