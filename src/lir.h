@@ -161,6 +161,9 @@ class LIR {
   // Go through active values and move all uses of register into spill
   void SpillRegister(HIRInstruction* hinstr, LIROperand* reg);
 
+  // Debug printing
+  void Print(char* buffer, uint32_t size);
+
   // Changes value's operand and creates move if needed
   inline void ChangeOperand(HIRInstruction* hinstr,
                             HIRValue* value,

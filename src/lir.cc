@@ -153,7 +153,7 @@ void LIR::PrunePhis() {
       if (range->start == -1) continue;
 
       // Input should be available in last block's instruction
-      range->Extend(last->id());
+      range->Extend(last->id() + 1);
       phi->Extend(last->id());
 
       // And push it to the goto
@@ -441,18 +441,23 @@ void LIR::Translate(Masm* masm) {
 
     TranslateInstruction(masm, hinstr);
 
+    // Replace phi operand with it's inputs operands
     if (hinstr->block() != NULL &&
         hinstr == hinstr->block()->first_instruction()) {
       HIRPhiList::Item* phi_item = hinstr->block()->phis()->head();
+      LIRInstruction* current = hinstr->lir(this);
+
       for (; phi_item != NULL; phi_item = phi_item->next()) {
         HIRPhi* phi = phi_item->value();
+
+        if (phi->operand() == NULL) continue;
 
         HIRValueList::Item* val_item = phi->inputs()->head();
         for (; val_item != NULL; val_item = val_item->next()) {
           LIROperand* op = new LIROperand(*phi->operand());
-          op->hir(val_item->value());
 
-          hinstr->lir(this)->AddOperand(op);
+          op->hir(val_item->value());
+          current->AddOperand(op);
         }
       }
     }
@@ -468,9 +473,12 @@ void LIR::Translate(Masm* masm) {
     }
   }
 
-  char out[5000];
+  char out[64 * 1024];
   hir()->Print(out, sizeof(out));
   fprintf(stdout, "---------------------------------\n%s\n", out);
+
+  Print(out, sizeof(out));
+  fprintf(stdout, "%s\n", out);
 }
 
 
@@ -478,8 +486,9 @@ void LIR::GenerateShuffle(Masm* masm,
                           LIRInstruction* from,
                           LIRInstruction* to) {
   HIRParallelMove* move;
+  bool direct = from->next() == to;
 
-  if (to->type() == LIRInstruction::kParallelMove) {
+  if (to->type() == LIRInstruction::kParallelMove || !direct) {
     move = new HIRParallelMove();
     move->Init(NULL);
   } else {
@@ -496,6 +505,8 @@ void LIR::GenerateShuffle(Masm* masm,
                     to_op);
       continue;
     }
+
+    if (!direct && to_op->hir()->is_phi()) continue;
 
     LIROperandList::Item* j;
     for (j = from->operands()->head(); j != NULL; j = j->next()) {
@@ -537,6 +548,19 @@ void LIR::Generate(Masm* masm) {
       masm->FinalizeSpills(instr->prev()->spill_offset() - 1);
     }
   }
+}
+
+
+void LIR::Print(char* buffer, uint32_t size) {
+  PrintBuffer p(buffer, size);
+
+  LIRInstruction* instr = first_instruction_;
+  for (; instr != NULL; instr = instr->next()) {
+    instr->Print(&p);
+    if (instr->next() != NULL) p.Print("\n");
+  }
+
+  p.Finalize();
 }
 
 } // namespace internal

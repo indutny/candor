@@ -2,7 +2,8 @@
 #define _SRC_LIR_INSTRUCTIONS_H_
 
 #include "lir.h"
-#include "zone.h"
+#include "zone.h" // ZoneObject
+#include "utils.h" // PrintBuffer
 
 namespace candor {
 namespace internal {
@@ -87,8 +88,12 @@ class LIRInstruction : public ZoneObject {
   void JumpTo(HIRBasicBlock* instr);
   void JumpTo(int skip_condition, HIRBasicBlock* instr);
 
-  // Adds operand to the list
+  // Adds/Removes operand to the list
+  void RemoveOperand(HIRValue* value);
   void AddOperand(LIROperand* operand);
+
+  // Debug printing
+  void Print(PrintBuffer* p);
 
   virtual void Generate() = 0;
 
