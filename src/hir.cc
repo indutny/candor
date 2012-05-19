@@ -795,7 +795,7 @@ AstNode* HIR::VisitWhile(AstNode* node) {
 
   // And loop it back to condition
   current_block()->Goto(b.first_continue_block());
-
+  b.first_continue_block()->loop(current_block());
   b.first_continue_block()->end(b.first_break_block());
 
   // Execution will continue in the `end` block
@@ -985,7 +985,8 @@ AstNode* HIR::VisitContinue(AstNode* node) {
   HIRBasicBlock* block = break_continue_info()->continue_blocks()->Pop();
   current_block()->Goto(block);
 
-  HIRLoopStart::Cast(block)->end(current_block());
+  HIRLoopStart::Cast(block)->loop(current_block());
+  HIRLoopStart::Cast(block)->end(break_continue_info()->first_break_block());
 
   return node;
 }

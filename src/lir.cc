@@ -82,15 +82,23 @@ void LIR::CalculateLiveness() {
         hinstr != hinstr->block()->first_instruction()) {
       continue;
     }
-    HIRBasicBlock* end = HIRLoopStart::Cast(hinstr->block())->end();
+    HIRBasicBlock* block = hinstr->block();
+    int start = block->first_instruction()->id();
+    int end = HIRLoopStart::Cast(hinstr->block())
+        ->loop()->last_instruction()->id();
 
-    item = hinstr->block()->values()->head();
-    for (; item != NULL; item = item->next()) {
-      HIRValue* value = item->value();
+    while (block != NULL) {
+      item = block->values()->head();
 
-      if (value == NULL || value->live_range()->start == -1) continue;
+      for (; item != NULL; item = item->next()) {
+        HIRValue* value = item->value();
 
-      value->live_range()->Extend(end->last_instruction()->id());
+        if (value == NULL || value->live_range()->end < start) continue;
+
+        value->live_range()->Extend(end);
+      }
+
+      block = block->dominator();
     }
   }
 

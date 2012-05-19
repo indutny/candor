@@ -47,7 +47,7 @@ class LIROperand : public ZoneObject {
   }
 
   // Debug printing
-  inline void Print(PrintBuffer* p);
+  void Print(PrintBuffer* p);
 
   inline Type type() { return type_; }
   inline bool is_register() { return type_ == kRegister; }

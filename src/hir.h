@@ -147,7 +147,7 @@ class HIRBasicBlock : public ZoneObject {
 
 class HIRLoopStart : public HIRBasicBlock {
  public:
-  HIRLoopStart(HIR* hir) : HIRBasicBlock(hir), end_(NULL) {
+  HIRLoopStart(HIR* hir) : HIRBasicBlock(hir), loop_(NULL), end_(NULL) {
     type_ = kLoopStart;
   }
 
@@ -155,13 +155,13 @@ class HIRLoopStart : public HIRBasicBlock {
     return reinterpret_cast<HIRLoopStart*>(block);
   }
 
-  inline void end(HIRBasicBlock* end) {
-    assert(end_ == NULL || end_ == end);
-    end_ = end;
-  }
+  inline void loop(HIRBasicBlock* loop) { loop_ = loop; }
+  inline HIRBasicBlock* loop() { return loop_; }
+  inline void end(HIRBasicBlock* end) { end_ = end; }
   inline HIRBasicBlock* end() { return end_; }
 
  private:
+  HIRBasicBlock* loop_;
   HIRBasicBlock* end_;
 };
 
