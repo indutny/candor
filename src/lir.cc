@@ -72,25 +72,6 @@ void LIR::CalculateLiveness() {
     // Set liveness range
     value->live_range()->start = min;
     value->live_range()->end = max;
-
-    // Extend phi's and it's inputs liveness
-    if (value->is_phi() && max != -1) {
-      ZoneList<HIRPhi*> work_list;
-      work_list.Push(HIRPhi::Cast(value));
-
-      HIRPhi* phi;
-      while ((phi = work_list.Shift()) != NULL) {
-        int id = phi->block()->first_instruction()->id();
-        if (phi->live_range()->Extend(id)) {
-          if (phi->inputs()->head()->value()->is_phi()) {
-            work_list.Push(HIRPhi::Cast(phi->inputs()->head()->value()));
-          }
-          if (phi->inputs()->tail()->value()->is_phi()) {
-            work_list.Push(HIRPhi::Cast(phi->inputs()->tail()->value()));
-          }
-        }
-      }
-    }
   }
 
   // Add non-local variable uses to the end of loop
@@ -154,7 +135,6 @@ void LIR::PrunePhis() {
 
       // Input should be available in last block's instruction
       range->Extend(last->id() + 1);
-      phi->Extend(last->id());
 
       // And push it to the goto
       last->values()->Push(input);

@@ -249,6 +249,8 @@ HIRPhi::HIRPhi(HIRBasicBlock* block, HIRValue* value)
 
 
 void HIRPhi::AddInput(HIRValue* input) {
+  if (input == this) return;
+
   assert(inputs()->length() < 2);
   inputs()->Push(input);
   input->phi_uses()->Push(this);
