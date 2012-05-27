@@ -156,6 +156,18 @@ bool HIRBasicBlock::Dominates(HIRBasicBlock* block) {
 }
 
 
+void HIRBasicBlock::PrunePhis() {
+  HIRPhiList::Item* item;
+  for (item = phis()->head(); item != NULL; item = item->next()) {
+    HIRPhi* phi = item->value();
+    if (phi->inputs()->length() < 2) {
+      phi->Replace(phi->inputs()->head()->value());
+      phis()->Remove(item);
+    }
+  }
+}
+
+
 bool HIRBasicBlock::IsPrintable() {
   off_t value = MarkPrinted();
 
@@ -267,6 +279,7 @@ void HIRPhi::ReplaceVarUse(HIRValue* source, HIRValue* target) {
     if (item->value() == source) {
       if (target == this) {
         inputs()->Remove(item);
+        block()->PrunePhis();
       } else {
         item->value(target);
       }
@@ -549,19 +562,7 @@ void HIR::Enumerate() {
     }
 
     // Prune phis with less than 2 inputs
-    HIRPhiList::Item* item = current->phis()->head();
-    while (item != NULL) {
-      HIRPhi* phi = item->value();
-      if (item->value()->inputs()->length() < 2) {
-        HIRPhiList::Item* next = item->next();
-        phi->Replace(phi->inputs()->head()->value());
-
-        current->phis()->Remove(item);
-        item = next;
-      } else {
-        item = item->next();
-      }
-    }
+    current->PrunePhis();
 
     if (current->id() == -1) {
       current->id(block_id++);

@@ -83,6 +83,16 @@ void LIRInstruction::Print(PrintBuffer* p) {
     }
     p->Print("]");
   }
+
+  if (args()->length() > 0) {
+    p->Print(" (");
+    LIROperandList::Item* item = args()->head();
+    for (; item != NULL; item = item->next()) {
+      if (item->prev() != NULL) p->Print(", ");
+      item->value()->Print(p);
+    }
+    p->Print(")");
+  }
 }
 
 #undef LIR_TYPE_TO_STRING

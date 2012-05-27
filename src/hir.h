@@ -58,6 +58,9 @@ class HIRBasicBlock : public ZoneObject {
   // Block relations
   bool Dominates(HIRBasicBlock* block);
 
+  // Prune dead or empty phis
+  void PrunePhis();
+
   // Debug printing
   void Print(PrintBuffer* p);
 
