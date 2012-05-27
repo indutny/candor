@@ -114,6 +114,8 @@ void LIR::PrunePhis() {
     // Skip dead phis
     if (phi->start == -1) continue;
 
+    phi->Extend(value->block()->first_instruction()->id());
+
     // Add phi to predecessor's gotos
     for (int i = 0; i < value->block()->predecessors_count(); i++) {
       value->block()->predecessors()[i]->
