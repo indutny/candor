@@ -264,7 +264,13 @@ void HIRPhi::AddInput(HIRValue* input) {
 void HIRPhi::ReplaceVarUse(HIRValue* source, HIRValue* target) {
   HIRValueList::Item* item;
   for (item = inputs()->head(); item != NULL; item = item->next()) {
-    if (item->value() == source) item->value(target);
+    if (item->value() == source) {
+      if (target == this) {
+        inputs()->Remove(item);
+      } else {
+        item->value(target);
+      }
+    }
   }
 }
 
