@@ -85,7 +85,7 @@ void LIR::CalculateLiveness() {
     HIRBasicBlock* block = hinstr->block();
     int start = block->first_instruction()->id();
     int end = HIRLoopStart::Cast(hinstr->block())
-        ->loop()->last_instruction()->id();
+        ->loop()->last_instruction()->id() + 1;
 
     while (block != NULL) {
       item = block->values()->head();
@@ -387,15 +387,10 @@ void LIR::TranslateInstruction(Masm* masm, HIRInstruction* hinstr) {
 
   // Store LIR arguments
   {
-    HIRValueList::Item* item = NULL;
-
-    if (hinstr->type() == HIRInstruction::kEntry) {
-      item = reinterpret_cast<HIREntry*>(hinstr)->args()->head();
-    } else if (hinstr->type() == HIRInstruction::kCall) {
-      item = reinterpret_cast<HIRCall*>(hinstr)->args()->head();
-    }
+    HIRValueList::Item* item = hinstr->args()->head();
 
     for (; item != NULL; item = item->next()) {
+      assert(item->value()->operand() != NULL);
       linstr->args()->Push(item->value()->operand());
     }
   }

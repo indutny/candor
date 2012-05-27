@@ -46,18 +46,25 @@ void HIRInstruction::Use(HIRValue* value) {
 
 
 void HIRInstruction::ReplaceVarUse(HIRValue* source, HIRValue* target) {
-  ZoneList<HIRValue*>::Item* item = values()->head();
   bool found = false;
-  while (item != NULL) {
-    if (item->value() == source) {
-      ZoneList<HIRValue*>::Item* next = item->next();
-      values()->InsertBefore(item, target);
-      values()->Remove(item);
-      found = true;
-      item = next;
-      continue;
-    }
-    item = item->next();
+
+  ZoneList<HIRValue*>::Item* item;
+  // Replace values
+  for (item = values()->head() ; item != NULL; item = item->next()) {
+    if (item->value() != source) continue;
+
+    values()->InsertBefore(item, target);
+    values()->Remove(item);
+    found = true;
+  }
+
+  // Replace arguments
+  for (item = args()->head(); item != NULL ; item = item->next()) {
+    if (item->value() != source) continue;
+
+    args()->InsertBefore(item, target);
+    args()->Remove(item);
+    found = true;
   }
 
   if (found) {
@@ -254,6 +261,7 @@ void HIRCall::AddArg(HIRValue* arg) {
   args()->Push(arg);
   values()->Push(arg);
 }
+
 
 #undef HIR_ENUM_INSTRUCTONS
 #undef HIR_ENUM_STUB_INSTRUCTIONS

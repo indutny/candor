@@ -115,6 +115,9 @@ class HIRInstruction : public ZoneObject {
   // List of all used values
   inline ZoneList<HIRValue*>* values() { return &values_; }
 
+  // List of arguments (only for Call and Entry)
+  inline ZoneList<HIRValue*>* args() { return &args_; }
+
   // Links to previous and next instructions
   inline HIRInstruction* prev() { return prev_; }
   inline void prev(HIRInstruction* prev) { prev_ = prev; }
@@ -135,6 +138,7 @@ class HIRInstruction : public ZoneObject {
   AstNode* ast_;
 
   ZoneList<HIRValue*> values_;
+  ZoneList<HIRValue*> args_;
 
   HIRValue* def_;
   HIRValue* result_;
@@ -316,11 +320,9 @@ class HIREntry : public HIRInstruction {
   void AddArg(HIRValue* arg);
 
   inline int context_slots() { return context_slots_; }
-  inline ZoneList<HIRValue*>* args() { return &args_; }
 
  private:
   int context_slots_;
-  ZoneList<HIRValue*> args_;
 };
 
 class HIRReturn : public HIRInstruction {
@@ -464,11 +466,9 @@ class HIRCall : public HIRStubCall {
   void AddArg(HIRValue* arg);
 
   inline HIRValue* fn() { return fn_; }
-  inline ZoneList<HIRValue*>* args() { return &args_; }
 
  private:
   HIRValue* fn_;
-  ZoneList<HIRValue*> args_;
 };
 
 class HIRTypeof : public HIRPrefixKeyword {
