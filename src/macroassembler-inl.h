@@ -3,7 +3,7 @@
 
 #include "macroassembler.h"
 #include "heap.h" // HValue
-#include "lir.h" // LIROperand
+#include "lir-allocator.h" // LIROperand
 
 namespace candor {
 namespace internal {

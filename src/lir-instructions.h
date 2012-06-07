@@ -2,6 +2,8 @@
 #define _SRC_LIR_INSTRUCTIONS_H_
 
 #include "lir.h"
+#include "lir-allocator.h"
+#include "lir-allocator-inl.h"
 #include "zone.h" // ZoneObject
 #include "utils.h" // PrintBuffer
 
@@ -88,10 +90,6 @@ class LIRInstruction : public ZoneObject {
   void JumpTo(HIRBasicBlock* instr);
   void JumpTo(int skip_condition, HIRBasicBlock* instr);
 
-  // Adds/Removes operand to the list
-  void RemoveOperand(HIRValue* value);
-  void AddOperand(LIROperand* operand);
-
   // Debug printing
   void Print(PrintBuffer* p);
 
@@ -126,9 +124,6 @@ class LIRInstruction : public ZoneObject {
   // `Entry`'s arguments
   inline LIROperandList* args() { return &args_; }
 
-  // List of operands for generating shuffles in jump instructions
-  inline LIROperandList* operands() { return &operands_; }
-
   inline LIRInstruction* next() { return next_; }
   inline void next(LIRInstruction* next) { next_ = next; }
 
@@ -155,7 +150,6 @@ class LIRInstruction : public ZoneObject {
   ZoneList<RelocationInfo*> uses_;
 
   LIROperandList args_;
-  LIROperandList operands_;
 
   LIRInstruction* next_;
   LIRInstruction* prev_;

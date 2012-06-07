@@ -1,6 +1,8 @@
 #ifndef _SRC_LIR_H_
 #define _SRC_LIR_H_
 
+#include "lir-allocator.h"
+#include "lir-allocator-inl.h"
 #include "zone.h"
 
 #include <sys/types.h> // off_t
@@ -17,67 +19,8 @@ class HIRInstruction;
 class HIRParallelMove;
 class HIRBasicBlock;
 class LIR;
-class LIROperand;
 class LIRInstruction;
 struct Register;
-
-typedef ZoneList<LIROperand*> LIROperandList;
-
-// Operand for LIRInstruction
-class LIROperand : public ZoneObject {
- public:
-  enum Type {
-    kRegister,
-    kSpill,
-    kImmediate
-  };
-
-  LIROperand(Type type, off_t value) : type_(type),
-                                       value_(value),
-                                       has_immediate_value_(false),
-                                       immediate_value_(0),
-                                       hir_(NULL) {
-  }
-
-  LIROperand(Type type, char* value) : type_(type),
-                                       has_immediate_value_(false),
-                                       immediate_value_(0),
-                                       hir_(NULL) {
-    value_ = reinterpret_cast<off_t>(value);
-  }
-
-  // Debug printing
-  void Print(PrintBuffer* p);
-
-  inline Type type() { return type_; }
-  inline bool is_register() { return type_ == kRegister; }
-  inline bool is_spill() { return type_ == kSpill; }
-  inline bool is_immediate() { return type_ == kImmediate; }
-
-  inline bool has_immediate_value() { return has_immediate_value_; }
-  inline off_t immediate_value() { return immediate_value_; }
-  inline void immediate_value(off_t immediate_value) {
-    has_immediate_value_ = true;
-    immediate_value_ = immediate_value;
-  }
-
-  inline bool is_equal(LIROperand* op) {
-    return !is_immediate() && type() == op->type() && value() == op->value();
-  }
-
-  inline off_t value() { return value_; }
-
-  inline HIRValue* hir() { return hir_; }
-  inline void hir(HIRValue* hir) { hir_ = hir; }
-
- private:
-  Type type_;
-  off_t value_;
-  bool has_immediate_value_;
-  off_t immediate_value_;
-
-  HIRValue* hir_;
-};
 
 // For sorted insertions
 class HIRValueEndShape {
@@ -113,13 +56,10 @@ class LIR {
   void PrunePhis();
 
   // Generate linked-list of instruction for `hir`
-  void Translate(Masm* masm);
+  void Translate();
 
   // Generate machine code for linked-list of instructions
-  void Generate(Masm* masm);
-
-  // Generate shuffle for jumping between instructions
-  void GenerateShuffle(Masm* masm, LIRInstruction* from, LIRInstruction* to);
+  void Generate();
 
   // Translate specific instruction into LIR representation
   // (including register allocation, spilling/unspilling)
@@ -130,7 +70,7 @@ class LIR {
   //
   // After instruction, scratch registers will be put back into FreeList
   //
-  void TranslateInstruction(Masm* masm, HIRInstruction* hinstr);
+  void TranslateInstruction(HIRInstruction* hinstr);
 
   // Put spill used in movements to active_values() list to
   // release it automatically after reverse instruction
@@ -139,7 +79,7 @@ class LIR {
                        LIROperand* spill);
 
   // Spill all active (in-use) registers that will be live after hinstr.
-  void SpillActive(Masm* masm, HIRInstruction* hinstr);
+  void SpillActive(HIRInstruction* hinstr);
 
   // Linear scan methods:
 
@@ -205,6 +145,7 @@ class LIR {
 
   inline Heap* heap() { return heap_; }
   inline HIR* hir() { return hir_; }
+  inline Masm* masm() { return masm_; }
 
  private:
   ZoneList<HIRValue*> active_values_;
@@ -221,6 +162,7 @@ class LIR {
 
   Heap* heap_;
   HIR* hir_;
+  Masm* masm_;
 };
 
 } // namespace internal

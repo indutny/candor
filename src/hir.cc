@@ -1,6 +1,7 @@
 #include "hir.h"
 #include "hir-instructions.h"
-#include "lir.h"
+#include "lir-allocator.h"
+#include "lir-allocator-inl.h"
 #include "visitor.h" // Visitor
 #include "ast.h" // AstNode
 #include "macroassembler.h" // Masm, RelocationInfo
@@ -209,7 +210,6 @@ void HIRBasicBlock::Print(PrintBuffer* p) {
     HIRInstructionList::Item* item = instructions()->head();
     if (item != NULL) p->Print("\n");
     for (; item != NULL; item = item->next()) {
-      if (item->value()->type() == HIRInstruction::kNop) continue;
       item->value()->Print(p);
     }
   }
@@ -541,19 +541,13 @@ void HIR::Enumerate() {
     work_list.Push(root->value());
   }
 
-  // Add first instruction
-  {
-    HIRParallelMove* move = new HIRParallelMove();
-    move->Init(NULL);
-    move->id(get_instruction_index());
-    first_instruction(move);
-    last_instruction(move);
-  }
-
-  int block_id = 0;
+  // Setup last/first instruction
+  first_instruction(work_list.head()->value()->first_instruction());
+  last_instruction(first_instruction());
 
   // Process worklist
   HIRBasicBlock* current;
+  int block_id = 0;
   while ((current = work_list.Shift()) != NULL) {
     // Insert nop instruction in empty blocks
     if (current->instructions()->length() == 0) {
@@ -577,16 +571,6 @@ void HIR::Enumerate() {
       instr->value()->prev(last_instruction());
       instr->value()->id(get_instruction_index());
       last_instruction(instr->value());
-
-      // Insert parallel move after each instruction
-      HIRParallelMove* move = new HIRParallelMove();
-      move->Init(instr->value()->block());
-
-      last_instruction()->next(move);
-
-      move->prev(last_instruction());
-      move->id(get_instruction_index());
-      last_instruction(move);
     }
 
     for (int i = 0; i < current->successors_count(); i++) {

@@ -1,8 +1,6 @@
 #ifndef _SRC_HIR_H_
 #define _SRC_HIR_H_
 
-#include "hir-instructions.h" // HIRInstructions
-
 #include "visitor.h" // Visitor
 #include "root.h" // Root
 #include "zone.h" // ZoneObject
@@ -21,6 +19,7 @@ class HIRBasicBlock;
 class HIRPhi;
 class HIRValue;
 class HIRLoopStart;
+class HIRInstruction;
 class LIROperand;
 class Heap;
 class ScopeSlot;
@@ -203,6 +202,7 @@ class HIRValue : public ZoneObject {
     int end;
   };
 
+  HIRValue();
   HIRValue(HIRBasicBlock* block);
   HIRValue(HIRBasicBlock* block, ScopeSlot* slot);
   HIRValue(ValueType type, HIRBasicBlock* block, ScopeSlot* slot);
@@ -476,7 +476,11 @@ class HIR : public Visitor {
 
   inline int get_variable_index() { return variable_index_++; }
 
-  inline int get_instruction_index() { return instruction_index_++; }
+  inline int get_instruction_index() {
+    int id = instruction_index_;
+    instruction_index_ += 2;
+    return id;
+  }
 
   inline bool enumerated() { return enumerated_; }
   inline void enumerated(bool enumerated) { enumerated_ = enumerated; }

@@ -2,6 +2,7 @@
 #define _SRC_LIR_INL_H_
 
 #include "hir.h"
+#include "hir-instructions.h"
 
 #if CANDOR_ARCH_x64
 #include "x64/lir-instructions-x64.h"
@@ -19,17 +20,6 @@ namespace internal {
 inline int HIRValueEndShape::Compare(HIRValue* l, HIRValue* r) {
   // Normal order (by end)
   return l->live_range()->end - r->live_range()->end;
-}
-
-
-inline void LIROperand::Print(PrintBuffer* p) {
-  if (is_register()) {
-    p->Print("%%%s", RegisterNameByIndex(value()));
-  } else if (is_spill()) {
-    p->Print("[%llu]", value());
-  } else {
-    p->Print("%llu", value());
-  }
 }
 
 
@@ -82,14 +72,6 @@ inline void LIR::AddInstruction(LIRInstruction* instr) {
   }
 
   last_instruction_ = instr;
-
-  // Store active values' operands into `operands` list
-  HIRValueList::Item* item = active_values()->head();
-  for (; item != NULL; item = item->next()) {
-    if (item->value()->operand() == NULL) continue;
-    item->value()->operand()->hir(item->value());
-    instr->AddOperand(item->value()->operand());
-  }
 }
 
 

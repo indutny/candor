@@ -23,7 +23,7 @@ namespace internal {
 void LIRInstruction::JumpTo(HIRBasicBlock* block) {
   LIRInstruction* instr = block->first_instruction()->lir(lir());
 
-  lir()->GenerateShuffle(masm(), this, instr);
+  // lir()->GenerateShuffle(masm(), this, instr);
 
   __ jmp(NULL);
 
