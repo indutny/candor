@@ -17,17 +17,6 @@ inline void LIROperand::Print(PrintBuffer* p) {
   }
 }
 
-
-inline LIRInterval* LIRInterval::Split(int pos) {
-  assert(start() < pos && pos < end());
-
-  LIRInterval* child = new LIRInterval(pos, end());
-  child->parent(this);
-  end(pos);
-
-  return child;
-}
-
 } // namespace internal
 } // namespace candor
 

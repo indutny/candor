@@ -119,7 +119,7 @@ void LIRReturn::Generate() {
 
 
 void LIRGoto::Generate() {
-  assert(hir()->block()->successors_count() == 1);
+  assert(hir()->block()->successor_count() == 1);
 
   // Zero jumps should be ignored
   // NOTE: Next instruction is a move instruction (skip it)

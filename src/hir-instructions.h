@@ -94,8 +94,8 @@ class HIRInstruction : public ZoneObject {
   inline AstNode* ast() { return ast_; }
   inline void ast(AstNode* ast) { ast_ = ast; }
 
-  // Instruction with side
-  virtual bool HasSideEffects() const { return false; };
+  // Instruction which can affect any registers outside
+  virtual bool HasCall() const { return false; };
 
   // Instruction takes multiple inputs
   inline void SetInput(HIRValue* input) {
@@ -193,7 +193,7 @@ class HIRBranchBase : public HIRInstruction {
 
   virtual void Init(HIRBasicBlock* block);
 
-  virtual bool HasSideEffects() const { return true; };
+  virtual bool HasCall() const { return true; };
 
   inline HIRValue* clause() { return clause_; }
   inline HIRBasicBlock* left() { return left_; }
@@ -211,7 +211,7 @@ class HIRStubCall : public HIRInstruction {
   }
 
   void Init(HIRBasicBlock* block);
-  virtual bool HasSideEffects() const { return true; };
+  virtual bool HasCall() const { return true; };
 };
 
 class HIRPrefixKeyword : public HIRStubCall {
@@ -277,14 +277,6 @@ class HIRParallelMove : public HIRInstruction {
   static inline HIRParallelMove* Cast(HIRInstruction* instr) {
     assert(instr->type() == kParallelMove);
     return reinterpret_cast<HIRParallelMove*>(instr);
-  }
-
-  static inline HIRParallelMove* GetBefore(HIRInstruction* instr) {
-    return Cast(instr->prev());
-  }
-
-  static inline HIRParallelMove* GetAfter(HIRInstruction* instr) {
-    return Cast(instr->next());
   }
 
   inline MoveList* moves() { return &moves_; }
@@ -420,7 +412,7 @@ class HIRStoreProperty : public HIRInstruction {
     SetInput(rhs);
   }
 
-  virtual bool HasSideEffects() const { return true; };
+  virtual bool HasCall() const { return true; };
 
   inline HIRValue* receiver() { return receiver_; }
   inline HIRValue* property() { return property_; }

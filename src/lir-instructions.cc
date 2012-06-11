@@ -52,7 +52,7 @@ void LIRInstruction::Print(PrintBuffer* p) {
     p->Print(" [");
     for (int i = 0; i < input_count(); i++) {
       if (i != 0) p->Print(", ");
-      inputs[i]->Print(p);
+      if (inputs[i] != NULL) inputs[i]->Print(p);
     }
     p->Print("]");
   }

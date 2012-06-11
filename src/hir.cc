@@ -22,8 +22,8 @@ HIRBasicBlock::HIRBasicBlock(HIR* hir) : hir_(hir),
                                          type_(kNormal),
                                          enumerated_(0),
                                          dominator_(NULL),
-                                         predecessors_count_(0),
-                                         successors_count_(0),
+                                         predecessor_count_(0),
+                                         successor_count_(0),
                                          masm_(NULL),
                                          loop_start_(NULL),
                                          finished_(false),
@@ -35,11 +35,22 @@ HIRBasicBlock::HIRBasicBlock(HIR* hir) : hir_(hir),
 }
 
 
-void HIRBasicBlock::AddValue(HIRValue* value) {
+void HIRBasicBlock::AddValue(HIRValue* value, ValueKind kind) {
   // Do not add parasite values: immediate or root values
   if (value->slot()->is_immediate() ||
       (value->slot()->is_context() && value->slot()->depth() < 0)) {
     return;
+  }
+
+  if (kind == kInputValue) {
+    // If value is already in inputs list - remove previous
+    HIRValueList::Item* item = inputs()->head();
+    for (; item != NULL; item = item->next()) {
+      if (item->value()->slot() == value->slot()) {
+        inputs()->Remove(item);
+      }
+    }
+    inputs()->Push(value);
   }
 
   // Do not insert values after enumeration
@@ -64,7 +75,7 @@ void HIRBasicBlock::AssignDominator(HIRBasicBlock* block) {
 
   HIRBasicBlock* d = dominator();
   while (!d->Dominates(block)) {
-    assert(d->predecessors_count() > 0);
+    assert(d->predecessor_count() > 0);
     d = d->predecessors()[0];
   }
 
@@ -73,8 +84,8 @@ void HIRBasicBlock::AssignDominator(HIRBasicBlock* block) {
 
 
 void HIRBasicBlock::AddPredecessor(HIRBasicBlock* block) {
-  assert(predecessors_count() < 2);
-  predecessors()[predecessors_count_++] = block;
+  assert(predecessor_count() < 2);
+  predecessors()[predecessor_count_++] = block;
 
   HIRValueList::Item* item;
 
@@ -82,7 +93,7 @@ void HIRBasicBlock::AddPredecessor(HIRBasicBlock* block) {
   AssignDominator(block);
 
   // Mark values propagated from first predecessor
-  if (predecessors_count() > 1) {
+  if (predecessor_count() > 1) {
     for (item = values()->head(); item != NULL; item = item->next()) {
       if (item->value() == NULL) continue;
 
@@ -104,7 +115,7 @@ void HIRBasicBlock::AddPredecessor(HIRBasicBlock* block) {
         phi = HIRPhi::Cast(value->slot()->hir());
       } else {
         phi = new HIRPhi(this, value->slot()->hir());
-        AddValue(phi);
+        AddValue(phi, kOutputValue);
         value->slot()->hir(phi);
       }
 
@@ -113,11 +124,11 @@ void HIRBasicBlock::AddPredecessor(HIRBasicBlock* block) {
       if (is_loop_start()) {
         // Insert phi for every local variable in loop start
         phi = new HIRPhi(this, value);
-        AddValue(phi);
+        AddValue(phi, kOutputValue);
         value->slot()->hir(phi);
       } else {
         // Just put value into the list
-        AddValue(value);
+        AddValue(value, kInputValue);
         value->current_block(this);
         value->slot()->hir(value);
       }
@@ -127,8 +138,8 @@ void HIRBasicBlock::AddPredecessor(HIRBasicBlock* block) {
 
 
 void HIRBasicBlock::AddSuccessor(HIRBasicBlock* block) {
-  assert(successors_count() < 2);
-  successors()[successors_count_++] = block;
+  assert(successor_count() < 2);
+  successors()[successor_count_++] = block;
   block->AddPredecessor(this);
 }
 
@@ -172,11 +183,11 @@ void HIRBasicBlock::PrunePhis() {
 bool HIRBasicBlock::IsPrintable() {
   off_t value = MarkPrinted();
 
-  if (predecessors_count() == 2 &&
+  if (predecessor_count() == 2 &&
       (Dominates(predecessors()[0]) || Dominates(predecessors()[1]))) {
     return value == 1;
   }
-  if (value == predecessors_count()) return true;
+  if (value == predecessor_count()) return true;
 
   return false;
 }
@@ -215,9 +226,9 @@ void HIRBasicBlock::Print(PrintBuffer* p) {
   }
 
   // Print predecessors' ids
-  if (predecessors_count() == 2) {
+  if (predecessor_count() == 2) {
     p->Print("[%d,%d]", predecessors()[0]->id(), predecessors()[1]->id());
-  } else if (predecessors_count() == 1) {
+  } else if (predecessor_count() == 1) {
     p->Print("[%d]", predecessors()[0]->id());
   } else {
     p->Print("[]");
@@ -226,9 +237,9 @@ void HIRBasicBlock::Print(PrintBuffer* p) {
   p->Print(">*>");
 
   // Print successors' ids
-  if (successors_count() == 2) {
+  if (successor_count() == 2) {
     p->Print("[%d,%d]", successors()[0]->id(), successors()[1]->id());
-  } else if (successors_count() == 1) {
+  } else if (successor_count() == 1) {
     p->Print("[%d]", successors()[0]->id());
   } else {
     p->Print("[]");
@@ -237,10 +248,10 @@ void HIRBasicBlock::Print(PrintBuffer* p) {
   p->Print("]\n\n");
 
   // Print successors
-  if (successors_count() == 2) {
+  if (successor_count() == 2) {
     if (successors()[0]->IsPrintable()) successors()[0]->Print(p);
     if (successors()[1]->IsPrintable()) successors()[1]->Print(p);
-  } else if (successors_count() == 1) {
+  } else if (successor_count() == 1) {
     if (successors()[0]->IsPrintable()) successors()[0]->Print(p);
   }
 }
@@ -303,7 +314,7 @@ void HIRPhi::Print(PrintBuffer* p) {
 HIRValue::HIRValue(HIRBasicBlock* block) : type_(kNormal),
                                            block_(block),
                                            current_block_(block),
-                                           operand_(NULL) {
+                                           lir_(NULL) {
   slot_ = new ScopeSlot(ScopeSlot::kStack);
   Init();
 }
@@ -313,7 +324,7 @@ HIRValue::HIRValue(HIRBasicBlock* block, ScopeSlot* slot)
     : type_(kNormal),
       block_(block),
       current_block_(block),
-      operand_(NULL),
+      lir_(NULL),
       slot_(slot) {
   Init();
 }
@@ -323,26 +334,22 @@ HIRValue::HIRValue(ValueType type, HIRBasicBlock* block, ScopeSlot* slot)
     : type_(type),
       block_(block),
       current_block_(block),
-      operand_(NULL),
+      lir_(NULL),
       slot_(slot) {
   Init();
 }
 
 
 void HIRValue::Init() {
-  block()->AddValue(this);
+  block()->AddValue(this, HIRBasicBlock::kOutputValue);
   id_ = block()->hir()->get_variable_index();
 
-  live_range()->start = -1;
-  live_range()->end = -1;
+  lir_ = new LIRValue(this);
 }
 
 
 void HIRValue::Print(PrintBuffer* p) {
   p->Print("*[%d ", id());
-  if (live_range()->start != -1) {
-    p->Print("<%d,%d>", live_range()->start, live_range()->end);
-  }
   slot()->Print(p);
   p->Print("]");
 }
@@ -549,6 +556,9 @@ void HIR::Enumerate() {
   HIRBasicBlock* current;
   int block_id = 0;
   while ((current = work_list.Shift()) != NULL) {
+    // Create list of blocks in enumeration order
+    enumerated_blocks()->Push(current);
+
     // Insert nop instruction in empty blocks
     if (current->instructions()->length() == 0) {
       set_current_block(current);
@@ -573,14 +583,14 @@ void HIR::Enumerate() {
       last_instruction(instr->value());
     }
 
-    for (int i = 0; i < current->successors_count(); i++) {
+    for (int i = 0; i < current->successor_count(); i++) {
       if (current->successors()[i]->id() == -1) {
         current->successors()[i]->id(block_id++);
       }
     }
 
     // Add block's successors to the work list
-    for (int i = current->successors_count() - 1; i >= 0; i--) {
+    for (int i = current->successor_count() - 1; i >= 0; i--) {
       // Skip processed blocks and join blocks that was visited only once
       current->successors()[i]->enumerate();
       if (current->successors()[i]->is_enumerated()) {
@@ -924,7 +934,7 @@ void HIR::VisitGenericObject(AstNode* node) {
   // And return object
   AddInstruction(new HIRNop(result));
   // Rewrite previous declarations of variable
-  current_block()->AddValue(result);
+  current_block()->AddValue(result, HIRBasicBlock::kOutputValue);
 }
 
 

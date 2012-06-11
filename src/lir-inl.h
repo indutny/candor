@@ -17,30 +17,6 @@
 namespace candor {
 namespace internal {
 
-inline int HIRValueEndShape::Compare(HIRValue* l, HIRValue* r) {
-  // Normal order (by end)
-  return l->live_range()->end - r->live_range()->end;
-}
-
-
-inline void LIR::Release(LIROperand* operand) {
-  if (operand->is_register()) {
-    registers()->Release(operand->value());
-  } else if (operand->is_spill()) {
-    spills()->Release(operand->value());
-  }
-}
-
-inline void LIR::ChangeOperand(HIRInstruction* hinstr,
-                               HIRValue* value,
-                               LIROperand* operand) {
-  if (value->operand() != NULL &&
-      !value->operand()->is_equal(operand)) {
-    Release(value->operand());
-  }
-  value->operand(operand);
-}
-
 inline LIRInstruction* LIR::Cast(HIRInstruction* instr) {
 #define LIR_GEN_CAST(V)\
   case HIRInstruction::k##V:\
@@ -72,12 +48,6 @@ inline void LIR::AddInstruction(LIRInstruction* instr) {
   }
 
   last_instruction_ = instr;
-}
-
-
-inline bool LIR::IsInUse(LIROperand* operand) {
-  return (operand->is_register() && !registers()->Has(operand->value())) ||
-         (operand->is_spill() && !spills()->Has(operand->value()));
 }
 
 } // namespace internal

@@ -20,7 +20,7 @@ class HIRPhi;
 class HIRValue;
 class HIRLoopStart;
 class HIRInstruction;
-class LIROperand;
+class LIRValue;
 class Heap;
 class ScopeSlot;
 class AstNode;
@@ -39,10 +39,15 @@ class HIRBasicBlock : public ZoneObject {
     kLoopStart
   };
 
+  enum ValueKind {
+    kInputValue,
+    kOutputValue
+  };
+
   HIRBasicBlock(HIR* hir);
 
   // Add value for generating PHIs later
-  void AddValue(HIRValue* value);
+  void AddValue(HIRValue* value, ValueKind kind);
 
   // Assigns new dominator or finds closest common of current one and block
   void AssignDominator(HIRBasicBlock* block);
@@ -76,18 +81,19 @@ class HIRBasicBlock : public ZoneObject {
   inline bool is_enumerated() {
     // Check if node's predecessor is dominated by node
     // (node loops to itself)
-    if (enumerated_ >= 1 && predecessors_count() == 2) {
+    if (enumerated_ >= 1 && predecessor_count() == 2) {
       if (this->Dominates(predecessors()[1]) ||
           this->Dominates(predecessors()[0])) {
         return enumerated_ == 1;
       }
     }
-    return enumerated_ == predecessors_count();
+    return enumerated_ == predecessor_count();
   }
   inline void enumerate() { ++enumerated_; }
   inline void reset_enumerate() { enumerated_ = 0; }
 
   inline HIRValueList* values() { return &values_; }
+  inline HIRValueList* inputs() { return &inputs_; }
   inline HIRPhiList* phis() { return &phis_; }
   inline HIRInstructionList* instructions() { return &instructions_; }
 
@@ -102,8 +108,8 @@ class HIRBasicBlock : public ZoneObject {
 
   inline HIRBasicBlock** predecessors() { return predecessors_; }
   inline HIRBasicBlock** successors() { return successors_; }
-  inline int predecessors_count() { return predecessors_count_; }
-  inline int successors_count() { return successors_count_; }
+  inline int predecessor_count() { return predecessor_count_; }
+  inline int successor_count() { return successor_count_; }
 
   // Loop associated with current block (for break/continue blocks)
   inline HIRLoopStart* loop_start() { return loop_start_; }
@@ -129,13 +135,14 @@ class HIRBasicBlock : public ZoneObject {
   HIRBasicBlockList dominates_;
 
   HIRValueList values_;
+  HIRValueList inputs_;
   HIRPhiList phis_;
   HIRInstructionList instructions_;
 
   HIRBasicBlock* predecessors_[2];
   HIRBasicBlock* successors_[2];
-  int predecessors_count_;
-  int successors_count_;
+  int predecessor_count_;
+  int successor_count_;
 
   Masm* masm_;
 
@@ -175,33 +182,6 @@ class HIRValue : public ZoneObject {
     kPhi
   };
 
-  class LiveRange {
-   public:
-    inline bool Extend(int value) {
-      bool changed = false;
-
-      if (start == -1) {
-        start = value;
-        end = value;
-        return true;
-      }
-
-      if (start > value) {
-        changed = true;
-        start = value;
-      }
-      if (end < value) {
-        changed = true;
-        end = value;
-      }
-
-      return changed;
-    }
-
-    int start;
-    int end;
-  };
-
   HIRValue();
   HIRValue(HIRBasicBlock* block);
   HIRValue(HIRBasicBlock* block, ScopeSlot* slot);
@@ -223,9 +203,8 @@ class HIRValue : public ZoneObject {
   }
 
   // LIR helpers
-  inline LiveRange* live_range() { return &live_range_; }
-  inline LIROperand* operand() { return operand_; }
-  inline void operand(LIROperand* operand) { operand_ = operand; }
+  inline LIRValue* lir() { return lir_; }
+  inline void lir(LIRValue* lir) { lir_ = lir; }
 
   inline ScopeSlot* slot() { return slot_; }
 
@@ -248,8 +227,7 @@ class HIRValue : public ZoneObject {
   HIRBasicBlock* current_block_;
 
   // Used in lir.h
-  LiveRange live_range_;
-  LIROperand* operand_;
+  LIRValue* lir_;
 
   ScopeSlot* slot_;
 
@@ -446,6 +424,7 @@ class HIR : public Visitor {
   AstNode* VisitBinOp(AstNode* node);
 
   inline HIRBasicBlockList* roots() { return &roots_; }
+  inline HIRBasicBlockList* enumerated_blocks() { return &enumerated_blocks_; }
   inline HIRBasicBlock* root_block() { return root_block_; }
   inline HIRBasicBlock* current_block() { return current_block_; }
   inline void set_current_block(HIRBasicBlock* block) {
@@ -490,6 +469,7 @@ class HIR : public Visitor {
 
  private:
   HIRBasicBlockList roots_;
+  HIRBasicBlockList enumerated_blocks_;
 
   HIRBasicBlock* root_block_;
   HIRBasicBlock* current_block_;
