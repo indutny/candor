@@ -20,14 +20,23 @@
 namespace candor {
 namespace internal {
 
-LIR::LIR(Heap* heap, HIR* hir, Masm* masm) : allocator_(this, hir),
-                                             heap_(heap),
+LIR::LIR(Heap* heap, HIR* hir, Masm* masm) : heap_(heap),
                                              hir_(hir),
                                              masm_(masm),
                                              first_instruction_(NULL),
                                              last_instruction_(NULL) {
   BuildInstructions();
-  allocator()->Init();
+
+  HIRBasicBlock* block = hir->first_block();
+  for (; block != NULL; block = block->prev()) {
+    LIRAllocator allocator(this, hir);
+    allocator.Init(block);
+
+    // Skip all blocks up-to entry block
+    while (block != NULL && block->predecessor_count() != 0) {
+      block = block->prev();
+    }
+  }
 
   Translate();
   Generate();

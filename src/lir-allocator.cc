@@ -161,6 +161,18 @@ LIRUse* LIRInterval::NextUseAfter(int pos) {
 }
 
 
+LIRInterval* LIRInterval::GetFixed(LIRInstruction* instr, LIROperand* value) {
+  LIRInterval* interval = SplitAt(instr->id());
+
+  interval->kind(LIRInterval::kFixed);
+  interval->operand(value);
+  interval->AddLiveRange(instr->id(), instr->id() + 1);
+  interval->AddUse(instr, LIROperand::kRegister);
+
+  return interval;
+}
+
+
 LIRInterval* LIRValue::FindInterval(int pos) {
   LIRInterval* current = interval();
 
@@ -183,7 +195,7 @@ LIRInterval* LIRValue::FindInterval(int pos) {
 }
 
 
-void LIRAllocator::Init() {
+void LIRAllocator::Init(HIRBasicBlock* block) {
   for (int i = 0; i < kLIRRegisterCount; i++) {
     registers()[i] = new LIRValue(NULL);
     registers()[i]->interval()->kind(LIRInterval::kFixed);
@@ -192,15 +204,13 @@ void LIRAllocator::Init() {
     AddUnhandled(registers()[i]->interval());
   }
 
-  BuildIntervals();
+  BuildIntervals(block);
   WalkIntervals();
 }
 
 
-void LIRAllocator::BuildIntervals() {
-  HIRBasicBlockList::Item* item = hir()->enumerated_blocks()->tail();
-  for (; item != NULL; item = item->prev()) {
-    HIRBasicBlock* block = item->value();
+void LIRAllocator::BuildIntervals(HIRBasicBlock* block) {
+  for (; block != NULL; block = block->prev()) {
     assert(block->instructions()->length() != 0);
 
     int from = block->first_instruction()->id();
@@ -242,13 +252,7 @@ void LIRAllocator::BuildIntervals() {
           AddUnhandled(result->interval());
 
           // Split interval to create fixed
-          LIRInterval* interval = result->interval()->SplitAt(linstr->id());
-
-          interval->kind(LIRInterval::kFixed);
-          interval->operand(linstr->result);
-          interval->AddLiveRange(linstr->id(), linstr->id() + 1);
-          interval->AddUse(linstr, LIROperand::kRegister);
-          AddUnhandled(interval);
+          AddUnhandled(result->interval()->GetFixed(linstr, linstr->result));
 
           linstr->result = result;
         }
@@ -281,13 +285,8 @@ void LIRAllocator::BuildIntervals() {
             }
 
             // Create fixed interval
-            LIRInterval* interval = value->interval()->SplitAt(linstr->id());
-
-            interval->kind(LIRInterval::kFixed);
-            interval->operand(linstr->inputs[i]);
-            interval->AddLiveRange(linstr->id(), linstr->id() + 1);
-            interval->AddUse(linstr, LIROperand::kRegister);
-            AddUnhandled(interval);
+            AddUnhandled(value->interval()->GetFixed(linstr,
+                                                     linstr->inputs[i]));
           }
           value->interval()->AddLiveRange(from, linstr->id());
 
@@ -295,6 +294,9 @@ void LIRAllocator::BuildIntervals() {
         }
       }
     }
+
+    // Stop on entry block
+    if (block->predecessor_count() == 0) break;
   }
 }
 

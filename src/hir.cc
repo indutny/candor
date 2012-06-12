@@ -21,6 +21,8 @@ namespace internal {
 HIRBasicBlock::HIRBasicBlock(HIR* hir) : hir_(hir),
                                          type_(kNormal),
                                          enumerated_(0),
+                                         prev_(NULL),
+                                         next_(NULL),
                                          dominator_(NULL),
                                          predecessor_count_(0),
                                          successor_count_(0),
@@ -417,6 +419,7 @@ HIRBasicBlock* HIRBreakContinueInfo::AddBlock(ListKind kind) {
 
 HIR::HIR(Heap* heap, AstNode* node) : Visitor(kPreorder),
                                       root_(heap),
+                                      first_block_(NULL),
                                       break_continue_info_(NULL),
                                       first_instruction_(NULL),
                                       last_instruction_(NULL),
@@ -554,10 +557,17 @@ void HIR::Enumerate() {
 
   // Process worklist
   HIRBasicBlock* current;
+  HIRBasicBlock* previous = NULL;
   int block_id = 0;
   while ((current = work_list.Shift()) != NULL) {
     // Create list of blocks in enumeration order
-    enumerated_blocks()->Push(current);
+    if (previous != NULL) {
+      previous->next(current);
+    } else {
+      first_block(current);
+    }
+    current->prev(previous);
+    previous = current;
 
     // Insert nop instruction in empty blocks
     if (current->instructions()->length() == 0) {

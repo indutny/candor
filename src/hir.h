@@ -92,6 +92,11 @@ class HIRBasicBlock : public ZoneObject {
   inline void enumerate() { ++enumerated_; }
   inline void reset_enumerate() { enumerated_ = 0; }
 
+  inline HIRBasicBlock* prev() { return prev_; }
+  inline void prev(HIRBasicBlock* prev) { prev_ = prev; }
+  inline HIRBasicBlock* next() { return next_; }
+  inline void next(HIRBasicBlock* next) { next_ = next; }
+
   inline HIRValueList* values() { return &values_; }
   inline HIRValueList* inputs() { return &inputs_; }
   inline HIRPhiList* phis() { return &phis_; }
@@ -130,6 +135,10 @@ class HIRBasicBlock : public ZoneObject {
 
   // Whether block was enumerated by Enumerate() or not
   int enumerated_;
+
+  // Adjacent blocks (in enumeration order)
+  HIRBasicBlock* prev_;
+  HIRBasicBlock* next_;
 
   HIRBasicBlock* dominator_;
   HIRBasicBlockList dominates_;
@@ -424,7 +433,10 @@ class HIR : public Visitor {
   AstNode* VisitBinOp(AstNode* node);
 
   inline HIRBasicBlockList* roots() { return &roots_; }
-  inline HIRBasicBlockList* enumerated_blocks() { return &enumerated_blocks_; }
+  inline HIRBasicBlock* first_block() { return first_block_; }
+  inline void first_block(HIRBasicBlock* first_block) {
+    first_block_ = first_block;
+  }
   inline HIRBasicBlock* root_block() { return root_block_; }
   inline HIRBasicBlock* current_block() { return current_block_; }
   inline void set_current_block(HIRBasicBlock* block) {
@@ -469,7 +481,8 @@ class HIR : public Visitor {
 
  private:
   HIRBasicBlockList roots_;
-  HIRBasicBlockList enumerated_blocks_;
+
+  HIRBasicBlock* first_block_;
 
   HIRBasicBlock* root_block_;
   HIRBasicBlock* current_block_;

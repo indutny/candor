@@ -1,8 +1,6 @@
 #ifndef _SRC_LIR_ALLOCATOR_H_
 #define _SRC_LIR_ALLOCATOR_H_
 
-#include "hir.h" // HIRValue
-
 #include "utils.h"
 #include "zone.h" // ZoneObject
 
@@ -17,6 +15,8 @@ class LIRInterval;
 class LIRValue;
 class LIRInstruction;
 class HIR;
+class HIRBasicBlock;
+class HIRValue;
 
 typedef ZoneList<LIROperand*> LIROperandList;
 typedef ZoneList<LIRLiveRange*> LIRRangeList;
@@ -170,6 +170,9 @@ class LIRInterval : public ZoneObject {
   // Finds closest use after position
   LIRUse* NextUseAfter(int pos);
 
+  // Split interval and mark child as fixed
+  LIRInterval* GetFixed(LIRInstruction* instr, LIROperand* value);
+
   inline int start() {
     return first_range() == NULL ? 0 : first_range()->start();
   }
@@ -248,11 +251,11 @@ class LIRAllocator {
   }
 
   // Initializer
-  void Init();
+  void Init(HIRBasicBlock* block);
 
   // Traverses blocks in a post-order and creates live ranges for all
   // LIRValues (intervals).
-  void BuildIntervals();
+  void BuildIntervals(HIRBasicBlock* block);
 
   // Walk all intervals and assign an operand to each of them
   void WalkIntervals();

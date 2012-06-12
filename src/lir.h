@@ -48,7 +48,6 @@ class LIR {
   inline Heap* heap() { return heap_; }
   inline HIR* hir() { return hir_; }
   inline Masm* masm() { return masm_; }
-  inline LIRAllocator* allocator() { return &allocator_; }
 
  private:
   LIRInstruction* first_instruction_;
@@ -57,7 +56,6 @@ class LIR {
   Heap* heap_;
   HIR* hir_;
   Masm* masm_;
-  LIRAllocator allocator_;
 };
 
 } // namespace internal

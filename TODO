@@ -1,6 +1,7 @@
 HIR/LIR todos:
-* Create sorted list of intervals
-* Allocate registers for intervals
+* Split and spill where needed
+* Accumulate real live_gen, live_kill variables lists
+* Count/collect spills
 * Create movement instructions on intervals' edges
 * Create movement instructions for phis
 * Replace intervals in instructions with registers
