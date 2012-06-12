@@ -26,9 +26,21 @@ LIR::LIR(Heap* heap, HIR* hir, Masm* masm) : allocator_(this, hir),
                                              masm_(masm),
                                              first_instruction_(NULL),
                                              last_instruction_(NULL) {
+  BuildInstructions();
   allocator()->Init();
+
   Translate();
   Generate();
+}
+
+
+void LIR::BuildInstructions() {
+  HIRInstruction* hinstr = hir()->first_instruction();
+
+  for (; hinstr != NULL; hinstr = hinstr->next()) {
+    LIRInstruction* linstr = hinstr->lir(this);
+    AddInstruction(linstr);
+  }
 }
 
 

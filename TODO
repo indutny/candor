@@ -1,8 +1,12 @@
 HIR/LIR todos:
+* Create sorted list of intervals
+* Allocate registers for intervals
+* Create movement instructions on intervals' edges
+* Create movement instructions for phis
+* Replace intervals in instructions with registers
+
 * Move context variables get/set to instructions (with index as imm arg)
   (No values for them, as they may be changed by side-effect instructions)
-* Insert phis everywhere, not just in join points (different phi algorithm)
-* Break/continue
 * Vararg arguments (call)
 * Speeding up HIR construction
 * Cleanup masm

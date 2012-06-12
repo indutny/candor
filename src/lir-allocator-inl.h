@@ -17,6 +17,29 @@ inline void LIROperand::Print(PrintBuffer* p) {
   }
 }
 
+
+inline int LIRLiveRange::FindIntersection(LIRLiveRange* range) {
+  if (this->end() <= range->start() || this->start() >= range->end()) return -1;
+
+  if (this->start() < range->start()) {
+    // this:  xxx
+    // range:  xxx
+    return range->start();
+  } else {
+    // this:   xxx
+    // range: xxx
+    return this->start();
+  }
+}
+
+
+inline void LIRAllocator::AddUnhandled(LIRInterval* interval) {
+  if (interval->enumerated()) return;
+  interval->enumerated(true);
+
+  unhandled()->InsertSorted<LIRIntervalShape>(interval);
+}
+
 } // namespace internal
 } // namespace candor
 

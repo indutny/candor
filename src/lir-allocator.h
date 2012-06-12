@@ -81,6 +81,9 @@ class LIRLiveRange : public ZoneObject {
                                      next_(NULL) {
   }
 
+  // See description of LIRInterval::FindIntersection
+  inline int FindIntersection(LIRLiveRange* range);
+
   inline int start() { return start_; }
   inline void start(int start) { start_ = start; }
   inline int end() { return end_; }
@@ -101,17 +104,14 @@ class LIRLiveRange : public ZoneObject {
 
 class LIRUse : public ZoneObject {
  public:
-  LIRUse(LIRInstruction* pos, LIROperand::Type kind, LIROperand* value) :
-      pos_(pos),
-      kind_(kind),
-      value_(value),
-      prev_(NULL),
-      next_(NULL) {
+  LIRUse(LIRInstruction* pos, LIROperand::Type kind) : pos_(pos),
+                                                       kind_(kind),
+                                                       prev_(NULL),
+                                                       next_(NULL) {
   }
 
   inline LIRInstruction* pos() { return pos_; }
   inline LIROperand::Type kind() { return kind_; }
-  inline LIROperand* value() { return value_; }
 
   inline LIRUse* prev() { return prev_; }
   inline void prev(LIRUse* prev) { prev_ = prev; }
@@ -121,7 +121,6 @@ class LIRUse : public ZoneObject {
  private:
   LIRInstruction* pos_;
   LIROperand::Type kind_;
-  LIROperand* value_;
 
   LIRUse* prev_;
   LIRUse* next_;
@@ -134,13 +133,20 @@ class LIRIntervalShape {
 
 class LIRInterval : public ZoneObject {
  public:
+  enum IntervalKind {
+    kNormal,
+    kFixed
+  };
+
   LIRInterval(LIRValue* value) : value_(value),
                                  operand_(NULL),
+                                 kind_(kNormal),
                                  first_range_(NULL),
                                  last_range_(NULL),
                                  first_use_(NULL),
                                  last_use_(NULL),
-                                 parent_(NULL) {
+                                 parent_(NULL),
+                                 enumerated_(false) {
   }
 
   // Creates new interval and links it with parent
@@ -152,9 +158,17 @@ class LIRInterval : public ZoneObject {
   void AddLiveRange(int start, int end);
 
   // Add use to uses list
-  void AddUse(LIRInstruction* pos,
-              LIROperand::Type kind,
-              LIROperand* operand);
+  void AddUse(LIRInstruction* pos, LIROperand::Type kind);
+
+  // True if there is a range in this interval that covers specific position
+  bool Covers(int pos);
+
+  // Returns -1 if intervals doesn't intersect, otherwise returns the closest
+  // intersection point of two intervals.
+  int FindIntersection(LIRInterval* interval);
+
+  // Finds closest use after position
+  LIRUse* NextUseAfter(int pos);
 
   inline int start() {
     return first_range() == NULL ? 0 : first_range()->start();
@@ -167,6 +181,11 @@ class LIRInterval : public ZoneObject {
 
   inline LIROperand* operand() { return operand_; }
   inline void operand(LIROperand* operand) { operand_ = operand; }
+
+  inline IntervalKind kind() { return kind_; }
+  inline void kind(IntervalKind kind) { kind_ = kind; }
+  inline bool is_normal() { return kind_ == kNormal; }
+  inline bool is_fixed() { return kind_ == kFixed; }
 
   inline LIRLiveRange* first_range() { return first_range_; }
   inline void first_range(LIRLiveRange* range) { first_range_ = range; }
@@ -182,9 +201,14 @@ class LIRInterval : public ZoneObject {
   inline void parent(LIRInterval* parent) { parent_ = parent; }
   inline LIRIntervalList* children() { return &children_; }
 
+  inline bool enumerated() { return enumerated_; }
+  inline void enumerated(bool enumerated) { enumerated_ = enumerated; }
+
  private:
   LIRValue* value_;
   LIROperand* operand_;
+
+  IntervalKind kind_;
 
   LIRLiveRange* first_range_;
   LIRLiveRange* last_range_;
@@ -194,6 +218,8 @@ class LIRInterval : public ZoneObject {
 
   LIRInterval* parent_;
   LIRIntervalList children_;
+
+  bool enumerated_;
 };
 
 // LIRValue (Virtual Register)
@@ -201,8 +227,7 @@ class LIRValue : public LIROperand {
  public:
   LIRValue(HIRValue* hir) : LIROperand(kVirtual, -1),
                             interval_(this),
-                            hir_(hir),
-                            enumerated_(false) {
+                            hir_(hir) {
   }
 
   // Finds interval at specific position
@@ -210,9 +235,6 @@ class LIRValue : public LIROperand {
 
   inline LIRInterval* interval() { return &interval_; }
   inline HIRValue* hir() { return hir_; }
-
-  inline bool enumerated() { return enumerated_; }
-  inline void enumerated(bool enumerated) { enumerated_ = enumerated; }
 
  private:
   LIRInterval interval_;
@@ -228,25 +250,35 @@ class LIRAllocator {
   // Initializer
   void Init();
 
-  // Translates every HIRInstruction into the LIRInstruction
-  void BuildInstructions();
-
   // Traverses blocks in a post-order and creates live ranges for all
   // LIRValues (intervals).
   void BuildIntervals();
+
+  // Walk all intervals and assign an operand to each of them
+  void WalkIntervals();
+
+  // Register allocation routines
+  bool AllocateFreeReg(LIRInterval* interval);
+  void AllocateBlockedReg(LIRInterval* interval);
+
+  inline void AddUnhandled(LIRInterval* interval);
 
   inline LIR* lir() { return lir_; }
   inline HIR* hir() { return hir_; }
 
   inline LIRValue** registers() { return registers_; }
-  inline LIRIntervalList* intervals() { return &intervals_; }
+  inline LIRIntervalList* unhandled() { return &unhandled_; }
+  inline LIRIntervalList* active() { return &active_; }
+  inline LIRIntervalList* inactive() { return &inactive_; }
 
  private:
   LIR* lir_;
   HIR* hir_;
 
   LIRValue* registers_[128];
-  LIRIntervalList intervals_;
+  LIRIntervalList unhandled_;
+  LIRIntervalList active_;
+  LIRIntervalList inactive_;
 };
 
 } // namespace internal

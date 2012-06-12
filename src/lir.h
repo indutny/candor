@@ -27,6 +27,9 @@ class LIR {
  public:
   LIR(Heap* heap, HIR* hir, Masm* masm);
 
+  // Translates every HIRInstruction into the LIRInstruction
+  void BuildInstructions();
+
   // Generate linked-list of instruction for `hir`
   void Translate();
 
