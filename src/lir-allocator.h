@@ -253,6 +253,10 @@ class LIRAllocator {
   // Initializer
   void Init(HIRBasicBlock* block);
 
+  // Compute live_in, live_out for each block
+  void ComputeLocalLiveSets(HIRBasicBlock* block);
+  void ComputeGlobalLiveSets(HIRBasicBlock* block);
+
   // Traverses blocks in a post-order and creates live ranges for all
   // LIRValues (intervals).
   void BuildIntervals(HIRBasicBlock* block);

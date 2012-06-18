@@ -196,6 +196,9 @@ LIRInterval* LIRValue::FindInterval(int pos) {
 
 
 void LIRAllocator::Init(HIRBasicBlock* block) {
+  ComputeLocalLiveSets(block);
+  ComputeGlobalLiveSets(block);
+
   for (int i = 0; i < kLIRRegisterCount; i++) {
     registers()[i] = new LIRValue(NULL);
     registers()[i]->interval()->kind(LIRInterval::kFixed);
@@ -206,6 +209,78 @@ void LIRAllocator::Init(HIRBasicBlock* block) {
 
   BuildIntervals(block);
   WalkIntervals();
+}
+
+
+void LIRAllocator::ComputeLocalLiveSets(HIRBasicBlock* block) {
+  for (; block != NULL; block = block->prev()) {
+    HIRInstructionList::Item* instr = block->instructions()->head();
+    for (; instr != NULL; instr = instr->next()) {
+      // Process inputs
+      HIRValueList::Item* item = instr->value()->values()->head();
+      for (; item != NULL; item = item->next()) {
+        // XXX: Use hashmaps here
+        if (item->value()->IsIn(block->live_kill()) ||
+            item->value()->IsIn(block->live_gen())) {
+          continue;
+        }
+        block->live_gen()->Push(item->value());
+      }
+
+      // Process result
+      if (instr->value()->GetResult() != NULL) {
+        HIRValue* result = instr->value()->GetResult();
+
+        // XXX: Use hashmaps here
+        if (!result->IsIn(block->live_kill())) {
+          block->live_kill()->Push(result);
+        }
+      }
+    }
+
+    if (block->prev() != NULL && block->prev()->predecessor_count() == 0) {
+      break;
+    }
+  }
+}
+
+
+void LIRAllocator::ComputeGlobalLiveSets(HIRBasicBlock* block) {
+  // This traverse SHOULD be bottom-up
+  for (; block != NULL; block = block->prev()) {
+    HIRValueList::Item* item;
+
+    // Propagate inputs from children to parent
+    for (int i = 0; i < block->successor_count(); i++) {
+      item = block->successors()[i]->live_in()->head();
+      // XXX: Use hashmaps here
+      for (; item != NULL; item = item->next()) {
+        if (item->value()->IsIn(block->live_out())) continue;
+        block->live_out()->Push(item->value());
+      }
+    }
+
+    // Propagate definitions to inputs
+    item = block->live_gen()->head();
+    for (; item != NULL; item = item->next()) {
+      block->live_in()->Push(item->value());
+    }
+
+    // That ain't defined in block
+    item = block->live_out()->head();
+    for (; item != NULL; item = item->next()) {
+      // XXX: Use hashmaps here
+      if (item->value()->IsIn(block->live_kill()) ||
+          item->value()->IsIn(block->live_in())) {
+        continue;
+      }
+      block->live_in()->Push(item->value());
+    }
+
+    if (block->prev() != NULL && block->prev()->predecessor_count() == 0) {
+      break;
+    }
+  }
 }
 
 

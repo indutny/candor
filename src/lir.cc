@@ -88,6 +88,7 @@ void LIR::Translate() {
 void LIR::Generate(HIRBasicBlock* entry, int spill_count) {
   LIRInstruction* instr = entry->first_instruction()->lir(this);
 
+  masm()->emitb(0xcc);
   for (; instr != NULL; instr = instr->next()) {
     // relocate all instruction' uses
     instr->Relocate(masm());

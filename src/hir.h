@@ -39,15 +39,10 @@ class HIRBasicBlock : public ZoneObject {
     kLoopStart
   };
 
-  enum ValueKind {
-    kInputValue,
-    kOutputValue
-  };
-
   HIRBasicBlock(HIR* hir);
 
   // Add value for generating PHIs later
-  void AddValue(HIRValue* value, ValueKind kind);
+  void AddValue(HIRValue* value);
 
   // Assigns new dominator or finds closest common of current one and block
   void AssignDominator(HIRBasicBlock* block);
@@ -98,7 +93,6 @@ class HIRBasicBlock : public ZoneObject {
   inline void next(HIRBasicBlock* next) { next_ = next; }
 
   inline HIRValueList* values() { return &values_; }
-  inline HIRValueList* inputs() { return &inputs_; }
   inline HIRPhiList* phis() { return &phis_; }
   inline HIRInstructionList* instructions() { return &instructions_; }
 
@@ -110,6 +104,12 @@ class HIRBasicBlock : public ZoneObject {
     if (instructions()->length() == 0) return NULL;
     return instructions()->tail()->value();
   }
+
+  // lir-allocator helpers
+  inline HIRValueList* live_gen() { return &live_gen_; }
+  inline HIRValueList* live_kill() { return &live_kill_; }
+  inline HIRValueList* live_in() { return &live_in_; }
+  inline HIRValueList* live_out() { return &live_out_; }
 
   inline HIRBasicBlock** predecessors() { return predecessors_; }
   inline HIRBasicBlock** successors() { return successors_; }
@@ -144,9 +144,14 @@ class HIRBasicBlock : public ZoneObject {
   HIRBasicBlockList dominates_;
 
   HIRValueList values_;
-  HIRValueList inputs_;
   HIRPhiList phis_;
   HIRInstructionList instructions_;
+
+  // Lists for lir-allocator
+  HIRValueList live_gen_;
+  HIRValueList live_kill_;
+  HIRValueList live_in_;
+  HIRValueList live_out_;
 
   HIRBasicBlock* predecessors_[2];
   HIRBasicBlock* successors_[2];
@@ -200,6 +205,9 @@ class HIRValue : public ZoneObject {
 
   // Replace all uses (not-definitions!) of variable
   void Replace(HIRValue* target);
+
+  // Returns true if value is in the list
+  bool IsIn(HIRValueList* list);
 
   inline bool is_phi() { return type_ == kPhi; }
 

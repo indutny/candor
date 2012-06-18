@@ -37,22 +37,11 @@ HIRBasicBlock::HIRBasicBlock(HIR* hir) : hir_(hir),
 }
 
 
-void HIRBasicBlock::AddValue(HIRValue* value, ValueKind kind) {
+void HIRBasicBlock::AddValue(HIRValue* value) {
   // Do not add parasite values: immediate or root values
   if (value->slot()->is_immediate() ||
       (value->slot()->is_context() && value->slot()->depth() < 0)) {
     return;
-  }
-
-  if (kind == kInputValue) {
-    // If value is already in inputs list - remove previous
-    HIRValueList::Item* item = inputs()->head();
-    for (; item != NULL; item = item->next()) {
-      if (item->value()->slot() == value->slot()) {
-        inputs()->Remove(item);
-      }
-    }
-    inputs()->Push(value);
   }
 
   // Do not insert values after enumeration
@@ -117,7 +106,7 @@ void HIRBasicBlock::AddPredecessor(HIRBasicBlock* block) {
         phi = HIRPhi::Cast(value->slot()->hir());
       } else {
         phi = new HIRPhi(this, value->slot()->hir());
-        AddValue(phi, kOutputValue);
+        AddValue(phi);
         value->slot()->hir(phi);
       }
 
@@ -126,11 +115,11 @@ void HIRBasicBlock::AddPredecessor(HIRBasicBlock* block) {
       if (is_loop_start()) {
         // Insert phi for every local variable in loop start
         phi = new HIRPhi(this, value);
-        AddValue(phi, kOutputValue);
+        AddValue(phi);
         value->slot()->hir(phi);
       } else {
         // Just put value into the list
-        AddValue(value, kInputValue);
+        AddValue(value);
         value->current_block(this);
         value->slot()->hir(value);
       }
@@ -343,7 +332,7 @@ HIRValue::HIRValue(ValueType type, HIRBasicBlock* block, ScopeSlot* slot)
 
 
 void HIRValue::Init() {
-  block()->AddValue(this, HIRBasicBlock::kOutputValue);
+  block()->AddValue(this);
   id_ = block()->hir()->get_variable_index();
 
   lir_ = new LIRValue(this);
@@ -371,6 +360,16 @@ void HIRValue::Replace(HIRValue* target) {
       item->value()->ReplaceVarUse(this, target);
     }
   }
+}
+
+
+bool HIRValue::IsIn(HIRValueList* list) {
+  HIRValueList::Item* item = list->head();
+  for (; item != NULL; item = item->next()) {
+    if (item->value() == this) return true;
+  }
+
+  return false;
 }
 
 
@@ -944,7 +943,7 @@ void HIR::VisitGenericObject(AstNode* node) {
   // And return object
   AddInstruction(new HIRNop(result));
   // Rewrite previous declarations of variable
-  current_block()->AddValue(result, HIRBasicBlock::kOutputValue);
+  current_block()->AddValue(result);
 }
 
 

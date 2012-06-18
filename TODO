@@ -1,9 +1,6 @@
 HIR/LIR todos:
-* Generate each function separately (insert Generate into allocator loop)
 * Count/collect spills
 * Split and spill where needed
-* Accumulate real live_gen, live_kill variables lists (intervals are live up to
-  the end now)
 * Create movement instructions on intervals' edges
 * Create movement instructions for phis
 * Replace intervals in instructions with registers
