@@ -247,7 +247,7 @@ class LIRValue : public LIROperand {
 
 class LIRAllocator {
  public:
-  LIRAllocator(LIR* lir, HIR* hir) : lir_(lir), hir_(hir) {
+  LIRAllocator(LIR* lir, HIR* hir) : lir_(lir), hir_(hir), spill_count_(0) {
   }
 
   // Initializer
@@ -274,6 +274,8 @@ class LIRAllocator {
   inline LIRIntervalList* active() { return &active_; }
   inline LIRIntervalList* inactive() { return &inactive_; }
 
+  inline int spill_count() { return spill_count_; }
+
  private:
   LIR* lir_;
   HIR* hir_;
@@ -282,6 +284,8 @@ class LIRAllocator {
   LIRIntervalList unhandled_;
   LIRIntervalList active_;
   LIRIntervalList inactive_;
+
+  int spill_count_;
 };
 
 } // namespace internal

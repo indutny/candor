@@ -30,11 +30,8 @@ class LIR {
   // Translates every HIRInstruction into the LIRInstruction
   void BuildInstructions();
 
-  // Generate linked-list of instruction for `hir`
-  void Translate();
-
   // Generate machine code for linked-list of instructions
-  void Generate();
+  void Generate(HIRBasicBlock* entry, int spill_count);
 
   // Debug printing
   void Print(char* buffer, uint32_t size);

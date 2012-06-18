@@ -28,18 +28,20 @@ LIR::LIR(Heap* heap, HIR* hir, Masm* masm) : heap_(heap),
   BuildInstructions();
 
   HIRBasicBlock* block = hir->first_block();
-  for (; block != NULL; block = block->prev()) {
+  for (; block != NULL; block = block->next()) {
+    HIRBasicBlock* entry = block;
+
+    // Skip all blocks up-to next entry block
+    while (block->next() != NULL && block->next()->predecessor_count() != 0) {
+      block = block->next();
+    }
+
     LIRAllocator allocator(this, hir);
     allocator.Init(block);
 
-    // Skip all blocks up-to entry block
-    while (block != NULL && block->predecessor_count() != 0) {
-      block = block->prev();
-    }
+    // Generate all instructions starting from this entry block
+    Generate(entry, allocator.spill_count());
   }
-
-  Translate();
-  Generate();
 }
 
 
@@ -53,6 +55,7 @@ void LIR::BuildInstructions() {
 }
 
 
+/*
 void LIR::Translate() {
   // Visit all instructions and create LIR graph
   HIRInstruction* hinstr = hir()->first_instruction();
@@ -79,30 +82,29 @@ void LIR::Translate() {
   Print(out, sizeof(out));
   fprintf(stdout, "%s\n", out);
 }
+*/
 
 
-void LIR::Generate() {
-  LIRInstruction* instr = first_instruction_;
+void LIR::Generate(HIRBasicBlock* entry, int spill_count) {
+  LIRInstruction* instr = entry->first_instruction()->lir(this);
 
   for (; instr != NULL; instr = instr->next()) {
     // relocate all instruction' uses
     instr->Relocate(masm());
 
-    if (instr->type() != LIRInstruction::kParallelMove) {
-      // generate instruction itself
-      masm()->spill_offset(instr->spill_offset() * HValue::kPointerSize);
-      instr->masm(masm());
-      instr->Generate();
-    }
+    // generate instruction itself
+    masm()->spill_offset(instr->spill_offset() * HValue::kPointerSize);
+    instr->masm(masm());
+    instr->Generate();
 
-    // prepare entering new function
-    if (instr->next() == NULL) {
-      masm()->FinalizeSpills(instr->spill_offset() - 1);
-    } else if (instr->next()->type() == LIRInstruction::kEntry &&
-               instr->prev() != NULL) {
-      masm()->FinalizeSpills(instr->prev()->spill_offset() - 1);
+    // Next function wasn't allocated
+    if (instr->next() != NULL &&
+        instr->next()->type() == LIRInstruction::kEntry) {
+      break;
     }
   }
+
+  masm()->FinalizeSpills(spill_count);
 }
 
 
