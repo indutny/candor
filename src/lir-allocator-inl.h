@@ -40,6 +40,21 @@ inline void LIRAllocator::AddUnhandled(LIRInterval* interval) {
   unhandled()->InsertSorted<LIRIntervalShape>(interval);
 }
 
+
+inline void LIRAllocator::AssignSpill(LIRInterval* interval) {
+  LIROperand* operand;
+
+  if (available_spills()->length() != 0) {
+    operand = available_spills()->Pop();
+  } else {
+    operand = new LIROperand(LIROperand::kSpill, spill_count());
+  }
+
+  interval->operand(operand);
+
+  active_spills()->Push(interval);
+}
+
 } // namespace internal
 } // namespace candor
 

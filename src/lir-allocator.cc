@@ -173,6 +173,21 @@ LIRInterval* LIRInterval::GetFixed(LIRInstruction* instr, LIROperand* value) {
 }
 
 
+LIRInterval* LIRInterval::SplitAndSpill(LIRAllocator* allocator,
+                                        LIRInterval* interval) {
+  int pos = FindIntersection(interval);
+
+  // If no intersection was found - no spilling is required
+  if (pos == -1) return NULL;
+
+  LIRInterval* child = SplitAt(pos);
+  allocator->AssignSpill(child);
+  allocator->AddUnhandled(child);
+
+  return child;
+}
+
+
 LIRInterval* LIRValue::FindInterval(int pos) {
   LIRInterval* current = interval();
 
@@ -293,8 +308,8 @@ void LIRAllocator::BuildIntervals(HIRBasicBlock* block) {
 
     // Process block's outputs
     {
-      HIRValueList::Item* item;
-      for (item = block->values()->head(); item != NULL; item = item->next()) {
+      HIRValueList::Item* item = block->live_out()->head();
+      for (; item != NULL; item = item->next()) {
         LIRValue* value = item->value()->lir();
 
         value->interval()->AddLiveRange(from, to);
@@ -394,6 +409,20 @@ void LIRAllocator::WalkIntervals() {
       }
     }
 
+    // Walk active spills
+    for (item = active_spills()->head(); item != NULL; item = item->next()) {
+      if (item->value()->end() <= position) {
+        // Remove expired spilled interval
+        active_spills()->Remove(item);
+        // And add it to the available list
+        available_spills()->Push(item->value()->operand());
+      } else if (!item->value()->Covers(position)) {
+        // Move interval to inactive
+        inactive()->Push(item->value());
+        active_spills()->Remove(item);
+      }
+    }
+
     // Walk inactive ones
     for (item = inactive()->head(); item != NULL; item = item->next()) {
       if (item->value()->end() <= position) {
@@ -401,7 +430,9 @@ void LIRAllocator::WalkIntervals() {
         inactive()->Remove(item);
       } else if (item->value()->Covers(position)) {
         // Move interval to active
-        active()->Push(item->value());
+        if (item->value()->operand()->is_register()) {
+          active()->Push(item->value());
+        }
         inactive()->Remove(item);
       }
     }
@@ -463,8 +494,6 @@ bool LIRAllocator::AllocateFreeReg(LIRInterval* interval) {
   if (max < interval->end()) {
     // XXX: Choose optimal split position
     AddUnhandled(interval->SplitAt(max));
-
-    // TODO: Insert movement if split isn't on a block edge
   } else {
     // Register is available for the whole interval's lifetime
   }
@@ -525,9 +554,7 @@ void LIRAllocator::AllocateBlockedReg(LIRInterval* interval) {
   }
 
   if (max_use < interval->first_use()->pos()->id()) {
-    // XXX: Spill current interval
-    UNEXPECTED
-
+    AssignSpill(interval);
     return;
   } else if (block_pos[max_i] <= interval->end()) {
     // Split current interval at optimal position
@@ -537,7 +564,17 @@ void LIRAllocator::AllocateBlockedReg(LIRInterval* interval) {
   // Assign register to interval
   interval->operand(registers()[max_i]->interval()->operand());
 
-  // XXX: Split and spill every active/inactive that intersects with current
+  // Split and spill every active/inactive interval with that register
+  // that intersects with current interval.
+  for (item = active()->head(); item != NULL; item = item->next()) {
+    if (!item->value()->operand()->is_equal(interval->operand())) continue;
+    item->value()->SplitAndSpill(this, interval);
+  }
+
+  for (item = inactive()->head(); item != NULL; item = item->next()) {
+    if (!item->value()->operand()->is_equal(interval->operand())) continue;
+    item->value()->SplitAndSpill(this, interval);
+  }
 }
 
 } // namespace internal

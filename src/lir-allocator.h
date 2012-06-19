@@ -9,6 +9,7 @@ namespace internal {
 
 // Forward declarations
 class LIR;
+class LIRAllocator;
 class LIROperand;
 class LIRLiveRange;
 class LIRInterval;
@@ -167,6 +168,9 @@ class LIRInterval : public ZoneObject {
   // intersection point of two intervals.
   int FindIntersection(LIRInterval* interval);
 
+  // Split and spill interval in the point of intersection with the given one
+  LIRInterval* SplitAndSpill(LIRAllocator* allocator, LIRInterval* interval);
+
   // Finds closest use after position
   LIRUse* NextUseAfter(int pos);
 
@@ -247,7 +251,7 @@ class LIRValue : public LIROperand {
 
 class LIRAllocator {
  public:
-  LIRAllocator(LIR* lir, HIR* hir) : lir_(lir), hir_(hir), spill_count_(0) {
+  LIRAllocator(LIR* lir, HIR* hir) : lir_(lir), hir_(hir) {
   }
 
   // Initializer
@@ -270,6 +274,10 @@ class LIRAllocator {
 
   inline void AddUnhandled(LIRInterval* interval);
 
+  // Gets spill from free list or creates a new one, and assigns it to the
+  // interval
+  inline void AssignSpill(LIRInterval* inteval);
+
   inline LIR* lir() { return lir_; }
   inline HIR* hir() { return hir_; }
 
@@ -278,7 +286,12 @@ class LIRAllocator {
   inline LIRIntervalList* active() { return &active_; }
   inline LIRIntervalList* inactive() { return &inactive_; }
 
-  inline int spill_count() { return spill_count_; }
+  inline LIRIntervalList* active_spills() { return &active_spills_; }
+  inline LIROperandList* available_spills() { return &available_spills_; }
+
+  inline int spill_count() {
+    return available_spills_.length() + active_spills_.length();
+  }
 
  private:
   LIR* lir_;
@@ -288,8 +301,9 @@ class LIRAllocator {
   LIRIntervalList unhandled_;
   LIRIntervalList active_;
   LIRIntervalList inactive_;
+  LIRIntervalList active_spills_;
 
-  int spill_count_;
+  LIROperandList available_spills_;
 };
 
 } // namespace internal

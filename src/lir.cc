@@ -94,7 +94,8 @@ void LIR::Generate(HIRBasicBlock* entry, int spill_count) {
     instr->Relocate(masm());
 
     // generate instruction itself
-    masm()->spill_offset(instr->spill_offset() * HValue::kPointerSize);
+    // TODO: Setup minimal spill offset
+    masm()->spill_offset(spill_count * HValue::kPointerSize);
     instr->masm(masm());
     instr->Generate();
 

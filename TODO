@@ -1,8 +1,7 @@
 HIR/LIR todos:
-* Count/collect spills
-* Split and spill where needed
-* Create movement instructions on intervals' edges
-* Create movement instructions for phis
+* Resolve data flow:
+  * Create movement instructions on intervals' edges
+  * Create movement instructions for phis
 * Replace intervals in instructions with registers
 
 * Move context variables get/set to instructions (with index as imm arg)
