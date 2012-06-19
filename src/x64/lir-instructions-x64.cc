@@ -207,7 +207,12 @@ void LIRLoadRoot::Generate() {
   // root()->Place(...) may generate immediate values
   // ignore them here
   ScopeSlot* slot = hir()->value()->slot();
-  if (slot->is_immediate()) return;
+  if (slot->is_immediate()) {
+    __ mov(ToRegister(result),
+           Immediate(reinterpret_cast<off_t>(slot->value())));
+    return;
+  }
+
   assert(slot->is_context());
 
   Operand root_slot(root_reg, HContext::GetIndexDisp(slot->index()));

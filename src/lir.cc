@@ -39,6 +39,9 @@ LIR::LIR(Heap* heap, HIR* hir, Masm* masm) : heap_(heap),
     LIRAllocator allocator(this, hir);
     allocator.Init(block);
 
+    // Replace LIRValues with LIROperand
+    AssignRegisters(entry->first_instruction()->lir(this));
+
     // Generate all instructions starting from this entry block
     Generate(entry, allocator.spill_count());
   }
@@ -49,13 +52,14 @@ void LIR::BuildInstructions() {
   HIRInstruction* hinstr = hir()->first_instruction();
 
   for (; hinstr != NULL; hinstr = hinstr->next()) {
+    AddInstruction(hinstr->lir(this));
+
     // Resolve phis (create movement instructions);
     if (hinstr->block()->last_instruction() == hinstr &&
         hinstr->block()->successor_count() == 1 &&
         hinstr->block()->successors()[0]->predecessor_count() == 2 &&
         hinstr->block()->successors()[0]->phis()->length() != 0) {
-      HIRParallelMove* move = new HIRParallelMove();
-      move->Init(hinstr->block());
+      HIRParallelMove* move = HIRParallelMove::CreateBefore(hinstr);
 
       HIRBasicBlock* join = hinstr->block()->successors()[0];
       int index = join->predecessors()[0] == hinstr->block() ? 0 : 1;
@@ -64,10 +68,29 @@ void LIR::BuildInstructions() {
       for (; item != NULL; item = item->next()) {
         move->AddMove(item->value()->input(index)->lir(), item->value()->lir());
       }
-      AddInstruction(move->lir(this));
+    }
+  }
+}
+
+
+void LIR::AssignRegisters(LIRInstruction* instr) {
+  while (instr != NULL) {
+    if (instr->result != NULL && instr->result->is_virtual()) {
+      LIRValue::ReplaceWithOperand(instr, &instr->result);
     }
 
-    AddInstruction(hinstr->lir(this));
+    for (int i = 0; i < instr->scratch_count(); i++) {
+      LIRValue::ReplaceWithOperand(instr, &instr->scratches[i]);
+    }
+
+    for (int i = 0; i < instr->input_count(); i++) {
+      LIRValue::ReplaceWithOperand(instr, &instr->inputs[i]);
+    }
+
+    instr = instr->next();
+    if (instr != NULL && instr->type() == LIRInstruction::kEntry) {
+      break;
+    }
   }
 }
 
@@ -105,7 +128,6 @@ void LIR::Translate() {
 void LIR::Generate(HIRBasicBlock* entry, int spill_count) {
   LIRInstruction* instr = entry->first_instruction()->lir(this);
 
-  masm()->emitb(0xcc);
   for (; instr != NULL; instr = instr->next()) {
     // relocate all instruction' uses
     instr->Relocate(masm());

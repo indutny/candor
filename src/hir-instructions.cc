@@ -3,6 +3,7 @@
 
 #include "lir.h" // LIROperand
 #include "lir-inl.h" // GetSpill
+#include "lir-instructions.h" // LIRInstruction
 
 namespace candor {
 namespace internal {
@@ -126,6 +127,29 @@ void HIRInstruction::Print(PrintBuffer* p) {
     }
   }
   p->Print("]\n");
+}
+
+
+HIRParallelMove* HIRParallelMove::CreateBefore(HIRInstruction* instr) {
+  HIRParallelMove* move = new HIRParallelMove();
+
+  // Link move to instruction
+  move->Init(instr->block());
+  move->id(instr->id() - 1);
+  move->prev(instr->prev());
+  move->next(instr);
+
+  if (instr->prev() != NULL) instr->prev()->next(move);
+  instr->prev(move);
+
+  // Link instructions in LIR
+  if (instr->lir() != NULL) {
+    LIRInstruction* lmove = move->lir(instr->lir()->lir());
+    lmove->prev(instr->lir()->prev());
+    lmove->next(instr->lir());
+    if (instr->lir()->prev() != NULL) instr->lir()->prev()->next(lmove);
+    instr->lir()->prev(lmove);
+  }
 }
 
 

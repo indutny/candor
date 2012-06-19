@@ -82,6 +82,7 @@ class HIRInstruction : public ZoneObject {
 
   // Returns LIR companion of this instruction
   LIRInstruction* lir(LIR* l);
+  LIRInstruction* lir() { return lir_; }
 
   // Type checks
   inline Type type() { return type_; }
@@ -261,6 +262,10 @@ class HIRParallelMove : public HIRInstruction {
 
   HIRParallelMove() : HIRInstruction(kParallelMove) {
   }
+
+  // Create ParallelMove before instruction
+  // (And insert it into LIR's linked list)
+  static HIRParallelMove* CreateBefore(HIRInstruction* instr);
 
   // Record movement
   void AddMove(LIROperand* source, LIROperand* target);

@@ -153,6 +153,9 @@ class LIRInterval : public ZoneObject {
   // Creates new interval and links it with parent
   LIRInterval* SplitAt(int pos);
 
+  // Returns interval or one of it's children that covers given position
+  LIRInterval* ChildAt(int pos);
+
   // Add range to value's liveness interval's ranges
   // (should be called in bottom-up order, i.e. when traversing from the last
   //  instruction to the first one)
@@ -238,7 +241,15 @@ class LIRValue : public LIROperand {
   }
 
   // Finds interval at specific position
-  LIRInterval* FindInterval(int pos);
+  LIROperand* OperandAt(int pos);
+
+  // Replaces LIRValue with LIROperand
+  static void ReplaceWithOperand(LIRInstruction* instr, LIROperand** operand);
+
+  static inline LIRValue* Cast(LIROperand* operand) {
+    assert(operand->is_virtual());
+    return reinterpret_cast<LIRValue*>(operand);
+  }
 
   inline LIRInterval* interval() { return &interval_; }
   inline HIRValue* hir() { return hir_; }

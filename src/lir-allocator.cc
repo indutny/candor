@@ -85,6 +85,18 @@ LIRInterval* LIRInterval::SplitAt(int pos) {
 }
 
 
+LIRInterval* LIRInterval::ChildAt(int pos) {
+  if (Covers(pos)) return this;
+
+  LIRIntervalList::Item* item = children()->head();
+  for (; item != NULL; item = item->next()) {
+    if (item->value()->Covers(pos)) return item->value()->ChildAt(pos);
+  }
+
+  return NULL;
+}
+
+
 int LIRIntervalShape::Compare(LIRInterval* a, LIRInterval* b) {
   return a->start() - b->start();
 }
@@ -188,10 +200,10 @@ LIRInterval* LIRInterval::SplitAndSpill(LIRAllocator* allocator,
 }
 
 
-LIRInterval* LIRValue::FindInterval(int pos) {
+LIROperand* LIRValue::OperandAt(int pos) {
   LIRInterval* current = interval();
 
-  while (current != NULL && (current->start() < pos || current->end() >= pos)) {
+  while (current != NULL && !current->Covers(pos)) {
     LIRIntervalList::Item* item = current->children()->head();
 
     // Find appropriate child
@@ -206,7 +218,14 @@ LIRInterval* LIRValue::FindInterval(int pos) {
     }
   }
 
-  return current;
+  return current != NULL ? current->operand() : NULL;
+}
+
+
+void LIRValue::ReplaceWithOperand(LIRInstruction* instr, LIROperand** operand) {
+  if (!(*operand)->is_virtual()) return;
+  *operand = LIRValue::Cast(*operand)->OperandAt(instr->id());
+  assert(*operand != NULL);
 }
 
 
@@ -380,6 +399,7 @@ void LIRAllocator::BuildIntervals(HIRBasicBlock* block) {
                                                      linstr->inputs[i]));
           }
           value->interval()->AddLiveRange(from, linstr->id());
+          AddUnhandled(value->interval());
 
           linstr->inputs[i] = value;
         }
@@ -581,6 +601,38 @@ void LIRAllocator::AllocateBlockedReg(LIRInterval* interval) {
 
 
 void LIRAllocator::ResolveDataFlow(HIRBasicBlock* block) {
+  HIRBasicBlock* from = block;
+  for (; from != NULL; from = from->prev()) {
+    HIRInstructionList::Item* instr = from->instructions()->head();
+    HIRParallelMove* move = reinterpret_cast<HIRParallelMove*>(
+        from->last_instruction()->prev());
+
+    for (int i = 0; i < from->successor_count(); i++) {
+      HIRBasicBlock* to = from->successors()[i];
+
+      HIRValueList::Item* item = to->live_in()->head();
+      for (; item != NULL; item = item->next()) {
+        LIRInterval* parent = item->value()->lir()->interval();
+        LIRInterval* from_interval = parent->ChildAt(
+            from->last_instruction()->id());
+        LIRInterval* to_interval = parent->ChildAt(
+            to->first_instruction()->id());
+
+        if (from_interval == to_interval) continue;
+
+        // Lazy-create move
+        if (move == NULL || move->type() != HIRInstruction::kParallelMove) {
+          move = HIRParallelMove::CreateBefore(from->last_instruction());
+        }
+
+        move->AddMove(from_interval->operand(), to_interval->operand());
+      }
+    }
+
+    if (from->prev() != NULL && from->prev()->predecessor_count() == 0) {
+      break;
+    }
+  }
 }
 
 } // namespace internal

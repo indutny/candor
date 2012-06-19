@@ -30,6 +30,9 @@ class LIR {
   // Translates every HIRInstruction into the LIRInstruction
   void BuildInstructions();
 
+  // Replace LIRValues with LIROperand
+  void AssignRegisters(LIRInstruction* instr);
+
   // Generate machine code for linked-list of instructions
   void Generate(HIRBasicBlock* entry, int spill_count);
 
