@@ -272,6 +272,9 @@ class LIRAllocator {
   bool AllocateFreeReg(LIRInterval* interval);
   void AllocateBlockedReg(LIRInterval* interval);
 
+  // Insert movements on block edges
+  void ResolveDataFlow(HIRBasicBlock* block);
+
   inline void AddUnhandled(LIRInterval* interval);
 
   // Gets spill from free list or creates a new one, and assigns it to the

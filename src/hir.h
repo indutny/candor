@@ -6,6 +6,7 @@
 #include "zone.h" // ZoneObject
 #include "utils.h" // List
 
+#include <assert.h> // assert
 #include <sys/types.h> // off_t
 
 // High-level intermediate representation of source code
@@ -265,6 +266,14 @@ class HIRPhi : public HIRValue {
     return reinterpret_cast<HIRPhi*>(value);
   }
   inline HIRValueList* inputs() { return &inputs_; }
+  inline HIRValue* input(int i) {
+    assert(inputs_.length() > 0);
+    if (i == 0) {
+      return inputs_.head()->value();
+    } else {
+      return inputs_.tail()->value();
+    }
+  }
  private:
   HIRValueList inputs_;
 };

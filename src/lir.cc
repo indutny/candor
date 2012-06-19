@@ -49,8 +49,25 @@ void LIR::BuildInstructions() {
   HIRInstruction* hinstr = hir()->first_instruction();
 
   for (; hinstr != NULL; hinstr = hinstr->next()) {
-    LIRInstruction* linstr = hinstr->lir(this);
-    AddInstruction(linstr);
+    // Resolve phis (create movement instructions);
+    if (hinstr->block()->last_instruction() == hinstr &&
+        hinstr->block()->successor_count() == 1 &&
+        hinstr->block()->successors()[0]->predecessor_count() == 2 &&
+        hinstr->block()->successors()[0]->phis()->length() != 0) {
+      HIRParallelMove* move = new HIRParallelMove();
+      move->Init(hinstr->block());
+
+      HIRBasicBlock* join = hinstr->block()->successors()[0];
+      int index = join->predecessors()[0] == hinstr->block() ? 0 : 1;
+
+      HIRPhiList::Item* item = join->phis()->head();
+      for (; item != NULL; item = item->next()) {
+        move->AddMove(item->value()->input(index)->lir(), item->value()->lir());
+      }
+      AddInstruction(move->lir(this));
+    }
+
+    AddInstruction(hinstr->lir(this));
   }
 }
 

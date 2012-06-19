@@ -224,6 +224,7 @@ void LIRAllocator::Init(HIRBasicBlock* block) {
 
   BuildIntervals(block);
   WalkIntervals();
+  ResolveDataFlow(block);
 }
 
 
@@ -386,7 +387,7 @@ void LIRAllocator::BuildIntervals(HIRBasicBlock* block) {
     }
 
     // Stop on entry block
-    if (block->predecessor_count() == 0) break;
+    if (block->prev() != NULL && block->prev()->predecessor_count() == 0) break;
   }
 }
 
@@ -496,6 +497,7 @@ bool LIRAllocator::AllocateFreeReg(LIRInterval* interval) {
     AddUnhandled(interval->SplitAt(max));
   } else {
     // Register is available for the whole interval's lifetime
+    // (Intentionally left empty)
   }
 
   // Assign register to the interval
@@ -575,6 +577,10 @@ void LIRAllocator::AllocateBlockedReg(LIRInterval* interval) {
     if (!item->value()->operand()->is_equal(interval->operand())) continue;
     item->value()->SplitAndSpill(this, interval);
   }
+}
+
+
+void LIRAllocator::ResolveDataFlow(HIRBasicBlock* block) {
 }
 
 } // namespace internal
