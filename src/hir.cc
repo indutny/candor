@@ -196,6 +196,42 @@ off_t HIRBasicBlock::MarkPrinted() {
 void HIRBasicBlock::Print(PrintBuffer* p) {
   p->Print("[Block#%d", id());
 
+  if (live_gen()->length() > 0) {
+    p->Print(" gen:[");
+    HIRValueList::Item* item;
+    for (item = live_gen()->head(); item != NULL; item = item->next()) {
+      p->Print(item->next() != NULL ? "%d," : "%d", item->value()->id());
+    }
+    p->Print("]");
+  }
+
+  if (live_kill()->length() > 0) {
+    p->Print(" kill:[");
+    HIRValueList::Item* item;
+    for (item = live_kill()->head(); item != NULL; item = item->next()) {
+      p->Print(item->next() != NULL ? "%d," : "%d", item->value()->id());
+    }
+    p->Print("]");
+  }
+
+  if (live_in()->length() > 0) {
+    p->Print(" in:[");
+    HIRValueList::Item* item;
+    for (item = live_in()->head(); item != NULL; item = item->next()) {
+      p->Print(item->next() != NULL ? "%d," : "%d", item->value()->id());
+    }
+    p->Print("]");
+  }
+
+  if (live_out()->length() > 0) {
+    p->Print(" out:[");
+    HIRValueList::Item* item;
+    for (item = live_out()->head(); item != NULL; item = item->next()) {
+      p->Print(item->next() != NULL ? "%d," : "%d", item->value()->id());
+    }
+    p->Print("]");
+  }
+
   // Print phis
   {
     HIRPhiList::Item* item = phis()->head();

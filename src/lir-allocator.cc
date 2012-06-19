@@ -233,6 +233,10 @@ void LIRAllocator::Init(HIRBasicBlock* block) {
   ComputeLocalLiveSets(block);
   ComputeGlobalLiveSets(block);
 
+  char out[50000];
+  block->hir()->Print(out, sizeof(out));
+  fprintf(stdout, "%s\n", out);
+
   for (int i = 0; i < kLIRRegisterCount; i++) {
     registers()[i] = new LIRValue(NULL);
     registers()[i]->interval()->kind(LIRInterval::kFixed);
@@ -356,8 +360,11 @@ void LIRAllocator::BuildIntervals(HIRBasicBlock* block) {
         if (hinstr->GetResult() != NULL) {
           LIRValue* result = hinstr->GetResult()->lir();
 
-          assert(result->interval()->first_range() != NULL);
-          result->interval()->first_range()->start(linstr->id() + 1);
+          if (result->interval()->first_range() == NULL) {
+            result->interval()->AddLiveRange(linstr->id(), linstr->id() + 1);
+          } else {
+            result->interval()->first_range()->start(linstr->id() + 1);
+          }
           result->interval()->AddUse(linstr, LIROperand::kRegister);
           AddUnhandled(result->interval());
 
