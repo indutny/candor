@@ -130,7 +130,11 @@ void HIRInstruction::Print(PrintBuffer* p) {
 }
 
 
-HIRParallelMove* HIRParallelMove::CreateBefore(HIRInstruction* instr) {
+HIRParallelMove* HIRParallelMove::GetBefore(HIRInstruction* instr) {
+  if (instr->prev() != NULL && instr->prev()->type() == kParallelMove) {
+    return HIRParallelMove::Cast(instr->prev());
+  }
+
   HIRParallelMove* move = new HIRParallelMove();
 
   // Link move to instruction
@@ -212,6 +216,21 @@ void HIRParallelMove::Reorder(LIR* lir, MoveItem* move) {
 
   // Finalize status
   move->move_status(kMoved);
+}
+
+
+void HIRParallelMove::AssignRegisters(LIR* lir) {
+  MoveList::Item* item = raw_moves()->head();
+  for (; item != NULL; item = item->next()) {
+    if (item->value()->source()->is_virtual() ||
+        item->value()->source()->is_interval()) {
+      LIRValue::ReplaceWithOperand(this->lir(lir), &item->value()->source_);
+    }
+    if (item->value()->target()->is_virtual() ||
+        item->value()->target()->is_interval()) {
+      LIRValue::ReplaceWithOperand(this->lir(lir), &item->value()->target_);
+    }
+  }
 }
 
 

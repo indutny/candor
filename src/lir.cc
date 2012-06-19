@@ -36,8 +36,7 @@ LIR::LIR(Heap* heap, HIR* hir, Masm* masm) : heap_(heap),
       block = block->next();
     }
 
-    LIRAllocator allocator(this, hir);
-    allocator.Init(block);
+    LIRAllocator allocator(this, hir, block);
 
     // Replace LIRValues with LIROperand
     AssignRegisters(entry->first_instruction()->lir(this));
@@ -59,7 +58,7 @@ void LIR::BuildInstructions() {
         hinstr->block()->successor_count() == 1 &&
         hinstr->block()->successors()[0]->predecessor_count() == 2 &&
         hinstr->block()->successors()[0]->phis()->length() != 0) {
-      HIRParallelMove* move = HIRParallelMove::CreateBefore(hinstr);
+      HIRParallelMove* move = HIRParallelMove::GetBefore(hinstr);
 
       HIRBasicBlock* join = hinstr->block()->successors()[0];
       int index = join->predecessors()[0] == hinstr->block() ? 0 : 1;
@@ -85,6 +84,10 @@ void LIR::AssignRegisters(LIRInstruction* instr) {
 
     for (int i = 0; i < instr->input_count(); i++) {
       LIRValue::ReplaceWithOperand(instr, &instr->inputs[i]);
+    }
+
+    if (instr->type() == LIRInstruction::kParallelMove) {
+      reinterpret_cast<LIRParallelMove*>(instr)->hir()->AssignRegisters(this);
     }
 
     instr = instr->next();

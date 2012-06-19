@@ -8,7 +8,7 @@
 namespace candor {
 namespace internal {
 
-static const int kLIRRegisterCount = 10;
+static const int kLIRRegisterCount = 4;
 
 #define LIR_COMMON_METHODS(V)\
     Type type() const { return k##V; }\
@@ -21,7 +21,7 @@ class LIRParallelMove : public LIRInstructionTemplate<0, 0, 0> {
   LIR_COMMON_METHODS(ParallelMove);
 };
 
-class LIRNop : public LIRInstructionTemplate<0, 0, 0> {
+class LIRNop : public LIRInstructionTemplate<1, 0, 0> {
  public:
   void Generate();
 

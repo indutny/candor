@@ -55,6 +55,9 @@ class HIRBasicBlock : public ZoneObject {
   void AddSuccessor(HIRBasicBlock* block);
   void Goto(HIRBasicBlock* block);
 
+  // Finds instruction in all blocks by id
+  HIRInstruction* FindInstruction(int id);
+
   // Block relations
   bool Dominates(HIRBasicBlock* block);
 

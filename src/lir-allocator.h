@@ -28,6 +28,7 @@ class LIROperand : public ZoneObject {
  public:
   enum Type {
     kVirtual,
+    kInterval,
     kRegister,
     kSpill,
     kImmediate
@@ -50,6 +51,7 @@ class LIROperand : public ZoneObject {
 
   inline Type type() { return type_; }
   inline bool is_virtual() { return type_ == kVirtual; }
+  inline bool is_interval() { return type_ == kInterval; }
   inline bool is_register() { return type_ == kRegister; }
   inline bool is_spill() { return type_ == kSpill; }
   inline bool is_immediate() { return type_ == kImmediate; }
@@ -132,14 +134,15 @@ class LIRIntervalShape {
   static int Compare(LIRInterval* a, LIRInterval* b);
 };
 
-class LIRInterval : public ZoneObject {
+class LIRInterval : public LIROperand {
  public:
   enum IntervalKind {
     kNormal,
     kFixed
   };
 
-  LIRInterval(LIRValue* value) : value_(value),
+  LIRInterval(LIRValue* value) : LIROperand(kInterval, -1),
+                                 value_(value),
                                  operand_(NULL),
                                  kind_(kNormal),
                                  first_range_(NULL),
@@ -172,19 +175,29 @@ class LIRInterval : public ZoneObject {
   int FindIntersection(LIRInterval* interval);
 
   // Split and spill interval in the point of intersection with the given one
-  LIRInterval* SplitAndSpill(LIRAllocator* allocator, LIRInterval* interval);
+  LIRInterval* SplitAndSpill(LIRAllocator* allocator,
+                             LIRInterval* interval,
+                             int* pos);
+
+  // Finds interval at specific position
+  LIROperand* OperandAt(int pos);
 
   // Finds closest use after position
   LIRUse* NextUseAfter(int pos);
 
-  // Split interval and mark child as fixed
-  LIRInterval* GetFixed(LIRInstruction* instr, LIROperand* value);
+  static inline LIRInterval* Cast(LIROperand* operand) {
+    assert(operand->is_interval());
+    return reinterpret_cast<LIRInterval*>(operand);
+  }
 
   inline int start() {
-    return first_range() == NULL ? 0 : first_range()->start();
+    return first_range() == NULL ? -1 : first_range()->start();
   }
   inline int end() {
-    return last_range() == NULL ? 0 : last_range()->end();
+    if (children()->length() > 0) {
+      return children()->tail()->value()->end();
+    }
+    return last_range() == NULL ? -1 : last_range()->end();
   }
 
   inline LIRValue* value() { return value_; }
@@ -240,9 +253,6 @@ class LIRValue : public LIROperand {
                             hir_(hir) {
   }
 
-  // Finds interval at specific position
-  LIROperand* OperandAt(int pos);
-
   // Replaces LIRValue with LIROperand
   static void ReplaceWithOperand(LIRInstruction* instr, LIROperand** operand);
 
@@ -262,19 +272,23 @@ class LIRValue : public LIROperand {
 
 class LIRAllocator {
  public:
-  LIRAllocator(LIR* lir, HIR* hir) : lir_(lir), hir_(hir) {
+  LIRAllocator(LIR* lir, HIR* hir, HIRBasicBlock* last_block)
+      : lir_(lir),
+        hir_(hir),
+        last_block_(last_block) {
+    Init();
   }
 
   // Initializer
-  void Init(HIRBasicBlock* block);
+  void Init();
 
   // Compute live_in, live_out for each block
-  void ComputeLocalLiveSets(HIRBasicBlock* block);
-  void ComputeGlobalLiveSets(HIRBasicBlock* block);
+  void ComputeLocalLiveSets();
+  void ComputeGlobalLiveSets();
 
   // Traverses blocks in a post-order and creates live ranges for all
   // LIRValues (intervals).
-  void BuildIntervals(HIRBasicBlock* block);
+  void BuildIntervals();
 
   // Walk all intervals and assign an operand to each of them
   void WalkIntervals();
@@ -284,7 +298,13 @@ class LIRAllocator {
   void AllocateBlockedReg(LIRInterval* interval);
 
   // Insert movements on block edges
-  void ResolveDataFlow(HIRBasicBlock* block);
+  void ResolveDataFlow();
+
+  // Adds fixed interval (with specified register if operand != NULL) and
+  // adds movement from (value) to it.
+  LIRValue* GetFixed(LIRInstruction* instr,
+                     LIRValue* value,
+                     LIROperand* operand);
 
   inline void AddUnhandled(LIRInterval* interval);
 
@@ -294,6 +314,7 @@ class LIRAllocator {
 
   inline LIR* lir() { return lir_; }
   inline HIR* hir() { return hir_; }
+  inline HIRBasicBlock* last_block() { return last_block_; }
 
   inline LIRValue** registers() { return registers_; }
   inline LIRIntervalList* unhandled() { return &unhandled_; }
@@ -310,6 +331,7 @@ class LIRAllocator {
  private:
   LIR* lir_;
   HIR* hir_;
+  HIRBasicBlock* last_block_;
 
   LIRValue* registers_[128];
   LIRIntervalList unhandled_;

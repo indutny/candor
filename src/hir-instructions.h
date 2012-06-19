@@ -256,6 +256,8 @@ class HIRParallelMove : public HIRInstruction {
     LIROperand* source_;
     LIROperand* target_;
     MoveStatus move_status_;
+
+    friend class HIRParallelMove;
   };
 
   typedef ZoneList<MoveItem*> MoveList;
@@ -265,7 +267,10 @@ class HIRParallelMove : public HIRInstruction {
 
   // Create ParallelMove before instruction
   // (And insert it into LIR's linked list)
-  static HIRParallelMove* CreateBefore(HIRInstruction* instr);
+  static HIRParallelMove* GetBefore(HIRInstruction* instr);
+
+  // Replace virtual registeres in raw list
+  void AssignRegisters(LIR* lir);
 
   // Record movement
   void AddMove(LIROperand* source, LIROperand* target);

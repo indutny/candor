@@ -149,6 +149,18 @@ void HIRBasicBlock::Goto(HIRBasicBlock* block) {
 }
 
 
+
+HIRInstruction* HIRBasicBlock::FindInstruction(int id) {
+  HIRInstruction* instr = last_instruction();
+
+  for (; instr != NULL; instr = instr->prev()) {
+    if (instr->id() == id) return instr;
+  }
+
+  return NULL;
+}
+
+
 bool HIRBasicBlock::Dominates(HIRBasicBlock* block) {
   HIRBasicBlock* d = block;
   while (d != NULL && d != this) {
@@ -379,6 +391,10 @@ void HIRValue::Print(PrintBuffer* p) {
   p->Print("*[%d ", id());
   slot()->Print(p);
   p->Print("]");
+
+  if (lir()->interval()->start() != -1) {
+    p->Print(" {%d,%d}", lir()->interval()->start(), lir()->interval()->end());
+  }
 }
 
 
@@ -588,7 +604,7 @@ void HIR::Enumerate() {
 
   // Setup last/first instruction
   first_instruction(work_list.head()->value()->first_instruction());
-  last_instruction(first_instruction());
+  last_instruction(NULL);
 
   // Process worklist
   HIRBasicBlock* current;
@@ -621,7 +637,7 @@ void HIR::Enumerate() {
     HIRInstructionList::Item* instr = current->instructions()->head();
     for (; instr != NULL; instr = instr->next()) {
       // Insert instruction into linked list
-      last_instruction()->next(instr->value());
+      if (last_instruction() != NULL) last_instruction()->next(instr->value());
 
       instr->value()->prev(last_instruction());
       instr->value()->id(get_instruction_index());
