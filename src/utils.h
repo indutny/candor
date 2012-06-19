@@ -13,7 +13,7 @@
 namespace candor {
 namespace internal {
 
-#define UNEXPECTED assert(0 && "Unexpected");
+#define UNEXPECTED { assert(0 && "Unexpected"); abort(); }
 
 inline uint32_t ComputeHash(int64_t key) {
   uint32_t hash = 0;

@@ -3,6 +3,7 @@
 
 #include "utils.h" // PrintBuffer
 #include "macroassembler.h"
+#include "hir.h"
 
 namespace candor {
 namespace internal {
@@ -51,6 +52,7 @@ inline void LIRAllocator::AssignSpill(LIRInterval* interval) {
   }
 
   interval->operand(operand);
+  fprintf(stdout, "%d: %d %d\n", interval->value()->hir()->id(), interval->start(), interval->end());
 
   active_spills()->Push(interval);
 }

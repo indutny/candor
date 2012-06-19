@@ -272,6 +272,11 @@ class LIRValue : public LIROperand {
 
 class LIRAllocator {
  public:
+  enum FixedPosition {
+    kFixedBefore,
+    kFixedAfter
+  };
+
   LIRAllocator(LIR* lir, HIR* hir, HIRBasicBlock* last_block)
       : lir_(lir),
         hir_(hir),
@@ -302,7 +307,8 @@ class LIRAllocator {
 
   // Adds fixed interval (with specified register if operand != NULL) and
   // adds movement from (value) to it.
-  LIRValue* GetFixed(LIRInstruction* instr,
+  LIRValue* GetFixed(FixedPosition position,
+                     LIRInstruction* instr,
                      LIRValue* value,
                      LIROperand* operand);
 

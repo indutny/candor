@@ -1,5 +1,6 @@
 #include "lir-instructions.h"
 #include "hir.h" // HIRValue::Print
+#include "hir-instructions.h" // HIRParallelMove
 #include "macroassembler.h"
 #include "macroassembler-inl.h"
 
@@ -47,6 +48,19 @@ void LIRInstruction::Print(PrintBuffer* p) {
     p->Print(" = ");
   }
   p->Print("%s", str_type);
+
+  if (type() == LIRInstruction::kParallelMove) {
+    ZoneList<HIRParallelMove::MoveItem*>::Item* item =
+        HIRParallelMove::Cast(generic_hir())->moves()->head();
+
+    for (; item != NULL; item = item->next()) {
+      HIRParallelMove::MoveItem* move = item->value();
+      move->source()->Print(p);
+      p->Print("=>");
+      move->target()->Print(p);
+      if (item->next() != NULL) p->Print(",");
+    }
+  }
 
   if (input_count() > 0) {
     p->Print(" [");

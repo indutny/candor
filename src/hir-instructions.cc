@@ -157,6 +157,34 @@ HIRParallelMove* HIRParallelMove::GetBefore(HIRInstruction* instr) {
 }
 
 
+// XXX: DRY it
+HIRParallelMove* HIRParallelMove::GetAfter(HIRInstruction* instr) {
+  if (instr->next() != NULL && instr->next()->type() == kParallelMove) {
+    return HIRParallelMove::Cast(instr->next());
+  }
+
+  HIRParallelMove* move = new HIRParallelMove();
+
+  // Link move to instruction
+  move->Init(instr->block());
+  move->id(instr->id() + 1);
+  move->prev(instr);
+  move->next(instr->next());
+
+  if (instr->next() != NULL) instr->next()->prev(move);
+  instr->next(move);
+
+  // Link instructions in LIR
+  if (instr->lir() != NULL) {
+    LIRInstruction* lmove = move->lir(instr->lir()->lir());
+    lmove->prev(instr->lir());
+    lmove->next(instr->lir()->next());
+    if (instr->lir()->next() != NULL) instr->lir()->next()->prev(lmove);
+    instr->lir()->next(lmove);
+  }
+}
+
+
 void HIRParallelMove::AddMove(LIROperand* source, LIROperand* target) {
   // Skip nop moves
   if (source->is_equal(target)) return;

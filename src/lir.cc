@@ -44,6 +44,12 @@ LIR::LIR(Heap* heap, HIR* hir, Masm* masm) : heap_(heap),
     // Generate all instructions starting from this entry block
     Generate(entry, allocator.spill_count());
   }
+
+  char out[50000];
+  hir->Print(out, sizeof(out));
+  fprintf(stdout, "%s\n", out);
+  Print(out, sizeof(out));
+  fprintf(stdout, "%s\n", out);
 }
 
 

@@ -265,9 +265,10 @@ class HIRParallelMove : public HIRInstruction {
   HIRParallelMove() : HIRInstruction(kParallelMove) {
   }
 
-  // Create ParallelMove before instruction
+  // Create ParallelMove before/after instruction
   // (And insert it into LIR's linked list)
   static HIRParallelMove* GetBefore(HIRInstruction* instr);
+  static HIRParallelMove* GetAfter(HIRInstruction* instr);
 
   // Replace virtual registeres in raw list
   void AssignRegisters(LIR* lir);

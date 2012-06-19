@@ -393,7 +393,7 @@ void HIRValue::Print(PrintBuffer* p) {
   p->Print("]");
 
   if (lir()->interval()->start() != -1) {
-    p->Print(" {%d,%d}", lir()->interval()->start(), lir()->interval()->end());
+    p->Print(" [%d,%d)", lir()->interval()->start(), lir()->interval()->end());
   }
 }
 
@@ -769,13 +769,13 @@ AstNode* HIR::VisitAssign(AstNode* stmt) {
     HIRValue* receiver = GetValue(stmt->lhs()->lhs());
 
     AddInstruction(new HIRStoreProperty(receiver, property, rhs));
+
+    // Propagate result
+    AddInstruction(new HIRNop(rhs));
   } else {
     // TODO: Set error! Incorrect lhs
     abort();
   }
-
-  // Propagate result
-  AddInstruction(new HIRNop(rhs));
 
   return stmt;
 }
