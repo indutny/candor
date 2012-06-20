@@ -1,13 +1,38 @@
 #include "test.h"
 
 TEST_START(functional)
+  // Basics: return + assign
+  FUN_TEST("return 1", {
+    assert(result->As<Number>()->Value() == 1);
+  })
+
+  FUN_TEST("return", {
+    assert(result->Is<Nil>());
+  })
+
+  FUN_TEST("a = 32\nreturn a", {
+    assert(result->As<Number>()->Value() == 32);
+  })
+
+  FUN_TEST("a = b = 32\nreturn a", {
+    assert(result->As<Number>()->Value() == 32);
+  })
+
+  FUN_TEST("a = 32\nb = a\nreturn b", {
+    assert(result->As<Number>()->Value() == 32);
+  })
+
+  FUN_TEST("a = nil\nreturn a", {
+    assert(result->Is<Nil>());
+  })
+
   // Spill test
   // NOTE: `{}` causes a stub call, which has side-effects
   // That means that every active register will be spilled and restored
   // after that call.
-  FUN_TEST("a=1\nb=2\n"
+  FUN_TEST("a=1\nb=2\nc=3\nd=4\ne=5\nf=6\ng=7\nh=8\ni=9\nj=10\nk=11\nl=12\n"
            "x={}\n"
-           "b\na\nreturn x", {
+           "b\nc\nd\ne\na\ng\nh\ni\nj\nk\nl\nreturn f", {
     assert(result->As<Number>()->Value() == 6);
   })
 

@@ -360,20 +360,25 @@ void LIRAllocator::BuildIntervals() {
 
         // Process output
         if (hinstr->GetResult() != NULL) {
-          LIRValue* result = hinstr->GetResult()->lir();
-
-          if (result->interval()->first_range() == NULL) {
-            result->interval()->AddLiveRange(linstr->id(), linstr->id() + 1);
+          if (hinstr->HasCall()) {
+            // Instruction with call always has %ax as result
+            linstr->result = registers()[0]->interval()->operand();
           } else {
-            result->interval()->first_range()->start(linstr->id());
-          }
-          result->interval()->AddUse(linstr, LIROperand::kRegister);
-          AddUnhandled(result->interval());
+            LIRValue* result = hinstr->GetResult()->lir();
 
-          linstr->result = GetFixed(kFixedAfter,
-                                    linstr,
-                                    result,
-                                    linstr->result);
+            if (result->interval()->first_range() == NULL) {
+              result->interval()->AddLiveRange(linstr->id(), linstr->id() + 1);
+            } else {
+              result->interval()->first_range()->start(linstr->id());
+            }
+            result->interval()->AddUse(linstr, LIROperand::kRegister);
+            AddUnhandled(result->interval());
+
+            linstr->result = GetFixed(kFixedAfter,
+                                      linstr,
+                                      result,
+                                      linstr->result);
+          }
         }
 
         // Process scratches

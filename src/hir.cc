@@ -404,7 +404,7 @@ void HIRValue::Print(PrintBuffer* p, HIRInstruction* instr) {
   p->Print("]");
 
   LIRInterval* interval = lir()->interval()->ChildAt(instr->id());
-  if (interval->start() != -1) {
+  if (interval != NULL && interval->start() != -1) {
     p->Print(" [%d,%d)", interval->start(), interval->end());
   }
 }
