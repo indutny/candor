@@ -64,6 +64,9 @@ class LIROperand : public ZoneObject {
   }
 
   inline bool is_equal(LIROperand* op) {
+    if (is_virtual() || is_interval()) {
+      return this == op;
+    }
     return !is_immediate() && type() == op->type() && value() == op->value();
   }
 

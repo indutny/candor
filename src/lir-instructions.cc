@@ -53,6 +53,7 @@ void LIRInstruction::Print(PrintBuffer* p) {
     ZoneList<HIRParallelMove::MoveItem*>::Item* item =
         HIRParallelMove::Cast(generic_hir())->moves()->head();
 
+    p->Print(" ");
     for (; item != NULL; item = item->next()) {
       HIRParallelMove::MoveItem* move = item->value();
       move->source()->Print(p);

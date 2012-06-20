@@ -154,6 +154,8 @@ HIRParallelMove* HIRParallelMove::GetBefore(HIRInstruction* instr) {
     if (instr->lir()->prev() != NULL) instr->lir()->prev()->next(lmove);
     instr->lir()->prev(lmove);
   }
+
+  return move;
 }
 
 
@@ -182,6 +184,8 @@ HIRParallelMove* HIRParallelMove::GetAfter(HIRInstruction* instr) {
     if (instr->lir()->next() != NULL) instr->lir()->next()->prev(lmove);
     instr->lir()->next(lmove);
   }
+
+  return move;
 }
 
 
