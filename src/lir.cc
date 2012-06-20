@@ -48,6 +48,7 @@ LIR::LIR(Heap* heap, HIR* hir, Masm* masm) : heap_(heap),
   char out[50000];
   hir->Print(out, sizeof(out));
   fprintf(stdout, "%s\n", out);
+
   Print(out, sizeof(out));
   fprintf(stdout, "%s\n", out);
 }

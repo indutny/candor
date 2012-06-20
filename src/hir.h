@@ -233,6 +233,7 @@ class HIRValue : public ZoneObject {
 
   // Debug printing
   void Print(PrintBuffer* p);
+  void Print(PrintBuffer* p, HIRInstruction* instr);
 
  protected:
   ValueType type_;

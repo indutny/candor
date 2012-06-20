@@ -52,7 +52,7 @@ LIRInterval* LIRInterval::SplitAt(int pos) {
     child->first_range(split_range);
 
     last_range(split_range->prev());
-    last_range()->next(NULL);
+    if (last_range() != NULL) last_range()->next(NULL);
     if (last_range() == NULL || split_range->prev()->prev() == NULL) {
       first_range(last_range());
     }
@@ -146,6 +146,7 @@ bool LIRInterval::Covers(int pos) {
 
     return true;
   }
+  return false;
 }
 
 
@@ -189,7 +190,7 @@ LIRInterval* LIRInterval::SplitAndSpill(LIRAllocator* allocator,
   // If no intersection was found - no spilling is required
   if (*pos == -1) return NULL;
 
-  LIRInterval* child = SplitAt(*pos);
+  LIRInterval* child = SplitAt(*pos - 1);
   allocator->AssignSpill(child);
   allocator->AddUnhandled(child);
 
@@ -220,10 +221,11 @@ LIROperand* LIRInterval::OperandAt(int pos) {
 
 
 void LIRValue::ReplaceWithOperand(LIRInstruction* instr, LIROperand** operand) {
-  if ((*operand)->is_virtual()) {
-    *operand = LIRValue::Cast(*operand)->interval()->OperandAt(instr->id());
+  LIROperand* original = *operand;
+  if (original->is_virtual()) {
+    *operand = LIRValue::Cast(original)->interval()->OperandAt(instr->id());
   } else if ((*operand)->is_interval()) {
-    *operand = LIRInterval::Cast(*operand)->OperandAt(instr->id());
+    *operand = LIRInterval::Cast(original)->OperandAt(instr->id());
   }
   assert(*operand != NULL);
 }
@@ -515,7 +517,7 @@ bool LIRAllocator::AllocateFreeReg(LIRInterval* interval) {
 
   if (max < interval->end()) {
     // XXX: Choose optimal split position
-    LIRInterval* split_child = interval->SplitAt(max);
+    LIRInterval* split_child = interval->SplitAt(max - 1);
     AddUnhandled(split_child);
 
     // Create movement if instruction wasn't on the block edge
@@ -585,7 +587,7 @@ void LIRAllocator::AllocateBlockedReg(LIRInterval* interval) {
   }
 
   if (max_use < interval->NextUseAfter(0)->pos()->id() ||
-      block_pos[max_i] < interval->start()) {
+      block_pos[max_i] < interval->end()) {
     AssignSpill(interval);
     return;
   } else if (block_pos[max_i] <= interval->end()) {

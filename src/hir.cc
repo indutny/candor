@@ -398,6 +398,18 @@ void HIRValue::Print(PrintBuffer* p) {
 }
 
 
+void HIRValue::Print(PrintBuffer* p, HIRInstruction* instr) {
+  p->Print("*[%d ", id());
+  slot()->Print(p);
+  p->Print("]");
+
+  LIRInterval* interval = lir()->interval()->ChildAt(instr->id());
+  if (interval->start() != -1) {
+    p->Print(" [%d,%d)", interval->start(), interval->end());
+  }
+}
+
+
 void HIRValue::Replace(HIRValue* target) {
   {
     HIRInstructionList::Item* item;

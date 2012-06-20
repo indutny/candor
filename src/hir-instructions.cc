@@ -112,7 +112,7 @@ void HIRInstruction::Print(PrintBuffer* p) {
   p->Print("%d: ", id());
 
   if (GetResult() != NULL) {
-    GetResult()->Print(p);
+    GetResult()->Print(p, this);
     p->Print(" = ");
   }
 
@@ -121,7 +121,7 @@ void HIRInstruction::Print(PrintBuffer* p) {
     ZoneList<HIRValue*>::Item* item = values()->head();
     if (item != NULL) p->Print(" ");
     while (item != NULL) {
-      item->value()->Print(p);
+      item->value()->Print(p, this);
       item = item->next();
       if (item != NULL) p->Print(" ");
     }

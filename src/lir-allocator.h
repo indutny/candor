@@ -197,9 +197,6 @@ class LIRInterval : public LIROperand {
     return first_range() == NULL ? -1 : first_range()->start();
   }
   inline int end() {
-    if (children()->length() > 0) {
-      return children()->tail()->value()->end();
-    }
     return last_range() == NULL ? -1 : last_range()->end();
   }
 
