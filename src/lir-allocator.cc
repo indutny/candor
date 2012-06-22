@@ -677,7 +677,7 @@ LIRValue* LIRAllocator::GetFixed(FixedPosition position,
                                  LIROperand* operand) {
   LIRValue* fixed = new LIRValue(NULL);
 
-  fixed->interval()->AddLiveRange(instr->id(), instr->id() + 1);
+  fixed->interval()->AddLiveRange(instr->id() - 1, instr->id() + 2);
   fixed->interval()->AddUse(instr, LIROperand::kRegister);
   fixed->interval()->kind(LIRInterval::kFixed);
 
