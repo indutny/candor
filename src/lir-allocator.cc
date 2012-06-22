@@ -443,14 +443,10 @@ void LIRAllocator::WalkIntervals() {
     LIRInterval* current = unhandled()->Shift();
     int position = current->start();
 
-    if (position == 6 && current->is_fixed()) {
-      int gc = 0;
-    }
-
     // Walk active intervals and move/remove them if needed
     LIRIntervalList::Item* item;
     for (item = active()->head(); item != NULL; item = item->next()) {
-      if (item->value()->last_range()->end() <= position) {
+      if (item->value()->end() <= position) {
         // Remove expired interval
         active()->Remove(item);
         if (item->value()->operand()->is_spill()) {
@@ -466,9 +462,13 @@ void LIRAllocator::WalkIntervals() {
 
     // Walk inactive ones
     for (item = inactive()->head(); item != NULL; item = item->next()) {
-      if (item->value()->last_range()->end() <= position) {
+      if (item->value()->end() <= position) {
         // Remove expired interval
         inactive()->Remove(item);
+        if (item->value()->operand()->is_spill()) {
+          // And add it to the available list
+          available_spills()->Push(item->value()->operand());
+        }
       } else if (item->value()->Covers(position)) {
         // Move interval to active
         active()->Push(item->value());
@@ -505,7 +505,7 @@ bool LIRAllocator::AllocateFreeReg(LIRInterval* interval) {
   // Set free_pos for all active registers
   LIRIntervalList::Item* item;
   for (item = active()->head(); item != NULL; item = item->next()) {
-    if (!item->value()->is_register()) continue;
+    if (!item->value()->operand()->is_register()) continue;
 
     assert(item->value()->operand() != NULL);
     free_pos[item->value()->operand()->value()] = 0;
@@ -514,7 +514,7 @@ bool LIRAllocator::AllocateFreeReg(LIRInterval* interval) {
   // Set free_pos for all inactive registers that intersects with current
   // interval
   for (item = inactive()->head(); item != NULL; item = item->next()) {
-    if (!item->value()->is_register()) continue;
+    if (!item->value()->operand()->is_register()) continue;
 
     int pos = item->value()->FindIntersection(interval);
     if (pos == -1) continue;
@@ -571,7 +571,7 @@ void LIRAllocator::AllocateBlockedReg(LIRInterval* interval) {
   // Process active intervals
   LIRIntervalList::Item* item;
   for (item = active()->head(); item != NULL; item = item->next()) {
-    if (!item->value()->is_register()) continue;
+    if (!item->value()->operand()->is_register()) continue;
 
     assert(item->value()->operand() != NULL);
     int reg_num = item->value()->operand()->value();
@@ -586,7 +586,7 @@ void LIRAllocator::AllocateBlockedReg(LIRInterval* interval) {
 
   // Process inactive ones
   for (item = inactive()->head(); item != NULL; item = item->next()) {
-    if (!item->value()->is_register()) continue;
+    if (!item->value()->operand()->is_register()) continue;
 
     int pos = item->value()->FindIntersection(interval);
     if (pos == -1) continue;
@@ -611,7 +611,7 @@ void LIRAllocator::AllocateBlockedReg(LIRInterval* interval) {
     }
   }
 
-  if (max_use < interval->NextUseAfter(0)->pos()->id() ||
+  if (max_use < interval->first_use()->pos()->id() ||
       block_pos[max_i] < interval->end()) {
     AssignSpill(interval);
     return;
@@ -632,17 +632,17 @@ void LIRAllocator::SplitAndSpillIntersecting(LIRInterval* interval) {
   // Split and spill every active/inactive interval with that register
   // that intersects with current interval.
   int pos;
-  LIRIntervalList::Item* item;
-  for (item = active()->head(); item != NULL; item = item->next()) {
-    if (item->value() == interval) continue;
-    if (!item->value()->operand()->is_equal(interval->operand())) continue;
-    item->value()->SplitAndSpill(this, interval);
-  }
-
-  for (item = inactive()->head(); item != NULL; item = item->next()) {
-    if (item->value() == interval) continue;
-    if (!item->value()->operand()->is_equal(interval->operand())) continue;
-    item->value()->SplitAndSpill(this, interval);
+  LIRIntervalList* lists[2] = { active(), inactive() };
+  for (int i = 0; i < 2; i++) {
+    LIRIntervalList::Item* item;
+    for (item = lists[i]->head(); item != NULL; item = item->next()) {
+      if ((item->value() == interval) ||
+          !item->value()->operand()->is_register() ||
+          !item->value()->operand()->is_equal(interval->operand())) {
+        continue;
+      }
+      item->value()->SplitAndSpill(this, interval);
+    }
   }
 }
 

@@ -269,6 +269,13 @@ void HIRParallelMove::AssignRegisters(LIR* lir) {
 void HIRParallelMove::Reorder(LIR* lir) {
   MoveList::Item* item = raw_moves()->head();
   for (; item != NULL; item = item->next()) {
+    if (item->value()->source()->is_equal(item->value()->target())) {
+      raw_moves()->Remove(item);
+    }
+  }
+
+  item = raw_moves()->head();
+  for (; item != NULL; item = item->next()) {
     if (item->value()->move_status() != kToMove) continue;
     Reorder(lir, item->value());
   }
