@@ -27,6 +27,8 @@ LIR::LIR(Heap* heap, HIR* hir, Masm* masm) : heap_(heap),
                                              last_instruction_(NULL) {
   BuildInstructions();
 
+  char out[50000];
+
   HIRBasicBlock* block = hir->first_block();
   for (; block != NULL; block = block->next()) {
     HIRBasicBlock* entry = block;
@@ -45,7 +47,6 @@ LIR::LIR(Heap* heap, HIR* hir, Masm* masm) : heap_(heap),
     Generate(entry, allocator.spill_count());
   }
 
-  char out[50000];
   hir->Print(out, sizeof(out));
   fprintf(stdout, "%s\n", out);
 

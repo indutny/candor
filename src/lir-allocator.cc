@@ -22,6 +22,16 @@ namespace internal {
 
 LIRInterval* LIRInterval::SplitAt(int pos) {
   assert(pos >= start());
+
+  // Position points to children's ranges
+  if (pos >= end()) {
+    LIRIntervalList::Item* item = children()->tail();
+    for (; item != NULL; item = item->prev()) {
+      if (item->value()->start() >= pos) return item->value()->SplitAt(pos);
+    }
+  }
+
+  // Position is inside current interval ranges
   LIRInterval* child = new LIRInterval(value());
 
   child->parent(this);
@@ -182,19 +192,27 @@ LIRUse* LIRInterval::NextUseAfter(int pos) {
 }
 
 
-LIRInterval* LIRInterval::SplitAndSpill(LIRAllocator* allocator,
-                                        LIRInterval* interval,
-                                        int* pos) {
-  *pos = FindIntersection(interval);
+void LIRInterval::SplitAndSpill(LIRAllocator* allocator,
+                                LIRInterval* interval) {
+  int pos = FindIntersection(interval);
 
   // If no intersection was found - no spilling is required
-  if (*pos == -1) return NULL;
+  if (pos == -1) return;
 
-  LIRInterval* child = SplitAt(*pos - 1);
+  // Intervals intersects at `interval` start point
+  if (pos - 1 <= this->start()) {
+    allocator->AssignSpill(interval);
+    return;
+  }
+
+  LIRInterval* child = SplitAt(pos - 1);
   allocator->AssignSpill(child);
   allocator->AddUnhandled(child);
 
-  return child;
+  HIRInstruction* hinstr = allocator->last_block()->FindInstruction(pos);
+  if (hinstr != hinstr->block()->first_instruction()) {
+    HIRParallelMove::GetBefore(hinstr)->AddMove(this, child);
+  }
 }
 
 
@@ -353,32 +371,33 @@ void LIRAllocator::BuildIntervals() {
         // Add 1-range to every available register
         if (hinstr->HasCall()) {
           for (int i = 0; i < kLIRRegisterCount; i++) {
-            registers()[i]->interval()
-                ->AddLiveRange(linstr->id(), linstr->id() + 1);
+            LIRValue* fixed = new LIRValue(NULL);
+
+            fixed->interval()->AddLiveRange(linstr->id(), linstr->id() + 1);
+            fixed->interval()->AddUse(linstr, LIROperand::kRegister);
+            fixed->interval()->kind(LIRInterval::kFixed);
+            fixed->interval()->operand(registers()[i]->interval()->operand());
+
+            AddUnhandled(fixed->interval());
           }
         }
 
         // Process output
         if (hinstr->GetResult() != NULL) {
-          if (hinstr->HasCall()) {
-            // Instruction with call always has %ax as result
-            linstr->result = registers()[0]->interval()->operand();
+          LIRValue* result = hinstr->GetResult()->lir();
+
+          if (result->interval()->first_range() == NULL) {
+            result->interval()->AddLiveRange(linstr->id(), linstr->id() + 2);
           } else {
-            LIRValue* result = hinstr->GetResult()->lir();
-
-            if (result->interval()->first_range() == NULL) {
-              result->interval()->AddLiveRange(linstr->id(), linstr->id() + 1);
-            } else {
-              result->interval()->first_range()->start(linstr->id());
-            }
-            result->interval()->AddUse(linstr, LIROperand::kRegister);
-            AddUnhandled(result->interval());
-
-            linstr->result = GetFixed(kFixedAfter,
-                                      linstr,
-                                      result,
-                                      linstr->result);
+            result->interval()->first_range()->start(linstr->id());
           }
+          result->interval()->AddUse(linstr, LIROperand::kRegister);
+          AddUnhandled(result->interval());
+
+          linstr->result = GetFixed(kFixedAfter,
+                                    linstr,
+                                    result,
+                                    linstr->result);
         }
 
         // Process scratches
@@ -402,10 +421,10 @@ void LIRAllocator::BuildIntervals() {
             linstr->inputs[i] = value;
           } else {
             value->interval()->AddUse(linstr, LIROperand::kRegister);
-            linstr->inputs[i] = GetFixed(kFixedBefore,
-                                         linstr,
-                                         value,
-                                         linstr->inputs[i]);
+            GetFixed(kFixedBefore,
+                     linstr,
+                     value,
+                     linstr->inputs[i]);
           }
           value->interval()->AddLiveRange(from, linstr->id() + 1);
           AddUnhandled(value->interval());
@@ -424,43 +443,35 @@ void LIRAllocator::WalkIntervals() {
     LIRInterval* current = unhandled()->Shift();
     int position = current->start();
 
+    if (position == 6 && current->is_fixed()) {
+      int gc = 0;
+    }
+
     // Walk active intervals and move/remove them if needed
     LIRIntervalList::Item* item;
     for (item = active()->head(); item != NULL; item = item->next()) {
-      if (item->value()->end() <= position) {
+      if (item->value()->last_range()->end() <= position) {
         // Remove expired interval
         active()->Remove(item);
+        if (item->value()->operand()->is_spill()) {
+          // And add it to the available list
+          available_spills()->Push(item->value()->operand());
+        }
       } else if (!item->value()->Covers(position)) {
         // Move interval to inactive
         inactive()->Push(item->value());
         active()->Remove(item);
-      }
-    }
-
-    // Walk active spills
-    for (item = active_spills()->head(); item != NULL; item = item->next()) {
-      if (item->value()->end() <= position) {
-        // Remove expired spilled interval
-        active_spills()->Remove(item);
-        // And add it to the available list
-        available_spills()->Push(item->value()->operand());
-      } else if (!item->value()->Covers(position)) {
-        // Move interval to inactive
-        inactive()->Push(item->value());
-        active_spills()->Remove(item);
       }
     }
 
     // Walk inactive ones
     for (item = inactive()->head(); item != NULL; item = item->next()) {
-      if (item->value()->end() <= position) {
+      if (item->value()->last_range()->end() <= position) {
         // Remove expired interval
         inactive()->Remove(item);
       } else if (item->value()->Covers(position)) {
         // Move interval to active
-        if (item->value()->operand()->is_register()) {
-          active()->Push(item->value());
-        }
+        active()->Push(item->value());
         inactive()->Remove(item);
       }
     }
@@ -470,13 +481,14 @@ void LIRAllocator::WalkIntervals() {
       if (!AllocateFreeReg(current)) {
         AllocateBlockedReg(current);
       }
-    } else {
-      // XXX: Enable assertion?
-      // assert(current->is_fixed());
+    } else if (current->is_fixed()) {
+      int gc =0;
+      // SplitAndSpillIntersecting(current);
     }
 
     assert(current->operand() != NULL);
-    if (current->operand()->is_register()) {
+    if (current->operand()->is_register() ||
+        current->operand()->is_spill()) {
       active()->Push(current);
     }
   }
@@ -493,6 +505,8 @@ bool LIRAllocator::AllocateFreeReg(LIRInterval* interval) {
   // Set free_pos for all active registers
   LIRIntervalList::Item* item;
   for (item = active()->head(); item != NULL; item = item->next()) {
+    if (!item->value()->is_register()) continue;
+
     assert(item->value()->operand() != NULL);
     free_pos[item->value()->operand()->value()] = 0;
   }
@@ -500,6 +514,8 @@ bool LIRAllocator::AllocateFreeReg(LIRInterval* interval) {
   // Set free_pos for all inactive registers that intersects with current
   // interval
   for (item = inactive()->head(); item != NULL; item = item->next()) {
+    if (!item->value()->is_register()) continue;
+
     int pos = item->value()->FindIntersection(interval);
     if (pos == -1) continue;
 
@@ -555,6 +571,8 @@ void LIRAllocator::AllocateBlockedReg(LIRInterval* interval) {
   // Process active intervals
   LIRIntervalList::Item* item;
   for (item = active()->head(); item != NULL; item = item->next()) {
+    if (!item->value()->is_register()) continue;
+
     assert(item->value()->operand() != NULL);
     int reg_num = item->value()->operand()->value();
 
@@ -568,6 +586,8 @@ void LIRAllocator::AllocateBlockedReg(LIRInterval* interval) {
 
   // Process inactive ones
   for (item = inactive()->head(); item != NULL; item = item->next()) {
+    if (!item->value()->is_register()) continue;
+
     int pos = item->value()->FindIntersection(interval);
     if (pos == -1) continue;
 
@@ -604,33 +624,25 @@ void LIRAllocator::AllocateBlockedReg(LIRInterval* interval) {
   assert(interval->operand() == NULL);
   interval->operand(registers()[max_i]->interval()->operand());
 
+  SplitAndSpillIntersecting(interval);
+}
+
+
+void LIRAllocator::SplitAndSpillIntersecting(LIRInterval* interval) {
   // Split and spill every active/inactive interval with that register
   // that intersects with current interval.
   int pos;
+  LIRIntervalList::Item* item;
   for (item = active()->head(); item != NULL; item = item->next()) {
+    if (item->value() == interval) continue;
     if (!item->value()->operand()->is_equal(interval->operand())) continue;
-    LIRInterval* split_child = item->value()->SplitAndSpill(this,
-                                                            interval,
-                                                            &pos);
-    if (split_child == NULL) continue;
-
-    HIRInstruction* hinstr = last_block()->FindInstruction(pos);
-    if (hinstr != hinstr->block()->first_instruction()) {
-      HIRParallelMove::GetBefore(hinstr)->AddMove(item->value(), split_child);
-    }
+    item->value()->SplitAndSpill(this, interval);
   }
 
   for (item = inactive()->head(); item != NULL; item = item->next()) {
+    if (item->value() == interval) continue;
     if (!item->value()->operand()->is_equal(interval->operand())) continue;
-    LIRInterval* split_child = item->value()->SplitAndSpill(this,
-                                                            interval,
-                                                            &pos);
-    if (split_child == NULL) continue;
-
-    HIRInstruction* hinstr = last_block()->FindInstruction(pos);
-    if (hinstr != hinstr->block()->first_instruction()) {
-      HIRParallelMove::GetBefore(hinstr)->AddMove(item->value(), split_child);
-    }
+    item->value()->SplitAndSpill(this, interval);
   }
 }
 

@@ -49,11 +49,12 @@ inline void LIRAllocator::AssignSpill(LIRInterval* interval) {
     operand = available_spills()->Pop();
   } else {
     operand = new LIROperand(LIROperand::kSpill, spill_count());
+    spill_count_++;
   }
 
   interval->operand(operand);
 
-  active_spills()->Push(interval);
+  active()->Push(interval);
 }
 
 } // namespace internal

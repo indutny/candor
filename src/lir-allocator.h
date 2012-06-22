@@ -178,9 +178,7 @@ class LIRInterval : public LIROperand {
   int FindIntersection(LIRInterval* interval);
 
   // Split and spill interval in the point of intersection with the given one
-  LIRInterval* SplitAndSpill(LIRAllocator* allocator,
-                             LIRInterval* interval,
-                             int* pos);
+  void SplitAndSpill(LIRAllocator* allocator, LIRInterval* interval);
 
   // Finds interval at specific position
   LIROperand* OperandAt(int pos);
@@ -280,7 +278,8 @@ class LIRAllocator {
   LIRAllocator(LIR* lir, HIR* hir, HIRBasicBlock* last_block)
       : lir_(lir),
         hir_(hir),
-        last_block_(last_block) {
+        last_block_(last_block),
+        spill_count_(0) {
     Init();
   }
 
@@ -301,6 +300,8 @@ class LIRAllocator {
   // Register allocation routines
   bool AllocateFreeReg(LIRInterval* interval);
   void AllocateBlockedReg(LIRInterval* interval);
+
+  void SplitAndSpillIntersecting(LIRInterval* interval);
 
   // Insert movements on block edges
   void ResolveDataFlow();
@@ -327,12 +328,9 @@ class LIRAllocator {
   inline LIRIntervalList* active() { return &active_; }
   inline LIRIntervalList* inactive() { return &inactive_; }
 
-  inline LIRIntervalList* active_spills() { return &active_spills_; }
   inline LIROperandList* available_spills() { return &available_spills_; }
 
-  inline int spill_count() {
-    return available_spills_.length() + active_spills_.length();
-  }
+  inline int spill_count() { return spill_count_; }
 
  private:
   LIR* lir_;
@@ -343,9 +341,9 @@ class LIRAllocator {
   LIRIntervalList unhandled_;
   LIRIntervalList active_;
   LIRIntervalList inactive_;
-  LIRIntervalList active_spills_;
 
   LIROperandList available_spills_;
+  int spill_count_;
 };
 
 } // namespace internal

@@ -1,8 +1,6 @@
 HIR/LIR todos:
-* Resolve data flow:
-  * Create movement instructions on intervals' edges
-  * Create movement instructions for phis
-* Replace intervals in instructions with registers
+* HasCall and instruction with result
+* Pipeline: mov 1, eax; mov eax, ebx => mov 1, ebx
 
 * Move context variables get/set to instructions (with index as imm arg)
   (No values for them, as they may be changed by side-effect instructions)

@@ -26,7 +26,15 @@ TEST_START(functional)
     assert(result->Is<Nil>());
   })
 
-  // Spill test
+  FUN_TEST("return {}", {
+    assert(result->Is<Object>());
+  });
+
+  // Spill tests
+  FUN_TEST("a=1\nb=2\nc=3\nd=4\nd\nc\nb\nreturn c", {
+    assert(result->As<Number>()->Value() == 3);
+  })
+
   // NOTE: `{}` causes a stub call, which has side-effects
   // That means that every active register will be spilled and restored
   // after that call.
