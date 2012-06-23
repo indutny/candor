@@ -566,6 +566,13 @@ HIRValue* HIR::GetValue(ScopeSlot* slot) {
 }
 
 
+HIRValue* HIR::GetNil() {
+  HIRValue* Nil = CreateValue(root()->Put(new AstNode(AstNode::kNil)));
+  AddInstruction(new HIRLoadRoot(Nil));
+  return Nil;
+}
+
+
 HIRBasicBlock* HIR::CreateBlock() {
   return new HIRBasicBlock(this);
 }
@@ -681,7 +688,7 @@ HIRValue* HIR::GetValue(AstNode* node) {
 
   if (current_block() == NULL ||
       current_block()->instructions()->length() == 0) {
-    return CreateValue(root()->Put(new AstNode(AstNode::kNil)));
+    return GetNil();
   } else {
     return GetLastResult();
   }
@@ -697,7 +704,7 @@ HIRValue* HIR::GetLastResult() {
       instr->GetResult();
 
   if (res == NULL) {
-    return CreateValue(root()->Put(new AstNode(AstNode::kNil)));
+    return GetNil();
   } else {
     return res;
   }
@@ -749,8 +756,7 @@ AstNode* HIR::VisitFunction(AstNode* stmt) {
 
     VisitChildren(stmt);
 
-    AddInstruction(new HIRReturn(CreateValue(
-            root()->Put(new AstNode(AstNode::kNil)))));
+    AddInstruction(new HIRReturn(GetNil()));
   } else {
     HIRBasicBlock* block = CreateBlock();
     AddInstruction(new HIRAllocateFunction(block, fn->args()->length()));
@@ -1016,7 +1022,7 @@ AstNode* HIR::VisitReturn(AstNode* node) {
   if (node->lhs() != NULL) result = GetValue(node->lhs());
 
   if (result == NULL) {
-    result = CreateValue(root()->Put(new AstNode(AstNode::kNil)));
+    result = GetNil();
   }
   Finish(new HIRReturn(result));
 

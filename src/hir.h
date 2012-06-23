@@ -370,6 +370,7 @@ class HIR : public Visitor {
   HIRValue* CreateValue(HIRBasicBlock* block);
 
   HIRValue* GetValue(ScopeSlot* slot);
+  HIRValue* GetNil();
   HIRBasicBlock* CreateBlock();
   HIRLoopStart* CreateLoopStart();
 
