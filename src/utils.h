@@ -269,6 +269,24 @@ class GenericList {
   }
 
 
+  // Quicksort
+  template <class Shape>
+  void Sort() {
+    // XXX: Replace it with qsort eventually
+    Item* a;
+    Item* b;
+    for (a = head(); a != NULL; a = a->next()) {
+      for (b = a->next(); b != NULL; b = b->next()) {
+        if (Shape::Compare(a->value(), b->value()) > 0) {
+          T tmp = a->value();
+          a->value(b->value());
+          b->value(tmp);
+        }
+      }
+    }
+  }
+
+
   inline Item* head() { return head_; }
   inline Item* tail() { return tail_; }
   inline int32_t length() { return length_; }

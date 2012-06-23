@@ -256,11 +256,13 @@ void HIRParallelMove::AssignRegisters(LIR* lir) {
   for (; item != NULL; item = item->next()) {
     if (item->value()->source()->is_virtual() ||
         item->value()->source()->is_interval()) {
-      LIRValue::ReplaceWithOperand(this->lir(lir), &item->value()->source_);
+      LIRValue::ReplaceWithOperand(this->lir(lir)->prev(),
+                                   &item->value()->source_);
     }
     if (item->value()->target()->is_virtual() ||
         item->value()->target()->is_interval()) {
-      LIRValue::ReplaceWithOperand(this->lir(lir), &item->value()->target_);
+      LIRValue::ReplaceWithOperand(this->lir(lir)->next(),
+                                   &item->value()->target_);
     }
   }
 }

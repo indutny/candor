@@ -106,7 +106,6 @@ void LIREntry::Generate() {
     __ bind(&args_end);
     __ pop(root_reg);
   }
-  __ emitb(0xcc);
 }
 
 

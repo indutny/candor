@@ -8,7 +8,7 @@
 namespace candor {
 namespace internal {
 
-static const int kLIRRegisterCount = 4;
+static const int kLIRRegisterCount = 10;
 
 #define LIR_COMMON_METHODS(V)\
     Type type() const { return k##V; }\
