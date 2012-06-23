@@ -210,7 +210,8 @@ void LIRInterval::SplitAndSpill(LIRAllocator* allocator,
   allocator->AssignSpill(child);
   allocator->AddUnhandled(child);
 
-  HIRInstruction* hinstr = allocator->last_block()->FindInstruction(pos);
+  HIRInstruction* hinstr = allocator->blocks()->tail()->value()
+      ->FindInstruction(pos);
   if (hinstr != hinstr->block()->first_instruction()) {
     HIRParallelMove::GetBefore(hinstr)->AddMove(this, child);
   }
@@ -269,8 +270,9 @@ void LIRAllocator::Init() {
 
 
 void LIRAllocator::ComputeLocalLiveSets() {
-  HIRBasicBlock* block = last_block();
-  for (; block != NULL; block = block->prev()) {
+  HIRBasicBlockList::Item* block_item = blocks()->tail();
+  for (; block_item != NULL; block_item = block_item->prev()) {
+    HIRBasicBlock* block = block_item->value();
     HIRInstructionList::Item* instr = block->instructions()->head();
     for (; instr != NULL; instr = instr->next()) {
       // Process inputs
@@ -294,19 +296,15 @@ void LIRAllocator::ComputeLocalLiveSets() {
         }
       }
     }
-
-    if (block->prev() != NULL && block->prev()->predecessor_count() == 0) {
-      break;
-    }
   }
 }
 
 
 void LIRAllocator::ComputeGlobalLiveSets() {
-  HIRBasicBlock* block = last_block();
-
+  HIRBasicBlockList::Item* block_item = blocks()->tail();
   // This traverse SHOULD be bottom-up
-  for (; block != NULL; block = block->prev()) {
+  for (; block_item != NULL; block_item = block_item->prev()) {
+    HIRBasicBlock* block = block_item->value();
     HIRValueList::Item* item;
 
     // Propagate inputs from children to parent
@@ -335,17 +333,14 @@ void LIRAllocator::ComputeGlobalLiveSets() {
       }
       block->live_in()->Push(item->value());
     }
-
-    if (block->prev() != NULL && block->prev()->predecessor_count() == 0) {
-      break;
-    }
   }
 }
 
 
 void LIRAllocator::BuildIntervals() {
-  HIRBasicBlock* block = last_block();
-  for (; block != NULL; block = block->prev()) {
+  HIRBasicBlockList::Item* block_item = blocks()->tail();
+  for (; block_item != NULL; block_item = block_item->prev()) {
+    HIRBasicBlock* block = block_item->value();
     assert(block->instructions()->length() != 0);
 
     int from = block->first_instruction()->id();
@@ -441,9 +436,6 @@ void LIRAllocator::BuildIntervals() {
         }
       }
     }
-
-    // Stop on entry block
-    if (block->prev() != NULL && block->prev()->predecessor_count() == 0) break;
   }
 
   unhandled()->Sort<LIRIntervalShape>();
@@ -553,7 +545,7 @@ bool LIRAllocator::AllocateFreeReg(LIRInterval* interval) {
     AddUnhandled(split_child);
 
     // Create movement if instruction wasn't on the block edge
-    HIRInstruction* hinstr = last_block()->FindInstruction(max);
+    HIRInstruction* hinstr = blocks()->tail()->value()->FindInstruction(max);
     if (hinstr != hinstr->block()->first_instruction()) {
       HIRParallelMove::GetBefore(hinstr)->AddMove(interval, split_child);
     }
@@ -666,8 +658,9 @@ void LIRAllocator::SplitAndSpillIntersecting(LIRInterval* interval) {
 
 
 void LIRAllocator::ResolveDataFlow() {
-  HIRBasicBlock* from = last_block();
-  for (; from != NULL; from = from->prev()) {
+  HIRBasicBlockList::Item* block_item = blocks()->tail();
+  for (; block_item != NULL; block_item = block_item->prev()) {
+    HIRBasicBlock* from = block_item->value();
     HIRInstructionList::Item* instr = from->instructions()->head();
     HIRParallelMove* move = reinterpret_cast<HIRParallelMove*>(
         from->last_instruction()->prev());
@@ -692,10 +685,6 @@ void LIRAllocator::ResolveDataFlow() {
 
         move->AddMove(from_interval->operand(), to_interval->operand());
       }
-    }
-
-    if (from->prev() != NULL && from->prev()->predecessor_count() == 0) {
-      break;
     }
   }
 }

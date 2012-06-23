@@ -32,19 +32,24 @@ LIR::LIR(Heap* heap, HIR* hir, Masm* masm) : heap_(heap),
   HIRBasicBlock* block = hir->first_block();
   for (; block != NULL; block = block->next()) {
     HIRBasicBlock* entry = block;
+    HIRBasicBlockList blocks;
 
     // Skip all blocks up-to next entry block
-    while (block->next() != NULL && block->next()->predecessor_count() != 0) {
-      block = block->next();
+    for (;
+         block != NULL && (block == entry || block->predecessor_count() != 0);
+         block = block->next()) {
+      blocks.Push(block);
     }
 
-    LIRAllocator allocator(this, hir, block);
+    LIRAllocator allocator(this, hir, &blocks);
 
     // Replace LIRValues with LIROperand
     AssignRegisters(entry->first_instruction()->lir(this));
 
     // Generate all instructions starting from this entry block
     Generate(entry, allocator.spill_count());
+
+    if (block == NULL) break;
   }
 
   hir->Print(out, sizeof(out));

@@ -275,10 +275,10 @@ class LIRAllocator {
     kFixedAfter
   };
 
-  LIRAllocator(LIR* lir, HIR* hir, HIRBasicBlock* last_block)
+  LIRAllocator(LIR* lir, HIR* hir, ZoneList<HIRBasicBlock*>* blocks)
       : lir_(lir),
         hir_(hir),
-        last_block_(last_block),
+        blocks_(blocks),
         spill_count_(0) {
     Init();
   }
@@ -321,7 +321,7 @@ class LIRAllocator {
 
   inline LIR* lir() { return lir_; }
   inline HIR* hir() { return hir_; }
-  inline HIRBasicBlock* last_block() { return last_block_; }
+  inline ZoneList<HIRBasicBlock*>* blocks() { return blocks_; }
 
   inline LIRValue** registers() { return registers_; }
   inline LIRIntervalList* unhandled() { return &unhandled_; }
@@ -335,7 +335,7 @@ class LIRAllocator {
  private:
   LIR* lir_;
   HIR* hir_;
-  HIRBasicBlock* last_block_;
+  ZoneList<HIRBasicBlock*>* blocks_;
 
   LIRValue* registers_[128];
   LIRIntervalList unhandled_;
