@@ -48,6 +48,7 @@ inline void LIR::AddInstruction(LIRInstruction* instr) {
   }
 
   last_instruction_ = instr;
+  instr->id(instruction_index());
 }
 
 } // namespace internal

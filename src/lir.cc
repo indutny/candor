@@ -24,7 +24,8 @@ LIR::LIR(Heap* heap, HIR* hir, Masm* masm) : heap_(heap),
                                              hir_(hir),
                                              masm_(masm),
                                              first_instruction_(NULL),
-                                             last_instruction_(NULL) {
+                                             last_instruction_(NULL),
+                                             instruction_index_(0) {
   BuildInstructions();
 
   char out[50000];
@@ -64,7 +65,8 @@ void LIR::BuildInstructions() {
   HIRInstruction* hinstr = hir()->first_instruction();
 
   for (; hinstr != NULL; hinstr = hinstr->next()) {
-    AddInstruction(hinstr->lir(this));
+    LIRInstruction* linstr = hinstr->lir(this);
+    AddInstruction(linstr);
 
     // Resolve phis (create movement instructions);
     if (hinstr->block()->last_instruction() == hinstr &&
@@ -72,6 +74,10 @@ void LIR::BuildInstructions() {
         hinstr->block()->successors()[0]->predecessor_count() == 2 &&
         hinstr->block()->successors()[0]->phis()->length() != 0) {
       HIRParallelMove* move = HIRParallelMove::GetBefore(hinstr);
+
+      // Move should have even-numbered id
+      move->lir(this)->id(linstr->id());
+      linstr->id(instruction_index());
 
       HIRBasicBlock* join = hinstr->block()->successors()[0];
       int index = join->predecessors()[0] == hinstr->block() ? 0 : 1;

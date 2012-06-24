@@ -44,6 +44,11 @@ class LIR {
 
   // Adds instruction to linked list
   inline void AddInstruction(LIRInstruction* instr);
+  inline int instruction_index() {
+    int id = instruction_index_;
+    instruction_index_ += 2;
+    return id;
+  }
 
   inline Heap* heap() { return heap_; }
   inline HIR* hir() { return hir_; }
@@ -52,6 +57,8 @@ class LIR {
  private:
   LIRInstruction* first_instruction_;
   LIRInstruction* last_instruction_;
+
+  int instruction_index_;
 
   Heap* heap_;
   HIR* hir_;

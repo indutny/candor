@@ -131,7 +131,7 @@ void HIRInstruction::Print(PrintBuffer* p) {
 
 
 HIRParallelMove* HIRParallelMove::GetBefore(HIRInstruction* instr) {
-  if (instr->prev() != NULL && instr->prev()->type() == kParallelMove) {
+  if (instr->prev() != NULL && (instr->prev()->id() % 2) == 1) {
     return HIRParallelMove::Cast(instr->prev());
   }
 
@@ -161,7 +161,7 @@ HIRParallelMove* HIRParallelMove::GetBefore(HIRInstruction* instr) {
 
 // XXX: DRY it
 HIRParallelMove* HIRParallelMove::GetAfter(HIRInstruction* instr) {
-  if (instr->next() != NULL && instr->next()->type() == kParallelMove) {
+  if (instr->next() != NULL && (instr->next()->id() % 2) == 1) {
     return HIRParallelMove::Cast(instr->next());
   }
 
