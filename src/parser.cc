@@ -87,6 +87,11 @@ AstNode* Parser::ParseStatement(ParseStatementType type) {
           if (elseBody == NULL) {
             elseBody = ParseStatement(kLeaveTrailingCr);
           }
+
+          if (elseBody == NULL) {
+            SetError("Expected else's body");
+            return NULL;
+          }
         }
       }
 
@@ -123,6 +128,7 @@ AstNode* Parser::ParseStatement(ParseStatementType type) {
 
       AstNode* body = ParseBlock(NULL);
       if (body == NULL) {
+        SetError("Expected while's body");
         return NULL;
       }
 
@@ -454,10 +460,13 @@ AstNode* Parser::ParseMember() {
         fn->args()->Push(expr);
 
         // Skip commas
-        if (Peek()->is(kComma)) {
-          Skip();
-          SkipCr();
+        if (!Peek()->is(kComma)) {
+          SetError("Failed to parse function's arguments");
+          break;
         }
+
+        Skip();
+        SkipCr();
       }
       if (!Peek()->is(kParenClose)) {
         SetError("Failed to parse function's arguments");
