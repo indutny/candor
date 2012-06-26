@@ -426,8 +426,7 @@ Heap::HeapTag RuntimeCoerceType(Heap* heap,
     rhs = RuntimeToBoolean(heap, rhs);
     break;
    case Heap::kTagNil:
-    rhs = HNil::New();
-    break;
+    return RuntimeCoerceType(heap, type, rhs, lhs);
    case Heap::kTagFunction:
    case Heap::kTagObject:
    case Heap::kTagArray:
