@@ -502,9 +502,11 @@ AstNode* Parser::ParseMember() {
         // a.b || a:b(args)
         Skip();
         next = ParsePrimary(kAny);
-        if (next != NULL && !next->is(AstNode::kNumber)) {
-          next->type(AstNode::kProperty);
+        if (next != NULL && !next->is(AstNode::kName)) {
+          SetError("Expression after '.' ain't allowed!");
+          return NULL;
         }
+        next->type(AstNode::kProperty);
         break;
        case kArrayOpen:
         // a["prop-expr"]
