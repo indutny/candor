@@ -690,29 +690,38 @@ void LIRAllocator::ResolveDataFlow() {
 }
 
 
-LIRValue* LIRAllocator::GetFixed(FixedPosition position,
-                                 LIRInstruction* instr,
-                                 LIRValue* value,
-                                 LIROperand* operand) {
-  LIRValue* fixed = new LIRValue(NULL);
-
-  fixed->interval()->AddLiveRange(instr->id(), instr->id() + 1);
-  fixed->interval()->AddUse(instr, LIROperand::kRegister);
-  fixed->interval()->kind(LIRInterval::kFixed);
-
-  if (operand != NULL) {
-    fixed->interval()->operand(operand);
-  }
+LIRInterval* LIRAllocator::GetFixed(FixedPosition position,
+                                    LIRInstruction* instr,
+                                    LIRValue* value,
+                                    LIROperand* operand) {
+  LIRInterval* fixed;
 
   if (position == kFixedBefore) {
-    HIRParallelMove::GetBefore(instr->generic_hir())->AddMove(value, fixed);
-  } else if (position == kFixedAfter) {
-    HIRParallelMove::GetAfter(instr->generic_hir())->AddMove(fixed, value);
+    // value: ------------
+    // use:        [ ]
+    // after:         ----
+    // fixed:      ---
+    // left:  -----
+    LIRInterval* after = value->interval()->SplitAt(instr->id() + 2);
+    AddUnhandled(after);
+    fixed = value->interval()->SplitAt(instr->id());
+    AddUnhandled(fixed);
+
+    HIRParallelMove::GetBefore(instr->generic_hir())->AddMove(value->interval(),
+                                                              fixed);
+    HIRParallelMove::GetAfter(instr->generic_hir())->AddMove(fixed, after);
   } else {
-    UNEXPECTED
+    LIRInterval* after = value->interval()->SplitAt(instr->id() + 2);
+    fixed = value->interval();
+    AddUnhandled(fixed);
+
+    HIRParallelMove::GetAfter(instr->generic_hir())->AddMove(fixed, after);
   }
 
-  AddUnhandled(fixed->interval());
+  fixed->AddUse(instr, LIROperand::kRegister);
+  fixed->kind(LIRInterval::kFixed);
+
+  if (operand != NULL) fixed->operand(operand);
 
   return fixed;
 }

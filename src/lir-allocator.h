@@ -308,10 +308,10 @@ class LIRAllocator {
 
   // Adds fixed interval (with specified register if operand != NULL) and
   // adds movement from (value) to it.
-  LIRValue* GetFixed(FixedPosition position,
-                     LIRInstruction* instr,
-                     LIRValue* value,
-                     LIROperand* operand);
+  LIRInterval* GetFixed(FixedPosition position,
+                        LIRInstruction* instr,
+                        LIRValue* value,
+                        LIROperand* operand);
 
   inline void AddUnhandled(LIRInterval* interval);
 
