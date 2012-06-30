@@ -93,7 +93,7 @@ candor::Value* APIPrint(uint32_t argc, candor::Value* argv[]) {
 }
 
 
-candor::Value* APIGetValue(uint32_t argc, candor::Value* argv[]) {
+candor::Value* APIToString(uint32_t argc, candor::Value* argv[]) {
   if (argc < 1) return candor::Nil::New();
 
   argv[0]->ToString();
@@ -107,7 +107,7 @@ candor::Object* CreateGlobal() {
 
   obj->Set("assert", candor::Function::New(APIAssert));
   obj->Set("print", candor::Function::New(APIPrint));
-  obj->Set("getValue", candor::Function::New(APIGetValue));
+  obj->Set("getValue", candor::Function::New(APIToString));
 
   return obj;
 }

@@ -1,6 +1,6 @@
 print = global.print
 assert = global.assert
-getValue = global.getValue
+toString = global.toString
 
 print('-- can: strings --')
 
@@ -10,7 +10,7 @@ while (i--) {
   a = a + '---------- ' + i + ' -----------\n'
 }
 
-getValue(a)
+toString(a)
 
 a = '11111111111111111111111111111' + '2222222222222222222222'
 b = {}
