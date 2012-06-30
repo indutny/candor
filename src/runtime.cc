@@ -470,9 +470,7 @@ char* RuntimeBinOp(Heap* heap, char* lhs, char* rhs) {
     Heap::HeapTag lhs_tag;
 
     // nil == expr, expr == nil
-    if (BinOp::is_strict_eq(type) ||
-        (BinOp::is_equality(type) &&
-         (lhs == HNil::New() || rhs == HNil::New()))) {
+    if (BinOp::is_strict_eq(type)) {
       lhs_tag = HValue::GetTag(lhs);
       Heap::HeapTag rhs_tag = HValue::GetTag(rhs);
 
