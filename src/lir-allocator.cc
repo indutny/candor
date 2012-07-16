@@ -713,6 +713,7 @@ LIRInterval* LIRAllocator::GetFixed(FixedPosition position,
   } else {
     LIRInterval* after = value->interval()->SplitAt(instr->id() + 2);
     fixed = value->interval();
+    AddUnhandled(after);
     AddUnhandled(fixed);
 
     HIRParallelMove::GetAfter(instr->generic_hir())->AddMove(fixed, after);
