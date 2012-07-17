@@ -225,8 +225,9 @@ LIROperand* LIRInterval::OperandAt(int pos) {
     LIRIntervalList::Item* item = current->children()->head();
 
     // Find appropriate child
-    for (; item != NULL && item->value()->start() < pos; item = item->next()) {
-      if (item->value()->end() > pos) break;
+    while (item != NULL && item->value()->rec_start() < pos) {
+      if (item->value()->rec_end() > pos) break;
+      item = item->next();
     }
 
     if (item != NULL) {
