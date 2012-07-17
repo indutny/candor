@@ -72,6 +72,15 @@ void LIRInstruction::Print(PrintBuffer* p) {
     p->Print("]");
   }
 
+  if (scratch_count() > 0) {
+    p->Print(" s:<");
+    for (int i = 0; i < scratch_count(); i++) {
+      if (i != 0) p->Print(", ");
+      if (scratches[i] != NULL) scratches[i]->Print(p);
+    }
+    p->Print(">");
+  }
+
   if (args()->length() > 0) {
     p->Print(" (");
     LIROperandList::Item* item = args()->head();

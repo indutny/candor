@@ -52,6 +52,7 @@ LIR::LIR(Heap* heap, HIR* hir, Masm* masm) : heap_(heap),
 
     if (block == NULL) break;
   }
+
   hir->Print(out, sizeof(out));
   fprintf(stdout, "%s\n", out);
 

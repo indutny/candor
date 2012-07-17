@@ -45,6 +45,9 @@ inline void LIRAllocator::AddUnhandled(LIRInterval* interval) {
 inline void LIRAllocator::AssignSpill(LIRInterval* interval) {
   LIROperand* operand;
 
+  // Fixed intervals can't be spilled!
+  assert(!interval->is_fixed());
+
   if (available_spills()->length() != 0) {
     operand = available_spills()->Pop();
   } else {
