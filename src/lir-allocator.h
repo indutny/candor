@@ -27,6 +27,7 @@ typedef ZoneList<LIRValue*> LIRValueList;
 class LIROperand : public ZoneObject {
  public:
   enum Type {
+    kAny,
     kVirtual,
     kInterval,
     kRegister,
@@ -112,12 +113,16 @@ class LIRUse : public ZoneObject {
  public:
   LIRUse(LIRInstruction* pos, LIROperand::Type kind) : pos_(pos),
                                                        kind_(kind),
+                                                       operand_(NULL),
                                                        prev_(NULL),
                                                        next_(NULL) {
   }
 
   inline LIRInstruction* pos() { return pos_; }
   inline LIROperand::Type kind() { return kind_; }
+
+  inline LIROperand* operand() { return operand_; }
+  inline void operand(LIROperand* operand) { operand_ = operand; }
 
   inline LIRUse* prev() { return prev_; }
   inline void prev(LIRUse* prev) { prev_ = prev; }
@@ -127,6 +132,7 @@ class LIRUse : public ZoneObject {
  private:
   LIRInstruction* pos_;
   LIROperand::Type kind_;
+  LIROperand* operand_;
 
   LIRUse* prev_;
   LIRUse* next_;
@@ -184,7 +190,7 @@ class LIRInterval : public LIROperand {
   LIROperand* OperandAt(int pos);
 
   // Finds closest use after position
-  LIRUse* NextUseAfter(int pos);
+  LIRUse* NextUseAfter(LIROperand::Type kind, int pos);
 
   static inline LIRInterval* Cast(LIROperand* operand) {
     assert(operand->is_interval());
@@ -308,6 +314,7 @@ class LIRAllocator {
   void WalkIntervals();
 
   // Register allocation routines
+  void AllocateReg(LIRInterval* interval);
   bool AllocateFreeReg(LIRInterval* interval);
   void AllocateBlockedReg(LIRInterval* interval);
 
@@ -329,6 +336,9 @@ class LIRAllocator {
   // interval
   inline void AssignSpill(LIRInterval* inteval);
   inline void ReleaseSpill(LIROperand* spill);
+
+  // Add move to parallel move before instruction (if not on block's edge)
+  inline void AddMoveBefore(int pos, LIROperand* from, LIROperand* to);
 
   inline LIR* lir() { return lir_; }
   inline HIR* hir() { return hir_; }

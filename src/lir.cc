@@ -47,17 +47,17 @@ LIR::LIR(Heap* heap, HIR* hir, Masm* masm) : heap_(heap),
     // Replace LIRValues with LIROperand
     AssignRegisters(entry->first_instruction()->lir(this));
 
+    hir->Print(out, sizeof(out));
+    fprintf(stdout, "%s\n", out);
+
+    Print(out, sizeof(out));
+    fprintf(stdout, "%s\n", out);
+
     // Generate all instructions starting from this entry block
     Generate(entry, allocator.spill_count());
 
     if (block == NULL) break;
   }
-
-  hir->Print(out, sizeof(out));
-  fprintf(stdout, "%s\n", out);
-
-  Print(out, sizeof(out));
-  fprintf(stdout, "%s\n", out);
 }
 
 

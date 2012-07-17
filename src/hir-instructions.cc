@@ -280,7 +280,7 @@ void HIRParallelMove::Reorder(LIR* lir) {
 
     // Remove equivalent moves (this may happen after virtual reg resolving)
     MoveList::Item* subitem = raw_moves()->head();
-    for (; subitem != NULL; subitem = item->next()) {
+    for (; subitem != NULL; subitem = subitem->next()) {
       if (subitem == item) continue;
       if (subitem->value()->source()->is_equal(item->value()->source()) &&
           subitem->value()->target()->is_equal(item->value()->target())) {

@@ -4,6 +4,7 @@
 #include "utils.h" // PrintBuffer
 #include "macroassembler.h"
 #include "hir.h"
+#include "hir-instructions.h"
 
 namespace candor {
 namespace internal {
@@ -69,6 +70,16 @@ inline void LIRAllocator::ReleaseSpill(LIROperand* spill) {
   }
 #endif
   available_spills()->Push(spill);
+}
+
+
+inline void LIRAllocator::AddMoveBefore(int pos,
+                                        LIROperand* from,
+                                        LIROperand* to) {
+  HIRInstruction* hinstr = blocks()->tail()->value()->FindInstruction(pos);
+  if (hinstr != hinstr->block()->first_instruction()) {
+    HIRParallelMove::GetBefore(hinstr)->AddMove(from, to);
+  }
 }
 
 } // namespace internal
