@@ -53,8 +53,19 @@ inline void LIRAllocator::AssignSpill(LIRInterval* interval) {
   }
 
   interval->operand(operand);
+}
 
-  active()->Push(interval);
+
+inline void LIRAllocator::ReleaseSpill(LIROperand* spill) {
+  assert(spill->is_spill());
+  LIROperandList::Item* item;
+#ifndef NDEBUG
+  // No repeating items!
+  for (item = available_spills()->head(); item != NULL; item = item->next()) {
+    assert(!item->value()->is_equal(spill));
+  }
+#endif
+  available_spills()->Push(spill);
 }
 
 } // namespace internal

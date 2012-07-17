@@ -456,7 +456,7 @@ void LIRAllocator::WalkIntervals() {
         active()->Remove(item);
         if (item->value()->operand()->is_spill()) {
           // And add it to the available list
-          available_spills()->Push(item->value()->operand());
+          ReleaseSpill(item->value()->operand());
         }
       } else if (!item->value()->Covers(position)) {
         // Move interval to inactive
@@ -472,7 +472,7 @@ void LIRAllocator::WalkIntervals() {
         inactive()->Remove(item);
         if (item->value()->operand()->is_spill()) {
           // And add it to the available list
-          available_spills()->Push(item->value()->operand());
+          ReleaseSpill(item->value()->operand());
         }
       } else if (item->value()->Covers(position)) {
         // Move interval to active

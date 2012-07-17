@@ -328,6 +328,7 @@ class LIRAllocator {
   // Gets spill from free list or creates a new one, and assigns it to the
   // interval
   inline void AssignSpill(LIRInterval* inteval);
+  inline void ReleaseSpill(LIROperand* spill);
 
   inline LIR* lir() { return lir_; }
   inline HIR* hir() { return hir_; }
