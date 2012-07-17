@@ -717,6 +717,12 @@ LIRInterval* LIRAllocator::GetFixed(FixedPosition position,
     assert(fixed != NULL);
     HIRParallelMove::GetBefore(instr->generic_hir())->AddMove(value->interval(),
                                                               fixed);
+    // Extra shuffle is needed to put spilled register to the requested reg
+    if (instr->generic_hir()->HasCall() && operand != NULL) {
+      HIRParallelMove::GetBefore(instr->generic_hir())->AddMove(
+          value->interval(),
+          operand);
+    }
     if (after != NULL) {
       HIRParallelMove::GetAfter(instr->generic_hir())->AddMove(fixed, after);
     }
