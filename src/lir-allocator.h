@@ -289,7 +289,7 @@ class LIRAllocator {
       : lir_(lir),
         hir_(hir),
         blocks_(blocks),
-        spill_count_(0) {
+        spill_count_(1) {
     Init();
   }
 

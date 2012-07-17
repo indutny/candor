@@ -226,13 +226,16 @@ void HIRParallelMove::Reorder(LIR* lir, MoveItem* move) {
       Reorder(lir, next);
       break;
      case kBeingMoved:
-      // scratch = target
-      assert(0 && "Implement me!");
-      // XXX: No tmp_spill now
-      // moves()->Push(new MoveItem(next->source(), lir->tmp_spill()));
+      {
+        LIROperand* tmp = new LIROperand(LIROperand::kSpill,
+                                         static_cast<off_t>(0));
 
-      // And use scratch in this move
-      // next->source(lir->tmp_spill());
+        // scratch = target
+        moves()->Push(new MoveItem(next->source(), tmp));
+
+        // And use scratch in this move
+        next->source(tmp);
+      }
       break;
      case kMoved:
       // NOP
