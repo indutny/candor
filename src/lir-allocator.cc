@@ -32,13 +32,6 @@ LIRInterval* LIRInterval::SplitAt(int pos) {
     }
   }
 
-  // Position is inside current interval ranges
-  LIRInterval* child = new LIRInterval(value());
-
-  child->parent(this);
-
-  this->children()->InsertSorted<LIRIntervalShape>(child);
-
   // Split ranges
   LIRLiveRange* split_range = last_range();
   while (split_range != NULL && split_range->end() >= pos &&
@@ -46,30 +39,38 @@ LIRInterval* LIRInterval::SplitAt(int pos) {
     split_range = split_range->prev();
   }
 
-  if (split_range != NULL && split_range->end() >= pos) {
-    // Split range if it is in both parent and child interval
-    if (split_range->start() < pos) {
-      LIRLiveRange* r = new LIRLiveRange(split_range->start(), pos);
-      r->next(split_range);
-      r->prev(split_range->prev());
+  // Split can't be performed (pos is on the interval's edge, or behind it)
+  if (split_range == NULL || split_range->end() < pos) return NULL;
 
-      if (split_range->prev() != NULL) split_range->prev()->next(r);
-      split_range->prev(r);
+  // Position is inside current interval ranges
+  LIRInterval* child = new LIRInterval(value());
 
-      split_range->start(pos);
-    }
+  child->parent(this);
+  this->children()->InsertSorted<LIRIntervalShape>(child);
 
-    child->last_range(last_range());
-    child->first_range(split_range);
 
-    last_range(split_range->prev());
-    if (last_range() != NULL) last_range()->next(NULL);
-    if (last_range() == NULL || split_range->prev()->prev() == NULL) {
-      first_range(last_range());
-    }
+  // Split range if it is in both parent and child interval
+  if (split_range->start() < pos) {
+    LIRLiveRange* r = new LIRLiveRange(split_range->start(), pos);
+    r->next(split_range);
+    r->prev(split_range->prev());
 
-    split_range->prev(NULL);
+    if (split_range->prev() != NULL) split_range->prev()->next(r);
+    split_range->prev(r);
+
+    split_range->start(pos);
   }
+
+  child->last_range(last_range());
+  child->first_range(split_range);
+
+  last_range(split_range->prev());
+  if (last_range() != NULL) last_range()->next(NULL);
+  if (last_range() == NULL || split_range->prev()->prev() == NULL) {
+    first_range(last_range());
+  }
+
+  split_range->prev(NULL);
 
   // Split uses
   LIRUse* split_use = last_use();
@@ -207,6 +208,8 @@ void LIRInterval::SplitAndSpill(LIRAllocator* allocator,
   }
 
   LIRInterval* child = SplitAt(pos);
+  if (child == NULL) return;
+
   allocator->AssignSpill(child);
   allocator->AddUnhandled(child);
 
@@ -422,6 +425,7 @@ void LIRAllocator::BuildIntervals() {
         for (int i = 0; i < linstr->input_count(); item = item->next(), i++) {
           LIRValue* value = item->value()->lir();
 
+          value->interval()->AddLiveRange(from, linstr->id() + 1);
           if (linstr->inputs[i] == NULL) {
             value->interval()->AddUse(linstr, LIROperand::kVirtual);
             linstr->inputs[i] = value;
@@ -432,7 +436,6 @@ void LIRAllocator::BuildIntervals() {
                      value,
                      linstr->inputs[i]);
           }
-          value->interval()->AddLiveRange(from, linstr->id() + 1);
           AddUnhandled(value->interval());
         }
       }
@@ -543,12 +546,14 @@ bool LIRAllocator::AllocateFreeReg(LIRInterval* interval) {
   if (max < interval->end()) {
     // XXX: Choose optimal split position
     LIRInterval* split_child = interval->SplitAt(max);
-    AddUnhandled(split_child);
+    if (split_child != NULL) {
+      AddUnhandled(split_child);
 
-    // Create movement if instruction wasn't on the block edge
-    HIRInstruction* hinstr = blocks()->tail()->value()->FindInstruction(max);
-    if (hinstr != hinstr->block()->first_instruction()) {
-      HIRParallelMove::GetBefore(hinstr)->AddMove(interval, split_child);
+      // Create movement if instruction wasn't on the block edge
+      HIRInstruction* hinstr = blocks()->tail()->value()->FindInstruction(max);
+      if (hinstr != hinstr->block()->first_instruction()) {
+        HIRParallelMove::GetBefore(hinstr)->AddMove(interval, split_child);
+      }
     }
   } else {
     // Register is available for the whole interval's lifetime
@@ -616,7 +621,8 @@ void LIRAllocator::AllocateBlockedReg(LIRInterval* interval) {
   }
 
   if (!interval->is_fixed()) {
-    if (max_use < interval->NextUseAfter(0)->pos()->id() ||
+    LIRUse* use = interval->NextUseAfter(0);
+    if (use == NULL || max_use < use->pos()->id() ||
         block_pos[max_i] < interval->end()) {
       AssignSpill(interval);
       return;
@@ -700,7 +706,7 @@ LIRInterval* LIRAllocator::GetFixed(FixedPosition position,
   if (position == kFixedBefore) {
     // value: ------------
     // use:        [ ]
-    // after:         ----
+    // after:         ?----
     // fixed:      ---
     // left:  -----
     LIRInterval* after = value->interval()->SplitAt(instr->id() + 2);
@@ -708,16 +714,21 @@ LIRInterval* LIRAllocator::GetFixed(FixedPosition position,
     fixed = value->interval()->SplitAt(instr->id());
     AddUnhandled(fixed);
 
+    assert(fixed != NULL);
     HIRParallelMove::GetBefore(instr->generic_hir())->AddMove(value->interval(),
                                                               fixed);
-    HIRParallelMove::GetAfter(instr->generic_hir())->AddMove(fixed, after);
+    if (after != NULL) {
+      HIRParallelMove::GetAfter(instr->generic_hir())->AddMove(fixed, after);
+    }
   } else {
     LIRInterval* after = value->interval()->SplitAt(instr->id() + 2);
     fixed = value->interval();
     AddUnhandled(after);
     AddUnhandled(fixed);
 
-    HIRParallelMove::GetAfter(instr->generic_hir())->AddMove(fixed, after);
+    if (after != NULL) {
+      HIRParallelMove::GetAfter(instr->generic_hir())->AddMove(fixed, after);
+    }
   }
 
   fixed->AddUse(instr, LIROperand::kRegister);

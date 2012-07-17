@@ -35,7 +35,7 @@ inline int LIRLiveRange::FindIntersection(LIRLiveRange* range) {
 
 
 inline void LIRAllocator::AddUnhandled(LIRInterval* interval) {
-  if (interval->enumerated()) return;
+  if (interval == NULL || interval->enumerated()) return;
   interval->enumerated(true);
 
   unhandled()->InsertSorted<LIRIntervalShape>(interval);
