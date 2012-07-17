@@ -306,9 +306,9 @@ void LIRBranchBool::Generate() {
 
   // Jump to the far block
   if (hir()->next() == hir()->block()->successors()[0]->first_instruction()) {
-    JumpTo(kEq, hir()->left());
-  } else {
     JumpTo(kNe, hir()->right());
+  } else {
+    JumpTo(kEq, hir()->left());
   }
 }
 

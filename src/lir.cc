@@ -44,12 +44,6 @@ LIR::LIR(Heap* heap, HIR* hir, Masm* masm) : heap_(heap),
 
     LIRAllocator allocator(this, hir, &blocks);
 
-    hir->Print(out, sizeof(out));
-    fprintf(stdout, "%s\n", out);
-
-    Print(out, sizeof(out));
-    fprintf(stdout, "%s\n", out);
-
     // Replace LIRValues with LIROperand
     AssignRegisters(entry->first_instruction()->lir(this));
 
@@ -58,6 +52,11 @@ LIR::LIR(Heap* heap, HIR* hir, Masm* masm) : heap_(heap),
 
     if (block == NULL) break;
   }
+  hir->Print(out, sizeof(out));
+  fprintf(stdout, "%s\n", out);
+
+  Print(out, sizeof(out));
+  fprintf(stdout, "%s\n", out);
 }
 
 

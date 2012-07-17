@@ -227,7 +227,7 @@ void HIRParallelMove::Reorder(LIR* lir, MoveItem* move) {
       break;
      case kBeingMoved:
       // scratch = target
-      abort();
+      assert(0 && "Implement me!");
       // XXX: No tmp_spill now
       // moves()->Push(new MoveItem(next->source(), lir->tmp_spill()));
 
