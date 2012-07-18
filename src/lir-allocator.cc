@@ -21,8 +21,9 @@ namespace candor {
 namespace internal {
 
 LIRInterval* LIRInterval::SplitAt(int pos) {
-  assert((pos & 1) == 0);
   assert(pos >= start());
+
+  if (pos <= start()) return NULL;
 
   // Position points to children's ranges
   if (pos >= end()) {
@@ -75,7 +76,7 @@ LIRInterval* LIRInterval::SplitAt(int pos) {
   // Split uses
   LIRUse* split_use = last_use();
   while (split_use != NULL && split_use->pos()->id() >= pos &&
-         split_use->prev() != NULL && split_use->pos()->id() < pos) {
+         split_use->prev() != NULL && split_use->prev()->pos()->id() >= pos) {
     split_use = split_use->prev();
   }
 
@@ -98,14 +99,25 @@ LIRInterval* LIRInterval::SplitAt(int pos) {
 
 
 LIRInterval* LIRInterval::ChildAt(int pos) {
-  if (Covers(pos)) return this;
+  LIRInterval* current = this;
 
-  LIRIntervalList::Item* item = children()->head();
-  for (; item != NULL; item = item->next()) {
-    if (item->value()->Covers(pos)) return item->value()->ChildAt(pos);
+  while (current != NULL && !current->Covers(pos)) {
+    LIRIntervalList::Item* item = current->children()->head();
+
+    // Find appropriate child
+    while (item != NULL && item->value()->rec_start() < pos) {
+      if (item->value()->rec_end() > pos) break;
+      item = item->next();
+    }
+
+    if (item != NULL) {
+      current = item->value();
+    } else {
+      current = NULL;
+    }
   }
 
-  return NULL;
+  return current;
 }
 
 
@@ -139,7 +151,7 @@ void LIRInterval::AddLiveRange(int start, int end) {
 }
 
 
-void LIRInterval::AddUse(LIRInstruction* pos, LIROperand::Type kind) {
+LIRUse* LIRInterval::AddUse(LIRInstruction* pos, LIROperand::Type kind) {
   LIRUse* use = new LIRUse(pos, kind);
   if (first_use() == NULL) {
     first_use(use);
@@ -149,6 +161,8 @@ void LIRInterval::AddUse(LIRInstruction* pos, LIROperand::Type kind) {
     use->next(first_use());
     first_use(use);
   }
+
+  return use;
 }
 
 
@@ -158,10 +172,7 @@ bool LIRInterval::Covers(int pos) {
     // All other ranges are starting after pos
     if (range->start() > pos) return false;
 
-    // Range ends before pos
-    if (range->end() <= pos) continue;
-
-    return true;
+    if (range->end() > pos) return true;
   }
   return false;
 }
@@ -215,15 +226,25 @@ void LIRInterval::SplitAndSpill(LIRAllocator* allocator,
   LIRInterval* child = SplitAt(pos);
   if (child == NULL) return;
 
-  allocator->AssignSpill(child);
+  allocator->AddMoveBefore(this->end(), this, child);
   allocator->AddUnhandled(child);
-
-  allocator->AddMoveBefore(pos, this, child);
 }
 
 
-LIROperand* LIRInterval::OperandAt(int pos) {
+LIROperand* LIRInterval::OperandAt(int pos, bool is_move) {
   LIRInterval* current = this;
+  bool align = 0;
+
+  // If interval's start is odd and pos is right before it - align pos
+  if (is_move) {
+    if (pos + 1 == start()) {
+      pos = pos + 1;
+      align = 1;
+    } else if (pos - 1 == start()) {
+      pos = pos - 1;
+      align = -1;
+    }
+  }
 
   while (current != NULL && !current->Covers(pos)) {
     LIRIntervalList::Item* item = current->children()->head();
@@ -242,8 +263,10 @@ LIROperand* LIRInterval::OperandAt(int pos) {
   }
 
   if (current == NULL) return NULL;
+  if (is_move) return current->operand();
 
   // Return use's operand in case if we have any at this position
+  pos = pos - align;
   LIRUse* use = current->NextUseAfter(LIROperand::kRegister, pos);
   if (use != NULL && use->pos()->id() == pos && use->operand() != NULL) {
     return use->operand();
@@ -253,12 +276,19 @@ LIROperand* LIRInterval::OperandAt(int pos) {
 }
 
 
-void LIRValue::ReplaceWithOperand(LIRInstruction* instr, LIROperand** operand) {
+void LIRValue::ReplaceWithOperand(LIRInstruction* instr,
+                                  LIROperand** operand,
+                                  bool is_move) {
   LIROperand* original = *operand;
+  LIRInterval* interval = NULL;
   if (original->is_virtual()) {
-    *operand = LIRValue::Cast(original)->interval()->OperandAt(instr->id());
+    interval= LIRValue::Cast(original)->interval();
   } else if ((*operand)->is_interval()) {
-    *operand = LIRInterval::Cast(original)->OperandAt(instr->id());
+    interval = LIRInterval::Cast(original);
+  }
+
+  if (interval != NULL) {
+    *operand = interval->OperandAt(instr->id(), is_move);
   }
   assert(*operand != NULL);
 }
@@ -397,22 +427,20 @@ void LIRAllocator::BuildIntervals() {
 
           // Shorten range or create small one
           if (result->interval()->first_range() == NULL) {
-            result->interval()->AddLiveRange(linstr->id(), linstr->id() + 2);
+            result->interval()->AddLiveRange(linstr->id() - 1,
+                                             linstr->id() + 1);
           } else {
-            result->interval()->first_range()->start(linstr->id());
+            result->interval()->first_range()->start(linstr->id() - 1);
           }
           result->interval()->AddUse(linstr, LIROperand::kRegister);
           AddUnhandled(result->interval());
 
-          if (result->interval()->end() > linstr->id() + 2) {
+          if (result->interval()->end() > linstr->id() + 1) {
             linstr->result = GetFixed(kFixedAfter,
                                       linstr,
                                       result,
                                       linstr->result);
           } else {
-            // If result is not-used after definition - fix it
-            result->interval()->AddUse(linstr, LIROperand::kRegister);
-
             linstr->result = result;
           }
         }
@@ -421,7 +449,11 @@ void LIRAllocator::BuildIntervals() {
         for (int i = 0; i < linstr->scratch_count(); i++) {
           LIRValue* value = new LIRValue(NULL);
           linstr->scratches[i] = value;
-          value->interval()->AddLiveRange(linstr->id(), linstr->id() + 1);
+
+          // Scratch should be live slightly before instruction,
+          // otherwise it won't have a register assigned to it if instruction
+          // HasCall()
+          value->interval()->AddLiveRange(linstr->id() - 1, linstr->id() + 1);
           value->interval()->AddUse(linstr, LIROperand::kRegister);
           AddUnhandled(value->interval());
         }
@@ -511,15 +543,6 @@ void LIRAllocator::AllocateReg(LIRInterval* interval) {
   if (!AllocateFreeReg(interval)) {
     AllocateBlockedReg(interval);
   }
-
-  // Put operand into use
-  LIRUse* use = interval->NextUseAfter(LIROperand::kRegister,
-                                       interval->start());
-  if (use != NULL && use->pos()->id() == interval->start()) {
-    use->operand(interval->operand());
-    assert(use->operand()->type() == use->kind() ||
-           use->kind() == LIROperand::kAny);
-  }
 }
 
 
@@ -608,6 +631,7 @@ void LIRAllocator::AllocateBlockedReg(LIRInterval* interval) {
     } else {
       LIRUse* use = item->value()->NextUseAfter(LIROperand::kRegister,
                                                 interval->start());
+      if (use == NULL) continue;
       use_pos[reg_num] = use->pos()->id();
     }
   }
@@ -627,39 +651,52 @@ void LIRAllocator::AllocateBlockedReg(LIRInterval* interval) {
     } else {
       LIRUse* use = item->value()->NextUseAfter(LIROperand::kRegister,
                                                 interval->start());
+      if (use == NULL) continue;
       use_pos[reg_num] = use->pos()->id();
     }
   }
 
-  int max_use = use_pos[0];
-  int max_i = 0;
+  int max_use = -1;
+  int max_i = -1;
   for (int i = 0; i < kLIRRegisterCount; i++) {
+    if (block_pos[i] < use_pos[i]) use_pos[i] = block_pos[i];
     if (use_pos[i] > max_use) {
       max_use = use_pos[i];
       max_i = i;
     }
   }
+  assert(max_i != -1);
 
   if (!interval->is_fixed()) {
-    LIRUse* reg_use = interval->NextUseAfter(LIROperand::kRegister, 0);
-
     // All active and inactive intervals are used before current
     if (max_use < interval->start()) {
-      // Better split and spill current
-      AssignSpill(interval);
-      if (reg_use != NULL) {
-        LIRInterval* after = interval->SplitAt(reg_use->pos()->id());
+      LIRUse* first_use = interval->NextUseAfter(LIROperand::kRegister,
+                                                 0);
+      if (first_use != NULL) {
+        LIRUse* next_use = interval->NextUseAfter(LIROperand::kRegister,
+                                                  first_use->pos()->id() + 1);
 
-        AddUnhandled(after);
-        AddMoveBefore(reg_use->pos()->id(), interval, after);
+        // Better split and spill current
+        if (next_use != NULL && next_use->pos()->id() < interval->end()) {
+          // Add some padding before for HasCall() cases
+          LIRInterval* after = interval->SplitAt(next_use->pos()->id() - 1);
+          if (after != NULL) {
+            AddUnhandled(after);
+            AddMoveBefore(after->start() + 1, interval, after);
+          }
+        }
+        LIROperand* operand = interval->parent()->OperandAt(
+            first_use->pos()->id() - 1);
+        first_use->operand(operand);
       }
+      AssignSpill(interval);
       return;
     } else if (block_pos[max_i] <= interval->end()) {
       // Split current interval at optimal position before block pos
       LIRInterval* after = interval->SplitAt(block_pos[max_i]);
 
       AddUnhandled(after);
-      AddMoveBefore(reg_use->pos()->id(), interval, after);
+      AddMoveBefore(block_pos[max_i], interval, after);
     }
 
     assert(interval->operand() == NULL);
@@ -667,6 +704,7 @@ void LIRAllocator::AllocateBlockedReg(LIRInterval* interval) {
     // Assign register to interval
     interval->operand(registers()[max_i]->interval()->operand());
   } else {
+    // Fixed intervals should be already filled!
     assert(interval->operand() != NULL);
   }
 
@@ -683,7 +721,7 @@ void LIRAllocator::SplitAndSpillIntersecting(LIRInterval* interval) {
     LIRIntervalList::Item* item;
     for (item = lists[i]->head(); item != NULL; item = item->next()) {
       if ((item->value() == interval) ||
-          !item->value()->is_fixed() ||
+          item->value()->is_fixed() ||
           !item->value()->operand()->is_register() ||
           !item->value()->operand()->is_equal(interval->operand())) {
         continue;
@@ -767,12 +805,9 @@ LIRInterval* LIRAllocator::GetFixed(FixedPosition position,
     }
   }
 
-  fixed->AddUse(instr, LIROperand::kRegister);
-  if (fixed->operand() != NULL) {
-    fixed->kind(LIRInterval::kFixed);
-  }
+  LIRUse* use = fixed->AddUse(instr, LIROperand::kRegister);
 
-  if (operand != NULL) fixed->operand(operand);
+  if (operand != NULL) use->operand(operand);
 
   return fixed;
 }

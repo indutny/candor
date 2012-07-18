@@ -31,6 +31,10 @@ TEST_START(functional)
   });
 
   // Spill tests
+  FUN_TEST("a=1\nc=2\nb={}\nreturn a", {
+    assert(result->As<Number>()->Value() == 1);
+  });
+
   FUN_TEST("a=1\nb=2\nc=3\nd=4\nd\nc\nb\nreturn c", {
     assert(result->As<Number>()->Value() == 3);
   })

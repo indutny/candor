@@ -174,7 +174,7 @@ class LIRInterval : public LIROperand {
   void AddLiveRange(int start, int end);
 
   // Add use to uses list
-  void AddUse(LIRInstruction* pos, LIROperand::Type kind);
+  LIRUse* AddUse(LIRInstruction* pos, LIROperand::Type kind);
 
   // True if there is a range in this interval that covers specific position
   bool Covers(int pos);
@@ -187,7 +187,7 @@ class LIRInterval : public LIROperand {
   void SplitAndSpill(LIRAllocator* allocator, LIRInterval* interval);
 
   // Finds interval at specific position
-  LIROperand* OperandAt(int pos);
+  LIROperand* OperandAt(int pos, bool is_move=false);
 
   // Finds closest use after position
   LIRUse* NextUseAfter(LIROperand::Type kind, int pos);
@@ -268,7 +268,9 @@ class LIRValue : public LIROperand {
   }
 
   // Replaces LIRValue with LIROperand
-  static void ReplaceWithOperand(LIRInstruction* instr, LIROperand** operand);
+  static void ReplaceWithOperand(LIRInstruction* instr,
+                                 LIROperand** operand,
+                                 bool is_move = false);
 
   static inline LIRValue* Cast(LIROperand* operand) {
     assert(operand->is_virtual());

@@ -77,6 +77,10 @@ inline void LIRAllocator::AddMoveBefore(int pos,
                                         LIROperand* from,
                                         LIROperand* to) {
   HIRInstruction* hinstr = blocks()->tail()->value()->FindInstruction(pos);
+
+  // End reached?
+  if (hinstr == NULL) return;
+
   if (hinstr != hinstr->block()->first_instruction()) {
     HIRParallelMove::GetBefore(hinstr)->AddMove(from, to);
   }
