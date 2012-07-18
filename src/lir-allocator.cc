@@ -217,6 +217,9 @@ void LIRInterval::SplitAndSpill(LIRAllocator* allocator,
   // If no intersection was found - no spilling is required
   if (pos == -1) return;
 
+  // Do not spill things that ain't used after
+  if (pos + 1 >= this->end()) return;
+
   // Intervals intersects at `interval` start point
   if (pos <= this->start()) {
     allocator->AssignSpill(interval);
