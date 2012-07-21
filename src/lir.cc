@@ -47,17 +47,17 @@ LIR::LIR(Heap* heap, HIR* hir, Masm* masm) : heap_(heap),
     // Replace LIRValues with LIROperand
     AssignRegisters(entry->first_instruction()->lir(this));
 
-    hir->Print(out, sizeof(out));
-    fprintf(stdout, "%s\n", out);
-
-    Print(out, sizeof(out));
-    fprintf(stdout, "%s\n", out);
-
     // Generate all instructions starting from this entry block
     Generate(entry, allocator.spill_count());
 
     if (block == NULL) break;
   }
+
+  hir->Print(out, sizeof(out));
+  fprintf(stdout, "%s\n", out);
+
+  Print(out, sizeof(out));
+  fprintf(stdout, "%s\n", out);
 }
 
 
@@ -73,18 +73,14 @@ void LIR::BuildInstructions() {
         hinstr->block()->successor_count() == 1 &&
         hinstr->block()->successors()[0]->predecessor_count() == 2 &&
         hinstr->block()->successors()[0]->phis()->length() != 0) {
-      HIRParallelMove* move = HIRParallelMove::GetBefore(hinstr);
-
-      // Move should have even-numbered id
-      move->lir(this)->id(linstr->id());
-      linstr->id(instruction_index());
+      HIRPhiMove* move = HIRPhiMove::Cast(hinstr->prev());
 
       HIRBasicBlock* join = hinstr->block()->successors()[0];
       int index = join->predecessors()[0] == hinstr->block() ? 0 : 1;
 
       HIRPhiList::Item* item = join->phis()->head();
       for (; item != NULL; item = item->next()) {
-        move->AddMove(item->value()->input(index)->lir(), item->value()->lir());
+//        move->AddMove(item->value()->input(index)->lir(), item->value()->lir());
       }
     }
   }
@@ -107,6 +103,10 @@ void LIR::AssignRegisters(LIRInstruction* instr) {
 
     if (instr->type() == LIRInstruction::kParallelMove) {
       reinterpret_cast<LIRParallelMove*>(instr)->hir()->AssignRegisters(this);
+    }
+
+    if (instr->type() == LIRInstruction::kPhiMove) {
+      reinterpret_cast<LIRPhiMove*>(instr)->hir()->AssignRegisters(this);
     }
 
     instr = instr->next();

@@ -31,6 +31,7 @@ class HIRInstruction : public ZoneObject {
 
     // Instruction w/o side-effects
     kParallelMove,
+    kPhiMove,
     kEntry,
     kReturn,
     kGoto,
@@ -87,6 +88,7 @@ class HIRInstruction : public ZoneObject {
   // Type checks
   inline Type type() { return type_; }
   inline bool is(Type type) { return type_ == type; }
+  inline void type (Type type) { type_ = type; }
 
   // Block in which this instruction is located
   inline HIRBasicBlock* block() { return block_; }
@@ -302,6 +304,18 @@ class HIRParallelMove : public HIRInstruction {
 
   // Sources/Targets before reordering (because it's cheaper to leave it here)
   MoveList raw_moves_;
+};
+
+class HIRPhiMove : public HIRParallelMove {
+ public:
+  HIRPhiMove() : HIRParallelMove() {
+    type(kPhiMove);
+  }
+
+  static inline HIRPhiMove* Cast(HIRInstruction* instr) {
+    assert(instr->type() == kPhiMove);
+    return reinterpret_cast<HIRPhiMove*>(instr);
+  }
 };
 
 class HIRNop : public HIRInstruction {

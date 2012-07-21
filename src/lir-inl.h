@@ -34,6 +34,15 @@ inline LIRInstruction* LIR::Cast(HIRInstruction* instr) {
   result->id(instr->id());
   result->lir(this);
 
+  // Fix borked ids
+  if (instr->type() == HIRInstruction::kParallelMove && (instr->id() & 1)) {
+    if (instr->prev() != NULL) {
+      result->id(instr->prev()->lir(this)->id() + 1);
+    } else if (instr->next() != NULL) {
+      result->id(instr->next()->lir(this)->id() - 1);
+    }
+  }
+
   return result;
 #undef LIR_GEN_CAST
 }

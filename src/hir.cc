@@ -2,6 +2,7 @@
 #include "hir-instructions.h"
 #include "lir-allocator.h"
 #include "lir-allocator-inl.h"
+#include "lir-instructions.h" // LIRInstruction
 #include "visitor.h" // Visitor
 #include "ast.h" // AstNode
 #include "macroassembler.h" // Masm, RelocationInfo
@@ -138,6 +139,11 @@ void HIRBasicBlock::AddSuccessor(HIRBasicBlock* block) {
 void HIRBasicBlock::Goto(HIRBasicBlock* block) {
   if (finished()) return;
 
+  // Add move in case if we're going to resolve phis here later
+  HIRPhiMove* move = new HIRPhiMove();
+  instructions()->Push(move);
+  move->Init(this);
+
   // Add goto instruction and finalize block
   HIRGoto* instr = new HIRGoto();
   instructions()->Push(instr);
@@ -154,7 +160,9 @@ HIRInstruction* HIRBasicBlock::FindInstruction(int id) {
   HIRInstruction* instr = last_instruction();
 
   for (; instr != NULL; instr = instr->prev()) {
-    if (instr->id() == id) return instr;
+    if (instr->lir() != NULL && instr->lir()->id() == id) {
+      return instr;
+    }
   }
 
   return NULL;

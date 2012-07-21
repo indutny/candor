@@ -49,9 +49,14 @@ void LIRInstruction::Print(PrintBuffer* p) {
   }
   p->Print("%s", str_type);
 
-  if (type() == LIRInstruction::kParallelMove) {
-    ZoneList<HIRParallelMove::MoveItem*>::Item* item =
-        HIRParallelMove::Cast(generic_hir())->moves()->head();
+  if (type() == LIRInstruction::kParallelMove ||
+      type() == LIRInstruction::kPhiMove) {
+    ZoneList<HIRParallelMove::MoveItem*>::Item* item;
+    if (type() == LIRInstruction::kParallelMove) {
+      item = HIRParallelMove::Cast(generic_hir())->moves()->head();
+    } else {
+      item = HIRPhiMove::Cast(generic_hir())->moves()->head();
+    }
 
     p->Print(" ");
     for (; item != NULL; item = item->next()) {

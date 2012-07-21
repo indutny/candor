@@ -23,6 +23,7 @@ class RelocationInfo;
 #define LIR_ENUM_INSTRUCTIONS(V)\
     V(Nop)\
     V(ParallelMove)\
+    V(PhiMove)\
     V(Entry)\
     V(Return)\
     V(Goto)\

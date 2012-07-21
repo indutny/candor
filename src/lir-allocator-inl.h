@@ -35,6 +35,18 @@ inline int LIRLiveRange::FindIntersection(LIRLiveRange* range) {
 }
 
 
+inline void LIRInterval::operand(LIROperand* operand) {
+  operand_ = operand;
+  LIRUse* use = first_use();
+  for (; use != NULL; use = use->next()) {
+    if (use->kind() == LIROperand::kAny ||
+        use->kind() == operand->type()) {
+      use->operand(operand);
+    }
+  }
+}
+
+
 inline void LIRAllocator::AddUnhandled(LIRInterval* interval) {
   if (interval == NULL || interval->enumerated()) return;
   interval->enumerated(true);
@@ -68,7 +80,7 @@ inline void LIRAllocator::ReleaseSpill(LIROperand* spill) {
   for (item = available_spills()->head(); item != NULL; item = item->next()) {
     assert(!item->value()->is_equal(spill));
   }
-#endif
+#endif // NDEBUG
   available_spills()->Push(spill);
 }
 
@@ -76,6 +88,8 @@ inline void LIRAllocator::ReleaseSpill(LIROperand* spill) {
 inline void LIRAllocator::AddMoveBefore(int pos,
                                         LIROperand* from,
                                         LIROperand* to) {
+  if (from == NULL || to == NULL) return;
+
   HIRInstruction* hinstr = blocks()->tail()->value()->FindInstruction(pos);
 
   // End reached?

@@ -26,6 +26,7 @@ namespace internal {
     V(None)\
     V(Nop)\
     V(ParallelMove)\
+    V(PhiMove)\
     V(Entry)\
     V(Return)\
     V(Goto)\
@@ -258,13 +259,15 @@ void HIRParallelMove::AssignRegisters(LIR* lir) {
   MoveList::Item* item = raw_moves()->head();
   for (; item != NULL; item = item->next()) {
     if (item->value()->source()->is_virtual() ||
-        item->value()->source()->is_interval()) {
+        item->value()->source()->is_interval() ||
+        item->value()->source()->is_use()) {
       LIRValue::ReplaceWithOperand(this->lir(lir)->prev(),
                                    &item->value()->source_,
                                    true);
     }
     if (item->value()->target()->is_virtual() ||
-        item->value()->target()->is_interval()) {
+        item->value()->target()->is_interval() ||
+        item->value()->target()->is_use()) {
       LIRValue::ReplaceWithOperand(this->lir(lir)->next(),
                                    &item->value()->target_,
                                    true);

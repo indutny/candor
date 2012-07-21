@@ -105,6 +105,67 @@ TEST_START(functional)
     assert(result->As<Number>()->Value() == 3);
   })
 
+  // While
+  FUN_TEST("i = 10\n"
+           "while (i--) {}\n"
+           "return i", {
+    assert(result->As<Number>()->Value() == -1);
+  })
+
+  FUN_TEST("i = 10\nj = 0\n"
+           "while (i--) { j = j + 1\n}\n"
+           "return j", {
+    assert(result->As<Number>()->Value() == 10);
+  })
+
+  FUN_TEST("i = 10\nk = 0\n"
+           "while (--i) {\n"
+           "  j = 10\n"
+           "  while (--j) {\n"
+           "    k = k + 1\n"
+           "  }\n"
+           "}\n"
+           "return k", {
+    assert(result->As<Number>()->Value() == 81);
+  })
+
+  FUN_TEST("i = 10\nj = 0\nk = 0\n"
+           "while (--i) {\n"
+           "  j = 10\n"
+           "  while (--j) {\n"
+           "    k = k + 1\n"
+           "  }\n"
+           "}\n"
+           "return k", {
+    assert(result->As<Number>()->Value() == 81);
+  })
+
+  FUN_TEST("i = 10\nj = 0\nk = 0\nl = 0\n"
+           "while (--i) {\n"
+           "  j = 10\n"
+           "  k = 0\n"
+           "  while (--j) {\n"
+           "    k = 10\n"
+           "    while (--k) {\n"
+          "       l = l + 1\n"
+          "     }\n"
+           "  }\n"
+           "}\n"
+           "return l", {
+    assert(result->As<Number>()->Value() == 729);
+  })
+
+  FUN_TEST("i = 3\na = 0\n"
+           "while (--i) {\n"
+           "  j = 3\n"
+           "  while (--j) {\n"
+           "    a = { x : { y : a } }\n"
+           "  }\n"
+           "}\n"
+           "return a.x.y", {
+    assert(result->Is<Object>());
+  })
+
   // Functions
   FUN_TEST("a() {}\nreturn a", {
     assert(result->Is<Function>());
@@ -313,66 +374,5 @@ TEST_START(functional)
   // Global lookup
   FUN_TEST("global.a = 1\nreturn global.a", {
     assert(result->As<Number>()->Value() == 1);
-  })
-
-  // While
-  FUN_TEST("i = 10\n"
-           "while (i--) {}\n"
-           "return i", {
-    assert(result->As<Number>()->Value() == -1);
-  })
-
-  FUN_TEST("i = 10\nj = 0\n"
-           "while (i--) { j = j + 1\n}\n"
-           "return j", {
-    assert(result->As<Number>()->Value() == 10);
-  })
-
-  FUN_TEST("i = 10\nk = 0\n"
-           "while (--i) {\n"
-           "  j = 10\n"
-           "  while (--j) {\n"
-           "    k = k + 1\n"
-           "  }\n"
-           "}\n"
-           "return k", {
-    assert(result->As<Number>()->Value() == 81);
-  })
-
-  FUN_TEST("i = 10\nj = 0\nk = 0\n"
-           "while (--i) {\n"
-           "  j = 10\n"
-           "  while (--j) {\n"
-           "    k = k + 1\n"
-           "  }\n"
-           "}\n"
-           "return k", {
-    assert(result->As<Number>()->Value() == 81);
-  })
-
-  FUN_TEST("i = 10\nj = 0\nk = 0\nl = 0\n"
-           "while (--i) {\n"
-           "  j = 10\n"
-           "  k = 0\n"
-           "  while (--j) {\n"
-           "    k = 10\n"
-           "    while (--k) {\n"
-          "       l = l + 1\n"
-          "     }\n"
-           "  }\n"
-           "}\n"
-           "return l", {
-    assert(result->As<Number>()->Value() == 729);
-  })
-
-  FUN_TEST("i = 3\na = 0\n"
-           "while (--i) {\n"
-           "  j = 3\n"
-           "  while (--j) {\n"
-           "    a = { x : { y : a } }\n"
-           "  }\n"
-           "}\n"
-           "return a.x.y", {
-    assert(result->Is<Object>());
   })
 TEST_END(functional)

@@ -30,6 +30,7 @@ class LIROperand : public ZoneObject {
     kAny,
     kVirtual,
     kInterval,
+    kUse,
     kRegister,
     kSpill,
     kImmediate
@@ -53,6 +54,7 @@ class LIROperand : public ZoneObject {
   inline Type type() { return type_; }
   inline bool is_virtual() { return type_ == kVirtual; }
   inline bool is_interval() { return type_ == kInterval; }
+  inline bool is_use() { return type_ == kUse; }
   inline bool is_register() { return type_ == kRegister; }
   inline bool is_spill() { return type_ == kSpill; }
   inline bool is_immediate() { return type_ == kImmediate; }
@@ -65,7 +67,7 @@ class LIROperand : public ZoneObject {
   }
 
   inline bool is_equal(LIROperand* op) {
-    if (is_virtual() || is_interval()) {
+    if (is_virtual() || is_interval() || is_use()) {
       return this == op;
     }
     return !is_immediate() && type() == op->type() && value() == op->value();
@@ -109,9 +111,10 @@ class LIRLiveRange : public ZoneObject {
   LIRLiveRange* next_;
 };
 
-class LIRUse : public ZoneObject {
+class LIRUse : public LIROperand {
  public:
-  LIRUse(LIRInstruction* pos, LIROperand::Type kind) : pos_(pos),
+  LIRUse(LIRInstruction* pos, LIROperand::Type kind) : LIROperand(kUse, -1),
+                                                       pos_(pos),
                                                        kind_(kind),
                                                        operand_(NULL),
                                                        prev_(NULL),
@@ -128,6 +131,11 @@ class LIRUse : public ZoneObject {
   inline void prev(LIRUse* prev) { prev_ = prev; }
   inline LIRUse* next() { return next_; }
   inline void next(LIRUse* next) { next_ = next; }
+
+  static inline LIRUse* Cast(LIROperand* operand) {
+    assert(operand->is_use());
+    return reinterpret_cast<LIRUse*>(operand);
+  }
 
  private:
   LIRInstruction* pos_;
@@ -217,7 +225,7 @@ class LIRInterval : public LIROperand {
   inline LIRValue* value() { return value_; }
 
   inline LIROperand* operand() { return operand_; }
-  inline void operand(LIROperand* operand) { operand_ = operand; }
+  inline void operand(LIROperand* operand);
 
   inline IntervalKind kind() { return kind_; }
   inline void kind(IntervalKind kind) { kind_ = kind; }

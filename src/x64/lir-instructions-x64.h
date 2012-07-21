@@ -21,6 +21,11 @@ class LIRParallelMove : public LIRInstructionTemplate<0, 0, 0> {
   LIR_COMMON_METHODS(ParallelMove);
 };
 
+class LIRPhiMove : public LIRParallelMove {
+ public:
+  LIR_COMMON_METHODS(PhiMove);
+};
+
 class LIRNop : public LIRInstructionTemplate<1, 0, 0> {
  public:
   void Generate();
