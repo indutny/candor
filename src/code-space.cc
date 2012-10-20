@@ -4,9 +4,9 @@
 #include "heap-inl.h" // Heap
 #include "parser.h" // Parser
 #include "scope.h" // Scope
-#include "fullgen.h" // Fullgen, Masm
+#include "macroassembler.h" // Masm
 #include "hir.h" // HIR
-#include "lir.h" // LIR
+#include "hir-inl.h" // HIR
 #include "stubs.h" // EntryStub
 #include "utils.h" // GetPageSize
 
@@ -85,7 +85,7 @@ char* CodeSpace::Compile(const char* filename,
   Scope::Analyze(ast);
 
   // Generate CFG with SSA
-  HIR hir(heap(), ast);
+  hir::Gen gen(heap(), ast);
 
   /*
   // TODO: Handle errors (like invalid lhs) in HIR!
@@ -99,12 +99,13 @@ char* CodeSpace::Compile(const char* filename,
   }
   */
 
+  abort();
+
   // Store root
-  *root = hir.root()->Allocate()->addr();
+  // *root = hir.root()->Allocate()->addr();
 
   // Generate low-level representation
   Masm masm(this);
-  LIR lir(heap(), &hir, &masm);
 
   char* addr = Put(&masm);
 

@@ -13,9 +13,12 @@ namespace internal {
 // Forward declarations
 class AstNode;
 class AstValue;
-class HIRValue;
 class Scope;
 class ScopeAnalyze;
+
+namespace hir {
+  class Instruction;
+};
 
 // Each AstVariable gets it's slot
 // After parse end indexes will be allocated
@@ -57,8 +60,8 @@ class ScopeSlot : public ZoneObject {
   inline char* value() { assert(is_immediate()); return value_; }
   inline void value(char* value) { assert(is_immediate()); value_ = value; }
 
-  inline HIRValue* hir() { return hir_; }
-  inline void hir(HIRValue* hir) { hir_ = hir; }
+  inline hir::Instruction* hir() { return hir_; }
+  inline void hir(hir::Instruction* hir) { hir_ = hir; }
 
   inline int32_t index() { return index_; }
   inline void index(int32_t index) { index_ = index; }
@@ -76,7 +79,7 @@ class ScopeSlot : public ZoneObject {
   Type type_;
   char* value_;
 
-  HIRValue* hir_;
+  hir::Instruction* hir_;
 
   int32_t index_;
   int32_t depth_;
@@ -124,13 +127,14 @@ class Scope : public HashMap<StringKey<ZoneObject>, ScopeSlot, ZoneObject> {
 
 // Runs on complete AST tree to wrap each kName into AstValue
 // and put it either in stack or in some context
-class ScopeAnalyze : public Visitor {
+class ScopeAnalyze : public Visitor<AstNode> {
  public:
   ScopeAnalyze(AstNode* ast);
 
   AstNode* VisitFunction(AstNode* node);
   AstNode* VisitCall(AstNode* node);
   AstNode* VisitName(AstNode* node);
+  void VisitChildren(AstNode* node);
 
   inline Scope* scope() { return scope_; }
 

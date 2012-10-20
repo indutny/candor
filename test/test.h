@@ -52,7 +52,12 @@ using namespace internal;
       Scope::Analyze(ast);\
       p.Print(out, sizeof(out));\
       assert(ast != NULL);\
-      assert(strcmp(expected, out) == 0);\
+      if (strcmp(expected, out) != 0) {\
+        fprintf(stderr, "SCOPE test failed, got:\n%s\n expected:\n%s\n",\
+                out,\
+                expected);\
+        abort();\
+      }\
       ast = NULL;\
     }
 
@@ -66,9 +71,14 @@ using namespace internal;
       assert(!p.has_error());\
       Scope::Analyze(ast);\
       assert(ast != NULL);\
-      HIR hir(&heap, ast);\
-      hir.Print(out, sizeof(out));\
-      assert(strcmp(expected, out) == 0);\
+      hir::Gen gen(&heap, ast);\
+      gen.Print(out, sizeof(out));\
+      if (strcmp(expected, out) != 0) {\
+        fprintf(stderr, "HIR test failed, got:\n%s\n expected:\n%s\n",\
+                out,\
+                expected);\
+        abort();\
+      }\
       ast = NULL;\
     }
 

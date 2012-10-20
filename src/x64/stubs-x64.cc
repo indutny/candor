@@ -4,7 +4,6 @@
 #include "ast.h" // BinOp
 #include "macroassembler.h" // Masm
 #include "macroassembler-inl.h"
-#include "hir-instructions.h"
 #include "runtime.h"
 
 namespace candor {

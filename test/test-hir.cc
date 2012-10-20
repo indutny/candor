@@ -2,31 +2,19 @@
 #include <parser.h>
 #include <ast.h>
 #include <hir.h>
-#include <lir.h>
+#include <hir-inl.h>
 
 TEST_START(hir)
   // Simple assignments
-  HIR_TEST("a = 1\nb = 1",
-           "[Block#0\n"
-           "0: [Entry]\n"
-           "2: *[0 [imm 0x2]] = [LoadRoot]\n"
-           "4: *[1 [st:0]] = [StoreLocal *[0 [imm 0x2]]]\n"
-           "6: *[2 [imm 0x2]] = [LoadRoot]\n"
-           "8: *[3 [st:1]] = [StoreLocal *[2 [imm 0x2]]]\n"
-           "10: [Return *[4 [imm 0x1]]]\n"
-           "[]>*>[]]\n\n")
-  HIR_TEST("a = 2\na = a",
-           "[Block#0\n"
-           "0: [Entry]\n"
-           "2: *[0 [imm 0x4]] = [LoadRoot]\n"
-           "4: *[1 [st:0]] = [StoreLocal *[0 [imm 0x4]]]\n"
-           "6: [Nop *[1 [st:0]]]\n"
-           "8: *[2 [st:0]] = [StoreLocal *[1 [st:0]]]\n"
-           "10: [Return *[3 [imm 0x1]]]\n"
-           "[]>*>[]]\n\n")
+  HIR_TEST("a = 1\nb = 1\nreturn a",
+           "# Block 0\n"
+           "i1 = Entry\n"
+           "i2 = Literal\n"
+           "i3 = Literal\n"
+           "i4 = Return(i2)\n")
 
   // Multiple blocks and phi
-  HIR_TEST("if (a) { a = 2 }\n"
+  HIR_TEST("if (a) { a = 2 }\nreturn a"
            "// phi should be inserted here\na",
            "[Block#0\n"
            "0: [Entry]\n"

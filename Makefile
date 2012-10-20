@@ -23,7 +23,7 @@ test-runner: build
 test: test-runner can
 	@./test-runner parser
 	@./test-runner scope
-	#@./test-runner hir
+	@./test-runner hir
 	@./test-runner functional
 	@./test-runner binary
 	@./test-runner numbers

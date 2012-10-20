@@ -4,10 +4,52 @@
 namespace candor {
 namespace internal {
 
+#define VISITOR_MAPPING_BLOCK(V, T) \
+    V(Function, T) \
+    V(Call, T) \
+    V(Block, T) \
+    V(If, T) \
+    V(While, T) \
+    V(Assign, T) \
+    V(Member, T) \
+    V(VarArg, T) \
+    V(ObjectLiteral, T) \
+    V(ArrayLiteral, T) \
+    V(Clone, T) \
+    V(Delete, T) \
+    V(Return, T) \
+    V(Break, T) \
+    V(Continue, T) \
+    V(Typeof, T) \
+    V(Sizeof, T) \
+    V(Keysof, T) \
+    V(UnOp, T) \
+    V(BinOp, T)
+
+#define VISITOR_MAPPING_REGULAR(V, T) \
+    V(Name, T) \
+    V(Value, T) \
+    V(Number, T) \
+    V(Property, T) \
+    V(String, T) \
+    V(Nil, T) \
+    V(True, T) \
+    V(False, T)
+
+#define VISITOR_SUB_DECLARE(V, T) \
+    template T* Visitor<T>::Visit##V(AstNode* node);
+
+#define VISITOR_DECLARE(T) \
+    template Visitor<T>::Visit(AstNode* node); \
+    template void Visitor<T>::VisitChildren(AstNode* node); \
+    VISITOR_MAPPING_BLOCK(VISITOR_SUB_DECLARE, T) \
+    VISITOR_MAPPING_REGULAR(VISITOR_SUB_DECLARE, T)
+
 // Forward declaration
 class AstNode;
 
 // AST Visiting abstraction
+template <class T>
 class Visitor {
  public:
   enum Type {
@@ -18,39 +60,39 @@ class Visitor {
   Visitor(Type type) : type_(type) {
   }
 
-  virtual AstNode* Visit(AstNode* node);
-  void VisitChildren(AstNode* node);
+  virtual T* Visit(AstNode* node);
+  virtual void VisitChildren(AstNode* node);
 
-  virtual AstNode* VisitFunction(AstNode* node);
-  virtual AstNode* VisitCall(AstNode* node);
-  virtual AstNode* VisitBlock(AstNode* node);
-  virtual AstNode* VisitIf(AstNode* node);
-  virtual AstNode* VisitWhile(AstNode* node);
-  virtual AstNode* VisitAssign(AstNode* node);
-  virtual AstNode* VisitMember(AstNode* node);
-  virtual AstNode* VisitName(AstNode* node);
-  virtual AstNode* VisitValue(AstNode* node);
-  virtual AstNode* VisitVarArg(AstNode* node);
-  virtual AstNode* VisitNumber(AstNode* node);
-  virtual AstNode* VisitObjectLiteral(AstNode* node);
-  virtual AstNode* VisitArrayLiteral(AstNode* node);
-  virtual AstNode* VisitNil(AstNode* node);
-  virtual AstNode* VisitClone(AstNode* node);
-  virtual AstNode* VisitDelete(AstNode* node);
-  virtual AstNode* VisitTrue(AstNode* node);
-  virtual AstNode* VisitFalse(AstNode* node);
-  virtual AstNode* VisitReturn(AstNode* node);
-  virtual AstNode* VisitBreak(AstNode* node);
-  virtual AstNode* VisitContinue(AstNode* node);
-  virtual AstNode* VisitProperty(AstNode* node);
-  virtual AstNode* VisitString(AstNode* node);
+  virtual T* VisitFunction(AstNode* node);
+  virtual T* VisitCall(AstNode* node);
+  virtual T* VisitBlock(AstNode* node);
+  virtual T* VisitIf(AstNode* node);
+  virtual T* VisitWhile(AstNode* node);
+  virtual T* VisitAssign(AstNode* node);
+  virtual T* VisitMember(AstNode* node);
+  virtual T* VisitName(AstNode* node);
+  virtual T* VisitValue(AstNode* node);
+  virtual T* VisitVarArg(AstNode* node);
+  virtual T* VisitNumber(AstNode* node);
+  virtual T* VisitObjectLiteral(AstNode* node);
+  virtual T* VisitArrayLiteral(AstNode* node);
+  virtual T* VisitNil(AstNode* node);
+  virtual T* VisitClone(AstNode* node);
+  virtual T* VisitDelete(AstNode* node);
+  virtual T* VisitTrue(AstNode* node);
+  virtual T* VisitFalse(AstNode* node);
+  virtual T* VisitReturn(AstNode* node);
+  virtual T* VisitBreak(AstNode* node);
+  virtual T* VisitContinue(AstNode* node);
+  virtual T* VisitProperty(AstNode* node);
+  virtual T* VisitString(AstNode* node);
 
-  virtual AstNode* VisitTypeof(AstNode* node);
-  virtual AstNode* VisitSizeof(AstNode* node);
-  virtual AstNode* VisitKeysof(AstNode* node);
+  virtual T* VisitTypeof(AstNode* node);
+  virtual T* VisitSizeof(AstNode* node);
+  virtual T* VisitKeysof(AstNode* node);
 
-  virtual AstNode* VisitUnOp(AstNode* node);
-  virtual AstNode* VisitBinOp(AstNode* node);
+  virtual T* VisitUnOp(AstNode* node);
+  virtual T* VisitBinOp(AstNode* node);
 
   inline AstNode* current_node() { return current_node_; }
 

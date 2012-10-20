@@ -12,7 +12,6 @@ namespace internal {
 
 // Forward declaration
 class BaseStub;
-class LIROperand;
 
 class Masm : public Assembler {
  public:
@@ -126,16 +125,6 @@ class Masm : public Assembler {
     kIntegral,
     kDouble
   };
-
-  // Routines for working with operands
-  inline void Push(LIROperand* src);
-  inline void Pop(LIROperand* dst);
-  inline void Mov(Register dst, LIROperand* src);
-  inline void Mov(Operand& dst, LIROperand* src);
-  inline void Mov(LIROperand* dst, Register src);
-  inline void Mov(LIROperand* dst, Operand& src);
-  inline void Mov(LIROperand* dst, Immediate src);
-  inline void Mov(LIROperand* dst, LIROperand* src);
 
   inline void Push(Register src);
   inline void Pop(Register src);
