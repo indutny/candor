@@ -28,8 +28,13 @@ class Block : public ZoneObject {
 
   int id;
 
+  inline void AddPhi(ScopeSlot* slot, Phi* phi);
+  inline Phi* GetPhi(ScopeSlot* slot);
+  inline bool HasPhi(ScopeSlot* slot);
+
   inline Block* AddSuccessor(Block* b);
   inline Instruction* Add(InstructionType type);
+  inline Instruction* Add(InstructionType type, ScopeSlot* slot);
   inline Instruction* Add(Instruction* instr);
   inline Instruction* Goto(InstructionType type, Block* target);
   inline Instruction* Branch(InstructionType type, Block* t, Block* f);
@@ -39,14 +44,16 @@ class Block : public ZoneObject {
 
   inline void Print(PrintBuffer* p);
 
- private:
-  inline void AddPredecessor(Block* b);
+ protected:
+  void AddPredecessor(Block* b);
 
   Gen* g_;
 
   bool loop_;
   bool ended_;
-  PhiList phis_;
+  HashMap<NumberKey, Instruction, ZoneObject> values_;
+  HashMap<NumberKey, Phi, ZoneObject> phis_;
+  PhiList phi_list_;
   InstructionList instructions_;
 
   // Allocator augmentation
@@ -88,6 +95,7 @@ class Gen : public Visitor<Instruction> {
   inline Block* current_block();
   inline Block* current_root();
   inline Instruction* Add(InstructionType type);
+  inline Instruction* Add(InstructionType type, ScopeSlot* slot);
   inline Instruction* Add(Instruction* instr);
   inline Instruction* Goto(InstructionType type, Block* target);
   inline Instruction* Branch(InstructionType type, Block* t, Block* f);

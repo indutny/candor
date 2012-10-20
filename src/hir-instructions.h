@@ -46,6 +46,7 @@ enum InstructionType {
 class Instruction : public ZoneObject {
  public:
   Instruction(Gen* g, Block* block, InstructionType type);
+  Instruction(Gen* g, Block* block, InstructionType type, ScopeSlot* slot);
 
   int id;
 
@@ -60,8 +61,9 @@ class Instruction : public ZoneObject {
  protected:
   Gen* g_;
   Block* block_;
-
   InstructionType type_;
+  ScopeSlot* slot_;
+
   InstructionList args_;
   InstructionList uses_;
 
@@ -74,7 +76,6 @@ class Phi : public Instruction {
   Phi(Gen* g, Block* block, ScopeSlot* slot);
 
  private:
-  ScopeSlot* slot_;
   int value_count_;
   Instruction* values_[2];
 };
@@ -90,22 +91,6 @@ class Function : public Instruction {
 
  private:
   AstNode* ast_;
-};
-
-class Literal : public Instruction {
- public:
-  Literal(Gen* g, Block* block, ScopeSlot* slot);
-
- private:
-  ScopeSlot* slot_;
-};
-
-class StoreContext : public Instruction {
- public:
-  StoreContext(Gen* g, Block* block, ScopeSlot* slot);
-
- private:
-  ScopeSlot* slot_;
 };
 
 } // namespace hir

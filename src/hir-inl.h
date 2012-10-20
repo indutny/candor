@@ -47,6 +47,11 @@ inline Instruction* Gen::Add(InstructionType type) {
 }
 
 
+inline Instruction* Gen::Add(InstructionType type, ScopeSlot* slot) {
+  return current_block()->Add(type, slot);
+}
+
+
 inline Instruction* Gen::Add(Instruction* instr) {
   return current_block()->Add(instr);
 }
@@ -101,14 +106,14 @@ inline Block* Block::AddSuccessor(Block* b) {
 }
 
 
-inline void Block::AddPredecessor(Block* b) {
-  assert(pred_count_ < 2);
-  pred_[pred_count_++] = b;
+inline Instruction* Block::Add(InstructionType type) {
+  Instruction* instr = new Instruction(g_, this, type);
+  return Add(instr);
 }
 
 
-inline Instruction* Block::Add(InstructionType type) {
-  Instruction* instr = new Instruction(g_, this, type);
+inline Instruction* Block::Add(InstructionType type, ScopeSlot* slot) {
+  Instruction* instr = new Instruction(g_, this, type, slot);
   return Add(instr);
 }
 
@@ -138,6 +143,25 @@ inline Instruction* Block::Branch(InstructionType type, Block* t, Block* f) {
 inline Instruction* Block::Return(InstructionType type) {
   ended_ = true;
   return Add(type);
+}
+
+
+inline void Block::AddPhi(ScopeSlot* slot, Phi* phi) {
+  // Prevent double insertions
+  if (HasPhi(slot)) return;
+
+  phi_list_.Push(phi);
+  phis_.Set(NumberKey::New(slot->index()), phi);
+}
+
+
+inline Phi* Block::GetPhi(ScopeSlot* slot) {
+  return phis_.Get(NumberKey::New(slot->index()));
+}
+
+
+inline bool Block::HasPhi(ScopeSlot* slot) {
+  return GetPhi(slot) != NULL;
 }
 
 

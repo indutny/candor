@@ -12,6 +12,21 @@ Instruction::Instruction(Gen* g, Block* block, InstructionType type) :
     g_(g),
     block_(block),
     type_(type),
+    slot_(NULL),
+    prev_(NULL),
+    next_(NULL) {
+}
+
+
+Instruction::Instruction(Gen* g,
+                         Block* block,
+                         InstructionType type,
+                         ScopeSlot* slot) :
+    id(g->instr_id()),
+    g_(g),
+    block_(block),
+    type_(type),
+    slot_(slot),
     prev_(NULL),
     next_(NULL) {
 }
@@ -35,11 +50,12 @@ void Instruction::Print(PrintBuffer* p) {
 
 
 Phi::Phi(Gen* g, Block* block, ScopeSlot* slot) :
-    Instruction(g, block, kPhi),
-    slot_(slot),
+    Instruction(g, block, kPhi, slot),
     value_count_(0) {
   values_[0] = NULL;
   values_[1] = NULL;
+
+  block->AddPhi(slot, this);
 }
 
 
@@ -47,18 +63,6 @@ Function::Function(Gen* g, Block* block, AstNode* ast) :
     Instruction(g, block, kFunction),
     body(NULL),
     ast_(ast) {
-}
-
-
-Literal::Literal(Gen* g, Block* block, ScopeSlot* slot) :
-    Instruction(g, block, kLiteral),
-    slot_(slot) {
-}
-
-
-StoreContext::StoreContext(Gen* g, Block* block, ScopeSlot* slot) :
-    Instruction(g, block, kStoreContext),
-    slot_(slot) {
 }
 
 } // namespace hir

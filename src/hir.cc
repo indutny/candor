@@ -71,7 +71,7 @@ Instruction* Gen::VisitAssign(AstNode* stmt) {
       // No instruction is needed
       Assign(value->slot(), rhs);
     } else {
-      Add(new StoreContext(this, current_block(), value->slot()))->AddArg(rhs);
+      Add(kStoreContext, value->slot())->AddArg(rhs);
     }
   } else if (stmt->lhs()->is(AstNode::kMember)) {
     Instruction* property = Visit(stmt->lhs()->rhs());
@@ -101,10 +101,10 @@ Instruction* Gen::VisitValue(AstNode* stmt) {
       return slot->hir();
     } else {
       // External value
-      return Add(new Phi(this, current_block(), slot));
+      return Add(kPhi, slot);
     }
   } else {
-    return Add(kLoadContext);
+    return Add(kLoadContext, slot);
   }
 }
 
@@ -136,7 +136,7 @@ Instruction* Gen::VisitIf(AstNode* stmt) {
 
 
 Instruction* Gen::VisitLiteral(AstNode* stmt) {
-  return Add(new Literal(this, current_block(), root_.Put(stmt)));
+  return Add(kLiteral, root_.Put(stmt));
 }
 
 
@@ -180,6 +180,15 @@ Block::Block(Gen* g) : id(g->block_id()),
   pred_[1] = NULL;
   succ_[0] = NULL;
   succ_[1] = NULL;
+}
+
+
+void Block::AddPredecessor(Block* b) {
+  assert(pred_count_ < 2);
+  pred_[pred_count_++] = b;
+
+  // Propagate values from parent block and create phis if needed
+
 }
 
 } // namespace hir
