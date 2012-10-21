@@ -512,8 +512,7 @@ void Block::AddPredecessor(Block* b) {
 
       // Create phi if needed
       if (phi == NULL || phi->block() != this) {
-        // XXX
-        if (!IsEmpty()) continue;
+        assert(IsEmpty());
 
         phi = CreatePhi(curr->slot());
         Add(phi);
