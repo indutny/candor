@@ -1,5 +1,6 @@
 #include "hir.h"
 #include "hir-inl.h"
+#include <string.h> // memset, memcpy
 
 namespace candor {
 namespace internal {
@@ -14,11 +15,12 @@ Gen::Gen(Heap* heap, AstNode* root) : Visitor<Instruction>(kPreorder),
   work_queue_.Push(new Function(this, NULL, root));
 
   while (work_queue_.length() != 0) {
-    Block* b = CreateBlock();
+    Function* current = Function::Cast(work_queue_.Shift());
+
+    Block* b = CreateBlock(current->ast()->stack_slots());
     set_current_block(b);
     set_current_root(b);
 
-    Function* current = Function::Cast(work_queue_.Shift());
     current->body = b;
     Visit(current->ast());
   }
@@ -53,11 +55,6 @@ Instruction* Gen::VisitFunction(AstNode* stmt) {
     work_queue_.Push(f);
     return Add(f);
   }
-}
-
-
-void Gen::Assign(ScopeSlot* slot, Instruction* value) {
-  slot->hir(value);
 }
 
 
@@ -96,12 +93,14 @@ Instruction* Gen::VisitValue(AstNode* stmt) {
   AstValue* value = AstValue::Cast(stmt);
   ScopeSlot* slot = value->slot();
   if (slot->is_stack()) {
-    if (slot->hir() != NULL && slot->hir()->block() == current_block()) {
+    Instruction* i = current_block()->env()->At(slot);
+
+    if (i != NULL && i->block() == current_block()) {
       // Local value
-      return slot->hir();
+      return i;
     } else {
       // External value
-      return Add(kPhi, slot);
+      return Add(Assign(slot, CreatePhi(slot)));
     }
   } else {
     return Add(kLoadContext, slot);
@@ -174,6 +173,7 @@ Block::Block(Gen* g) : id(g->block_id()),
                        g_(g),
                        loop_(false),
                        ended_(false),
+                       env_(NULL),
                        pred_count_(0),
                        succ_count_(0) {
   pred_[0] = NULL;
@@ -183,12 +183,75 @@ Block::Block(Gen* g) : id(g->block_id()),
 }
 
 
-void Block::AddPredecessor(Block* b) {
-  assert(pred_count_ < 2);
-  pred_[pred_count_++] = b;
+Instruction* Block::Assign(ScopeSlot* slot, Instruction* value) {
+  value->slot(slot);
+  env()->Set(slot, value);
 
-  // Propagate values from parent block and create phis if needed
+  return value;
+}
 
+
+void Block::PropagateValues(Block* from) {
+  for (int i = 0; i < from->env()->stack_slots(); i++) {
+    Instruction* curr = from->env()->At(i);
+    Instruction* old = this->env()->At(i);
+
+    // Value already present in block
+    if (old != NULL) {
+      // In loop values can be propagated up to the block where it was declared
+      if (old == curr) continue;
+
+      Phi* phi = this->env()->PhiAt(i);
+
+      // Create phi if needed
+      if (phi == NULL) {
+        assert(IsEmpty());
+        phi = CreatePhi(curr->slot());
+        Add(phi);
+
+        Assign(curr->slot(), phi);
+      }
+
+      // Add value as phi's input
+      phi->AddInput(curr);
+    } else {
+      // Propagate value
+      this->env()->Set(i, curr);
+    }
+  }
+}
+
+
+void Block::Replace(Instruction* o, Instruction* n) {
+  InstructionList::Item* head = o->uses()->head();
+  for (; head != NULL; head = head->next()) {
+    Instruction* use = head->value();
+
+    if (use->block() == this) {
+      use->ReplaceArg(o, n);
+    }
+  }
+}
+
+
+Environment::Environment(int stack_slots) : stack_slots_(stack_slots) {
+  instructions_ = reinterpret_cast<Instruction**>(Zone::current()->Allocate(
+      sizeof(*instructions_) * stack_slots_));
+  memset(instructions_, 0, sizeof(*instructions_) * stack_slots_);
+
+  phis_ = reinterpret_cast<Phi**>(Zone::current()->Allocate(
+      sizeof(*phis_) * stack_slots_));
+  memset(phis_, 0, sizeof(*phis_) * stack_slots_);
+}
+
+
+void Environment::Copy(Environment* from) {
+  memcpy(instructions_,
+         from->instructions_,
+         sizeof(*instructions_) * stack_slots_);
+  memcpy(phis_,
+         from->phis_,
+         sizeof(*phis_) * stack_slots_);
 }
 
 } // namespace hir

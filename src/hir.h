@@ -22,15 +22,38 @@ class Block;
 
 typedef ZoneList<Block*> BlockList;
 
+class Environment : public ZoneObject {
+ public:
+  Environment(int stack_slots);
+  void Copy(Environment* from);
+
+  inline Instruction* At(int i);
+  inline Phi* PhiAt(int i);
+  inline void Set(int i, Instruction* value);
+  inline void SetPhi(int i, Phi* value);
+
+  inline Instruction* At(ScopeSlot* slot);
+  inline Phi* PhiAt(ScopeSlot* slot);
+  inline void Set(ScopeSlot* slot, Instruction* value);
+  inline void SetPhi(ScopeSlot* slot, Phi* value);
+
+  inline int stack_slots();
+
+ protected:
+  int stack_slots_;
+  Instruction** instructions_;
+  Phi** phis_;
+};
+
 class Block : public ZoneObject {
  public:
   Block(Gen* g);
 
   int id;
 
-  inline void AddPhi(ScopeSlot* slot, Phi* phi);
-  inline Phi* GetPhi(ScopeSlot* slot);
-  inline bool HasPhi(ScopeSlot* slot);
+  Instruction* Assign(ScopeSlot* slot, Instruction* value);
+  void PropagateValues(Block* from);
+  void Replace(Instruction* o, Instruction* n);
 
   inline Block* AddSuccessor(Block* b);
   inline Instruction* Add(InstructionType type);
@@ -41,19 +64,22 @@ class Block : public ZoneObject {
   inline Instruction* Return(InstructionType type);
   inline bool IsEnded();
   inline bool IsEmpty();
+  inline Phi* CreatePhi(ScopeSlot* slot);
+
+  inline Environment* env();
+  inline void env(Environment* env);
 
   inline void Print(PrintBuffer* p);
 
  protected:
-  void AddPredecessor(Block* b);
+  inline void AddPredecessor(Block* b);
 
   Gen* g_;
 
   bool loop_;
   bool ended_;
-  HashMap<NumberKey, Instruction, ZoneObject> values_;
-  HashMap<NumberKey, Phi, ZoneObject> phis_;
-  PhiList phi_list_;
+
+  Environment* env_;
   InstructionList instructions_;
 
   // Allocator augmentation
@@ -71,8 +97,6 @@ class Block : public ZoneObject {
 class Gen : public Visitor<Instruction> {
  public:
   Gen(Heap* heap, AstNode* root);
-
-  void Assign(ScopeSlot* slot, Instruction* value);
 
   Instruction* VisitFunction(AstNode* stmt);
   Instruction* VisitAssign(AstNode* stmt);
@@ -101,9 +125,13 @@ class Gen : public Visitor<Instruction> {
   inline Instruction* Branch(InstructionType type, Block* t, Block* f);
   inline Instruction* Return(InstructionType type);
   inline Block* Join(Block* b1, Block* b2);
+  inline Instruction* Assign(ScopeSlot* slot, Instruction* value);
 
+  inline Block* CreateBlock(int stack_slots);
   inline Block* CreateBlock();
+
   inline Instruction* CreateInstruction(InstructionType type);
+  inline Phi* CreatePhi(ScopeSlot* slot);
   inline void Print(PrintBuffer* p);
   inline void Print(char* out, int32_t size);
 

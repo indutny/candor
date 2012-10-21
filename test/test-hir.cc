@@ -14,7 +14,7 @@ TEST_START(hir)
            "i4 = Return(i2)\n")
 
   // Multiple blocks and phi
-  HIR_TEST("a = 1\nif (a) { a = 2 }\nreturn a"
+  HIR_TEST("if (a) { a = 2 }\nreturn a"
            "// phi should be inserted here\na",
            "[Block#0\n"
            "0: [Entry]\n"

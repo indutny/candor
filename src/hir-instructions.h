@@ -50,6 +50,9 @@ class Instruction : public ZoneObject {
 
   int id;
 
+  void ReplaceArg(Instruction* o, Instruction* n);
+  void RemoveUse(Instruction* i);
+
   inline Instruction* AddArg(InstructionType type);
   inline Instruction* AddArg(Instruction* instr);
   inline bool Is(InstructionType type);
@@ -57,6 +60,10 @@ class Instruction : public ZoneObject {
   inline const char* TypeToStr(InstructionType type);
 
   inline Block* block();
+  inline ScopeSlot* slot();
+  inline void slot(ScopeSlot* slot);
+  inline InstructionList* args();
+  inline InstructionList* uses();
 
  protected:
   Gen* g_;
@@ -75,9 +82,11 @@ class Phi : public Instruction {
  public:
   Phi(Gen* g, Block* block, ScopeSlot* slot);
 
+  inline void AddInput(Instruction* instr);
+
  private:
-  int value_count_;
-  Instruction* values_[2];
+  int input_count_;
+  Instruction* inputs_[2];
 };
 
 class Function : public Instruction {

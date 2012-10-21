@@ -378,7 +378,29 @@ class HashMap {
   void Set(Key* key, Value* value) {
     uint32_t index = Key::Hash(key) & mask_;
     Item* i = map_[index];
-    Item* next = new Item(key, value);
+    Item* next = NULL;
+
+    if (i == NULL) {
+      next = new Item(key, value);
+      map_[index] = next;
+    } else {
+      while (Key::Compare(i->key_, key) != 0 && i->next() != NULL) {
+        i = i->next();
+      }
+
+      // Overwrite key
+      if (Key::Compare(i->key_, key) == 0) {
+        i->value_ = value;
+      } else {
+        next = new Item(key, value);
+
+        assert(i->next_ == NULL);
+        i->next_ = next;
+      }
+    }
+
+    // In case of overwrite value already present in scalar list
+    if (next == NULL) return;
 
     // Setup head or append item to linked list
     // (Needed for enumeration)
@@ -388,13 +410,6 @@ class HashMap {
       current_->next_scalar_ = next;
     }
     current_ = next;
-
-    if (i == NULL) {
-      map_[index] = next;
-    } else {
-      while (i->next() != NULL) i = i->next();
-      i->next_ = next;
-    }
   }
 
 
@@ -435,7 +450,7 @@ class HashMap {
 
 class NumberKey {
  public:
-  static NumberKey* New(const off_t value) {
+  static NumberKey* New(const intptr_t value) {
     return reinterpret_cast<NumberKey*>(value);
   }
 
@@ -443,8 +458,8 @@ class NumberKey {
     return reinterpret_cast<NumberKey*>(value);
   }
 
-  off_t value() {
-    return reinterpret_cast<off_t>(this);
+  intptr_t value() {
+    return reinterpret_cast<intptr_t>(this);
   }
 
   static uint32_t Hash(NumberKey* key) {
@@ -452,8 +467,8 @@ class NumberKey {
   }
 
   static int Compare(NumberKey* left, NumberKey* right) {
-    off_t l = reinterpret_cast<off_t>(left);
-    off_t r = reinterpret_cast<off_t>(right);
+    intptr_t l = reinterpret_cast<intptr_t>(left);
+    intptr_t r = reinterpret_cast<intptr_t>(right);
     return l == r ? 0 : l > r ? 1 : -1;
   }
 };

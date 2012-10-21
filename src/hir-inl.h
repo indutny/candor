@@ -28,8 +28,9 @@ inline Block* Gen::current_root() {
 }
 
 
-inline Block* Gen::CreateBlock() {
+inline Block* Gen::CreateBlock(int stack_slots) {
   Block* b = new Block(this);
+  b->env(new Environment(stack_slots));
 
   blocks_.Push(b);
 
@@ -37,8 +38,18 @@ inline Block* Gen::CreateBlock() {
 }
 
 
+inline Block* Gen::CreateBlock() {
+  return CreateBlock(current_block()->env()->stack_slots());
+}
+
+
 inline Instruction* Gen::CreateInstruction(InstructionType type) {
   return new Instruction(this, current_block(), type);
+}
+
+
+inline Phi* Gen::CreatePhi(ScopeSlot* slot) {
+  return new Phi(this, current_block(), slot);
 }
 
 
@@ -106,6 +117,19 @@ inline Block* Block::AddSuccessor(Block* b) {
 }
 
 
+inline void Block::AddPredecessor(Block* b) {
+  assert(pred_count_ < 2);
+  pred_[pred_count_++] = b;
+
+  if (pred_count_ == 1) {
+    // Fast path - copy environment
+    env()->Copy(b->env());
+  } else {
+    PropagateValues(b);
+  }
+}
+
+
 inline Instruction* Block::Add(InstructionType type) {
   Instruction* instr = new Instruction(g_, this, type);
   return Add(instr);
@@ -146,25 +170,6 @@ inline Instruction* Block::Return(InstructionType type) {
 }
 
 
-inline void Block::AddPhi(ScopeSlot* slot, Phi* phi) {
-  // Prevent double insertions
-  if (HasPhi(slot)) return;
-
-  phi_list_.Push(phi);
-  phis_.Set(NumberKey::New(slot->index()), phi);
-}
-
-
-inline Phi* Block::GetPhi(ScopeSlot* slot) {
-  return phis_.Get(NumberKey::New(slot->index()));
-}
-
-
-inline bool Block::HasPhi(ScopeSlot* slot) {
-  return GetPhi(slot) != NULL;
-}
-
-
 inline Block* Gen::Join(Block* b1, Block* b2) {
   Block* join = CreateBlock();
 
@@ -175,6 +180,11 @@ inline Block* Gen::Join(Block* b1, Block* b2) {
 }
 
 
+inline Instruction* Gen::Assign(ScopeSlot* slot, Instruction* value) {
+  return current_block()->Assign(slot, value);
+}
+
+
 inline bool Block::IsEnded() {
   return ended_;
 }
@@ -182,6 +192,22 @@ inline bool Block::IsEnded() {
 
 inline bool Block::IsEmpty() {
   return instructions_.length() == 0;
+}
+
+
+inline Phi* Block::CreatePhi(ScopeSlot* slot) {
+  return new Phi(g_, this, slot);
+}
+
+
+inline Environment* Block::env() {
+  assert(env_ != NULL);
+  return env_;
+}
+
+
+inline void Block::env(Environment* env) {
+  env_ = env;
 }
 
 
@@ -203,6 +229,55 @@ inline void Block::Print(PrintBuffer* p) {
    default:
     break;
   }
+}
+
+
+inline Instruction* Environment::At(int i) {
+  assert(i < stack_slots_);
+  return instructions_[i];
+}
+
+
+inline void Environment::Set(int i, Instruction* value) {
+  assert(i < stack_slots_);
+  instructions_[i] = value;
+}
+
+
+inline Phi* Environment::PhiAt(int i) {
+  assert(i < stack_slots_);
+  return phis_[i];
+}
+
+
+inline void Environment::SetPhi(int i, Phi* phi) {
+  assert(i < stack_slots_);
+  phis_[i] = phi;
+}
+
+
+inline Instruction* Environment::At(ScopeSlot* slot) {
+  return At(slot->index());
+}
+
+
+inline void Environment::Set(ScopeSlot* slot, Instruction* value) {
+  Set(slot->index(), value);
+}
+
+
+inline Phi* Environment::PhiAt(ScopeSlot* slot) {
+  return PhiAt(slot->index());
+}
+
+
+inline void Environment::SetPhi(ScopeSlot* slot, Phi* phi) {
+  SetPhi(slot->index(), phi);
+}
+
+
+inline int Environment::stack_slots() {
+  return stack_slots_;
 }
 
 } // namespace hir

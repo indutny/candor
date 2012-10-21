@@ -15,8 +15,8 @@ inline Instruction* Instruction::AddArg(InstructionType type) {
 
 inline Instruction* Instruction::AddArg(Instruction* instr) {
   assert(instr != NULL);
-  args_.Push(instr);
-  instr->uses_.Push(this);
+  args()->Push(instr);
+  instr->uses()->Push(this);
 
   // Chaining
   return this;
@@ -49,6 +49,32 @@ inline const char* Instruction::TypeToStr(InstructionType type) {
 
 inline Block* Instruction::block() {
   return block_;
+}
+
+
+inline ScopeSlot* Instruction::slot() {
+  return slot_;
+}
+
+
+inline void Instruction::slot(ScopeSlot* slot) {
+  slot_ = slot;
+}
+
+
+inline InstructionList* Instruction::args() {
+  return &args_;
+}
+
+
+inline InstructionList* Instruction::uses() {
+  return &uses_;
+}
+
+
+inline void Phi::AddInput(Instruction* instr) {
+  assert(input_count_ < 2);
+  inputs_[input_count_++] = instr;
 }
 
 

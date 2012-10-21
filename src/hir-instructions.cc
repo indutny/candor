@@ -32,14 +32,43 @@ Instruction::Instruction(Gen* g,
 }
 
 
+void Instruction::ReplaceArg(Instruction* o, Instruction* n) {
+  InstructionList::Item* head = args()->head();
+  for (; head != NULL; head = head->next()) {
+    Instruction* arg = head->value();
+    if (arg == o) {
+      args()->InsertBefore(head, n);
+      args()->Remove(head);
+
+      o->RemoveUse(this);
+      n->uses()->Push(this);
+
+      break;
+    }
+  }
+}
+
+
+void Instruction::RemoveUse(Instruction* i) {
+  InstructionList::Item* head = uses()->head();
+  for (; head != NULL; head = head->next()) {
+    Instruction* use = head->value();
+    if (use == i) {
+      uses()->Remove(head);
+      break;
+    }
+  }
+}
+
+
 void Instruction::Print(PrintBuffer* p) {
   p->Print("i%d = %s", id, TypeToStr(type_));
-  if (args_.length() == 0) {
+  if (args()->length() == 0) {
     p->Print("\n");
     return;
   }
 
-  InstructionList::Item* head = args_.head();
+  InstructionList::Item* head = args()->head();
   p->Print("(");
   for (; head != NULL; head = head->next()) {
     p->Print("i%d", head->value()->id);
@@ -51,11 +80,12 @@ void Instruction::Print(PrintBuffer* p) {
 
 Phi::Phi(Gen* g, Block* block, ScopeSlot* slot) :
     Instruction(g, block, kPhi, slot),
-    value_count_(0) {
-  values_[0] = NULL;
-  values_[1] = NULL;
+    input_count_(0) {
+  inputs_[0] = NULL;
+  inputs_[1] = NULL;
 
-  block->AddPhi(slot, this);
+  block->env()->Set(slot, this);
+  block->env()->SetPhi(slot, this);
 }
 
 
