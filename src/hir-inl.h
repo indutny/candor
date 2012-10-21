@@ -49,7 +49,7 @@ inline Instruction* Gen::CreateInstruction(InstructionType type) {
 
 
 inline Phi* Gen::CreatePhi(ScopeSlot* slot) {
-  return new Phi(this, current_block(), slot);
+  return current_block()->CreatePhi(slot);
 }
 
 
@@ -103,7 +103,11 @@ inline int Gen::block_id() {
 
 
 inline int Gen::instr_id() {
-  return instr_id_++;
+  int r = instr_id_;
+
+  instr_id_ += 2;
+
+  return r;
 }
 
 
@@ -114,19 +118,6 @@ inline Block* Block::AddSuccessor(Block* b) {
   b->AddPredecessor(this);
 
   return b;
-}
-
-
-inline void Block::AddPredecessor(Block* b) {
-  assert(pred_count_ < 2);
-  pred_[pred_count_++] = b;
-
-  if (pred_count_ == 1) {
-    // Fast path - copy environment
-    env()->Copy(b->env());
-  } else {
-    PropagateValues(b);
-  }
 }
 
 
@@ -196,7 +187,11 @@ inline bool Block::IsEmpty() {
 
 
 inline Phi* Block::CreatePhi(ScopeSlot* slot) {
-  return new Phi(g_, this, slot);
+  Phi* phi =  new Phi(g_, this, slot);
+
+  phis_.Push(phi);
+
+  return phi;
 }
 
 

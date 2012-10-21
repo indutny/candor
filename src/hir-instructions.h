@@ -83,6 +83,10 @@ class Phi : public Instruction {
   Phi(Gen* g, Block* block, ScopeSlot* slot);
 
   inline void AddInput(Instruction* instr);
+  inline Instruction* InputAt(int i);
+  inline void Nilify();
+
+  inline int input_count();
 
  private:
   int input_count_;

@@ -52,8 +52,9 @@ class Block : public ZoneObject {
   int id;
 
   Instruction* Assign(ScopeSlot* slot, Instruction* value);
-  void PropagateValues(Block* from);
   void Replace(Instruction* o, Instruction* n);
+  void Remove(Instruction* instr);
+  void PrunePhis();
 
   inline Block* AddSuccessor(Block* b);
   inline Instruction* Add(InstructionType type);
@@ -72,7 +73,7 @@ class Block : public ZoneObject {
   inline void Print(PrintBuffer* p);
 
  protected:
-  inline void AddPredecessor(Block* b);
+  void AddPredecessor(Block* b);
 
   Gen* g_;
 
@@ -81,6 +82,7 @@ class Block : public ZoneObject {
 
   Environment* env_;
   InstructionList instructions_;
+  PhiList phis_;
 
   // Allocator augmentation
   InstructionList live_gen_;
@@ -97,6 +99,7 @@ class Block : public ZoneObject {
 class Gen : public Visitor<Instruction> {
  public:
   Gen(Heap* heap, AstNode* root);
+  void PrunePhis();
 
   Instruction* VisitFunction(AstNode* stmt);
   Instruction* VisitAssign(AstNode* stmt);

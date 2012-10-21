@@ -75,6 +75,26 @@ inline InstructionList* Instruction::uses() {
 inline void Phi::AddInput(Instruction* instr) {
   assert(input_count_ < 2);
   inputs_[input_count_++] = instr;
+
+  AddArg(instr);
+}
+
+
+inline Instruction* Phi::InputAt(int i) {
+  assert(i < input_count_);
+
+  return inputs_[i];
+}
+
+
+inline void Phi::Nilify() {
+  assert(input_count_ == 0);
+  type_ = kNil;
+}
+
+
+inline int Phi::input_count() {
+  return input_count_;
 }
 
 

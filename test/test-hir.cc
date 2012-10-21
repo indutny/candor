@@ -8,61 +8,54 @@ TEST_START(hir)
   // Simple assignments
   HIR_TEST("a = 1\nb = 1\nreturn a",
            "# Block 0\n"
-           "i1 = Entry\n"
+           "i0 = Entry\n"
            "i2 = Literal\n"
-           "i3 = Literal\n"
-           "i4 = Return(i2)\n")
+           "i4 = Literal\n"
+           "i6 = Return(i2)\n")
 
   // Multiple blocks and phi
-  HIR_TEST("if (a) { a = 2 }\nreturn a"
-           "// phi should be inserted here\na",
-           "[Block#0\n"
-           "0: [Entry]\n"
-           "2: [Nop *[0 [st:0]]]\n"
-           "4: [BranchBool *[0 [st:0]]]\n"
-           "[]>*>[1,2]]\n\n"
-
-           "[Block#1\n"
-           "6: *[1 [imm 0x4]] = [LoadRoot]\n"
-           "8: *[2 [st:0]] = [StoreLocal *[1 [imm 0x4]]]\n"
-           "10: [Goto]\n"
-           "[0]>*>[3]]\n\n"
-
-           "[Block#2\n"
-           "12: [Goto]\n"
-           "[0]>*>[3]]\n\n"
-
-           "[Block#3 @[2,0]:3\n"
-           "14: [Nop *[3 [st:0]]]\n"
-           "16: [Return *[4 [imm 0x1]]]\n"
-           "[1,2]>*>[]]\n\n")
-
+  HIR_TEST("if (a) { a = 2 }\nreturn a",
+           "# Block 0\n"
+           "i0 = Entry\n"
+           "i2 = Nil\n"
+           "i4 = If(i2)\n"
+           "# succ: 1 2\n"
+           "--------\n"
+           "# Block 1\n"
+           "i6 = Literal\n"
+           "i8 = Goto\n"
+           "# succ: 3\n"
+           "--------\n"
+           "# Block 2\n"
+           "i12 = Goto\n"
+           "# succ: 3\n"
+           "--------\n"
+           "# Block 3\n"
+           "i10 = Phi(i6, i2)\n"
+           "i14 = Return(i10)\n")
 
   HIR_TEST("if (a) { a = 2 } else { a = 3 }\nreturn a",
-           "[Block#0\n"
-           "0: [Entry]\n"
-           "2: [Nop *[0 [st:0]]]\n"
-           "4: [BranchBool *[0 [st:0]]]\n"
-           "[]>*>[1,2]]\n\n"
+           "# Block 0\n"
+           "i0 = Entry\n"
+           "i2 = Nil\n"
+           "i4 = If(i2)\n"
+           "# succ: 1 2\n"
+           "--------\n"
+           "# Block 1\n"
+           "i6 = Literal\n"
+           "i10 = Goto\n"
+           "# succ: 3\n"
+           "--------\n"
+           "# Block 2\n"
+           "i8 = Literal\n"
+           "i14 = Goto\n"
+           "# succ: 3\n"
+           "--------\n"
+           "# Block 3\n"
+           "i12 = Phi(i6, i8)\n"
+           "i16 = Return(i12)\n")
 
-           "[Block#1\n"
-           "6: *[1 [imm 0x4]] = [LoadRoot]\n"
-           "8: *[2 [st:0]] = [StoreLocal *[1 [imm 0x4]]]\n"
-           "10: [Goto]\n"
-           "[0]>*>[3]]\n\n"
-
-           "[Block#2\n"
-           "12: *[3 [imm 0x6]] = [LoadRoot]\n"
-           "14: *[4 [st:0]] = [StoreLocal *[3 [imm 0x6]]]\n"
-           "16: [Goto]\n"
-           "[0]>*>[3]]\n\n"
-
-           "[Block#3 @[2,4]:5\n"
-           "18: [Nop *[5 [st:0]]]\n"
-           "20: [Return *[5 [st:0]]]\n"
-           "[1,2]>*>[]]\n\n")
-
-  HIR_TEST("if (a) { a = 2 } else { if (a) { a = 3 } else { a = 4 } }\n"
+  HIR_TEST("a = 1\nif (a) { a = 2 } else { if (a) { a = 3 } else { a = 4 } }\n"
            "return a",
            "[Block#0\n"
            "0: [Entry]\n"

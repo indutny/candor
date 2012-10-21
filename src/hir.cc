@@ -11,7 +11,8 @@ Gen::Gen(Heap* heap, AstNode* root) : Visitor<Instruction>(kPreorder),
                                       current_root_(NULL),
                                       root_(heap),
                                       block_id_(0),
-                                      instr_id_(0) {
+                                      // First instruction doesn't appear in HIR
+                                      instr_id_(-2) {
   work_queue_.Push(new Function(this, NULL, root));
 
   while (work_queue_.length() != 0) {
@@ -23,6 +24,16 @@ Gen::Gen(Heap* heap, AstNode* root) : Visitor<Instruction>(kPreorder),
 
     current->body = b;
     Visit(current->ast());
+  }
+
+  PrunePhis();
+}
+
+
+void Gen::PrunePhis() {
+  BlockList::Item* head = blocks_.head();
+  for (; head != NULL; head = head->next()) {
+    head->value()->PrunePhis();
   }
 }
 
@@ -99,8 +110,11 @@ Instruction* Gen::VisitValue(AstNode* stmt) {
       // Local value
       return i;
     } else {
+      Phi* phi = CreatePhi(slot);
+      if (i != NULL) phi->AddInput(i);
+
       // External value
-      return Add(Assign(slot, CreatePhi(slot)));
+      return Add(Assign(slot, phi));
     }
   } else {
     return Add(kLoadContext, slot);
@@ -191,23 +205,33 @@ Instruction* Block::Assign(ScopeSlot* slot, Instruction* value) {
 }
 
 
-void Block::PropagateValues(Block* from) {
-  for (int i = 0; i < from->env()->stack_slots(); i++) {
-    Instruction* curr = from->env()->At(i);
+void Block::AddPredecessor(Block* b) {
+  assert(pred_count_ < 2);
+  pred_[pred_count_++] = b;
+
+  if (pred_count_ == 1) {
+    // Fast path - copy environment
+    env()->Copy(b->env());
+    return;
+  }
+
+  for (int i = 0; i < b->env()->stack_slots(); i++) {
+    Instruction* curr = b->env()->At(i);
     Instruction* old = this->env()->At(i);
 
     // Value already present in block
     if (old != NULL) {
+      Phi* phi = this->env()->PhiAt(i);
+
       // In loop values can be propagated up to the block where it was declared
       if (old == curr) continue;
 
-      Phi* phi = this->env()->PhiAt(i);
-
       // Create phi if needed
-      if (phi == NULL) {
+      if (phi == NULL || phi->block() != this) {
         assert(IsEmpty());
         phi = CreatePhi(curr->slot());
         Add(phi);
+        phi->AddInput(old);
 
         Assign(curr->slot(), phi);
       }
@@ -229,6 +253,33 @@ void Block::Replace(Instruction* o, Instruction* n) {
 
     if (use->block() == this) {
       use->ReplaceArg(o, n);
+    }
+  }
+}
+
+
+void Block::Remove(Instruction* instr) {
+}
+
+
+void Block::PrunePhis() {
+  PhiList::Item* head = phis_.head();
+  for (; head != NULL; head = head->next()) {
+    Phi* phi = head->value();
+
+    switch (phi->input_count()) {
+     case 0:
+      phi->Nilify();
+      break;
+     case 1:
+      Replace(phi, phi->InputAt(0));
+      Remove(phi);
+      break;
+     case 2:
+      // Good phi, nothing to do here
+      break;
+     default:
+      UNEXPECTED
     }
   }
 }
