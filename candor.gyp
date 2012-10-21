@@ -19,6 +19,7 @@
       'src/heap.cc',
       'src/hir.cc',
       'src/hir-instructions.cc',
+      'src/lir.cc',
       'src/lexer.cc',
       'src/parser.cc',
       'src/root.cc',
