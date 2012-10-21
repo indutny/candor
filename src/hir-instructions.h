@@ -29,6 +29,7 @@ typedef ZoneList<Phi*> PhiList;
     V(StoreContext) \
     V(StoreProperty) \
     V(If) \
+    V(While) \
     V(Literal) \
     V(Goto) \
     V(Phi)
@@ -56,6 +57,8 @@ class Instruction : public ZoneObject {
   inline Instruction* AddArg(InstructionType type);
   inline Instruction* AddArg(Instruction* instr);
   inline bool Is(InstructionType type);
+  inline void Remove();
+  inline bool IsRemoved();
   virtual void Print(PrintBuffer* p);
   inline const char* TypeToStr(InstructionType type);
 
@@ -71,6 +74,8 @@ class Instruction : public ZoneObject {
   InstructionType type_;
   ScopeSlot* slot_;
 
+  bool removed_;
+
   InstructionList args_;
   InstructionList uses_;
 
@@ -85,6 +90,8 @@ class Phi : public Instruction {
   inline void AddInput(Instruction* instr);
   inline Instruction* InputAt(int i);
   inline void Nilify();
+
+  static inline Phi* Cast(Instruction* instr);
 
   inline int input_count();
 

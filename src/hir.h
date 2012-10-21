@@ -65,6 +65,8 @@ class Block : public ZoneObject {
   inline Instruction* Return(InstructionType type);
   inline bool IsEnded();
   inline bool IsEmpty();
+  void MarkLoop();
+  inline bool IsLoop();
   inline Phi* CreatePhi(ScopeSlot* slot);
 
   inline Environment* env();
@@ -106,6 +108,7 @@ class Gen : public Visitor<Instruction> {
   Instruction* VisitReturn(AstNode* stmt);
   Instruction* VisitValue(AstNode* stmt);
   Instruction* VisitIf(AstNode* stmt);
+  Instruction* VisitWhile(AstNode* stmt);
 
   // Literals
 

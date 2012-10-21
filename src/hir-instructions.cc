@@ -13,6 +13,7 @@ Instruction::Instruction(Gen* g, Block* block, InstructionType type) :
     block_(block),
     type_(type),
     slot_(NULL),
+    removed_(false),
     prev_(NULL),
     next_(NULL) {
 }

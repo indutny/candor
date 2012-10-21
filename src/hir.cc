@@ -145,6 +145,33 @@ Instruction* Gen::VisitIf(AstNode* stmt) {
 }
 
 
+Instruction* Gen::VisitWhile(AstNode* stmt) {
+  Block* start = CreateBlock();
+
+  Goto(kGoto, start);
+  set_current_block(start);
+
+  start->MarkLoop();
+
+  Instruction* cond = Visit(stmt->lhs());
+
+  Block* body = CreateBlock();
+  Block* loop = CreateBlock();
+  Block* end = CreateBlock();
+
+  Branch(kWhile, body, end)->AddArg(cond);
+
+  set_current_block(body);
+  VisitChildren(stmt);
+  body = current_block();
+
+  if (!body->IsEnded()) body->Goto(kGoto, loop);
+  loop->Goto(kGoto, start);
+
+  set_current_block(end);
+}
+
+
 // Literals
 
 
@@ -228,7 +255,9 @@ void Block::AddPredecessor(Block* b) {
 
       // Create phi if needed
       if (phi == NULL || phi->block() != this) {
-        assert(IsEmpty());
+        // XXX
+        if (!IsEmpty()) continue;
+
         phi = CreatePhi(curr->slot());
         Add(phi);
         phi->AddInput(old);
@@ -246,6 +275,23 @@ void Block::AddPredecessor(Block* b) {
 }
 
 
+void Block::MarkLoop() {
+  loop_ = true;
+
+  // Create phi for every possible value
+  for (int i = 0; i < env()->stack_slots(); i++) {
+    ScopeSlot* slot = new ScopeSlot(ScopeSlot::kStack);
+    slot->index(i);
+
+    Instruction* old = env()->At(i);
+    Phi* phi = CreatePhi(slot);
+    if (old != NULL) phi->AddInput(old);
+
+    Add(Assign(slot, phi));
+  }
+}
+
+
 void Block::Replace(Instruction* o, Instruction* n) {
   InstructionList::Item* head = o->uses()->head();
   for (; head != NULL; head = head->next()) {
@@ -259,13 +305,30 @@ void Block::Replace(Instruction* o, Instruction* n) {
 
 
 void Block::Remove(Instruction* instr) {
+  InstructionList::Item* head = instructions_.head();
+  for (; head != NULL; head = head->next()) {
+    Instruction* i = head->value();
+
+    if (i == instr) {
+      instructions_.Remove(head);
+      break;
+    }
+  }
+
+  instr->Remove();
 }
 
 
 void Block::PrunePhis() {
+  PhiList queue_;
+
   PhiList::Item* head = phis_.head();
   for (; head != NULL; head = head->next()) {
-    Phi* phi = head->value();
+    queue_.Push(head->value());
+  }
+
+  while (queue_.length() > 0) {
+    Phi* phi = queue_.Shift();
 
     switch (phi->input_count()) {
      case 0:
@@ -273,13 +336,19 @@ void Block::PrunePhis() {
       break;
      case 1:
       Replace(phi, phi->InputAt(0));
-      Remove(phi);
+      if (phi->block() == this) Remove(phi);
       break;
      case 2:
-      // Good phi, nothing to do here
       break;
      default:
       UNEXPECTED
+    }
+
+    // Check recursive uses too
+    for (int i = 0; i < phi->input_count(); i++) {
+      if (phi->InputAt(i)->Is(kPhi)) {
+        queue_.Push(Phi::Cast(phi->InputAt(i)));
+      }
     }
   }
 }

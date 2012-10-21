@@ -186,6 +186,11 @@ inline bool Block::IsEmpty() {
 }
 
 
+inline bool Block::IsLoop() {
+  return loop_;
+}
+
+
 inline Phi* Block::CreatePhi(ScopeSlot* slot) {
   Phi* phi =  new Phi(g_, this, slot);
 

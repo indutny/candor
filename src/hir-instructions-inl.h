@@ -27,6 +27,16 @@ inline bool Instruction::Is(InstructionType type) {
   return type_ == type;
 }
 
+
+inline void Instruction::Remove() {
+  removed_ = true;
+}
+
+
+inline bool Instruction::IsRemoved() {
+  return removed_;
+}
+
 #define HIR_INSTRUCTION_STR(I) \
   case k##I: \
    res = #I; \
@@ -95,6 +105,12 @@ inline void Phi::Nilify() {
 
 inline int Phi::input_count() {
   return input_count_;
+}
+
+
+inline Phi* Phi::Cast(Instruction* instr) {
+  assert(instr->Is(kPhi));
+  return reinterpret_cast<Phi*>(instr);
 }
 
 
