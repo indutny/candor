@@ -70,7 +70,7 @@ void Instruction::Print(PrintBuffer* p) {
 
   p->Print("%s", TypeToStr(type_));
 
-  if (ast() != NULL) {
+  if (ast() != NULL && ast()->value() != NULL) {
     p->Print("[");
     p->PrintValue(ast()->value(), ast()->length());
     p->Print("]");
@@ -106,6 +106,11 @@ Function::Function(Gen* g, Block* block, AstNode* ast) :
     Instruction(g, block, kFunction),
     body(NULL) {
   ast_ = ast;
+}
+
+
+void Function::Print(PrintBuffer* p) {
+  p->Print("i%d = Function[b%d]\n", id, body->id);
 }
 
 } // namespace hir

@@ -122,6 +122,7 @@ class Function : public Instruction {
 
   Block* body;
 
+  void Print(PrintBuffer* p);
   static inline Function* Cast(Instruction* instr);
 };
 

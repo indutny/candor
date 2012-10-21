@@ -64,21 +64,21 @@ TEST_START(hir)
            "i0 = Entry\n"
            "i2 = Literal[1]\n"
            "i4 = Literal[0]\n"
-           "i6 = BinOp[](i4, i2)\n"
+           "i6 = BinOp(i4, i2)\n"
            "i8 = Return(i6)\n")
   HIR_TEST("i = 0\nreturn ++i",
            "# Block 0\n"
            "i0 = Entry\n"
            "i2 = Literal[0]\n"
            "i4 = Literal[1]\n"
-           "i6 = BinOp[](i4, i2)\n"
+           "i6 = BinOp(i4, i2)\n"
            "i8 = Return(i6)\n")
   HIR_TEST("i = 0\nreturn i++",
            "# Block 0\n"
            "i0 = Entry\n"
            "i2 = Literal[0]\n"
            "i4 = Literal[1]\n"
-           "i6 = BinOp[](i4, i2)\n"
+           "i6 = BinOp(i4, i2)\n"
            "i8 = Return(i2)\n")
 
   // Logical operations
@@ -128,6 +128,17 @@ TEST_START(hir)
            "# Block 4\n"
            "i14 = Phi(i2, i8)\n"
            "i16 = Return(i14)\n")
+
+  // Functions
+  HIR_TEST("return a() { return 1 }",
+           "# Block 0\n"
+           "i0 = Entry\n"
+           "i2 = Function[b1]\n"
+           "i4 = Return(i2)\n"
+           "# Block 1\n"
+           "i6 = Entry\n"
+           "i8 = Literal[1]\n"
+           "i10 = Return(i8)\n")
 
   // Multiple blocks and phi
   HIR_TEST("if (a) { a = 2 }\nreturn a",
