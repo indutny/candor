@@ -4,6 +4,7 @@
 #include "hir-instructions.h"
 #include "hir-instructions-inl.h"
 #include "heap.h" // Heap
+#include "heap-inl.h" // Heap
 #include "root.h" // Root
 #include "ast.h" // AstNode
 #include "scope.h" // ScopeSlot

@@ -16,10 +16,6 @@ class AstValue;
 class Scope;
 class ScopeAnalyze;
 
-namespace hir {
-  class Instruction;
-};
-
 // Each AstVariable gets it's slot
 // After parse end indexes will be allocated
 class ScopeSlot : public ZoneObject {
@@ -35,14 +31,12 @@ class ScopeSlot : public ZoneObject {
   ScopeSlot(Type type) : type_(type),
                          value_(NULL),
                          index_(-1),
-                         hir_(NULL),
                          depth_(0),
                          use_count_(0) {
   }
 
   ScopeSlot(Type type, int32_t depth) : type_(type),
                                         value_(NULL),
-                                        hir_(NULL),
                                         index_(depth < 0 ? 0 : -1),
                                         depth_(depth),
                                         use_count_(0) {
@@ -60,9 +54,6 @@ class ScopeSlot : public ZoneObject {
   inline char* value() { assert(is_immediate()); return value_; }
   inline void value(char* value) { assert(is_immediate()); value_ = value; }
 
-  inline hir::Instruction* hir() { return hir_; }
-  inline void hir(hir::Instruction* hir) { hir_ = hir; }
-
   inline int32_t index() { return index_; }
   inline void index(int32_t index) { index_ = index; }
   inline int32_t depth() { return depth_; }
@@ -78,8 +69,6 @@ class ScopeSlot : public ZoneObject {
  private:
   Type type_;
   char* value_;
-
-  hir::Instruction* hir_;
 
   int32_t index_;
   int32_t depth_;

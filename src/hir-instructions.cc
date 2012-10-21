@@ -14,9 +14,7 @@ Instruction::Instruction(Gen* g, Block* block, InstructionType type) :
     type_(type),
     slot_(NULL),
     ast_(NULL),
-    removed_(false),
-    prev_(NULL),
-    next_(NULL) {
+    removed_(false) {
 }
 
 
@@ -30,9 +28,7 @@ Instruction::Instruction(Gen* g,
     type_(type),
     slot_(slot),
     ast_(NULL),
-    removed_(false),
-    prev_(NULL),
-    next_(NULL) {
+    removed_(false) {
 }
 
 

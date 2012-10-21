@@ -94,9 +94,6 @@ class Instruction : public ZoneObject {
 
   InstructionList args_;
   InstructionList uses_;
-
-  Instruction* prev_;
-  Instruction* next_;
 };
 
 class Phi : public Instruction {
