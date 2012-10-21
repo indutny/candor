@@ -39,7 +39,8 @@ inline Block* Gen::CreateBlock(int stack_slots) {
 
 
 inline Block* Gen::CreateBlock() {
-  return CreateBlock(current_block()->env()->stack_slots());
+  // NOTE: -1 for additional logic_slot
+  return CreateBlock(current_block()->env()->stack_slots() - 1);
 }
 
 
@@ -134,30 +135,41 @@ inline Instruction* Block::Add(InstructionType type, ScopeSlot* slot) {
 
 
 inline Instruction* Block::Add(Instruction* instr) {
-  instructions_.Push(instr);
+  if (!ended_) instructions_.Push(instr);
 
   return instr;
 }
 
 
 inline Instruction* Block::Goto(InstructionType type, Block* target) {
-  AddSuccessor(target);
-  ended_ = true;
-  return Add(type);
+  Instruction* res = Add(type);
+
+  if (!ended_) {
+    AddSuccessor(target);
+    ended_ = true;
+  }
+
+  return res;
 }
 
 
 inline Instruction* Block::Branch(InstructionType type, Block* t, Block* f) {
-  AddSuccessor(t);
-  AddSuccessor(f);
-  ended_ = true;
-  return Add(type);
+  Instruction* res = Add(type);
+
+  if (!ended_) {
+    AddSuccessor(t);
+    AddSuccessor(f);
+    ended_ = true;
+  }
+
+  return res;
 }
 
 
 inline Instruction* Block::Return(InstructionType type) {
-  ended_ = true;
-  return Add(type);
+  Instruction* res = Add(type);
+  if (!ended_) ended_ = true;
+  return res;
 }
 
 
@@ -212,7 +224,7 @@ inline void Block::env(Environment* env) {
 
 
 inline void Block::Print(PrintBuffer* p) {
-  p->Print("# Block %d\n", id);
+  p->Print(IsLoop() ? "# Block %d (loop)\n" : "# Block %d\n", id);
 
   InstructionList::Item* head = instructions_.head();
   for (; head != NULL; head = head->next()) {
@@ -278,6 +290,16 @@ inline void Environment::SetPhi(ScopeSlot* slot, Phi* phi) {
 
 inline int Environment::stack_slots() {
   return stack_slots_;
+}
+
+
+inline ScopeSlot* Environment::logic_slot() {
+  return logic_slot_;
+}
+
+
+inline BlockList* BreakContinueInfo::continue_blocks() {
+  return &continue_blocks_;
 }
 
 } // namespace hir

@@ -13,6 +13,7 @@ Instruction::Instruction(Gen* g, Block* block, InstructionType type) :
     block_(block),
     type_(type),
     slot_(NULL),
+    ast_(NULL),
     removed_(false),
     prev_(NULL),
     next_(NULL) {
@@ -28,6 +29,8 @@ Instruction::Instruction(Gen* g,
     block_(block),
     type_(type),
     slot_(slot),
+    ast_(NULL),
+    removed_(false),
     prev_(NULL),
     next_(NULL) {
 }
@@ -63,7 +66,16 @@ void Instruction::RemoveUse(Instruction* i) {
 
 
 void Instruction::Print(PrintBuffer* p) {
-  p->Print("i%d = %s", id, TypeToStr(type_));
+  p->Print("i%d = ", id);
+
+  p->Print("%s", TypeToStr(type_));
+
+  if (ast() != NULL) {
+    p->Print("[");
+    p->PrintValue(ast()->value(), ast()->length());
+    p->Print("]");
+  }
+
   if (args()->length() == 0) {
     p->Print("\n");
     return;
@@ -92,8 +104,8 @@ Phi::Phi(Gen* g, Block* block, ScopeSlot* slot) :
 
 Function::Function(Gen* g, Block* block, AstNode* ast) :
     Instruction(g, block, kFunction),
-    body(NULL),
-    ast_(ast) {
+    body(NULL) {
+  ast_ = ast;
 }
 
 } // namespace hir

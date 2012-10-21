@@ -72,6 +72,16 @@ inline void Instruction::slot(ScopeSlot* slot) {
 }
 
 
+inline AstNode* Instruction::ast() {
+  return ast_;
+}
+
+
+inline void Instruction::ast(AstNode* ast) {
+  ast_ = ast;
+}
+
+
 inline InstructionList* Instruction::args() {
   return &args_;
 }
@@ -117,11 +127,6 @@ inline Phi* Phi::Cast(Instruction* instr) {
 inline Function* Function::Cast(Instruction* instr) {
   assert(instr->Is(kFunction));
   return reinterpret_cast<Function*>(instr);
-}
-
-
-inline AstNode* Function::ast() {
-  return ast_;
 }
 
 } // namespace hir

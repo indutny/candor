@@ -32,6 +32,8 @@ typedef ZoneList<Phi*> PhiList;
     V(While) \
     V(Literal) \
     V(Goto) \
+    V(Not) \
+    V(BinOp) \
     V(Phi)
 
 #define HIR_INSTRUCTION_ENUM(I) \
@@ -65,6 +67,8 @@ class Instruction : public ZoneObject {
   inline Block* block();
   inline ScopeSlot* slot();
   inline void slot(ScopeSlot* slot);
+  inline AstNode* ast();
+  inline void ast(AstNode* ast);
   inline InstructionList* args();
   inline InstructionList* uses();
 
@@ -73,6 +77,7 @@ class Instruction : public ZoneObject {
   Block* block_;
   InstructionType type_;
   ScopeSlot* slot_;
+  AstNode* ast_;
 
   bool removed_;
 
@@ -107,10 +112,6 @@ class Function : public Instruction {
   Block* body;
 
   static inline Function* Cast(Instruction* instr);
-  inline AstNode* ast();
-
- private:
-  AstNode* ast_;
 };
 
 } // namespace hir

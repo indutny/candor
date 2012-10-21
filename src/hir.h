@@ -37,10 +37,12 @@ class Environment : public ZoneObject {
   inline void Set(ScopeSlot* slot, Instruction* value);
   inline void SetPhi(ScopeSlot* slot, Phi* value);
 
+  inline ScopeSlot* logic_slot();
   inline int stack_slots();
 
  protected:
   int stack_slots_;
+  ScopeSlot* logic_slot_;
   Instruction** instructions_;
   Phi** phis_;
 };
@@ -98,6 +100,21 @@ class Block : public ZoneObject {
   Block* succ_[2];
 };
 
+class BreakContinueInfo : public ZoneObject {
+ public:
+  BreakContinueInfo(Gen* g, Block* end);
+
+  Block* GetContinue();
+  Block* GetBreak();
+
+  inline BlockList* continue_blocks();
+
+ private:
+  Gen* g_;
+  BlockList continue_blocks_;
+  Block* brk_;
+};
+
 class Gen : public Visitor<Instruction> {
  public:
   Gen(Heap* heap, AstNode* root);
@@ -109,6 +126,10 @@ class Gen : public Visitor<Instruction> {
   Instruction* VisitValue(AstNode* stmt);
   Instruction* VisitIf(AstNode* stmt);
   Instruction* VisitWhile(AstNode* stmt);
+  Instruction* VisitBreak(AstNode* stmt);
+  Instruction* VisitContinue(AstNode* stmt);
+  Instruction* VisitUnOp(AstNode* stmt);
+  Instruction* VisitBinOp(AstNode* stmt);
 
   // Literals
 
@@ -150,6 +171,7 @@ class Gen : public Visitor<Instruction> {
 
   Block* current_block_;
   Block* current_root_;
+  BreakContinueInfo* break_continue_info_;
   BlockList blocks_;
   Root root_;
 

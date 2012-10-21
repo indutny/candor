@@ -9,6 +9,7 @@ namespace hir {
 Gen::Gen(Heap* heap, AstNode* root) : Visitor<Instruction>(kPreorder),
                                       current_block_(NULL),
                                       current_root_(NULL),
+                                      break_continue_info_(NULL),
                                       root_(heap),
                                       block_id_(0),
                                       // First instruction doesn't appear in HIR
@@ -146,12 +147,15 @@ Instruction* Gen::VisitIf(AstNode* stmt) {
 
 
 Instruction* Gen::VisitWhile(AstNode* stmt) {
+  BreakContinueInfo* old = break_continue_info_;
   Block* start = CreateBlock();
 
   Goto(kGoto, start);
-  set_current_block(start);
 
+  // Block can't be join and branch at the same time
+  set_current_block(CreateBlock());
   start->MarkLoop();
+  start->Goto(kGoto, current_block());
 
   Instruction* cond = Visit(stmt->lhs());
 
@@ -162,13 +166,132 @@ Instruction* Gen::VisitWhile(AstNode* stmt) {
   Branch(kWhile, body, end)->AddArg(cond);
 
   set_current_block(body);
-  VisitChildren(stmt);
-  body = current_block();
+  break_continue_info_ = new BreakContinueInfo(this, end);
 
-  if (!body->IsEnded()) body->Goto(kGoto, loop);
+  Visit(stmt->rhs());
+
+  while (break_continue_info_->continue_blocks()->length() > 0) {
+    Block* next = break_continue_info_->continue_blocks()->Shift();
+    Goto(kGoto, next);
+    set_current_block(next);
+  }
+  Goto(kGoto, loop);
   loop->Goto(kGoto, start);
 
-  set_current_block(end);
+  // Next current block should not be a join
+  set_current_block(break_continue_info_->GetBreak());
+
+  // Restore break continue info
+  break_continue_info_ = old;
+}
+
+
+Instruction* Gen::VisitBreak(AstNode* stmt) {
+  assert(break_continue_info_ != NULL);
+  Goto(kGoto, break_continue_info_->GetBreak());
+}
+
+
+Instruction* Gen::VisitContinue(AstNode* stmt) {
+  assert(break_continue_info_ != NULL);
+  Goto(kGoto, break_continue_info_->GetContinue());
+}
+
+
+Instruction* Gen::VisitUnOp(AstNode* stmt) {
+  UnOp* op = UnOp::Cast(stmt);
+
+  if (op->is_changing()) {
+    // ++i, i++
+    AstNode* one = new AstNode(AstNode::kNumber, stmt);
+    ScopeSlot* slot = AstValue::Cast(op->lhs())->slot();
+
+    one->value("1");
+    one->length(1);
+
+    AstNode* wrap = new BinOp(
+        (op->subtype() == UnOp::kPreInc || op->subtype() == UnOp::kPostInc) ?
+            BinOp::kAdd : BinOp::kSub,
+        one,
+        op->lhs());
+
+    if (op->subtype() == UnOp::kPreInc || op->subtype() == UnOp::kPreDec) {
+      return Assign(slot, Visit(wrap));
+    } else {
+      Instruction* ione = Visit(one);
+      Instruction* res = Visit(op->lhs());
+      Instruction* bin = Add(kBinOp)->AddArg(ione)->AddArg(res);
+
+      bin->ast(wrap);
+      Assign(slot, bin);
+
+      return res;
+    }
+  } else if (op->subtype() == UnOp::kPlus || op->subtype() == UnOp::kMinus) {
+    // +i = 0 + i,
+    // -i = 0 - i
+    AstNode* zero = new AstNode(AstNode::kNumber, stmt);
+    zero->value("0");
+    zero->length(1);
+
+    AstNode* wrap = new BinOp(
+        op->subtype() == UnOp::kPlus ? BinOp::kAdd : BinOp::kSub,
+        zero,
+        op->lhs());
+
+    return Visit(wrap);
+  } else if (op->subtype() == UnOp::kNot) {
+    return Add(kNot)->AddArg(Visit(op->lhs()));
+  } else {
+    UNEXPECTED
+  }
+}
+
+
+Instruction* Gen::VisitBinOp(AstNode* stmt) {
+  BinOp* op = BinOp::Cast(stmt);
+  Instruction* res;
+
+  if (!BinOp::is_bool_logic(op->subtype())) {
+    res = Add(kBinOp)->AddArg(Visit(op->lhs()))->AddArg(Visit(op->rhs()));
+  } else {
+    Instruction* lhs = Visit(op->lhs());
+    Block* branch = CreateBlock();
+    ScopeSlot* slot = current_block()->env()->logic_slot();
+
+    Goto(kGoto, branch);
+    set_current_block(branch);
+
+    Block* t = CreateBlock();
+    Block* f = CreateBlock();
+
+    Branch(kIf, t, f)->AddArg(lhs);
+
+    set_current_block(t);
+    if (op->subtype() == BinOp::kLAnd) {
+      Assign(slot, Visit(op->rhs()));
+    } else {
+      Assign(slot, lhs);
+    }
+    t = current_block();
+
+    set_current_block(f);
+    if (op->subtype() == BinOp::kLAnd) {
+      Assign(slot, lhs);
+    } else {
+      Assign(slot, Visit(op->rhs()));
+    }
+    f = current_block();
+
+    set_current_block(Join(t, f));
+    Phi* phi =  current_block()->env()->PhiAt(slot);
+    assert(phi != NULL);
+
+    return phi;
+  }
+
+  res->ast(stmt);
+  return res;
 }
 
 
@@ -176,7 +299,11 @@ Instruction* Gen::VisitWhile(AstNode* stmt) {
 
 
 Instruction* Gen::VisitLiteral(AstNode* stmt) {
-  return Add(kLiteral, root_.Put(stmt));
+  Instruction* i = Add(kLiteral, root_.Put(stmt));
+
+  i->ast(stmt);
+
+  return i;
 }
 
 
@@ -186,7 +313,7 @@ Instruction* Gen::VisitNumber(AstNode* stmt) {
 
 
 Instruction* Gen::VisitNil(AstNode* stmt) {
-  return VisitLiteral(stmt);
+  return Add(kNil);
 }
 
 
@@ -225,6 +352,8 @@ Block::Block(Gen* g) : id(g->block_id()),
 
 
 Instruction* Block::Assign(ScopeSlot* slot, Instruction* value) {
+  assert(value != NULL);
+
   value->slot(slot);
   env()->Set(slot, value);
 
@@ -244,6 +373,8 @@ void Block::AddPredecessor(Block* b) {
 
   for (int i = 0; i < b->env()->stack_slots(); i++) {
     Instruction* curr = b->env()->At(i);
+    if (curr == NULL) continue;
+
     Instruction* old = this->env()->At(i);
 
     // Value already present in block
@@ -278,8 +409,8 @@ void Block::AddPredecessor(Block* b) {
 void Block::MarkLoop() {
   loop_ = true;
 
-  // Create phi for every possible value
-  for (int i = 0; i < env()->stack_slots(); i++) {
+  // Create phi for every possible value (except logic_slot)
+  for (int i = 0; i < env()->stack_slots() - 1; i++) {
     ScopeSlot* slot = new ScopeSlot(ScopeSlot::kStack);
     slot->index(i);
 
@@ -354,7 +485,11 @@ void Block::PrunePhis() {
 }
 
 
-Environment::Environment(int stack_slots) : stack_slots_(stack_slots) {
+Environment::Environment(int stack_slots) : stack_slots_(stack_slots + 1) {
+  // ^^ NOTE: One stack slot is reserved for bool logic binary operations
+  logic_slot_ = new ScopeSlot(ScopeSlot::kStack);
+  logic_slot_->index(stack_slots);
+
   instructions_ = reinterpret_cast<Instruction**>(Zone::current()->Allocate(
       sizeof(*instructions_) * stack_slots_));
   memset(instructions_, 0, sizeof(*instructions_) * stack_slots_);
@@ -372,6 +507,28 @@ void Environment::Copy(Environment* from) {
   memcpy(phis_,
          from->phis_,
          sizeof(*phis_) * stack_slots_);
+}
+
+
+BreakContinueInfo::BreakContinueInfo(Gen *g, Block* end) : g_(g), brk_(end) {
+}
+
+
+Block* BreakContinueInfo::GetContinue() {
+  Block* b = g_->CreateBlock();
+
+  continue_blocks()->Push(b);
+
+  return b;
+}
+
+
+Block* BreakContinueInfo::GetBreak() {
+  Block* b = g_->CreateBlock();
+  brk_->Goto(kGoto, b);
+  brk_ = b;
+
+  return b;
 }
 
 } // namespace hir
