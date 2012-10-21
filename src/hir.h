@@ -60,12 +60,12 @@ class Block : public ZoneObject {
   void PrunePhis();
 
   inline Block* AddSuccessor(Block* b);
-  inline Instruction* Add(InstructionType type);
-  inline Instruction* Add(InstructionType type, ScopeSlot* slot);
+  inline Instruction* Add(Instruction::Type type);
+  inline Instruction* Add(Instruction::Type type, ScopeSlot* slot);
   inline Instruction* Add(Instruction* instr);
-  inline Instruction* Goto(InstructionType type, Block* target);
-  inline Instruction* Branch(InstructionType type, Block* t, Block* f);
-  inline Instruction* Return(InstructionType type);
+  inline Instruction* Goto(Instruction::Type type, Block* target);
+  inline Instruction* Branch(Instruction::Type type, Block* t, Block* f);
+  inline Instruction* Return(Instruction::Type type);
   inline bool IsEnded();
   inline bool IsEmpty();
   void MarkLoop();
@@ -154,19 +154,19 @@ class Gen : public Visitor<Instruction> {
   inline void set_current_root(Block* b);
   inline Block* current_block();
   inline Block* current_root();
-  inline Instruction* Add(InstructionType type);
-  inline Instruction* Add(InstructionType type, ScopeSlot* slot);
+  inline Instruction* Add(Instruction::Type type);
+  inline Instruction* Add(Instruction::Type type, ScopeSlot* slot);
   inline Instruction* Add(Instruction* instr);
-  inline Instruction* Goto(InstructionType type, Block* target);
-  inline Instruction* Branch(InstructionType type, Block* t, Block* f);
-  inline Instruction* Return(InstructionType type);
+  inline Instruction* Goto(Instruction::Type type, Block* target);
+  inline Instruction* Branch(Instruction::Type type, Block* t, Block* f);
+  inline Instruction* Return(Instruction::Type type);
   inline Block* Join(Block* b1, Block* b2);
   inline Instruction* Assign(ScopeSlot* slot, Instruction* value);
 
   inline Block* CreateBlock(int stack_slots);
   inline Block* CreateBlock();
 
-  inline Instruction* CreateInstruction(InstructionType type);
+  inline Instruction* CreateInstruction(Instruction::Type type);
   inline Phi* CreatePhi(ScopeSlot* slot);
   inline void Print(PrintBuffer* p);
   inline void Print(char* out, int32_t size);

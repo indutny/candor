@@ -7,7 +7,7 @@ namespace candor {
 namespace internal {
 namespace hir {
 
-Instruction::Instruction(Gen* g, Block* block, InstructionType type) :
+Instruction::Instruction(Gen* g, Block* block, Type type) :
     id(g->instr_id()),
     g_(g),
     block_(block),
@@ -20,7 +20,7 @@ Instruction::Instruction(Gen* g, Block* block, InstructionType type) :
 
 Instruction::Instruction(Gen* g,
                          Block* block,
-                         InstructionType type,
+                         Type type,
                          ScopeSlot* slot) :
     id(g->instr_id()),
     g_(g),

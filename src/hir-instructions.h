@@ -31,7 +31,6 @@ typedef ZoneList<Phi*> PhiList;
     V(StoreProperty) \
     V(DeleteProperty) \
     V(If) \
-    V(While) \
     V(Literal) \
     V(Goto) \
     V(Not) \
@@ -50,30 +49,28 @@ typedef ZoneList<Phi*> PhiList;
 #define HIR_INSTRUCTION_ENUM(I) \
     k##I,
 
-enum InstructionType {
-  HIR_INSTRUCTION_TYPES(HIR_INSTRUCTION_ENUM)
-  kNone
-};
-
-#undef HIR_INSTRUCTION_ENUM
-
 class Instruction : public ZoneObject {
  public:
-  Instruction(Gen* g, Block* block, InstructionType type);
-  Instruction(Gen* g, Block* block, InstructionType type, ScopeSlot* slot);
+  enum Type {
+    HIR_INSTRUCTION_TYPES(HIR_INSTRUCTION_ENUM)
+    kNone
+  };
+
+  Instruction(Gen* g, Block* block, Type type);
+  Instruction(Gen* g, Block* block, Type type, ScopeSlot* slot);
 
   int id;
 
   void ReplaceArg(Instruction* o, Instruction* n);
   void RemoveUse(Instruction* i);
 
-  inline Instruction* AddArg(InstructionType type);
+  inline Instruction* AddArg(Type type);
   inline Instruction* AddArg(Instruction* instr);
-  inline bool Is(InstructionType type);
+  inline bool Is(Type type);
   inline void Remove();
   inline bool IsRemoved();
   virtual void Print(PrintBuffer* p);
-  inline const char* TypeToStr(InstructionType type);
+  inline const char* TypeToStr(Type type);
 
   inline Block* block();
   inline ScopeSlot* slot();
@@ -86,7 +83,7 @@ class Instruction : public ZoneObject {
  protected:
   Gen* g_;
   Block* block_;
-  InstructionType type_;
+  Type type_;
   ScopeSlot* slot_;
   AstNode* ast_;
 
@@ -95,6 +92,8 @@ class Instruction : public ZoneObject {
   InstructionList args_;
   InstructionList uses_;
 };
+
+#undef HIR_INSTRUCTION_ENUM
 
 class Phi : public Instruction {
  public:

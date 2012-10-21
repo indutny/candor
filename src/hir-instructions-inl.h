@@ -7,7 +7,7 @@ namespace candor {
 namespace internal {
 namespace hir {
 
-inline Instruction* Instruction::AddArg(InstructionType type) {
+inline Instruction* Instruction::AddArg(Type type) {
   Instruction* instr = new Instruction(g_, block_, type);
   return AddArg(instr);
 }
@@ -23,7 +23,7 @@ inline Instruction* Instruction::AddArg(Instruction* instr) {
 }
 
 
-inline bool Instruction::Is(InstructionType type) {
+inline bool Instruction::Is(Type type) {
   return type_ == type;
 }
 
@@ -42,7 +42,7 @@ inline bool Instruction::IsRemoved() {
    res = #I; \
    break;
 
-inline const char* Instruction::TypeToStr(InstructionType type) {
+inline const char* Instruction::TypeToStr(Type type) {
   const char* res;
 
   switch (type) {

@@ -44,7 +44,7 @@ inline Block* Gen::CreateBlock() {
 }
 
 
-inline Instruction* Gen::CreateInstruction(InstructionType type) {
+inline Instruction* Gen::CreateInstruction(Instruction::Type type) {
   return new Instruction(this, current_block(), type);
 }
 
@@ -54,12 +54,12 @@ inline Phi* Gen::CreatePhi(ScopeSlot* slot) {
 }
 
 
-inline Instruction* Gen::Add(InstructionType type) {
+inline Instruction* Gen::Add(Instruction::Type type) {
   return current_block()->Add(type);
 }
 
 
-inline Instruction* Gen::Add(InstructionType type, ScopeSlot* slot) {
+inline Instruction* Gen::Add(Instruction::Type type, ScopeSlot* slot) {
   return current_block()->Add(type, slot);
 }
 
@@ -69,17 +69,17 @@ inline Instruction* Gen::Add(Instruction* instr) {
 }
 
 
-inline Instruction* Gen::Goto(InstructionType type, Block* target) {
+inline Instruction* Gen::Goto(Instruction::Type type, Block* target) {
   return current_block()->Goto(type, target);
 }
 
 
-inline Instruction* Gen::Branch(InstructionType type, Block* t, Block* f) {
+inline Instruction* Gen::Branch(Instruction::Type type, Block* t, Block* f) {
   return current_block()->Branch(type, t, f);
 }
 
 
-inline Instruction* Gen::Return(InstructionType type) {
+inline Instruction* Gen::Return(Instruction::Type type) {
   return current_block()->Return(type);
 }
 
@@ -122,13 +122,13 @@ inline Block* Block::AddSuccessor(Block* b) {
 }
 
 
-inline Instruction* Block::Add(InstructionType type) {
+inline Instruction* Block::Add(Instruction::Type type) {
   Instruction* instr = new Instruction(g_, this, type);
   return Add(instr);
 }
 
 
-inline Instruction* Block::Add(InstructionType type, ScopeSlot* slot) {
+inline Instruction* Block::Add(Instruction::Type type, ScopeSlot* slot) {
   Instruction* instr = new Instruction(g_, this, type, slot);
   return Add(instr);
 }
@@ -141,7 +141,7 @@ inline Instruction* Block::Add(Instruction* instr) {
 }
 
 
-inline Instruction* Block::Goto(InstructionType type, Block* target) {
+inline Instruction* Block::Goto(Instruction::Type type, Block* target) {
   Instruction* res = Add(type);
 
   if (!ended_) {
@@ -153,7 +153,7 @@ inline Instruction* Block::Goto(InstructionType type, Block* target) {
 }
 
 
-inline Instruction* Block::Branch(InstructionType type, Block* t, Block* f) {
+inline Instruction* Block::Branch(Instruction::Type type, Block* t, Block* f) {
   Instruction* res = Add(type);
 
   if (!ended_) {
@@ -166,7 +166,7 @@ inline Instruction* Block::Branch(InstructionType type, Block* t, Block* f) {
 }
 
 
-inline Instruction* Block::Return(InstructionType type) {
+inline Instruction* Block::Return(Instruction::Type type) {
   Instruction* res = Add(type);
   if (!ended_) ended_ = true;
   return res;
@@ -176,8 +176,8 @@ inline Instruction* Block::Return(InstructionType type) {
 inline Block* Gen::Join(Block* b1, Block* b2) {
   Block* join = CreateBlock();
 
-  b1->Goto(kGoto, join);
-  b2->Goto(kGoto, join);
+  b1->Goto(Instruction::kGoto, join);
+  b2->Goto(Instruction::kGoto, join);
 
   return join;
 }
