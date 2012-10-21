@@ -130,6 +130,14 @@ class Gen : public Visitor<Instruction> {
   Instruction* VisitContinue(AstNode* stmt);
   Instruction* VisitUnOp(AstNode* stmt);
   Instruction* VisitBinOp(AstNode* stmt);
+  Instruction* VisitObjectLiteral(AstNode* stmt);
+  Instruction* VisitArrayLiteral(AstNode* stmt);
+  Instruction* VisitMember(AstNode* stmt);
+  Instruction* VisitDelete(AstNode* stmt);
+  Instruction* VisitCall(AstNode* stmt);
+  Instruction* VisitTypeof(AstNode* stmt);
+  Instruction* VisitSizeof(AstNode* stmt);
+  Instruction* VisitKeysof(AstNode* stmt);
 
   // Literals
 

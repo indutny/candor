@@ -12,6 +12,45 @@ TEST_START(hir)
            "i2 = Literal[1]\n"
            "i4 = Literal[1]\n"
            "i6 = Return(i2)\n")
+  HIR_TEST("return { a: 1 }",
+           "# Block 0\n"
+           "i0 = Entry\n"
+           "i2 = AllocateObject\n"
+           "i4 = Literal[1]\n"
+           "i6 = Literal[a]\n"
+           "i8 = StoreProperty(i2, i6, i4)\n"
+           "i10 = Return(i2)\n")
+  HIR_TEST("return ['a']",
+           "# Block 0\n"
+           "i0 = Entry\n"
+           "i2 = AllocateArray\n"
+           "i4 = Literal\n"
+           "i6 = Literal[a]\n"
+           "i8 = StoreProperty(i2, i4, i6)\n"
+           "i10 = Return(i2)\n")
+  HIR_TEST("a = {}\na.b = 1\ndelete a.b\nreturn a.b",
+           "# Block 0\n"
+           "i0 = Entry\n"
+           "i2 = AllocateObject\n"
+           "i4 = Literal[1]\n"
+           "i6 = Literal[b]\n"
+           "i8 = StoreProperty(i2, i6, i4)\n"
+           "i10 = Literal[b]\n"
+           "i12 = DeleteProperty(i2, i10)\n"
+           "i14 = Literal[b]\n"
+           "i16 = LoadProperty(i2, i14)\n"
+           "i18 = Return(i16)\n")
+  HIR_TEST("a = global\nreturn a:b(1,2,3)",
+           "# Block 0\n"
+           "i0 = Entry\n"
+           "i2 = LoadContext\n"
+           "i4 = Literal[1]\n"
+           "i6 = Literal[2]\n"
+           "i8 = Literal[3]\n"
+           "i10 = Literal[b]\n"
+           "i12 = LoadProperty(i2, i10)\n"
+           "i14 = Call(i12, i2, i4, i6, i8)\n"
+           "i16 = Return(i14)\n")
 
   // Unary operations
   HIR_TEST("i = 0\nreturn !i",

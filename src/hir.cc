@@ -2,6 +2,9 @@
 #include "hir-inl.h"
 #include <string.h> // memset, memcpy
 
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h> // PRIu64
+
 namespace candor {
 namespace internal {
 namespace hir {
@@ -292,6 +295,129 @@ Instruction* Gen::VisitBinOp(AstNode* stmt) {
 
   res->ast(stmt);
   return res;
+}
+
+
+Instruction* Gen::VisitObjectLiteral(AstNode* stmt) {
+  Instruction* res = Add(kAllocateObject);
+  ObjectLiteral* obj = ObjectLiteral::Cast(stmt);
+
+  AstList::Item* khead = obj->keys()->head();
+  AstList::Item* vhead = obj->values()->head();
+  for (; khead != NULL; khead = khead->next(), vhead = vhead->next()) {
+    Instruction* value = Visit(vhead->value());
+    Instruction* key = Visit(khead->value());
+
+    Add(kStoreProperty)->AddArg(res)->AddArg(key)->AddArg(value);
+  }
+
+  return res;
+}
+
+
+Instruction* Gen::VisitArrayLiteral(AstNode* stmt) {
+  Instruction* res = Add(kAllocateArray);
+
+  AstList::Item* head = stmt->children()->head();
+  for (uint64_t i = 0; head != NULL; head = head->next(), i++) {
+    AstNode* index = new AstNode(AstNode::kNumber);
+    char keystr[32];
+    index->value(keystr);
+    index->length(snprintf(keystr, sizeof(keystr), "%" PRIu64, i));
+
+    Instruction* key = Visit(index);
+    Instruction* value = Visit(head->value());
+
+    // keystr is on-stack variable, nullify ast just for sanity
+    key->ast(NULL);
+
+    Add(kStoreProperty)->AddArg(res)->AddArg(key)->AddArg(value);
+  }
+
+  return res;
+}
+
+
+Instruction* Gen::VisitMember(AstNode* stmt) {
+  Instruction* prop = Visit(stmt->rhs());
+  Instruction* recv = Visit(stmt->lhs());
+  return Add(kLoadProperty)->AddArg(recv)->AddArg(prop);
+}
+
+
+Instruction* Gen::VisitDelete(AstNode* stmt) {
+  Instruction* prop = Visit(stmt->lhs()->rhs());
+  Instruction* recv = Visit(stmt->lhs()->lhs());
+  return Add(kDeleteProperty)->AddArg(recv)->AddArg(prop);
+}
+
+
+Instruction* Gen::VisitCall(AstNode* stmt) {
+  FunctionLiteral* fn = FunctionLiteral::Cast(stmt);
+
+  // handle __$gc() and __$trace() calls
+  if (fn->variable()->is(AstNode::kValue)) {
+    AstNode* name = AstValue::Cast(fn->variable())->name();
+    if (name->length() == 5 && strncmp(name->value(), "__$gc", 5) == 0) {
+      return Add(kCollectGarbage);
+    } else if (name->length() == 8 &&
+               strncmp(name->value(), "__$trace", 8) == 0) {
+      return Add(kGetStackTrace);
+    }
+  }
+
+  Instruction* receiver = NULL;
+
+  if (fn->args()->length() > 0 &&
+      fn->args()->head()->value()->is(AstNode::kSelf)) {
+    receiver = Visit(fn->variable()->lhs());
+  }
+
+  InstructionList args;
+
+  AstList::Item* item = fn->args()->head();
+  for (; item != NULL; item = item->next()) {
+    if (item->value()->is(AstNode::kSelf)) {
+      assert(receiver != NULL);
+      args.Push(receiver);
+    } else {
+      args.Push(Visit(item->value()));
+    }
+  }
+
+  Instruction* var;
+  if (fn->args()->length() > 0 &&
+      fn->args()->head()->value()->is(AstNode::kSelf)) {
+    assert(fn->variable()->is(AstNode::kMember));
+
+    Instruction* property = Visit(fn->variable()->rhs());
+
+    var = Add(kLoadProperty)->AddArg(receiver)->AddArg(property);
+  } else {
+    var = Visit(fn->variable());
+  }
+  Instruction* call = CreateInstruction(kCall)->AddArg(var);
+
+  InstructionList::Item* ihead = args.head();
+  for (; ihead != NULL; ihead = ihead->next()) {
+    call->AddArg(ihead->value());
+  }
+
+  return Add(call);
+}
+
+
+Instruction* Gen::VisitTypeof(AstNode* stmt) {
+  return Add(kTypeof)->AddArg(Visit(stmt->lhs()));
+}
+
+
+Instruction* Gen::VisitKeysof(AstNode* stmt) {
+  return Add(kKeysof)->AddArg(Visit(stmt->lhs()));
+}
+
+Instruction* Gen::VisitSizeof(AstNode* stmt) {
+  return Add(kSizeof)->AddArg(Visit(stmt->lhs()));
 }
 
 

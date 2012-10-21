@@ -27,13 +27,24 @@ typedef ZoneList<Phi*> PhiList;
     V(Function) \
     V(LoadContext) \
     V(StoreContext) \
+    V(LoadProperty) \
     V(StoreProperty) \
+    V(DeleteProperty) \
     V(If) \
     V(While) \
     V(Literal) \
     V(Goto) \
     V(Not) \
     V(BinOp) \
+    V(Typeof) \
+    V(Sizeof) \
+    V(Keysof) \
+    V(Call) \
+    V(CollectGarbage) \
+    V(GetStackTrace) \
+    V(AllocateObject) \
+    V(CloneObject) \
+    V(AllocateArray) \
     V(Phi)
 
 #define HIR_INSTRUCTION_ENUM(I) \
