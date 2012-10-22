@@ -8,7 +8,21 @@ namespace candor {
 namespace internal {
 namespace lir {
 
+// Forward-declarations
+class LGen;
+class LBlock;
+class LInstruction;
+
+typedef ZoneList<LInstruction*> LInstructionList;
+
 class LInstruction : public ZoneObject {
+ public:
+  LInstruction(LGen* g);
+
+  int id;
+
+ private:
+  LGen* g_;
 };
 
 } // namespace lir

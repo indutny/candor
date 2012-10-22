@@ -470,12 +470,16 @@ HInstruction* HGen::VisitProperty(AstNode* stmt) {
 
 
 HBlock::HBlock(HGen* g) : id(g->block_id()),
-                       g_(g),
-                       loop_(false),
-                       ended_(false),
-                       env_(NULL),
-                       pred_count_(0),
-                       succ_count_(0) {
+                          g_(g),
+                          loop_(false),
+                          ended_(false),
+                          env_(NULL),
+                          pred_count_(0),
+                          succ_count_(0),
+                          start_id_(-1),
+                          end_id_(-1),
+                          prev(NULL),
+                          next(NULL) {
   pred_[0] = NULL;
   pred_[1] = NULL;
   succ_[0] = NULL;

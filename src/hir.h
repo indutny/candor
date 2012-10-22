@@ -88,16 +88,20 @@ class HBlock : public ZoneObject {
   HInstructionList instructions_;
   HPhiList phis_;
 
+  int pred_count_;
+  int succ_count_;
+  HBlock* pred_[2];
+  HBlock* succ_[2];
+
   // Allocator augmentation
   HInstructionList live_gen_;
   HInstructionList live_kill_;
   HInstructionList live_in_;
   HInstructionList live_out_;
-
-  int pred_count_;
-  int succ_count_;
-  HBlock* pred_[2];
-  HBlock* succ_[2];
+  int start_id_;
+  int end_id_;
+  HBlock* prev;
+  HBlock* next;
 };
 
 class BreakContinueInfo : public ZoneObject {

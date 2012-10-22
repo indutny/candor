@@ -130,14 +130,14 @@ TEST_START(hir)
            "i16 = Return(i14)\n")
 
   // Functions
-  HIR_TEST("return a() { return 1 }",
+  HIR_TEST("return a(x) { return x }",
            "# Block 0\n"
            "i0 = Entry\n"
            "i2 = Function[b1]\n"
            "i4 = Return(i2)\n"
            "# Block 1\n"
-           "i6 = Entry\n"
-           "i8 = Literal[1]\n"
+           "i8 = Nil\n"
+           "i6 = Entry(i8)\n"
            "i10 = Return(i8)\n")
 
   // Multiple blocks and phi
