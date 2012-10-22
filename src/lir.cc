@@ -4,9 +4,8 @@
 
 namespace candor {
 namespace internal {
-namespace lir {
 
-LGen::LGen(hir::HGen* hir) : block_id_(0), instr_id_(0) {
+LGen::LGen(HIRGen* hir) : block_id_(0), instr_id_(0) {
 }
 
 
@@ -66,6 +65,5 @@ int LUseShape::Compare(LUse* a, LUse* b) {
          a->instr()->id < b->instr()->id ? -1 : 0;
 }
 
-} // namespace lir
 } // namespace internal
 } // namespace candor

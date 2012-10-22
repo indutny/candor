@@ -9,14 +9,9 @@
 namespace candor {
 namespace internal {
 
-namespace hir {
 // Forward-declarations
-class HGen;
-} // namespace hir
-
-namespace lir {
-
-// Forward-declarations
+class HIRGen;
+class HIRBlock;
 class LGen;
 class LOperand;
 class LRange;
@@ -108,7 +103,9 @@ class LStackSlot : public LOperand {
 
 class LGen : public ZoneObject {
  public:
-  LGen(hir::HGen* hir);
+  LGen(HIRGen* hir);
+
+  void VisitBlock(HIRBlock* block);
 
   inline int block_id();
   inline int instr_id();
@@ -118,7 +115,6 @@ class LGen : public ZoneObject {
   int instr_id_;
 };
 
-} // namespace lir
 } // namespace internal
 } // namespace candor
 

@@ -7,23 +7,20 @@
 
 namespace candor {
 namespace internal {
-namespace hir {
 
-HGen::HGen(Heap* heap, AstNode* root) : Visitor<HInstruction>(kPreorder),
-                                        current_block_(NULL),
-                                        current_root_(NULL),
-                                        break_continue_info_(NULL),
-                                        root_(heap),
-                                        block_id_(0),
-                                        // First instruction doesn't appear in
-                                        // HIR
-                                        instr_id_(-2) {
-  work_queue_.Push(new HFunction(this, NULL, root));
+HIRGen::HIRGen(Heap* heap, AstNode* root) : Visitor<HIRInstruction>(kPreorder),
+                                            current_block_(NULL),
+                                            current_root_(NULL),
+                                            break_continue_info_(NULL),
+                                            root_(heap),
+                                            block_id_(0),
+                                            instr_id_(-2) {
+  work_queue_.Push(new HIRFunction(this, NULL, root));
 
   while (work_queue_.length() != 0) {
-    HFunction* current = HFunction::Cast(work_queue_.Shift());
+    HIRFunction* current = HIRFunction::Cast(work_queue_.Shift());
 
-    HBlock* b = CreateBlock(current->ast()->stack_slots());
+    HIRBlock* b = CreateBlock(current->ast()->stack_slots());
     set_current_block(b);
     set_current_root(b);
 
@@ -31,24 +28,24 @@ HGen::HGen(Heap* heap, AstNode* root) : Visitor<HInstruction>(kPreorder),
     Visit(current->ast());
   }
 
-  PruneHPhis();
+  PruneHIRPhis();
 }
 
 
-void HGen::PruneHPhis() {
-  HBlockList::Item* head = blocks_.head();
+void HIRGen::PruneHIRPhis() {
+  HIRBlockList::Item* head = blocks_.head();
   for (; head != NULL; head = head->next()) {
-    head->value()->PruneHPhis();
+    head->value()->PruneHIRPhis();
   }
 }
 
 
-HInstruction* HGen::VisitFunction(AstNode* stmt) {
+HIRInstruction* HIRGen::VisitFunction(AstNode* stmt) {
   FunctionLiteral* fn = FunctionLiteral::Cast(stmt);
 
   if (current_root() == current_block() &&
       current_block()->IsEmpty()) {
-    HInstruction* entry = CreateInstruction(HInstruction::kEntry);
+    HIRInstruction* entry = CreateInstruction(HIRInstruction::kEntry);
 
     AstList::Item* args_head = fn->args()->head();
     for (; args_head != NULL; args_head = args_head->next()) {
@@ -60,22 +57,22 @@ HInstruction* HGen::VisitFunction(AstNode* stmt) {
     VisitChildren(stmt);
 
     if (!current_block()->IsEnded()) {
-      HInstruction* val = Add(HInstruction::kNil);
-      HInstruction* end = Return(HInstruction::kReturn);
+      HIRInstruction* val = Add(HIRInstruction::kNil);
+      HIRInstruction* end = Return(HIRInstruction::kReturn);
       end->AddArg(val);
     }
 
     return NULL;
   } else {
-    HFunction* f = new HFunction(this, current_block(), stmt);
+    HIRFunction* f = new HIRFunction(this, current_block(), stmt);
     work_queue_.Push(f);
     return Add(f);
   }
 }
 
 
-HInstruction* HGen::VisitAssign(AstNode* stmt) {
-  HInstruction* rhs = Visit(stmt->rhs());
+HIRInstruction* HIRGen::VisitAssign(AstNode* stmt) {
+  HIRInstruction* rhs = Visit(stmt->rhs());
 
   if (stmt->lhs()->is(AstNode::kValue)) {
     AstValue* value = AstValue::Cast(stmt->lhs());
@@ -84,13 +81,13 @@ HInstruction* HGen::VisitAssign(AstNode* stmt) {
       // No instruction is needed
       Assign(value->slot(), rhs);
     } else {
-      Add(HInstruction::kStoreContext, value->slot())->AddArg(rhs);
+      Add(HIRInstruction::kStoreContext, value->slot())->AddArg(rhs);
     }
   } else if (stmt->lhs()->is(AstNode::kMember)) {
-    HInstruction* property = Visit(stmt->lhs()->rhs());
-    HInstruction* receiver = Visit(stmt->lhs()->lhs());
+    HIRInstruction* property = Visit(stmt->lhs()->rhs());
+    HIRInstruction* receiver = Visit(stmt->lhs()->lhs());
 
-    Add(HInstruction::kStoreProperty)
+    Add(HIRInstruction::kStoreProperty)
         ->AddArg(receiver)
         ->AddArg(property)
         ->AddArg(rhs);
@@ -103,39 +100,39 @@ HInstruction* HGen::VisitAssign(AstNode* stmt) {
 }
 
 
-HInstruction* HGen::VisitReturn(AstNode* stmt) {
-  return Return(HInstruction::kReturn)->AddArg(Visit(stmt->lhs()));
+HIRInstruction* HIRGen::VisitReturn(AstNode* stmt) {
+  return Return(HIRInstruction::kReturn)->AddArg(Visit(stmt->lhs()));
 }
 
 
-HInstruction* HGen::VisitValue(AstNode* stmt) {
+HIRInstruction* HIRGen::VisitValue(AstNode* stmt) {
   AstValue* value = AstValue::Cast(stmt);
   ScopeSlot* slot = value->slot();
   if (slot->is_stack()) {
-    HInstruction* i = current_block()->env()->At(slot);
+    HIRInstruction* i = current_block()->env()->At(slot);
 
     if (i != NULL && i->block() == current_block()) {
       // Local value
       return i;
     } else {
-      HPhi* phi = CreatePhi(slot);
+      HIRPhi* phi = CreatePhi(slot);
       if (i != NULL) phi->AddInput(i);
 
       // External value
       return Add(Assign(slot, phi));
     }
   } else {
-    return Add(HInstruction::kLoadContext, slot);
+    return Add(HIRInstruction::kLoadContext, slot);
   }
 }
 
 
-HInstruction* HGen::VisitIf(AstNode* stmt) {
-  HBlock* t = CreateBlock();
-  HBlock* f = CreateBlock();
-  HInstruction* cond = Visit(stmt->lhs());
+HIRInstruction* HIRGen::VisitIf(AstNode* stmt) {
+  HIRBlock* t = CreateBlock();
+  HIRBlock* f = CreateBlock();
+  HIRInstruction* cond = Visit(stmt->lhs());
 
-  Branch(HInstruction::kIf, t, f)->AddArg(cond);
+  Branch(HIRInstruction::kIf, t, f)->AddArg(cond);
 
   set_current_block(t);
   Visit(stmt->rhs());
@@ -153,24 +150,24 @@ HInstruction* HGen::VisitIf(AstNode* stmt) {
 }
 
 
-HInstruction* HGen::VisitWhile(AstNode* stmt) {
+HIRInstruction* HIRGen::VisitWhile(AstNode* stmt) {
   BreakContinueInfo* old = break_continue_info_;
-  HBlock* start = CreateBlock();
+  HIRBlock* start = CreateBlock();
 
-  Goto(HInstruction::kGoto, start);
+  Goto(HIRInstruction::kGoto, start);
 
-  // HBlock can't be join and branch at the same time
+  // HIRBlock can't be join and branch at the same time
   set_current_block(CreateBlock());
   start->MarkLoop();
-  start->Goto(HInstruction::kGoto, current_block());
+  start->Goto(HIRInstruction::kGoto, current_block());
 
-  HInstruction* cond = Visit(stmt->lhs());
+  HIRInstruction* cond = Visit(stmt->lhs());
 
-  HBlock* body = CreateBlock();
-  HBlock* loop = CreateBlock();
-  HBlock* end = CreateBlock();
+  HIRBlock* body = CreateBlock();
+  HIRBlock* loop = CreateBlock();
+  HIRBlock* end = CreateBlock();
 
-  Branch(HInstruction::kIf, body, end)->AddArg(cond);
+  Branch(HIRInstruction::kIf, body, end)->AddArg(cond);
 
   set_current_block(body);
   break_continue_info_ = new BreakContinueInfo(this, end);
@@ -178,12 +175,12 @@ HInstruction* HGen::VisitWhile(AstNode* stmt) {
   Visit(stmt->rhs());
 
   while (break_continue_info_->continue_blocks()->length() > 0) {
-    HBlock* next = break_continue_info_->continue_blocks()->Shift();
-    Goto(HInstruction::kGoto, next);
+    HIRBlock* next = break_continue_info_->continue_blocks()->Shift();
+    Goto(HIRInstruction::kGoto, next);
     set_current_block(next);
   }
-  Goto(HInstruction::kGoto, loop);
-  loop->Goto(HInstruction::kGoto, start);
+  Goto(HIRInstruction::kGoto, loop);
+  loop->Goto(HIRInstruction::kGoto, start);
 
   // Next current block should not be a join
   set_current_block(break_continue_info_->GetBreak());
@@ -193,19 +190,19 @@ HInstruction* HGen::VisitWhile(AstNode* stmt) {
 }
 
 
-HInstruction* HGen::VisitBreak(AstNode* stmt) {
+HIRInstruction* HIRGen::VisitBreak(AstNode* stmt) {
   assert(break_continue_info_ != NULL);
-  Goto(HInstruction::kGoto, break_continue_info_->GetBreak());
+  Goto(HIRInstruction::kGoto, break_continue_info_->GetBreak());
 }
 
 
-HInstruction* HGen::VisitContinue(AstNode* stmt) {
+HIRInstruction* HIRGen::VisitContinue(AstNode* stmt) {
   assert(break_continue_info_ != NULL);
-  Goto(HInstruction::kGoto, break_continue_info_->GetContinue());
+  Goto(HIRInstruction::kGoto, break_continue_info_->GetContinue());
 }
 
 
-HInstruction* HGen::VisitUnOp(AstNode* stmt) {
+HIRInstruction* HIRGen::VisitUnOp(AstNode* stmt) {
   UnOp* op = UnOp::Cast(stmt);
 
   if (op->is_changing()) {
@@ -225,9 +222,10 @@ HInstruction* HGen::VisitUnOp(AstNode* stmt) {
     if (op->subtype() == UnOp::kPreInc || op->subtype() == UnOp::kPreDec) {
       return Assign(slot, Visit(wrap));
     } else {
-      HInstruction* ione = Visit(one);
-      HInstruction* res = Visit(op->lhs());
-      HInstruction* bin = Add(HInstruction::kBinOp)->AddArg(ione)->AddArg(res);
+      HIRInstruction* ione = Visit(one);
+      HIRInstruction* res = Visit(op->lhs());
+      HIRInstruction* bin = Add(HIRInstruction::kBinOp)->AddArg(ione)
+                                                       ->AddArg(res);
 
       bin->ast(wrap);
       Assign(slot, bin);
@@ -248,33 +246,33 @@ HInstruction* HGen::VisitUnOp(AstNode* stmt) {
 
     return Visit(wrap);
   } else if (op->subtype() == UnOp::kNot) {
-    return Add(HInstruction::kNot)->AddArg(Visit(op->lhs()));
+    return Add(HIRInstruction::kNot)->AddArg(Visit(op->lhs()));
   } else {
     UNEXPECTED
   }
 }
 
 
-HInstruction* HGen::VisitBinOp(AstNode* stmt) {
+HIRInstruction* HIRGen::VisitBinOp(AstNode* stmt) {
   BinOp* op = BinOp::Cast(stmt);
-  HInstruction* res;
+  HIRInstruction* res;
 
   if (!BinOp::is_bool_logic(op->subtype())) {
-    res = Add(HInstruction::kBinOp)
+    res = Add(HIRInstruction::kBinOp)
         ->AddArg(Visit(op->lhs()))
         ->AddArg(Visit(op->rhs()));
   } else {
-    HInstruction* lhs = Visit(op->lhs());
-    HBlock* branch = CreateBlock();
+    HIRInstruction* lhs = Visit(op->lhs());
+    HIRBlock* branch = CreateBlock();
     ScopeSlot* slot = current_block()->env()->logic_slot();
 
-    Goto(HInstruction::kGoto, branch);
+    Goto(HIRInstruction::kGoto, branch);
     set_current_block(branch);
 
-    HBlock* t = CreateBlock();
-    HBlock* f = CreateBlock();
+    HIRBlock* t = CreateBlock();
+    HIRBlock* f = CreateBlock();
 
-    Branch(HInstruction::kIf, t, f)->AddArg(lhs);
+    Branch(HIRInstruction::kIf, t, f)->AddArg(lhs);
 
     set_current_block(t);
     if (op->subtype() == BinOp::kLAnd) {
@@ -293,7 +291,7 @@ HInstruction* HGen::VisitBinOp(AstNode* stmt) {
     f = current_block();
 
     set_current_block(Join(t, f));
-    HPhi* phi =  current_block()->env()->PhiAt(slot);
+    HIRPhi* phi =  current_block()->env()->PhiAt(slot);
     assert(phi != NULL);
 
     return phi;
@@ -304,25 +302,28 @@ HInstruction* HGen::VisitBinOp(AstNode* stmt) {
 }
 
 
-HInstruction* HGen::VisitObjectLiteral(AstNode* stmt) {
-  HInstruction* res = Add(HInstruction::kAllocateObject);
+HIRInstruction* HIRGen::VisitObjectLiteral(AstNode* stmt) {
+  HIRInstruction* res = Add(HIRInstruction::kAllocateObject);
   ObjectLiteral* obj = ObjectLiteral::Cast(stmt);
 
   AstList::Item* khead = obj->keys()->head();
   AstList::Item* vhead = obj->values()->head();
   for (; khead != NULL; khead = khead->next(), vhead = vhead->next()) {
-    HInstruction* value = Visit(vhead->value());
-    HInstruction* key = Visit(khead->value());
+    HIRInstruction* value = Visit(vhead->value());
+    HIRInstruction* key = Visit(khead->value());
 
-    Add(HInstruction::kStoreProperty)->AddArg(res)->AddArg(key)->AddArg(value);
+    Add(HIRInstruction::kStoreProperty)
+        ->AddArg(res)
+        ->AddArg(key)
+        ->AddArg(value);
   }
 
   return res;
 }
 
 
-HInstruction* HGen::VisitArrayLiteral(AstNode* stmt) {
-  HInstruction* res = Add(HInstruction::kAllocateArray);
+HIRInstruction* HIRGen::VisitArrayLiteral(AstNode* stmt) {
+  HIRInstruction* res = Add(HIRInstruction::kAllocateArray);
 
   AstList::Item* head = stmt->children()->head();
   for (uint64_t i = 0; head != NULL; head = head->next(), i++) {
@@ -331,55 +332,58 @@ HInstruction* HGen::VisitArrayLiteral(AstNode* stmt) {
     index->value(keystr);
     index->length(snprintf(keystr, sizeof(keystr), "%" PRIu64, i));
 
-    HInstruction* key = Visit(index);
-    HInstruction* value = Visit(head->value());
+    HIRInstruction* key = Visit(index);
+    HIRInstruction* value = Visit(head->value());
 
     // keystr is on-stack variable, nullify ast just for sanity
     key->ast(NULL);
 
-    Add(HInstruction::kStoreProperty)->AddArg(res)->AddArg(key)->AddArg(value);
+    Add(HIRInstruction::kStoreProperty)
+        ->AddArg(res)
+        ->AddArg(key)
+        ->AddArg(value);
   }
 
   return res;
 }
 
 
-HInstruction* HGen::VisitMember(AstNode* stmt) {
-  HInstruction* prop = Visit(stmt->rhs());
-  HInstruction* recv = Visit(stmt->lhs());
-  return Add(HInstruction::kLoadProperty)->AddArg(recv)->AddArg(prop);
+HIRInstruction* HIRGen::VisitMember(AstNode* stmt) {
+  HIRInstruction* prop = Visit(stmt->rhs());
+  HIRInstruction* recv = Visit(stmt->lhs());
+  return Add(HIRInstruction::kLoadProperty)->AddArg(recv)->AddArg(prop);
 }
 
 
-HInstruction* HGen::VisitDelete(AstNode* stmt) {
-  HInstruction* prop = Visit(stmt->lhs()->rhs());
-  HInstruction* recv = Visit(stmt->lhs()->lhs());
-  return Add(HInstruction::kDeleteProperty)->AddArg(recv)->AddArg(prop);
+HIRInstruction* HIRGen::VisitDelete(AstNode* stmt) {
+  HIRInstruction* prop = Visit(stmt->lhs()->rhs());
+  HIRInstruction* recv = Visit(stmt->lhs()->lhs());
+  return Add(HIRInstruction::kDeleteProperty)->AddArg(recv)->AddArg(prop);
 }
 
 
-HInstruction* HGen::VisitCall(AstNode* stmt) {
+HIRInstruction* HIRGen::VisitCall(AstNode* stmt) {
   FunctionLiteral* fn = FunctionLiteral::Cast(stmt);
 
   // handle __$gc() and __$trace() calls
   if (fn->variable()->is(AstNode::kValue)) {
     AstNode* name = AstValue::Cast(fn->variable())->name();
     if (name->length() == 5 && strncmp(name->value(), "__$gc", 5) == 0) {
-      return Add(HInstruction::kCollectGarbage);
+      return Add(HIRInstruction::kCollectGarbage);
     } else if (name->length() == 8 &&
                strncmp(name->value(), "__$trace", 8) == 0) {
-      return Add(HInstruction::kGetStackTrace);
+      return Add(HIRInstruction::kGetStackTrace);
     }
   }
 
-  HInstruction* receiver = NULL;
+  HIRInstruction* receiver = NULL;
 
   if (fn->args()->length() > 0 &&
       fn->args()->head()->value()->is(AstNode::kSelf)) {
     receiver = Visit(fn->variable()->lhs());
   }
 
-  HInstructionList args;
+  HIRInstructionList args;
 
   AstList::Item* item = fn->args()->head();
   for (; item != NULL; item = item->next()) {
@@ -391,20 +395,21 @@ HInstruction* HGen::VisitCall(AstNode* stmt) {
     }
   }
 
-  HInstruction* var;
+  HIRInstruction* var;
   if (fn->args()->length() > 0 &&
       fn->args()->head()->value()->is(AstNode::kSelf)) {
     assert(fn->variable()->is(AstNode::kMember));
 
-    HInstruction* property = Visit(fn->variable()->rhs());
+    HIRInstruction* property = Visit(fn->variable()->rhs());
 
-    var = Add(HInstruction::kLoadProperty)->AddArg(receiver)->AddArg(property);
+    var = Add(HIRInstruction::kLoadProperty)->AddArg(receiver)
+                                            ->AddArg(property);
   } else {
     var = Visit(fn->variable());
   }
-  HInstruction* call = CreateInstruction(HInstruction::kCall)->AddArg(var);
+  HIRInstruction* call = CreateInstruction(HIRInstruction::kCall)->AddArg(var);
 
-  HInstructionList::Item* ihead = args.head();
+  HIRInstructionList::Item* ihead = args.head();
   for (; ihead != NULL; ihead = ihead->next()) {
     call->AddArg(ihead->value());
   }
@@ -413,25 +418,25 @@ HInstruction* HGen::VisitCall(AstNode* stmt) {
 }
 
 
-HInstruction* HGen::VisitTypeof(AstNode* stmt) {
-  return Add(HInstruction::kTypeof)->AddArg(Visit(stmt->lhs()));
+HIRInstruction* HIRGen::VisitTypeof(AstNode* stmt) {
+  return Add(HIRInstruction::kTypeof)->AddArg(Visit(stmt->lhs()));
 }
 
 
-HInstruction* HGen::VisitKeysof(AstNode* stmt) {
-  return Add(HInstruction::kKeysof)->AddArg(Visit(stmt->lhs()));
+HIRInstruction* HIRGen::VisitKeysof(AstNode* stmt) {
+  return Add(HIRInstruction::kKeysof)->AddArg(Visit(stmt->lhs()));
 }
 
-HInstruction* HGen::VisitSizeof(AstNode* stmt) {
-  return Add(HInstruction::kSizeof)->AddArg(Visit(stmt->lhs()));
+HIRInstruction* HIRGen::VisitSizeof(AstNode* stmt) {
+  return Add(HIRInstruction::kSizeof)->AddArg(Visit(stmt->lhs()));
 }
 
 
 // Literals
 
 
-HInstruction* HGen::VisitLiteral(AstNode* stmt) {
-  HInstruction* i = Add(HInstruction::kLiteral, root_.Put(stmt));
+HIRInstruction* HIRGen::VisitLiteral(AstNode* stmt) {
+  HIRInstruction* i = Add(HIRInstruction::kLiteral, root_.Put(stmt));
 
   i->ast(stmt);
 
@@ -439,37 +444,37 @@ HInstruction* HGen::VisitLiteral(AstNode* stmt) {
 }
 
 
-HInstruction* HGen::VisitNumber(AstNode* stmt) {
+HIRInstruction* HIRGen::VisitNumber(AstNode* stmt) {
   return VisitLiteral(stmt);
 }
 
 
-HInstruction* HGen::VisitNil(AstNode* stmt) {
-  return Add(HInstruction::kNil);
+HIRInstruction* HIRGen::VisitNil(AstNode* stmt) {
+  return Add(HIRInstruction::kNil);
 }
 
 
-HInstruction* HGen::VisitTrue(AstNode* stmt) {
+HIRInstruction* HIRGen::VisitTrue(AstNode* stmt) {
   return VisitLiteral(stmt);
 }
 
 
-HInstruction* HGen::VisitFalse(AstNode* stmt) {
+HIRInstruction* HIRGen::VisitFalse(AstNode* stmt) {
   return VisitLiteral(stmt);
 }
 
 
-HInstruction* HGen::VisitString(AstNode* stmt) {
+HIRInstruction* HIRGen::VisitString(AstNode* stmt) {
   return VisitLiteral(stmt);
 }
 
 
-HInstruction* HGen::VisitProperty(AstNode* stmt) {
+HIRInstruction* HIRGen::VisitProperty(AstNode* stmt) {
   return VisitLiteral(stmt);
 }
 
 
-HBlock::HBlock(HGen* g) : id(g->block_id()),
+HIRBlock::HIRBlock(HIRGen* g) : id(g->block_id()),
                           g_(g),
                           loop_(false),
                           ended_(false),
@@ -487,7 +492,7 @@ HBlock::HBlock(HGen* g) : id(g->block_id()),
 }
 
 
-HInstruction* HBlock::Assign(ScopeSlot* slot, HInstruction* value) {
+HIRInstruction* HIRBlock::Assign(ScopeSlot* slot, HIRInstruction* value) {
   assert(value != NULL);
 
   value->slot(slot);
@@ -497,7 +502,7 @@ HInstruction* HBlock::Assign(ScopeSlot* slot, HInstruction* value) {
 }
 
 
-void HBlock::AddPredecessor(HBlock* b) {
+void HIRBlock::AddPredecessor(HIRBlock* b) {
   assert(pred_count_ < 2);
   pred_[pred_count_++] = b;
 
@@ -508,14 +513,14 @@ void HBlock::AddPredecessor(HBlock* b) {
   }
 
   for (int i = 0; i < b->env()->stack_slots(); i++) {
-    HInstruction* curr = b->env()->At(i);
+    HIRInstruction* curr = b->env()->At(i);
     if (curr == NULL) continue;
 
-    HInstruction* old = this->env()->At(i);
+    HIRInstruction* old = this->env()->At(i);
 
     // Value already present in block
     if (old != NULL) {
-      HPhi* phi = this->env()->PhiAt(i);
+      HIRPhi* phi = this->env()->PhiAt(i);
 
       // In loop values can be propagated up to the block where it was declared
       if (old == curr) continue;
@@ -541,7 +546,7 @@ void HBlock::AddPredecessor(HBlock* b) {
 }
 
 
-void HBlock::MarkLoop() {
+void HIRBlock::MarkLoop() {
   loop_ = true;
 
   // Create phi for every possible value (except logic_slot)
@@ -549,8 +554,8 @@ void HBlock::MarkLoop() {
     ScopeSlot* slot = new ScopeSlot(ScopeSlot::kStack);
     slot->index(i);
 
-    HInstruction* old = env()->At(i);
-    HPhi* phi = CreatePhi(slot);
+    HIRInstruction* old = env()->At(i);
+    HIRPhi* phi = CreatePhi(slot);
     if (old != NULL) phi->AddInput(old);
 
     Add(Assign(slot, phi));
@@ -558,20 +563,20 @@ void HBlock::MarkLoop() {
 }
 
 
-void HGen::Replace(HInstruction* o, HInstruction* n) {
-  HInstructionList::Item* head = o->uses()->head();
+void HIRGen::Replace(HIRInstruction* o, HIRInstruction* n) {
+  HIRInstructionList::Item* head = o->uses()->head();
   for (; head != NULL; head = head->next()) {
-    HInstruction* use = head->value();
+    HIRInstruction* use = head->value();
 
     use->ReplaceArg(o, n);
   }
 }
 
 
-void HBlock::Remove(HInstruction* instr) {
-  HInstructionList::Item* head = instructions_.head();
+void HIRBlock::Remove(HIRInstruction* instr) {
+  HIRInstructionList::Item* head = instructions_.head();
   for (; head != NULL; head = head->next()) {
-    HInstruction* i = head->value();
+    HIRInstruction* i = head->value();
 
     if (i == instr) {
       instructions_.Remove(head);
@@ -583,16 +588,16 @@ void HBlock::Remove(HInstruction* instr) {
 }
 
 
-void HBlock::PruneHPhis() {
-  HPhiList queue_;
+void HIRBlock::PruneHIRPhis() {
+  HIRPhiList queue_;
 
-  HPhiList::Item* head = phis_.head();
+  HIRPhiList::Item* head = phis_.head();
   for (; head != NULL; head = head->next()) {
     queue_.Push(head->value());
   }
 
   while (queue_.length() > 0) {
-    HPhi* phi = queue_.Shift();
+    HIRPhi* phi = queue_.Shift();
 
     switch (phi->input_count()) {
      case 0:
@@ -610,8 +615,8 @@ void HBlock::PruneHPhis() {
 
     // Check recursive uses too
     for (int i = 0; i < phi->input_count(); i++) {
-      if (phi->InputAt(i)->Is(HInstruction::kPhi)) {
-        queue_.Push(HPhi::Cast(phi->InputAt(i)));
+      if (phi->InputAt(i)->Is(HIRInstruction::kPhi)) {
+        queue_.Push(HIRPhi::Cast(phi->InputAt(i)));
       }
     }
   }
@@ -623,11 +628,11 @@ HEnvironment::HEnvironment(int stack_slots) : stack_slots_(stack_slots + 1) {
   logic_slot_ = new ScopeSlot(ScopeSlot::kStack);
   logic_slot_->index(stack_slots);
 
-  instructions_ = reinterpret_cast<HInstruction**>(Zone::current()->Allocate(
+  instructions_ = reinterpret_cast<HIRInstruction**>(Zone::current()->Allocate(
       sizeof(*instructions_) * stack_slots_));
   memset(instructions_, 0, sizeof(*instructions_) * stack_slots_);
 
-  phis_ = reinterpret_cast<HPhi**>(Zone::current()->Allocate(
+  phis_ = reinterpret_cast<HIRPhi**>(Zone::current()->Allocate(
       sizeof(*phis_) * stack_slots_));
   memset(phis_, 0, sizeof(*phis_) * stack_slots_);
 }
@@ -643,12 +648,13 @@ void HEnvironment::Copy(HEnvironment* from) {
 }
 
 
-BreakContinueInfo::BreakContinueInfo(HGen *g, HBlock* end) : g_(g), brk_(end) {
+BreakContinueInfo::BreakContinueInfo(HIRGen *g, HIRBlock* end) : g_(g),
+                                                                 brk_(end) {
 }
 
 
-HBlock* BreakContinueInfo::GetContinue() {
-  HBlock* b = g_->CreateBlock();
+HIRBlock* BreakContinueInfo::GetContinue() {
+  HIRBlock* b = g_->CreateBlock();
 
   continue_blocks()->Push(b);
 
@@ -656,14 +662,13 @@ HBlock* BreakContinueInfo::GetContinue() {
 }
 
 
-HBlock* BreakContinueInfo::GetBreak() {
-  HBlock* b = g_->CreateBlock();
-  brk_->Goto(HInstruction::kGoto, b);
+HIRBlock* BreakContinueInfo::GetBreak() {
+  HIRBlock* b = g_->CreateBlock();
+  brk_->Goto(HIRInstruction::kGoto, b);
   brk_ = b;
 
   return b;
 }
 
-} // namespace hir
 } // namespace internal
 } // namespace candor

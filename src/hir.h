@@ -15,28 +15,27 @@
 
 namespace candor {
 namespace internal {
-namespace hir {
 
 // Forward declaration
-class HGen;
-class HBlock;
+class HIRGen;
+class HIRBlock;
 
-typedef ZoneList<HBlock*> HBlockList;
+typedef ZoneList<HIRBlock*> HIRBlockList;
 
 class HEnvironment : public ZoneObject {
  public:
   HEnvironment(int stack_slots);
   void Copy(HEnvironment* from);
 
-  inline HInstruction* At(int i);
-  inline HPhi* PhiAt(int i);
-  inline void Set(int i, HInstruction* value);
-  inline void SetPhi(int i, HPhi* value);
+  inline HIRInstruction* At(int i);
+  inline HIRPhi* PhiAt(int i);
+  inline void Set(int i, HIRInstruction* value);
+  inline void SetPhi(int i, HIRPhi* value);
 
-  inline HInstruction* At(ScopeSlot* slot);
-  inline HPhi* PhiAt(ScopeSlot* slot);
-  inline void Set(ScopeSlot* slot, HInstruction* value);
-  inline void SetPhi(ScopeSlot* slot, HPhi* value);
+  inline HIRInstruction* At(ScopeSlot* slot);
+  inline HIRPhi* PhiAt(ScopeSlot* slot);
+  inline void Set(ScopeSlot* slot, HIRInstruction* value);
+  inline void SetPhi(ScopeSlot* slot, HIRPhi* value);
 
   inline ScopeSlot* logic_slot();
   inline int stack_slots();
@@ -44,32 +43,34 @@ class HEnvironment : public ZoneObject {
  protected:
   int stack_slots_;
   ScopeSlot* logic_slot_;
-  HInstruction** instructions_;
-  HPhi** phis_;
+  HIRInstruction** instructions_;
+  HIRPhi** phis_;
 };
 
-class HBlock : public ZoneObject {
+class HIRBlock : public ZoneObject {
  public:
-  HBlock(HGen* g);
+  HIRBlock(HIRGen* g);
 
   int id;
 
-  HInstruction* Assign(ScopeSlot* slot, HInstruction* value);
-  void Remove(HInstruction* instr);
-  void PruneHPhis();
+  HIRInstruction* Assign(ScopeSlot* slot, HIRInstruction* value);
+  void Remove(HIRInstruction* instr);
+  void PruneHIRPhis();
 
-  inline HBlock* AddSuccessor(HBlock* b);
-  inline HInstruction* Add(HInstruction::Type type);
-  inline HInstruction* Add(HInstruction::Type type, ScopeSlot* slot);
-  inline HInstruction* Add(HInstruction* instr);
-  inline HInstruction* Goto(HInstruction::Type type, HBlock* target);
-  inline HInstruction* Branch(HInstruction::Type type, HBlock* t, HBlock* f);
-  inline HInstruction* Return(HInstruction::Type type);
+  inline HIRBlock* AddSuccessor(HIRBlock* b);
+  inline HIRInstruction* Add(HIRInstruction::Type type);
+  inline HIRInstruction* Add(HIRInstruction::Type type, ScopeSlot* slot);
+  inline HIRInstruction* Add(HIRInstruction* instr);
+  inline HIRInstruction* Goto(HIRInstruction::Type type, HIRBlock* target);
+  inline HIRInstruction* Branch(HIRInstruction::Type type,
+                                HIRBlock* t,
+                                HIRBlock* f);
+  inline HIRInstruction* Return(HIRInstruction::Type type);
   inline bool IsEnded();
   inline bool IsEmpty();
   void MarkLoop();
   inline bool IsLoop();
-  inline HPhi* CreatePhi(ScopeSlot* slot);
+  inline HIRPhi* CreatePhi(ScopeSlot* slot);
 
   inline HEnvironment* env();
   inline void env(HEnvironment* env);
@@ -77,102 +78,104 @@ class HBlock : public ZoneObject {
   inline void Print(PrintBuffer* p);
 
  protected:
-  void AddPredecessor(HBlock* b);
+  void AddPredecessor(HIRBlock* b);
 
-  HGen* g_;
+  HIRGen* g_;
 
   bool loop_;
   bool ended_;
 
   HEnvironment* env_;
-  HInstructionList instructions_;
-  HPhiList phis_;
+  HIRInstructionList instructions_;
+  HIRPhiList phis_;
 
   int pred_count_;
   int succ_count_;
-  HBlock* pred_[2];
-  HBlock* succ_[2];
+  HIRBlock* pred_[2];
+  HIRBlock* succ_[2];
 
   // Allocator augmentation
-  HInstructionList live_gen_;
-  HInstructionList live_kill_;
-  HInstructionList live_in_;
-  HInstructionList live_out_;
+  HIRInstructionList live_gen_;
+  HIRInstructionList live_kill_;
+  HIRInstructionList live_in_;
+  HIRInstructionList live_out_;
   int start_id_;
   int end_id_;
-  HBlock* prev;
-  HBlock* next;
+  HIRBlock* prev;
+  HIRBlock* next;
 };
 
 class BreakContinueInfo : public ZoneObject {
  public:
-  BreakContinueInfo(HGen* g, HBlock* end);
+  BreakContinueInfo(HIRGen* g, HIRBlock* end);
 
-  HBlock* GetContinue();
-  HBlock* GetBreak();
+  HIRBlock* GetContinue();
+  HIRBlock* GetBreak();
 
-  inline HBlockList* continue_blocks();
+  inline HIRBlockList* continue_blocks();
 
  private:
-  HGen* g_;
-  HBlockList continue_blocks_;
-  HBlock* brk_;
+  HIRGen* g_;
+  HIRBlockList continue_blocks_;
+  HIRBlock* brk_;
 };
 
-class HGen : public Visitor<HInstruction> {
+class HIRGen : public Visitor<HIRInstruction> {
  public:
-  HGen(Heap* heap, AstNode* root);
+  HIRGen(Heap* heap, AstNode* root);
 
-  void PruneHPhis();
-  void Replace(HInstruction* o, HInstruction* n);
+  void PruneHIRPhis();
+  void Replace(HIRInstruction* o, HIRInstruction* n);
 
-  HInstruction* VisitFunction(AstNode* stmt);
-  HInstruction* VisitAssign(AstNode* stmt);
-  HInstruction* VisitReturn(AstNode* stmt);
-  HInstruction* VisitValue(AstNode* stmt);
-  HInstruction* VisitIf(AstNode* stmt);
-  HInstruction* VisitWhile(AstNode* stmt);
-  HInstruction* VisitBreak(AstNode* stmt);
-  HInstruction* VisitContinue(AstNode* stmt);
-  HInstruction* VisitUnOp(AstNode* stmt);
-  HInstruction* VisitBinOp(AstNode* stmt);
-  HInstruction* VisitObjectLiteral(AstNode* stmt);
-  HInstruction* VisitArrayLiteral(AstNode* stmt);
-  HInstruction* VisitMember(AstNode* stmt);
-  HInstruction* VisitDelete(AstNode* stmt);
-  HInstruction* VisitCall(AstNode* stmt);
-  HInstruction* VisitTypeof(AstNode* stmt);
-  HInstruction* VisitSizeof(AstNode* stmt);
-  HInstruction* VisitKeysof(AstNode* stmt);
+  HIRInstruction* VisitFunction(AstNode* stmt);
+  HIRInstruction* VisitAssign(AstNode* stmt);
+  HIRInstruction* VisitReturn(AstNode* stmt);
+  HIRInstruction* VisitValue(AstNode* stmt);
+  HIRInstruction* VisitIf(AstNode* stmt);
+  HIRInstruction* VisitWhile(AstNode* stmt);
+  HIRInstruction* VisitBreak(AstNode* stmt);
+  HIRInstruction* VisitContinue(AstNode* stmt);
+  HIRInstruction* VisitUnOp(AstNode* stmt);
+  HIRInstruction* VisitBinOp(AstNode* stmt);
+  HIRInstruction* VisitObjectLiteral(AstNode* stmt);
+  HIRInstruction* VisitArrayLiteral(AstNode* stmt);
+  HIRInstruction* VisitMember(AstNode* stmt);
+  HIRInstruction* VisitDelete(AstNode* stmt);
+  HIRInstruction* VisitCall(AstNode* stmt);
+  HIRInstruction* VisitTypeof(AstNode* stmt);
+  HIRInstruction* VisitSizeof(AstNode* stmt);
+  HIRInstruction* VisitKeysof(AstNode* stmt);
 
   // Literals
 
-  HInstruction* VisitLiteral(AstNode* stmt);
-  HInstruction* VisitNumber(AstNode* stmt);
-  HInstruction* VisitNil(AstNode* stmt);
-  HInstruction* VisitTrue(AstNode* stmt);
-  HInstruction* VisitFalse(AstNode* stmt);
-  HInstruction* VisitString(AstNode* stmt);
-  HInstruction* VisitProperty(AstNode* stmt);
+  HIRInstruction* VisitLiteral(AstNode* stmt);
+  HIRInstruction* VisitNumber(AstNode* stmt);
+  HIRInstruction* VisitNil(AstNode* stmt);
+  HIRInstruction* VisitTrue(AstNode* stmt);
+  HIRInstruction* VisitFalse(AstNode* stmt);
+  HIRInstruction* VisitString(AstNode* stmt);
+  HIRInstruction* VisitProperty(AstNode* stmt);
 
-  inline void set_current_block(HBlock* b);
-  inline void set_current_root(HBlock* b);
-  inline HBlock* current_block();
-  inline HBlock* current_root();
-  inline HInstruction* Add(HInstruction::Type type);
-  inline HInstruction* Add(HInstruction::Type type, ScopeSlot* slot);
-  inline HInstruction* Add(HInstruction* instr);
-  inline HInstruction* Goto(HInstruction::Type type, HBlock* target);
-  inline HInstruction* Branch(HInstruction::Type type, HBlock* t, HBlock* f);
-  inline HInstruction* Return(HInstruction::Type type);
-  inline HBlock* Join(HBlock* b1, HBlock* b2);
-  inline HInstruction* Assign(ScopeSlot* slot, HInstruction* value);
+  inline void set_current_block(HIRBlock* b);
+  inline void set_current_root(HIRBlock* b);
+  inline HIRBlock* current_block();
+  inline HIRBlock* current_root();
+  inline HIRInstruction* Add(HIRInstruction::Type type);
+  inline HIRInstruction* Add(HIRInstruction::Type type, ScopeSlot* slot);
+  inline HIRInstruction* Add(HIRInstruction* instr);
+  inline HIRInstruction* Goto(HIRInstruction::Type type, HIRBlock* target);
+  inline HIRInstruction* Branch(HIRInstruction::Type type,
+                                HIRBlock* t,
+                                HIRBlock* f);
+  inline HIRInstruction* Return(HIRInstruction::Type type);
+  inline HIRBlock* Join(HIRBlock* b1, HIRBlock* b2);
+  inline HIRInstruction* Assign(ScopeSlot* slot, HIRInstruction* value);
 
-  inline HBlock* CreateBlock(int stack_slots);
-  inline HBlock* CreateBlock();
+  inline HIRBlock* CreateBlock(int stack_slots);
+  inline HIRBlock* CreateBlock();
 
-  inline HInstruction* CreateInstruction(HInstruction::Type type);
-  inline HPhi* CreatePhi(ScopeSlot* slot);
+  inline HIRInstruction* CreateInstruction(HIRInstruction::Type type);
+  inline HIRPhi* CreatePhi(ScopeSlot* slot);
   inline void Print(PrintBuffer* p);
   inline void Print(char* out, int32_t size);
 
@@ -180,20 +183,19 @@ class HGen : public Visitor<HInstruction> {
   inline int instr_id();
 
  private:
-  HInstructionList work_queue_;
-  HBlockList roots_;
+  HIRInstructionList work_queue_;
+  HIRBlockList roots_;
 
-  HBlock* current_block_;
-  HBlock* current_root_;
+  HIRBlock* current_block_;
+  HIRBlock* current_root_;
   BreakContinueInfo* break_continue_info_;
-  HBlockList blocks_;
+  HIRBlockList blocks_;
   Root root_;
 
   int block_id_;
   int instr_id_;
 };
 
-} // namespace hir
 } // namespace internal
 } // namespace candor
 

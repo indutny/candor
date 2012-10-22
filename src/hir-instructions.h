@@ -8,16 +8,15 @@
 
 namespace candor {
 namespace internal {
-namespace hir {
 
 // Forward declarations
-class HGen;
-class HBlock;
-class HInstruction;
-class HPhi;
+class HIRGen;
+class HIRBlock;
+class HIRInstruction;
+class HIRPhi;
 
-typedef ZoneList<HInstruction*> HInstructionList;
-typedef ZoneList<HPhi*> HPhiList;
+typedef ZoneList<HIRInstruction*> HIRInstructionList;
+typedef ZoneList<HIRPhi*> HIRPhiList;
 
 #define HIR_INSTRUCTION_TYPES(V) \
     V(Nop) \
@@ -49,80 +48,79 @@ typedef ZoneList<HPhi*> HPhiList;
 #define HIR_INSTRUCTION_ENUM(I) \
     k##I,
 
-class HInstruction : public ZoneObject {
+class HIRInstruction : public ZoneObject {
  public:
   enum Type {
     HIR_INSTRUCTION_TYPES(HIR_INSTRUCTION_ENUM)
     kNone
   };
 
-  HInstruction(HGen* g, HBlock* block, Type type);
-  HInstruction(HGen* g, HBlock* block, Type type, ScopeSlot* slot);
+  HIRInstruction(HIRGen* g, HIRBlock* block, Type type);
+  HIRInstruction(HIRGen* g, HIRBlock* block, Type type, ScopeSlot* slot);
 
   int id;
 
-  void ReplaceArg(HInstruction* o, HInstruction* n);
-  void RemoveUse(HInstruction* i);
+  void ReplaceArg(HIRInstruction* o, HIRInstruction* n);
+  void RemoveUse(HIRInstruction* i);
 
-  inline HInstruction* AddArg(Type type);
-  inline HInstruction* AddArg(HInstruction* instr);
+  inline HIRInstruction* AddArg(Type type);
+  inline HIRInstruction* AddArg(HIRInstruction* instr);
   inline bool Is(Type type);
   inline void Remove();
   inline bool IsRemoved();
   virtual void Print(PrintBuffer* p);
   inline const char* TypeToStr(Type type);
 
-  inline HBlock* block();
+  inline HIRBlock* block();
   inline ScopeSlot* slot();
   inline void slot(ScopeSlot* slot);
   inline AstNode* ast();
   inline void ast(AstNode* ast);
-  inline HInstructionList* args();
-  inline HInstructionList* uses();
+  inline HIRInstructionList* args();
+  inline HIRInstructionList* uses();
 
  protected:
-  HGen* g_;
-  HBlock* block_;
+  HIRGen* g_;
+  HIRBlock* block_;
   Type type_;
   ScopeSlot* slot_;
   AstNode* ast_;
 
   bool removed_;
 
-  HInstructionList args_;
-  HInstructionList uses_;
+  HIRInstructionList args_;
+  HIRInstructionList uses_;
 };
 
 #undef HIR_INSTRUCTION_ENUM
 
-class HPhi : public HInstruction {
+class HIRPhi : public HIRInstruction {
  public:
-  HPhi(HGen* g, HBlock* block, ScopeSlot* slot);
+  HIRPhi(HIRGen* g, HIRBlock* block, ScopeSlot* slot);
 
-  inline void AddInput(HInstruction* instr);
-  inline HInstruction* InputAt(int i);
+  inline void AddInput(HIRInstruction* instr);
+  inline HIRInstruction* InputAt(int i);
   inline void Nilify();
 
-  static inline HPhi* Cast(HInstruction* instr);
+  static inline HIRPhi* Cast(HIRInstruction* instr);
 
   inline int input_count();
 
  private:
   int input_count_;
-  HInstruction* inputs_[2];
+  HIRInstruction* inputs_[2];
 };
 
-class HFunction : public HInstruction {
+class HIRFunction : public HIRInstruction {
  public:
-  HFunction(HGen* g, HBlock* block, AstNode* ast);
+  HIRFunction(HIRGen* g, HIRBlock* block, AstNode* ast);
 
-  HBlock* body;
+  HIRBlock* body;
 
   void Print(PrintBuffer* p);
-  static inline HFunction* Cast(HInstruction* instr);
+  static inline HIRFunction* Cast(HIRInstruction* instr);
 };
 
-} // namespace hir
 } // namespace internal
 } // namespace candor
 

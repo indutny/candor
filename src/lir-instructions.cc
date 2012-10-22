@@ -5,11 +5,9 @@
 
 namespace candor {
 namespace internal {
-namespace lir {
 
 LInstruction::LInstruction(LGen* g) : g_(g), id(g->instr_id()) {
 }
 
-} // namespace lir
 } // namespace internal
 } // namespace candor

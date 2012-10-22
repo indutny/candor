@@ -5,7 +5,6 @@
 
 namespace candor {
 namespace internal {
-namespace lir {
 
 inline int LGen::block_id() {
   return block_id_++;
@@ -51,7 +50,6 @@ inline int LOperand::index() {
   return index_;
 }
 
-} // namespace lir
 } // namespace internal
 } // namespace candor
 

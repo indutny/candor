@@ -6,7 +6,6 @@
 
 namespace candor {
 namespace internal {
-namespace lir {
 
 // Forward-declarations
 class LGen;
@@ -25,7 +24,6 @@ class LInstruction : public ZoneObject {
   LGen* g_;
 };
 
-} // namespace lir
 } // namespace internal
 } // namespace candor
 

@@ -5,9 +5,8 @@
 
 namespace candor {
 namespace internal {
-namespace hir {
 
-HInstruction::HInstruction(HGen* g, HBlock* block, Type type) :
+HIRInstruction::HIRInstruction(HIRGen* g, HIRBlock* block, Type type) :
     id(g->instr_id()),
     g_(g),
     block_(block),
@@ -18,8 +17,8 @@ HInstruction::HInstruction(HGen* g, HBlock* block, Type type) :
 }
 
 
-HInstruction::HInstruction(HGen* g,
-                          HBlock* block,
+HIRInstruction::HIRInstruction(HIRGen* g,
+                          HIRBlock* block,
                           Type type,
                           ScopeSlot* slot) :
     id(g->instr_id()),
@@ -32,10 +31,10 @@ HInstruction::HInstruction(HGen* g,
 }
 
 
-void HInstruction::ReplaceArg(HInstruction* o, HInstruction* n) {
-  HInstructionList::Item* head = args()->head();
+void HIRInstruction::ReplaceArg(HIRInstruction* o, HIRInstruction* n) {
+  HIRInstructionList::Item* head = args()->head();
   for (; head != NULL; head = head->next()) {
-    HInstruction* arg = head->value();
+    HIRInstruction* arg = head->value();
     if (arg == o) {
       args()->InsertBefore(head, n);
       args()->Remove(head);
@@ -49,10 +48,10 @@ void HInstruction::ReplaceArg(HInstruction* o, HInstruction* n) {
 }
 
 
-void HInstruction::RemoveUse(HInstruction* i) {
-  HInstructionList::Item* head = uses()->head();
+void HIRInstruction::RemoveUse(HIRInstruction* i) {
+  HIRInstructionList::Item* head = uses()->head();
   for (; head != NULL; head = head->next()) {
-    HInstruction* use = head->value();
+    HIRInstruction* use = head->value();
     if (use == i) {
       uses()->Remove(head);
       break;
@@ -61,7 +60,7 @@ void HInstruction::RemoveUse(HInstruction* i) {
 }
 
 
-void HInstruction::Print(PrintBuffer* p) {
+void HIRInstruction::Print(PrintBuffer* p) {
   p->Print("i%d = ", id);
 
   p->Print("%s", TypeToStr(type_));
@@ -77,7 +76,7 @@ void HInstruction::Print(PrintBuffer* p) {
     return;
   }
 
-  HInstructionList::Item* head = args()->head();
+  HIRInstructionList::Item* head = args()->head();
   p->Print("(");
   for (; head != NULL; head = head->next()) {
     p->Print("i%d", head->value()->id);
@@ -87,8 +86,8 @@ void HInstruction::Print(PrintBuffer* p) {
 }
 
 
-HPhi::HPhi(HGen* g, HBlock* block, ScopeSlot* slot) :
-    HInstruction(g, block, kPhi, slot),
+HIRPhi::HIRPhi(HIRGen* g, HIRBlock* block, ScopeSlot* slot) :
+    HIRInstruction(g, block, kPhi, slot),
     input_count_(0) {
   inputs_[0] = NULL;
   inputs_[1] = NULL;
@@ -98,17 +97,16 @@ HPhi::HPhi(HGen* g, HBlock* block, ScopeSlot* slot) :
 }
 
 
-HFunction::HFunction(HGen* g, HBlock* block, AstNode* ast) :
-    HInstruction(g, block, kFunction),
+HIRFunction::HIRFunction(HIRGen* g, HIRBlock* block, AstNode* ast) :
+    HIRInstruction(g, block, kFunction),
     body(NULL) {
   ast_ = ast;
 }
 
 
-void HFunction::Print(PrintBuffer* p) {
+void HIRFunction::Print(PrintBuffer* p) {
   p->Print("i%d = Function[b%d]\n", id, body->id);
 }
 
-} // namespace hir
 } // namespace internal
 } // namespace candor
