@@ -68,6 +68,7 @@ class HIRInstruction : public ZoneObject {
   inline HIRInstruction* AddArg(Type type);
   inline HIRInstruction* AddArg(HIRInstruction* instr);
   inline bool Is(Type type);
+  inline Type type();
   inline void Remove();
   inline bool IsRemoved();
   virtual void Print(PrintBuffer* p);

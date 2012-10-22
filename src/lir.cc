@@ -9,7 +9,9 @@ namespace internal {
 
 LGen::LGen(HIRGen* hir) : hir_(hir), instr_id_(0) {
   FlattenBlocks();
-  ComputeLiveness();
+  GenerateInstructions();
+  ComputeLocalLiveSets();
+  ComputeGlobalLiveSets();
 }
 
 
@@ -50,30 +52,28 @@ void LGen::FlattenBlocks() {
 }
 
 
-void LGen::ComputeLiveness() {
-  // Compute kill/gen first
+void LGen::GenerateInstructions() {
   HIRBlockList::Item* head = blocks_.head();
   for (; head != NULL; head = head->next()) {
     HIRBlock* b = head->value();
 
     HIRInstructionList::Item* ihead = b->instructions()->head();
     for (; ihead != NULL; ihead = ihead->next()) {
-      HIRInstruction* i = ihead->value();
-
-      b->live_gen()->Set(NumberKey::New(i->id), i);
-
-      HIRInstructionList::Item* ahead = i->args()->head();
-      for (; ahead != NULL; ahead = ahead->next()) {
-        HIRInstruction* arg = ahead->value();
-        b->live_kill()->Set(NumberKey::New(arg->id), arg);
-      }
+//      LInstruction::Compile(this, ihead->value());
     }
   }
 }
 
 
-void LGen::VisitBlock(HIRBlock* block) {
-  
+void LGen::Add(LInstruction* instr) {
+}
+
+
+void LGen::ComputeLocalLiveSets() {
+}
+
+
+void LGen::ComputeGlobalLiveSets() {
 }
 
 

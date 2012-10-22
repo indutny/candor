@@ -3,8 +3,8 @@
 
 #include "hir.h"
 #include "hir-inl.h"
+#include "lir-builder.h"
 #include "lir-instructions.h"
-#include "lir-instructions-inl.h"
 #include "zone.h" // Zone
 #include "utils.h" // Lists and etc
 
@@ -106,8 +106,11 @@ class LGen : public ZoneObject {
   LGen(HIRGen* hir);
 
   void FlattenBlocks();
-  void ComputeLiveness();
-  void VisitBlock(HIRBlock* block);
+  void GenerateInstructions();
+  void ComputeLocalLiveSets();
+  void ComputeGlobalLiveSets();
+
+  void Add(LInstruction* instr);
 
   inline int instr_id();
 
@@ -119,6 +122,7 @@ class LGen : public ZoneObject {
   int instr_id_;
 
   HIRBlockList blocks_;
+  LInstructionList instructions_;
 };
 
 } // namespace internal

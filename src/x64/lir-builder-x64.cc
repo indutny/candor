@@ -1,5 +1,5 @@
-#include "lir-instructions-x64.h"
-#include "lir-instructions-x64-inl.h"
+#include "lir-builder-x64.h"
+#include "lir-builder-x64-inl.h"
 
 namespace candor {
 namespace internal {

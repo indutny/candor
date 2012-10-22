@@ -27,6 +27,11 @@ inline bool HIRInstruction::Is(Type type) {
 }
 
 
+inline HIRInstruction::Type HIRInstruction::type() {
+  return type_;
+}
+
+
 inline void HIRInstruction::Remove() {
   removed_ = true;
 }
