@@ -553,14 +553,12 @@ void Block::MarkLoop() {
 }
 
 
-void Block::Replace(Instruction* o, Instruction* n) {
+void Gen::Replace(Instruction* o, Instruction* n) {
   InstructionList::Item* head = o->uses()->head();
   for (; head != NULL; head = head->next()) {
     Instruction* use = head->value();
 
-    if (use->block() == this) {
-      use->ReplaceArg(o, n);
-    }
+    use->ReplaceArg(o, n);
   }
 }
 
@@ -596,7 +594,7 @@ void Block::PrunePhis() {
       phi->Nilify();
       break;
      case 1:
-      Replace(phi, phi->InputAt(0));
+      g_->Replace(phi, phi->InputAt(0));
       if (phi->block() == this) Remove(phi);
       break;
      case 2:

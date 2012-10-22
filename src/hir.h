@@ -55,7 +55,6 @@ class Block : public ZoneObject {
   int id;
 
   Instruction* Assign(ScopeSlot* slot, Instruction* value);
-  void Replace(Instruction* o, Instruction* n);
   void Remove(Instruction* instr);
   void PrunePhis();
 
@@ -119,7 +118,9 @@ class BreakContinueInfo : public ZoneObject {
 class Gen : public Visitor<Instruction> {
  public:
   Gen(Heap* heap, AstNode* root);
+
   void PrunePhis();
+  void Replace(Instruction* o, Instruction* n);
 
   Instruction* VisitFunction(AstNode* stmt);
   Instruction* VisitAssign(AstNode* stmt);
