@@ -128,6 +128,12 @@ inline HIRFunction* HIRFunction::Cast(HIRInstruction* instr) {
   return reinterpret_cast<HIRFunction*>(instr);
 }
 
+
+inline HIRLoadArg* HIRLoadArg::Cast(HIRInstruction* instr) {
+  assert(instr->Is(kLoadArg));
+  return reinterpret_cast<HIRLoadArg*>(instr);
+}
+
 } // namespace internal
 } // namespace candor
 

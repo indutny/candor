@@ -24,6 +24,8 @@ HIRGen::HIRGen(Heap* heap, AstNode* root) : Visitor<HIRInstruction>(kPreorder),
     set_current_block(b);
     set_current_root(b);
 
+    roots_.Push(b);
+
     current->body = b;
     Visit(current->ast());
   }
@@ -45,14 +47,20 @@ HIRInstruction* HIRGen::VisitFunction(AstNode* stmt) {
 
   if (current_root() == current_block() &&
       current_block()->IsEmpty()) {
-    HIRInstruction* entry = CreateInstruction(HIRInstruction::kEntry);
+    Add(HIRInstruction::kEntry);
 
     AstList::Item* args_head = fn->args()->head();
-    for (; args_head != NULL; args_head = args_head->next()) {
-      entry->AddArg(Visit(args_head->value()));
-    }
+    for (int i = 0; args_head != NULL; args_head = args_head->next(), i++) {
+      AstValue* value = AstValue::Cast(args_head->value());
 
-    Add(entry);
+      HIRInstruction* arg = Add(new HIRLoadArg(this, current_block(), i));
+      if (value->slot()->is_stack()) {
+        // No instruction is needed
+        Assign(value->slot(), arg);
+      } else {
+        Add(HIRInstruction::kStoreContext, value->slot())->AddArg(arg);
+      }
+    }
 
     VisitChildren(stmt);
 
@@ -482,9 +490,7 @@ HIRBlock::HIRBlock(HIRGen* g) : id(g->block_id()),
                           pred_count_(0),
                           succ_count_(0),
                           start_id_(-1),
-                          end_id_(-1),
-                          prev(NULL),
-                          next(NULL) {
+                          end_id_(-1) {
   pred_[0] = NULL;
   pred_[1] = NULL;
   succ_[0] = NULL;
@@ -623,7 +629,8 @@ void HIRBlock::PruneHIRPhis() {
 }
 
 
-HEnvironment::HEnvironment(int stack_slots) : stack_slots_(stack_slots + 1) {
+HIREnvironment::HIREnvironment(int stack_slots)
+    : stack_slots_(stack_slots + 1) {
   // ^^ NOTE: One stack slot is reserved for bool logic binary operations
   logic_slot_ = new ScopeSlot(ScopeSlot::kStack);
   logic_slot_->index(stack_slots);
@@ -638,7 +645,7 @@ HEnvironment::HEnvironment(int stack_slots) : stack_slots_(stack_slots + 1) {
 }
 
 
-void HEnvironment::Copy(HEnvironment* from) {
+void HIREnvironment::Copy(HIREnvironment* from) {
   memcpy(instructions_,
          from->instructions_,
          sizeof(*instructions_) * stack_slots_);

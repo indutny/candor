@@ -24,6 +24,7 @@ test: test-runner can
 	@./test-runner parser
 	@./test-runner scope
 	@./test-runner hir
+	@./test-runner lir
 	@./test-runner functional
 	@./test-runner binary
 	@./test-runner numbers

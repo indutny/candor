@@ -9,7 +9,8 @@
     V(numbers)\
     V(parser)\
     V(scope)\
-    V(hir)
+    V(hir) \
+    V(lir)
 
 #define TEST_DECLARE(name)\
     int __test_runner_##name();

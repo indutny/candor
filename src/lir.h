@@ -1,6 +1,8 @@
 #ifndef _SRC_LIR_H_
 #define _SRC_LIR_H_
 
+#include "hir.h"
+#include "hir-inl.h"
 #include "lir-instructions.h"
 #include "lir-instructions-inl.h"
 #include "zone.h" // Zone
@@ -10,8 +12,6 @@ namespace candor {
 namespace internal {
 
 // Forward-declarations
-class HIRGen;
-class HIRBlock;
 class LGen;
 class LOperand;
 class LRange;
@@ -105,14 +105,20 @@ class LGen : public ZoneObject {
  public:
   LGen(HIRGen* hir);
 
+  void FlattenBlocks();
+  void ComputeLiveness();
   void VisitBlock(HIRBlock* block);
 
-  inline int block_id();
   inline int instr_id();
 
+  inline void Print(PrintBuffer* p);
+  inline void Print(char* out, int32_t size);
+
  private:
-  int block_id_;
+  HIRGen* hir_;
   int instr_id_;
+
+  HIRBlockList blocks_;
 };
 
 } // namespace internal

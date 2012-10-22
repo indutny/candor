@@ -16,6 +16,7 @@ class HIRInstruction;
 class HIRPhi;
 
 typedef ZoneList<HIRInstruction*> HIRInstructionList;
+typedef HashMap<NumberKey, HIRInstruction, ZoneObject> HIRInstructionMap;
 typedef ZoneList<HIRPhi*> HIRPhiList;
 
 #define HIR_INSTRUCTION_TYPES(V) \
@@ -24,6 +25,7 @@ typedef ZoneList<HIRPhi*> HIRPhiList;
     V(Entry) \
     V(Return) \
     V(Function) \
+    V(LoadArg) \
     V(LoadContext) \
     V(StoreContext) \
     V(LoadProperty) \
@@ -119,6 +121,17 @@ class HIRFunction : public HIRInstruction {
 
   void Print(PrintBuffer* p);
   static inline HIRFunction* Cast(HIRInstruction* instr);
+};
+
+class HIRLoadArg : public HIRInstruction {
+ public:
+  HIRLoadArg(HIRGen* g, HIRBlock* block, int index);
+
+  void Print(PrintBuffer* p);
+  static inline HIRLoadArg* Cast(HIRInstruction* instr);
+
+ private:
+  int index_;
 };
 
 } // namespace internal

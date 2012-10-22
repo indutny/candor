@@ -22,10 +22,10 @@ class HIRBlock;
 
 typedef ZoneList<HIRBlock*> HIRBlockList;
 
-class HEnvironment : public ZoneObject {
+class HIREnvironment : public ZoneObject {
  public:
-  HEnvironment(int stack_slots);
-  void Copy(HEnvironment* from);
+  HIREnvironment(int stack_slots);
+  void Copy(HIREnvironment* from);
 
   inline HIRInstruction* At(int i);
   inline HIRPhi* PhiAt(int i);
@@ -72,8 +72,22 @@ class HIRBlock : public ZoneObject {
   inline bool IsLoop();
   inline HIRPhi* CreatePhi(ScopeSlot* slot);
 
-  inline HEnvironment* env();
-  inline void env(HEnvironment* env);
+  inline HIREnvironment* env();
+  inline void env(HIREnvironment* env);
+  inline HIRInstructionList* instructions();
+  inline HIRPhiList* phis();
+  inline HIRBlock* SuccAt(int i);
+  inline HIRBlock* PredAt(int i);
+  inline int pred_count();
+  inline int succ_count();
+  inline HIRInstructionMap* live_gen();
+  inline HIRInstructionMap* live_kill();
+  inline HIRInstructionMap* live_in();
+  inline HIRInstructionMap* live_out();
+  inline int start_id();
+  inline int end_id();
+  inline void start_id(int start_id);
+  inline void end_id(int end_id);
 
   inline void Print(PrintBuffer* p);
 
@@ -85,7 +99,7 @@ class HIRBlock : public ZoneObject {
   bool loop_;
   bool ended_;
 
-  HEnvironment* env_;
+  HIREnvironment* env_;
   HIRInstructionList instructions_;
   HIRPhiList phis_;
 
@@ -95,14 +109,12 @@ class HIRBlock : public ZoneObject {
   HIRBlock* succ_[2];
 
   // Allocator augmentation
-  HIRInstructionList live_gen_;
-  HIRInstructionList live_kill_;
-  HIRInstructionList live_in_;
-  HIRInstructionList live_out_;
+  HIRInstructionMap live_gen_;
+  HIRInstructionMap live_kill_;
+  HIRInstructionMap live_in_;
+  HIRInstructionMap live_out_;
   int start_id_;
   int end_id_;
-  HIRBlock* prev;
-  HIRBlock* next;
 };
 
 class BreakContinueInfo : public ZoneObject {
@@ -160,6 +172,10 @@ class HIRGen : public Visitor<HIRInstruction> {
   inline void set_current_root(HIRBlock* b);
   inline HIRBlock* current_block();
   inline HIRBlock* current_root();
+
+  inline HIRBlockList* blocks();
+  inline HIRBlockList* roots();
+
   inline HIRInstruction* Add(HIRInstruction::Type type);
   inline HIRInstruction* Add(HIRInstruction::Type type, ScopeSlot* slot);
   inline HIRInstruction* Add(HIRInstruction* instr);
@@ -184,11 +200,12 @@ class HIRGen : public Visitor<HIRInstruction> {
 
  private:
   HIRInstructionList work_queue_;
-  HIRBlockList roots_;
 
   HIRBlock* current_block_;
   HIRBlock* current_root_;
   BreakContinueInfo* break_continue_info_;
+
+  HIRBlockList roots_;
   HIRBlockList blocks_;
   Root root_;
 

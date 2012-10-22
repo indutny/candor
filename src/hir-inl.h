@@ -27,9 +27,19 @@ inline HIRBlock* HIRGen::current_root() {
 }
 
 
+inline HIRBlockList* HIRGen::blocks() {
+  return &blocks_;
+}
+
+
+inline HIRBlockList* HIRGen::roots() {
+  return &roots_;
+}
+
+
 inline HIRBlock* HIRGen::CreateBlock(int stack_slots) {
   HIRBlock* b = new HIRBlock(this);
-  b->env(new HEnvironment(stack_slots));
+  b->env(new HIREnvironment(stack_slots));
 
   blocks_.Push(b);
 
@@ -218,14 +228,89 @@ inline HIRPhi* HIRBlock::CreatePhi(ScopeSlot* slot) {
 }
 
 
-inline HEnvironment* HIRBlock::env() {
+inline HIREnvironment* HIRBlock::env() {
   assert(env_ != NULL);
   return env_;
 }
 
 
-inline void HIRBlock::env(HEnvironment* env) {
+inline void HIRBlock::env(HIREnvironment* env) {
   env_ = env;
+}
+
+
+inline HIRInstructionList* HIRBlock::instructions() {
+  return &instructions_;
+}
+
+
+inline HIRPhiList* HIRBlock::phis() {
+  return &phis_;
+}
+
+
+inline HIRBlock* HIRBlock::SuccAt(int i) {
+  assert(i < succ_count_);
+  return succ_[i];
+}
+
+
+inline HIRBlock* HIRBlock::PredAt(int i) {
+  assert(i < pred_count_);
+  return pred_[i];
+}
+
+
+inline int PredAt(int i);
+
+
+inline int HIRBlock::pred_count() {
+  return pred_count_;
+}
+
+
+inline int HIRBlock::succ_count() {
+  return succ_count_;
+}
+
+
+inline HIRInstructionMap* HIRBlock::live_gen() {
+  return &live_gen_;
+}
+
+
+inline HIRInstructionMap* HIRBlock::live_kill() {
+  return &live_kill_;
+}
+
+
+inline HIRInstructionMap* HIRBlock::live_in() {
+  return &live_in_;
+}
+
+
+inline HIRInstructionMap* HIRBlock::live_out() {
+  return &live_out_;
+}
+
+
+inline int HIRBlock::start_id() {
+  return start_id_;
+}
+
+
+inline int HIRBlock::end_id() {
+  return end_id_;
+}
+
+
+inline void HIRBlock::start_id(int start_id) {
+  start_id_ = start_id;
+}
+
+
+inline void HIRBlock::end_id(int end_id) {
+  end_id_ = end_id;
 }
 
 
@@ -250,56 +335,56 @@ inline void HIRBlock::Print(PrintBuffer* p) {
 }
 
 
-inline HIRInstruction* HEnvironment::At(int i) {
+inline HIRInstruction* HIREnvironment::At(int i) {
   assert(i < stack_slots_);
   return instructions_[i];
 }
 
 
-inline void HEnvironment::Set(int i, HIRInstruction* value) {
+inline void HIREnvironment::Set(int i, HIRInstruction* value) {
   assert(i < stack_slots_);
   instructions_[i] = value;
 }
 
 
-inline HIRPhi* HEnvironment::PhiAt(int i) {
+inline HIRPhi* HIREnvironment::PhiAt(int i) {
   assert(i < stack_slots_);
   return phis_[i];
 }
 
 
-inline void HEnvironment::SetPhi(int i, HIRPhi* phi) {
+inline void HIREnvironment::SetPhi(int i, HIRPhi* phi) {
   assert(i < stack_slots_);
   phis_[i] = phi;
 }
 
 
-inline HIRInstruction* HEnvironment::At(ScopeSlot* slot) {
+inline HIRInstruction* HIREnvironment::At(ScopeSlot* slot) {
   return At(slot->index());
 }
 
 
-inline void HEnvironment::Set(ScopeSlot* slot, HIRInstruction* value) {
+inline void HIREnvironment::Set(ScopeSlot* slot, HIRInstruction* value) {
   Set(slot->index(), value);
 }
 
 
-inline HIRPhi* HEnvironment::PhiAt(ScopeSlot* slot) {
+inline HIRPhi* HIREnvironment::PhiAt(ScopeSlot* slot) {
   return PhiAt(slot->index());
 }
 
 
-inline void HEnvironment::SetPhi(ScopeSlot* slot, HIRPhi* phi) {
+inline void HIREnvironment::SetPhi(ScopeSlot* slot, HIRPhi* phi) {
   SetPhi(slot->index(), phi);
 }
 
 
-inline int HEnvironment::stack_slots() {
+inline int HIREnvironment::stack_slots() {
   return stack_slots_;
 }
 
 
-inline ScopeSlot* HEnvironment::logic_slot() {
+inline ScopeSlot* HIREnvironment::logic_slot() {
   return logic_slot_;
 }
 

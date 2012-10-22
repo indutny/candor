@@ -437,6 +437,8 @@ class HashMap {
     }
   }
 
+  inline Item* head() { return head_; }
+
   bool allocated;
 
  private:

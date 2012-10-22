@@ -82,6 +82,28 @@ using namespace internal;
       ast = NULL;\
     }
 
+#define LIR_TEST(code, expected)\
+    {\
+      Zone z;\
+      char out[10024];\
+      Heap heap(2 * 1024 * 1024);\
+      Parser p(code, strlen(code));\
+      AstNode* ast = p.Execute();\
+      assert(!p.has_error());\
+      Scope::Analyze(ast);\
+      assert(ast != NULL);\
+      HIRGen hgen(&heap, ast);\
+      LGen lgen(&hgen);\
+      lgen.Print(out, sizeof(out));\
+      if (strcmp(expected, out) != 0) {\
+        fprintf(stderr, "HIR test failed, got:\n%s\n expected:\n%s\n",\
+                out,\
+                expected);\
+        abort();\
+      }\
+      ast = NULL;\
+    }
+
 #define FUN_TEST(code, block)\
     {\
       Isolate i;\

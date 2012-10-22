@@ -136,8 +136,8 @@ TEST_START(hir)
            "i2 = Function[b1]\n"
            "i4 = Return(i2)\n"
            "# Block 1\n"
-           "i8 = Nil\n"
-           "i6 = Entry(i8)\n"
+           "i6 = Entry\n"
+           "i8 = LoadArg[0]\n"
            "i10 = Return(i8)\n")
 
   // Multiple blocks and phi

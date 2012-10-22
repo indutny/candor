@@ -108,5 +108,16 @@ void HIRFunction::Print(PrintBuffer* p) {
   p->Print("i%d = Function[b%d]\n", id, body->id);
 }
 
+
+HIRLoadArg::HIRLoadArg(HIRGen* g, HIRBlock* block, int index) :
+    HIRInstruction(g, block, kLoadArg),
+    index_(index) {
+}
+
+
+void HIRLoadArg::Print(PrintBuffer* p) {
+  p->Print("i%d = LoadArg[%d]\n", id, index_);
+}
+
 } // namespace internal
 } // namespace candor

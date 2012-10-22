@@ -6,13 +6,19 @@
 namespace candor {
 namespace internal {
 
-inline int LGen::block_id() {
-  return block_id_++;
+inline int LGen::instr_id() {
+  return instr_id_++;
 }
 
 
-inline int LGen::instr_id() {
-  return instr_id_++;
+inline void LGen::Print(PrintBuffer* p) {
+  p->Print("lir\n");
+}
+
+
+inline void LGen::Print(char* out, int32_t size) {
+  PrintBuffer p(out, size);
+  Print(&p);
 }
 
 
