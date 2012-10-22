@@ -85,7 +85,7 @@ char* CodeSpace::Compile(const char* filename,
   Scope::Analyze(ast);
 
   // Generate CFG with SSA
-  hir::Gen gen(heap(), ast);
+  hir::HGen gen(heap(), ast);
 
   /*
   // TODO: Handle errors (like invalid lhs) in HIR!

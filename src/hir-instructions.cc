@@ -7,7 +7,7 @@ namespace candor {
 namespace internal {
 namespace hir {
 
-Instruction::Instruction(Gen* g, Block* block, Type type) :
+HInstruction::HInstruction(HGen* g, HBlock* block, Type type) :
     id(g->instr_id()),
     g_(g),
     block_(block),
@@ -18,10 +18,10 @@ Instruction::Instruction(Gen* g, Block* block, Type type) :
 }
 
 
-Instruction::Instruction(Gen* g,
-                         Block* block,
-                         Type type,
-                         ScopeSlot* slot) :
+HInstruction::HInstruction(HGen* g,
+                          HBlock* block,
+                          Type type,
+                          ScopeSlot* slot) :
     id(g->instr_id()),
     g_(g),
     block_(block),
@@ -32,10 +32,10 @@ Instruction::Instruction(Gen* g,
 }
 
 
-void Instruction::ReplaceArg(Instruction* o, Instruction* n) {
-  InstructionList::Item* head = args()->head();
+void HInstruction::ReplaceArg(HInstruction* o, HInstruction* n) {
+  HInstructionList::Item* head = args()->head();
   for (; head != NULL; head = head->next()) {
-    Instruction* arg = head->value();
+    HInstruction* arg = head->value();
     if (arg == o) {
       args()->InsertBefore(head, n);
       args()->Remove(head);
@@ -49,10 +49,10 @@ void Instruction::ReplaceArg(Instruction* o, Instruction* n) {
 }
 
 
-void Instruction::RemoveUse(Instruction* i) {
-  InstructionList::Item* head = uses()->head();
+void HInstruction::RemoveUse(HInstruction* i) {
+  HInstructionList::Item* head = uses()->head();
   for (; head != NULL; head = head->next()) {
-    Instruction* use = head->value();
+    HInstruction* use = head->value();
     if (use == i) {
       uses()->Remove(head);
       break;
@@ -61,7 +61,7 @@ void Instruction::RemoveUse(Instruction* i) {
 }
 
 
-void Instruction::Print(PrintBuffer* p) {
+void HInstruction::Print(PrintBuffer* p) {
   p->Print("i%d = ", id);
 
   p->Print("%s", TypeToStr(type_));
@@ -77,7 +77,7 @@ void Instruction::Print(PrintBuffer* p) {
     return;
   }
 
-  InstructionList::Item* head = args()->head();
+  HInstructionList::Item* head = args()->head();
   p->Print("(");
   for (; head != NULL; head = head->next()) {
     p->Print("i%d", head->value()->id);
@@ -87,8 +87,8 @@ void Instruction::Print(PrintBuffer* p) {
 }
 
 
-Phi::Phi(Gen* g, Block* block, ScopeSlot* slot) :
-    Instruction(g, block, kPhi, slot),
+HPhi::HPhi(HGen* g, HBlock* block, ScopeSlot* slot) :
+    HInstruction(g, block, kPhi, slot),
     input_count_(0) {
   inputs_[0] = NULL;
   inputs_[1] = NULL;
@@ -98,14 +98,14 @@ Phi::Phi(Gen* g, Block* block, ScopeSlot* slot) :
 }
 
 
-Function::Function(Gen* g, Block* block, AstNode* ast) :
-    Instruction(g, block, kFunction),
+HFunction::HFunction(HGen* g, HBlock* block, AstNode* ast) :
+    HInstruction(g, block, kFunction),
     body(NULL) {
   ast_ = ast;
 }
 
 
-void Function::Print(PrintBuffer* p) {
+void HFunction::Print(PrintBuffer* p) {
   p->Print("i%d = Function[b%d]\n", id, body->id);
 }
 

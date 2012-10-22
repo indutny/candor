@@ -26,7 +26,7 @@ namespace internal {
 
 // Instantiate Visitor
 template class Visitor<AstNode>;
-template class Visitor<hir::Instruction>;
+template class Visitor<hir::HInstruction>;
 
 template <class T>
 T* Visitor<T>::Visit(AstNode* node) {

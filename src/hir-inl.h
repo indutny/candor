@@ -8,29 +8,29 @@ namespace candor {
 namespace internal {
 namespace hir {
 
-inline void Gen::set_current_block(Block* b) {
+inline void HGen::set_current_block(HBlock* b) {
   current_block_ = b;
 }
 
 
-inline void Gen::set_current_root(Block* b) {
+inline void HGen::set_current_root(HBlock* b) {
   current_root_ = b;
 }
 
 
-inline Block* Gen::current_block() {
+inline HBlock* HGen::current_block() {
   return current_block_;
 }
 
 
-inline Block* Gen::current_root() {
+inline HBlock* HGen::current_root() {
   return current_root_;
 }
 
 
-inline Block* Gen::CreateBlock(int stack_slots) {
-  Block* b = new Block(this);
-  b->env(new Environment(stack_slots));
+inline HBlock* HGen::CreateBlock(int stack_slots) {
+  HBlock* b = new HBlock(this);
+  b->env(new HEnvironment(stack_slots));
 
   blocks_.Push(b);
 
@@ -38,72 +38,72 @@ inline Block* Gen::CreateBlock(int stack_slots) {
 }
 
 
-inline Block* Gen::CreateBlock() {
+inline HBlock* HGen::CreateBlock() {
   // NOTE: -1 for additional logic_slot
   return CreateBlock(current_block()->env()->stack_slots() - 1);
 }
 
 
-inline Instruction* Gen::CreateInstruction(Instruction::Type type) {
-  return new Instruction(this, current_block(), type);
+inline HInstruction* HGen::CreateInstruction(HInstruction::Type type) {
+  return new HInstruction(this, current_block(), type);
 }
 
 
-inline Phi* Gen::CreatePhi(ScopeSlot* slot) {
+inline HPhi* HGen::CreatePhi(ScopeSlot* slot) {
   return current_block()->CreatePhi(slot);
 }
 
 
-inline Instruction* Gen::Add(Instruction::Type type) {
+inline HInstruction* HGen::Add(HInstruction::Type type) {
   return current_block()->Add(type);
 }
 
 
-inline Instruction* Gen::Add(Instruction::Type type, ScopeSlot* slot) {
+inline HInstruction* HGen::Add(HInstruction::Type type, ScopeSlot* slot) {
   return current_block()->Add(type, slot);
 }
 
 
-inline Instruction* Gen::Add(Instruction* instr) {
+inline HInstruction* HGen::Add(HInstruction* instr) {
   return current_block()->Add(instr);
 }
 
 
-inline Instruction* Gen::Goto(Instruction::Type type, Block* target) {
+inline HInstruction* HGen::Goto(HInstruction::Type type, HBlock* target) {
   return current_block()->Goto(type, target);
 }
 
 
-inline Instruction* Gen::Branch(Instruction::Type type, Block* t, Block* f) {
+inline HInstruction* HGen::Branch(HInstruction::Type type, HBlock* t, HBlock* f) {
   return current_block()->Branch(type, t, f);
 }
 
 
-inline Instruction* Gen::Return(Instruction::Type type) {
+inline HInstruction* HGen::Return(HInstruction::Type type) {
   return current_block()->Return(type);
 }
 
 
-inline void Gen::Print(char* out, int32_t size) {
+inline void HGen::Print(char* out, int32_t size) {
   PrintBuffer p(out, size);
   Print(&p);
 }
 
 
-inline void Gen::Print(PrintBuffer* p) {
-  BlockList::Item* head = blocks_.head();
+inline void HGen::Print(PrintBuffer* p) {
+  HBlockList::Item* head = blocks_.head();
   for (; head != NULL; head = head->next()) {
     head->value()->Print(p);
   }
 }
 
 
-inline int Gen::block_id() {
+inline int HGen::block_id() {
   return block_id_++;
 }
 
 
-inline int Gen::instr_id() {
+inline int HGen::instr_id() {
   int r = instr_id_;
 
   instr_id_ += 2;
@@ -112,7 +112,7 @@ inline int Gen::instr_id() {
 }
 
 
-inline Block* Block::AddSuccessor(Block* b) {
+inline HBlock* HBlock::AddSuccessor(HBlock* b) {
   assert(succ_count_ < 2);
   succ_[succ_count_++] = b;
 
@@ -122,27 +122,27 @@ inline Block* Block::AddSuccessor(Block* b) {
 }
 
 
-inline Instruction* Block::Add(Instruction::Type type) {
-  Instruction* instr = new Instruction(g_, this, type);
+inline HInstruction* HBlock::Add(HInstruction::Type type) {
+  HInstruction* instr = new HInstruction(g_, this, type);
   return Add(instr);
 }
 
 
-inline Instruction* Block::Add(Instruction::Type type, ScopeSlot* slot) {
-  Instruction* instr = new Instruction(g_, this, type, slot);
+inline HInstruction* HBlock::Add(HInstruction::Type type, ScopeSlot* slot) {
+  HInstruction* instr = new HInstruction(g_, this, type, slot);
   return Add(instr);
 }
 
 
-inline Instruction* Block::Add(Instruction* instr) {
+inline HInstruction* HBlock::Add(HInstruction* instr) {
   if (!ended_) instructions_.Push(instr);
 
   return instr;
 }
 
 
-inline Instruction* Block::Goto(Instruction::Type type, Block* target) {
-  Instruction* res = Add(type);
+inline HInstruction* HBlock::Goto(HInstruction::Type type, HBlock* target) {
+  HInstruction* res = Add(type);
 
   if (!ended_) {
     AddSuccessor(target);
@@ -153,8 +153,8 @@ inline Instruction* Block::Goto(Instruction::Type type, Block* target) {
 }
 
 
-inline Instruction* Block::Branch(Instruction::Type type, Block* t, Block* f) {
-  Instruction* res = Add(type);
+inline HInstruction* HBlock::Branch(HInstruction::Type type, HBlock* t, HBlock* f) {
+  HInstruction* res = Add(type);
 
   if (!ended_) {
     AddSuccessor(t);
@@ -166,45 +166,45 @@ inline Instruction* Block::Branch(Instruction::Type type, Block* t, Block* f) {
 }
 
 
-inline Instruction* Block::Return(Instruction::Type type) {
-  Instruction* res = Add(type);
+inline HInstruction* HBlock::Return(HInstruction::Type type) {
+  HInstruction* res = Add(type);
   if (!ended_) ended_ = true;
   return res;
 }
 
 
-inline Block* Gen::Join(Block* b1, Block* b2) {
-  Block* join = CreateBlock();
+inline HBlock* HGen::Join(HBlock* b1, HBlock* b2) {
+  HBlock* join = CreateBlock();
 
-  b1->Goto(Instruction::kGoto, join);
-  b2->Goto(Instruction::kGoto, join);
+  b1->Goto(HInstruction::kGoto, join);
+  b2->Goto(HInstruction::kGoto, join);
 
   return join;
 }
 
 
-inline Instruction* Gen::Assign(ScopeSlot* slot, Instruction* value) {
+inline HInstruction* HGen::Assign(ScopeSlot* slot, HInstruction* value) {
   return current_block()->Assign(slot, value);
 }
 
 
-inline bool Block::IsEnded() {
+inline bool HBlock::IsEnded() {
   return ended_;
 }
 
 
-inline bool Block::IsEmpty() {
+inline bool HBlock::IsEmpty() {
   return instructions_.length() == 0;
 }
 
 
-inline bool Block::IsLoop() {
+inline bool HBlock::IsLoop() {
   return loop_;
 }
 
 
-inline Phi* Block::CreatePhi(ScopeSlot* slot) {
-  Phi* phi =  new Phi(g_, this, slot);
+inline HPhi* HBlock::CreatePhi(ScopeSlot* slot) {
+  HPhi* phi =  new HPhi(g_, this, slot);
 
   phis_.Push(phi);
 
@@ -212,21 +212,21 @@ inline Phi* Block::CreatePhi(ScopeSlot* slot) {
 }
 
 
-inline Environment* Block::env() {
+inline HEnvironment* HBlock::env() {
   assert(env_ != NULL);
   return env_;
 }
 
 
-inline void Block::env(Environment* env) {
+inline void HBlock::env(HEnvironment* env) {
   env_ = env;
 }
 
 
-inline void Block::Print(PrintBuffer* p) {
+inline void HBlock::Print(PrintBuffer* p) {
   p->Print(IsLoop() ? "# Block %d (loop)\n" : "# Block %d\n", id);
 
-  InstructionList::Item* head = instructions_.head();
+  HInstructionList::Item* head = instructions_.head();
   for (; head != NULL; head = head->next()) {
     head->value()->Print(p);
   }
@@ -244,61 +244,61 @@ inline void Block::Print(PrintBuffer* p) {
 }
 
 
-inline Instruction* Environment::At(int i) {
+inline HInstruction* HEnvironment::At(int i) {
   assert(i < stack_slots_);
   return instructions_[i];
 }
 
 
-inline void Environment::Set(int i, Instruction* value) {
+inline void HEnvironment::Set(int i, HInstruction* value) {
   assert(i < stack_slots_);
   instructions_[i] = value;
 }
 
 
-inline Phi* Environment::PhiAt(int i) {
+inline HPhi* HEnvironment::PhiAt(int i) {
   assert(i < stack_slots_);
   return phis_[i];
 }
 
 
-inline void Environment::SetPhi(int i, Phi* phi) {
+inline void HEnvironment::SetPhi(int i, HPhi* phi) {
   assert(i < stack_slots_);
   phis_[i] = phi;
 }
 
 
-inline Instruction* Environment::At(ScopeSlot* slot) {
+inline HInstruction* HEnvironment::At(ScopeSlot* slot) {
   return At(slot->index());
 }
 
 
-inline void Environment::Set(ScopeSlot* slot, Instruction* value) {
+inline void HEnvironment::Set(ScopeSlot* slot, HInstruction* value) {
   Set(slot->index(), value);
 }
 
 
-inline Phi* Environment::PhiAt(ScopeSlot* slot) {
+inline HPhi* HEnvironment::PhiAt(ScopeSlot* slot) {
   return PhiAt(slot->index());
 }
 
 
-inline void Environment::SetPhi(ScopeSlot* slot, Phi* phi) {
+inline void HEnvironment::SetPhi(ScopeSlot* slot, HPhi* phi) {
   SetPhi(slot->index(), phi);
 }
 
 
-inline int Environment::stack_slots() {
+inline int HEnvironment::stack_slots() {
   return stack_slots_;
 }
 
 
-inline ScopeSlot* Environment::logic_slot() {
+inline ScopeSlot* HEnvironment::logic_slot() {
   return logic_slot_;
 }
 
 
-inline BlockList* BreakContinueInfo::continue_blocks() {
+inline HBlockList* BreakContinueInfo::continue_blocks() {
   return &continue_blocks_;
 }
 

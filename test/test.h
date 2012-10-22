@@ -71,7 +71,7 @@ using namespace internal;
       assert(!p.has_error());\
       Scope::Analyze(ast);\
       assert(ast != NULL);\
-      hir::Gen gen(&heap, ast);\
+      hir::HGen gen(&heap, ast);\
       gen.Print(out, sizeof(out));\
       if (strcmp(expected, out) != 0) {\
         fprintf(stderr, "HIR test failed, got:\n%s\n expected:\n%s\n",\
