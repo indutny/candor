@@ -366,7 +366,10 @@ HIRInstruction* HIRGen::VisitMember(AstNode* stmt) {
 HIRInstruction* HIRGen::VisitDelete(AstNode* stmt) {
   HIRInstruction* prop = Visit(stmt->lhs()->rhs());
   HIRInstruction* recv = Visit(stmt->lhs()->lhs());
-  return Add(HIRInstruction::kDeleteProperty)->AddArg(recv)->AddArg(prop);
+  Add(HIRInstruction::kDeleteProperty)->AddArg(recv)->AddArg(prop);
+
+  // Delete property returns nil
+  return Add(HIRInstruction::kNil);
 }
 
 
@@ -437,6 +440,11 @@ HIRInstruction* HIRGen::VisitKeysof(AstNode* stmt) {
 
 HIRInstruction* HIRGen::VisitSizeof(AstNode* stmt) {
   return Add(HIRInstruction::kSizeof)->AddArg(Visit(stmt->lhs()));
+}
+
+
+HIRInstruction* HIRGen::VisitClone(AstNode* stmt) {
+  return Add(HIRInstruction::kClone)->AddArg(Visit(stmt->lhs()));
 }
 
 

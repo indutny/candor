@@ -96,6 +96,36 @@ inline HIRInstructionList* HIRInstruction::uses() {
 }
 
 
+inline HIRInstruction* HIRInstruction::left() {
+  assert(args()->length() >= 1);
+  return args()->head()->value();
+}
+
+
+inline HIRInstruction* HIRInstruction::right() {
+  assert(args()->length() >= 2);
+  return args()->head()->next()->value();
+}
+
+
+inline HIRInstruction* HIRInstruction::third() {
+  assert(args()->length() >= 3);
+  return args()->head()->next()->next()->value();
+}
+
+
+inline LInstruction* HIRInstruction::lir() {
+  assert(lir_ != NULL);
+  return lir_;
+}
+
+
+inline void HIRInstruction::lir(LInstruction* lir) {
+  assert(lir_ == NULL);
+  lir_ = lir;
+}
+
+
 inline void HIRPhi::AddInput(HIRInstruction* instr) {
   assert(input_count_ < 2);
   inputs_[input_count_++] = instr;

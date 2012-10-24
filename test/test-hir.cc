@@ -37,9 +37,10 @@ TEST_START(hir)
            "i8 = StoreProperty(i2, i6, i4)\n"
            "i10 = Literal[b]\n"
            "i12 = DeleteProperty(i2, i10)\n"
-           "i14 = Literal[b]\n"
-           "i16 = LoadProperty(i2, i14)\n"
-           "i18 = Return(i16)\n")
+           "i14 = Nil\n"
+           "i16 = Literal[b]\n"
+           "i18 = LoadProperty(i2, i16)\n"
+           "i20 = Return(i18)\n")
   HIR_TEST("a = global\nreturn a:b(1,2,3)",
            "# Block 0\n"
            "i0 = Entry\n"

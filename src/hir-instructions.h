@@ -14,6 +14,7 @@ class HIRGen;
 class HIRBlock;
 class HIRInstruction;
 class HIRPhi;
+class LInstruction;
 
 typedef ZoneList<HIRInstruction*> HIRInstructionList;
 typedef HashMap<NumberKey, HIRInstruction, ZoneObject> HIRInstructionMap;
@@ -39,11 +40,11 @@ typedef ZoneList<HIRPhi*> HIRPhiList;
     V(Typeof) \
     V(Sizeof) \
     V(Keysof) \
+    V(Clone) \
     V(Call) \
     V(CollectGarbage) \
     V(GetStackTrace) \
     V(AllocateObject) \
-    V(CloneObject) \
     V(AllocateArray) \
     V(Phi)
 
@@ -82,12 +83,20 @@ class HIRInstruction : public ZoneObject {
   inline HIRInstructionList* args();
   inline HIRInstructionList* uses();
 
+  inline HIRInstruction* left();
+  inline HIRInstruction* right();
+  inline HIRInstruction* third();
+
+  inline LInstruction* lir();
+  inline void lir(LInstruction* lir);
+
  protected:
   HIRGen* g_;
   HIRBlock* block_;
   Type type_;
   ScopeSlot* slot_;
   AstNode* ast_;
+  LInstruction* lir_;
 
   bool removed_;
 

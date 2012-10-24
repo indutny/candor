@@ -13,6 +13,7 @@ HIRInstruction::HIRInstruction(HIRGen* g, HIRBlock* block, Type type) :
     type_(type),
     slot_(NULL),
     ast_(NULL),
+    lir_(NULL),
     removed_(false) {
 }
 

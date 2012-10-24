@@ -2,12 +2,17 @@
 #include "hir-inl.h"
 #include "lir.h"
 #include "lir-inl.h"
+#include "lir-instructions.h"
 #include <string.h> // memset
 
 namespace candor {
 namespace internal {
 
-LGen::LGen(HIRGen* hir) : hir_(hir), instr_id_(0) {
+LGen::LGen(HIRGen* hir) : hir_(hir),
+                          instr_id_(0),
+                          virtual_index_(40),
+                          current_block_(NULL),
+                          current_instruction_(NULL) {
   FlattenBlocks();
   GenerateInstructions();
   ComputeLocalLiveSets();
@@ -54,20 +59,31 @@ void LGen::FlattenBlocks() {
 
 void LGen::GenerateInstructions() {
   HIRBlockList::Item* head = blocks_.head();
+
   for (; head != NULL; head = head->next()) {
     HIRBlock* b = head->value();
+    current_block_ = b;
 
     HIRInstructionList::Item* ihead = b->instructions()->head();
     for (; ihead != NULL; ihead = ihead->next()) {
-//      LInstruction::Compile(this, ihead->value());
+      current_instruction_ = ihead->value();
+      VisitInstruction(ihead->value());
     }
   }
 }
 
+#define LGEN_VISIT_SWITCH(V) \
+    case HIRInstruction::k##V: Visit##V(instr); break;
 
-void LGen::Add(LInstruction* instr) {
+void LGen::VisitInstruction(HIRInstruction* instr) {
+  switch (instr->type()) {
+    HIR_INSTRUCTION_TYPES(LGEN_VISIT_SWITCH)
+   default:
+    UNEXPECTED
+  }
 }
 
+#undef LGEN_VISIT_SWITCH
 
 void LGen::ComputeLocalLiveSets() {
 }
@@ -77,11 +93,7 @@ void LGen::ComputeGlobalLiveSets() {
 }
 
 
-LOperand::LOperand(int index, Type type) : index_(index), type_(type) {
-}
-
-
-LUse* LOperand::Use(LUse::Type type, LInstruction* instr) {
+LUse* LInterval::Use(LUse::Type type, LInstruction* instr) {
   LUse* use = new LUse(this, type, instr);
 
   uses_.InsertSorted<LUseShape>(use);
@@ -90,7 +102,7 @@ LUse* LOperand::Use(LUse::Type type, LInstruction* instr) {
 }
 
 
-LRange* LOperand::AddRange(int start, int end) {
+LRange* LInterval::AddRange(int start, int end) {
   LRange* range = new LRange(this, start, end);
 
   ranges_.InsertSorted<LRangeShape>(range);
@@ -99,19 +111,7 @@ LRange* LOperand::AddRange(int start, int end) {
 }
 
 
-LUnallocated::LUnallocated(int index) : LOperand(index, kUnallocated) {
-}
-
-
-LRegister::LRegister(int index) : LOperand(index, kRegister) {
-}
-
-
-LStackSlot::LStackSlot(int index) : LOperand(index, kStackSlot) {
-}
-
-
-LRange::LRange(LOperand* op, int start, int end) : op_(op),
+LRange::LRange(LInterval* op, int start, int end) : op_(op),
                                                    start_(start),
                                                    end_(end) {
 }
@@ -119,12 +119,6 @@ LRange::LRange(LOperand* op, int start, int end) : op_(op),
 
 int LRangeShape::Compare(LRange* a, LRange* b) {
   return a->start() > b->start() ? 1 : a->start() < b->start() ? -1 : 0;
-}
-
-
-LUse::LUse(LOperand* op, Type type, LInstruction* instr) : op_(op),
-                                                           type_(type),
-                                                           instr_(instr) {
 }
 
 

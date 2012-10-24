@@ -3,8 +3,7 @@
 
 #include "hir.h"
 #include "hir-inl.h"
-#include "lir-builder.h"
-#include "lir-instructions.h"
+#include "macroassembler.h" // Register
 #include "zone.h" // Zone
 #include "utils.h" // Lists and etc
 
@@ -13,22 +12,23 @@ namespace internal {
 
 // Forward-declarations
 class LGen;
-class LOperand;
+class LInterval;
+class LInstruction;
 class LRange;
 class LUse;
-typedef ZoneList<LOperand*> LOperandList;
+typedef ZoneList<LInterval*> LIntervalList;
 typedef ZoneList<LRange*> LRangeList;
 typedef ZoneList<LUse*> LUseList;
 
 class LRange : public ZoneObject {
  public:
-  LRange(LOperand* op, int start, int end);
+  LRange(LInterval* op, int start, int end);
 
   inline int start();
   inline int end();
 
  private:
-  LOperand* op_;
+  LInterval* op_;
   int start_;
   int end_;
 };
@@ -45,12 +45,18 @@ class LUse : public ZoneObject {
     kRegister
   };
 
-  LUse(LOperand* op, Type type, LInstruction* instr);
+  LUse(LInterval* op, Type type, LInstruction* instr) : interval_(op),
+                                                        type_(type),
+                                                        instr_(instr) {
+  }
+
+  inline void Print(PrintBuffer* p);
 
   inline LInstruction* instr();
+  inline LInterval* interval();
 
  private:
-  LOperand* op_;
+  LInterval* interval_;
   Type type_;
   LInstruction* instr_;
 };
@@ -60,46 +66,38 @@ class LUseShape {
   static int Compare(LUse* a, LUse* b);
 };
 
-class LOperand : public ZoneObject {
+class LInterval : public ZoneObject {
  public:
   enum Type {
-    kUnallocated,
+    kVirtual,
     kRegister,
     kStackSlot
   };
 
-  LOperand(int index, Type type);
+  LInterval(Type type, int index) : type_(type), index_(index) {
+  }
+
 
   LUse* Use(LUse::Type type, LInstruction* instr);
   LRange* AddRange(int start, int end);
 
-  inline bool is_unallocated();
+  inline bool is_virtual();
   inline bool is_register();
   inline bool is_stackslot();
 
   inline int index();
 
+  inline void Print(PrintBuffer* p);
+
  private:
-  int index_;
   Type type_;
+  int index_;
   LRangeList ranges_;
   LUseList uses_;
 };
 
-class LUnallocated : public LOperand {
- public:
-  LUnallocated(int index);
-};
-
-class LRegister: public LOperand {
- public:
-  LRegister(int index);
-};
-
-class LStackSlot : public LOperand {
- public:
-  LStackSlot(int index);
-};
+#define LGEN_VISITOR(V) \
+    void Visit##V(HIRInstruction* instr); 
 
 class LGen : public ZoneObject {
  public:
@@ -110,9 +108,21 @@ class LGen : public ZoneObject {
   void ComputeLocalLiveSets();
   void ComputeGlobalLiveSets();
 
-  void Add(LInstruction* instr);
+  void VisitInstruction(HIRInstruction* instr);
+  HIR_INSTRUCTION_TYPES(LGEN_VISITOR)
+
+  inline LInstruction* Add(int type);
+  inline LInstruction* Bind(int type);
+  inline LInterval* CreateInterval(LInterval::Type type, int index);
+  inline LInterval* CreateVirtual();
+  inline LInterval* CreateRegister(Register reg);
+  inline LInterval* CreateStackSlot(int index);
+  inline LInterval* ToFixed(HIRInstruction* instr, Register reg);
+  inline LInterval* FromFixed(Register reg, HIRInstruction* instr);
+  inline LInterval* FromFixed(Register reg, LInterval* interval);
 
   inline int instr_id();
+  inline int virtual_index();
 
   inline void Print(PrintBuffer* p);
   inline void Print(char* out, int32_t size);
@@ -120,10 +130,17 @@ class LGen : public ZoneObject {
  private:
   HIRGen* hir_;
   int instr_id_;
+  int virtual_index_;
+
+  HIRBlock* current_block_;
+  HIRInstruction* current_instruction_;
 
   HIRBlockList blocks_;
-  LInstructionList instructions_;
+  LIntervalList intervals_;
+  ZoneList<LInstruction*> instructions_;
 };
+
+#undef LGEN_VISITOR
 
 } // namespace internal
 } // namespace candor

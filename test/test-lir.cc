@@ -8,7 +8,7 @@
 
 TEST_START(lir)
   // Simple assignments
-  LIR_TEST("a = 1\nif (a) { a = 2 }\nreturn a",
+  LIR_TEST("a = {}\nreturn a.b",
            "# Block 0\n"
            "i0 = Entry\n"
            "i2 = Literal[1]\n"

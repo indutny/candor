@@ -19,6 +19,7 @@ namespace internal {
 // Forward declaration
 class HIRGen;
 class HIRBlock;
+class LInstruction;
 
 typedef ZoneList<HIRBlock*> HIRBlockList;
 
@@ -75,6 +76,7 @@ class HIRBlock : public ZoneObject {
   inline HIREnvironment* env();
   inline void env(HIREnvironment* env);
   inline HIRInstructionList* instructions();
+  inline ZoneList<LInstruction*>* linstructions();
   inline HIRPhiList* phis();
   inline HIRBlock* SuccAt(int i);
   inline HIRBlock* PredAt(int i);
@@ -102,6 +104,8 @@ class HIRBlock : public ZoneObject {
   HIREnvironment* env_;
   HIRInstructionList instructions_;
   HIRPhiList phis_;
+
+  ZoneList<LInstruction*> linstructions_;
 
   int pred_count_;
   int succ_count_;
@@ -157,6 +161,7 @@ class HIRGen : public Visitor<HIRInstruction> {
   HIRInstruction* VisitTypeof(AstNode* stmt);
   HIRInstruction* VisitSizeof(AstNode* stmt);
   HIRInstruction* VisitKeysof(AstNode* stmt);
+  HIRInstruction* VisitClone(AstNode* stmt);
 
   // Literals
 
