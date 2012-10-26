@@ -29,14 +29,22 @@ typedef HashMap<NumberKey, LUse, ZoneObject> LUseMap;
 
 class LRange : public ZoneObject {
  public:
-  LRange(LInterval* op, int start, int end);
+  LRange(LInterval* interval, int start, int end) : interval_(interval),
+                                                    start_(start),
+                                                    end_(end) {
+  }
+
+  int FindIntersection(LRange* with);
+
+  inline LInterval* interval();
+  inline void interval(LInterval* interval);
 
   inline int start();
   inline void start(int start);
   inline int end();
 
  private:
-  LInterval* op_;
+  LInterval* interval_;
   int start_;
   int end_;
 };
@@ -63,6 +71,7 @@ class LUse : public ZoneObject {
   inline LInstruction* instr();
   inline Type type();
   inline LInterval* interval();
+  inline void interval(LInterval* interval);
 
  private:
   LInterval* interval_;
@@ -83,16 +92,24 @@ class LInterval : public ZoneObject {
     kStackSlot
   };
 
-  LInterval(Type type, int index) : id(-1), type_(type), index_(index) {
+  LInterval(Type type, int index) : id(-1),
+                                    type_(type),
+                                    index_(index),
+                                    fixed_(false),
+                                    split_parent_(NULL) {
   }
 
   LUse* Use(LUse::Type type, LInstruction* instr);
   void AddRange(int start, int end);
   bool Covers(int pos);
   LUse* UseAt(int pos);
+  LUse* UseAfter(int pos, LUse::Type = LUse::kAny);
+  int FindIntersection(LInterval* with);
 
-  inline void Allocate(Register reg);
+  inline void Allocate(int reg);
   inline void Spill(int slot);
+  inline void MarkFixed();
+  inline bool IsFixed();
 
   inline bool is_virtual();
   inline bool is_register();
@@ -101,6 +118,12 @@ class LInterval : public ZoneObject {
   inline int index();
   inline LRangeList* ranges();
   inline LUseList* uses();
+  inline LInterval* split_parent();
+  inline void split_parent(LInterval* split_parent);
+  inline LIntervalList* split_children();
+
+  inline int start();
+  inline int end();
 
   inline void Print(PrintBuffer* p);
 
@@ -111,6 +134,15 @@ class LInterval : public ZoneObject {
   int index_;
   LRangeList ranges_;
   LUseList uses_;
+  bool fixed_;
+
+  LInterval* split_parent_;
+  LIntervalList split_children_;
+};
+
+class LIntervalShape {
+ public:
+  static int Compare(LInterval* a, LInterval* b);
 };
 
 class LBlock : public ZoneObject {
@@ -145,6 +177,8 @@ class LGen : public ZoneObject {
   void ComputeGlobalLiveSets();
   void BuildIntervals();
   void WalkIntervals();
+  void TryAllocateFreeReg(LInterval* current);
+  void AllocateBlockedReg(LInterval* current);
 
   void VisitInstruction(HIRInstruction* instr);
   HIR_INSTRUCTION_TYPES(LGEN_VISITOR)
@@ -159,6 +193,7 @@ class LGen : public ZoneObject {
   LInterval* ToFixed(HIRInstruction* instr, Register reg);
   LInterval* FromFixed(Register reg, HIRInstruction* instr);
   LInterval* FromFixed(Register reg, LInterval* interval);
+  LInterval* Split(LInterval* i, int pos);
 
   inline int instr_id();
   inline int interval_id();
@@ -181,6 +216,11 @@ class LGen : public ZoneObject {
   LInterval* registers_[kLIRRegisterCount];
   LIntervalList intervals_;
   ZoneList<LInstruction*> instructions_;
+
+  // Walk intervals data
+  LIntervalList unhandled_;
+  LIntervalList active_;
+  LIntervalList inactive_;
 };
 
 #undef LGEN_VISITOR

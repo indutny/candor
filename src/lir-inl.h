@@ -3,6 +3,7 @@
 
 #include "lir.h"
 #include "lir-instructions.h"
+#include "macroassembler.h"
 
 namespace candor {
 namespace internal {
@@ -104,6 +105,16 @@ inline void LBlock::PrintHeader(PrintBuffer* p) {
 }
 
 
+inline LInterval* LRange::interval() {
+  return interval_;
+}
+
+
+inline void LRange::interval(LInterval* interval) {
+  interval_ = interval;
+}
+
+
 inline int LRange::start() {
   return start_;
 }
@@ -131,6 +142,11 @@ inline LUse::Type LUse::type() {
 
 inline LInterval* LUse::interval() {
   return interval_;
+}
+
+
+inline void LUse::interval(LInterval* interval) {
+  interval_ = interval;
 }
 
 
@@ -163,19 +179,36 @@ inline void LInterval::Print(PrintBuffer* p) {
    default: UNEXPECTED
   }
 
-  p->Print("%d:%d", id, index());
+  p->Print("%d", id);
+  if (type_ == kRegister) {
+    p->Print(":%s", RegisterNameByIndex(index()));
+  } else {
+    p->Print(":%d", index());
+  }
 }
 
 
-inline void LInterval::Allocate(Register reg) {
+inline void LInterval::Allocate(int reg) {
+  assert(!IsFixed());
   type_ = kRegister;
-  index_ = IndexByRegister(reg);
+  index_ = reg;
 }
 
 
 inline void LInterval::Spill(int slot) {
+  assert(!IsFixed());
   type_ = kStackSlot;
   index_ = slot;
+}
+
+
+inline void LInterval::MarkFixed() {
+  fixed_ = true;
+}
+
+
+inline bool LInterval::IsFixed() {
+  return fixed_;
 }
 
 
@@ -191,6 +224,33 @@ inline LRangeList* LInterval::ranges() {
 
 inline LUseList* LInterval::uses() {
   return &uses_;
+}
+
+
+inline LInterval* LInterval::split_parent() {
+  return split_parent_;
+}
+
+
+inline void LInterval::split_parent(LInterval* split_parent) {
+  split_parent_ = split_parent;
+}
+
+
+inline LIntervalList* LInterval::split_children() {
+  return &split_children_;
+}
+
+
+inline int LInterval::start() {
+  assert(ranges()->length() > 0);
+  return ranges()->head()->value()->start();
+}
+
+
+inline int LInterval::end() {
+  assert(ranges()->length() > 0);
+  return ranges()->tail()->value()->end();
 }
 
 } // namespace internal

@@ -36,12 +36,14 @@ void LGen::VisitLiteral(HIRInstruction* instr) {
 
 void LGen::VisitAllocateObject(HIRInstruction* instr) {
   Bind(LInstruction::kAllocateObject)
+      ->MarkHasCall()
       ->SetResult(CreateVirtual(), LUse::kRegister);
 }
 
 
 void LGen::VisitAllocateArray(HIRInstruction* instr) {
   Bind(LInstruction::kAllocateArray)
+      ->MarkHasCall()
       ->SetResult(CreateVirtual(), LUse::kRegister);
 }
 
@@ -49,12 +51,14 @@ void LGen::VisitAllocateArray(HIRInstruction* instr) {
 void LGen::VisitFunction(HIRInstruction* instr) {
   // XXX : Store address somewhere
   Bind(LInstruction::kFunction)
+      ->MarkHasCall()
       ->SetResult(CreateVirtual(), LUse::kRegister);
 }
 
 
 void LGen::VisitNot(HIRInstruction* instr) {
   LInstruction* op = Bind(LInstruction::kNot)
+      ->MarkHasCall()
       ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister);
 
   op->SetResult(FromFixed(rax, CreateVirtual()), LUse::kRegister);
@@ -63,6 +67,7 @@ void LGen::VisitNot(HIRInstruction* instr) {
 
 void LGen::VisitBinOp(HIRInstruction* instr) {
   LInstruction* op = Bind(LInstruction::kBinOp)
+      ->MarkHasCall()
       ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister)
       ->AddArg(ToFixed(instr->right(), rbx), LUse::kRegister);
 
@@ -72,6 +77,7 @@ void LGen::VisitBinOp(HIRInstruction* instr) {
 
 void LGen::VisitSizeof(HIRInstruction* instr) {
   Bind(LInstruction::kSizeof)
+      ->MarkHasCall()
       ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister)
       ->SetResult(CreateVirtual(), LUse::kRegister);
 }
@@ -79,6 +85,7 @@ void LGen::VisitSizeof(HIRInstruction* instr) {
 
 void LGen::VisitTypeof(HIRInstruction* instr) {
   Bind(LInstruction::kTypeof)
+      ->MarkHasCall()
       ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister)
       ->SetResult(CreateVirtual(), LUse::kRegister);
 }
@@ -86,6 +93,7 @@ void LGen::VisitTypeof(HIRInstruction* instr) {
 
 void LGen::VisitKeysof(HIRInstruction* instr) {
   Bind(LInstruction::kKeysof)
+      ->MarkHasCall()
       ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister)
       ->SetResult(CreateVirtual(), LUse::kRegister);
 }
@@ -93,6 +101,7 @@ void LGen::VisitKeysof(HIRInstruction* instr) {
 
 void LGen::VisitClone(HIRInstruction* instr) {
   Bind(LInstruction::kClone)
+      ->MarkHasCall()
       ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister)
       ->SetResult(CreateVirtual(), LUse::kRegister);
 }
@@ -115,6 +124,7 @@ void LGen::VisitStoreContext(HIRInstruction* instr) {
 
 void LGen::VisitLoadProperty(HIRInstruction* instr) {
   Bind(LInstruction::kLoadProperty)
+      ->MarkHasCall()
       ->AddScratch(CreateVirtual())
       ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister)
       ->AddArg(ToFixed(instr->right(), rbx), LUse::kRegister)
@@ -133,18 +143,21 @@ void LGen::VisitStoreProperty(HIRInstruction* instr) {
 
 void LGen::VisitDeleteProperty(HIRInstruction* instr) {
   Bind(LInstruction::kDeleteProperty)
+      ->MarkHasCall()
       ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister)
       ->AddArg(ToFixed(instr->right(), rbx), LUse::kRegister);
 }
 
 
 void LGen::VisitGetStackTrace(HIRInstruction* instr) {
-  Bind(LInstruction::kGetStackTrace);
+  Bind(LInstruction::kGetStackTrace)
+      ->MarkHasCall();
 }
 
 
 void LGen::VisitCollectGarbage(HIRInstruction* instr) {
-  Bind(LInstruction::kCollectGarbage);
+  Bind(LInstruction::kCollectGarbage)
+      ->MarkHasCall();
 }
 
 

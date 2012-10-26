@@ -4,6 +4,7 @@
 #include "lir-inl.h"
 #include "lir-instructions.h"
 #include "lir-instructions-inl.h"
+#include <limits.h> // INT_MAX
 #include <string.h> // memset
 
 namespace candor {
@@ -18,6 +19,7 @@ LGen::LGen(HIRGen* hir) : hir_(hir),
   // Initialize fixed intervals
   for (int i = 0; i < kLIRRegisterCount; i++) {
     registers_[i] = CreateRegister(RegisterByIndex(i));
+    registers_[i]->MarkFixed();
   }
 
   FlattenBlocks();
@@ -247,6 +249,237 @@ void LGen::BuildIntervals() {
 
 
 void LGen::WalkIntervals() {
+  // First populate and sort unhandled list
+  LIntervalList::Item* head = intervals_.head();
+  for (; head != NULL; head = head->next()) {
+    LInterval* interval = head->value();
+
+    if (interval->IsFixed()) {
+      // Fixed register
+
+      // Skip unused
+      if (interval->ranges()->length() == 0) continue;
+      inactive_.Push(interval);
+    } else {
+      // Regular virtual one
+      assert(interval->is_virtual());
+      unhandled_.Push(interval);
+    }
+  }
+  // Sort by starting position
+  unhandled_.Sort<LIntervalShape>();
+  inactive_.Sort<LIntervalShape>();
+
+  while (unhandled_.length() > 0) {
+    // Pick first interval
+    LInterval* current = unhandled_.Shift();
+    int pos = current->start();
+
+    // Check for intervals in active that are expired or inactive
+    head = active_.head();
+    for (; head != NULL; head = head->next()) {
+      LInterval* active = head->value();
+
+      if (active->end() < pos) {
+        // Interval has ended before current position
+        active_.Remove(head);
+      } else if (!active->Covers(pos)){
+        // Interval isn't covering current position - move to inactive
+        active_.Remove(head);
+        inactive_.Push(active);
+      }
+    }
+
+    // Check for intervals in inactive that are expired or active
+    head = inactive_.head();
+    for (; head != NULL; head = head->next()) {
+      LInterval* inactive = head->value();
+
+      if (inactive->end() < pos) {
+        // Interval has ended before current position
+        inactive_.Remove(head);
+      } else if (inactive->Covers(pos)){
+        // Interval is covering current position - move to active
+        inactive_.Remove(head);
+        active_.Push(inactive);
+      }
+    }
+
+    // Find free register for current interval
+    TryAllocateFreeReg(current);
+
+    // If allocation has failed
+    if (!current->is_register()) {
+      // Spill something and allocate just-freed register
+      AllocateBlockedReg(current);
+    }
+
+    // If interval wasn't spilled itself - add it to active
+    assert(current->is_register() || current->is_stackslot());
+    if (current->is_register()) {
+      active_.Push(current);
+    }
+  }
+}
+
+
+void LGen::TryAllocateFreeReg(LInterval* current) {
+  int free_pos[kLIRRegisterCount];
+
+  // Initially all registers are free for any visible future
+  for (int i = 0; i < kLIRRegisterCount; i++) {
+    free_pos[i] = INT_MAX;
+  }
+
+  // But registers that are used by active intervals are not free at all
+  LIntervalList::Item* head = active_.head();
+  for (; head != NULL; head = head->next()) {
+    LInterval* active = head->value();
+    assert(active->is_register());
+    free_pos[active->index()] = 0;
+  }
+
+  // Inactive intervals can limit availablity too, but only at the places
+  // that are intersecting with current interval
+  head = inactive_.head();
+  for (; head != NULL; head = head->next()) {
+    LInterval* inactive = head->value();
+    assert(inactive->is_register());
+
+    int pos = current->FindIntersection(inactive);
+    if (pos == -1) continue;
+    if (free_pos[inactive->index()] <= pos) continue;
+    free_pos[inactive->index()] = pos;
+  }
+
+  // Now we need to find register that is free for maximum time
+  int max = 0;
+  int max_reg = 0;
+  for (int i = 0; i < kLIRRegisterCount; i++) {
+    if (free_pos[i] >= max) {
+      max = free_pos[i];
+      max_reg = i;
+    }
+  }
+
+  // All registers are occupied - failure
+  if (max - 2 <= current->start()) return;
+
+  if (max <= current->end()) {
+    // Split before `max` is needed
+    Split(current, max - 2);
+  }
+
+  // Register is available for whole interval's lifetime
+  current->Allocate(max_reg);
+}
+
+
+void LGen::AllocateBlockedReg(LInterval* current) {
+  int use_pos[kLIRRegisterCount];
+  int block_pos[kLIRRegisterCount];
+
+  for (int i = 0; i < kLIRRegisterCount; i++) {
+    use_pos[i] = INT_MAX;
+    block_pos[i] = INT_MAX;
+  }
+
+  // In all active intervals
+  LIntervalList::Item* head = active_.head();
+  for (; head != NULL; head = head->next()) {
+    LInterval* active = head->value();
+    int index = active->index();
+
+    if (active->IsFixed()) {
+      // Fixed intervals blocks register (i.e. this register can't be spilled)
+      block_pos[index] = 0;
+      use_pos[index] = 0;
+    } else {
+      LUse* use = active->UseAfter(current->start());
+      if (use == NULL) continue;
+      int pos = use->instr()->id;
+
+      // Uses of other intervals are recorded
+      if (use_pos[index] > pos) use_pos[index] = pos;
+    }
+  }
+
+  // Almost he same for inactive
+  head = inactive_.head();
+  for (; head != NULL; head = head->next()) {
+    LInterval* inactive = head->value();
+    int index = inactive->index();
+    int pos = current->FindIntersection(inactive);
+
+    // Count only intersecting intervals
+    if (pos == -1) continue;
+
+    if (inactive->IsFixed()) {
+      if (block_pos[index] > pos)  block_pos[index] = pos;
+      if (use_pos[index] > pos) use_pos[index] = pos;
+    } else {
+      LUse* use = inactive->UseAfter(current->start());
+      if (use == NULL) continue;
+      int pos = use->instr()->id;
+
+      if (use_pos[index] > pos) use_pos[index] = pos;
+    }
+  }
+
+  int use_max = 0;
+  int use_reg = 0;
+  for (int i = 0; i < kLIRRegisterCount; i++) {
+    if (use_pos[i] >= use_max) {
+      use_max = use_pos[i];
+      use_reg = i;
+    }
+  }
+
+  LUse* first_use = current->UseAfter(current->start());
+  assert(first_use != NULL);
+  if (use_max < first_use->instr()->id) {
+    // Better spill current
+    // XXX Determine spill index
+    current->Spill(0);
+
+    // Split before first use with required register
+    LUse* reg_use = current->UseAfter(current->start(), LUse::kRegister);
+    if (reg_use != NULL && reg_use->instr()->id > current->start()) {
+      Split(current, reg_use->instr()->id);
+    }
+  } else {
+    // Intervals using register will be spilled
+    current->Allocate(use_reg);
+
+    // If register is blocked somewhere before interval's end
+    if (block_pos[use_reg] <= current->end()) {
+      // Interval should be splitted
+      Split(current, block_pos[use_reg]);
+    }
+
+    // Split and spill all intersecting intervals
+    LIntervalList* lists[2] = { &active_, &inactive_ };
+    for (int i = 0; i < 2; i++) {
+      head = lists[i]->head();
+      for (; head != NULL; head = head->next()) {
+        LInterval* interval = head->value();
+
+        // Fixed intervals can't be split
+        if (interval->IsFixed()) continue;
+
+        int pos = current->FindIntersection(interval);
+        if (pos == -1) continue;
+
+        if (pos - 2 > interval->start()) Split(interval, pos - 2);
+
+        // XXX Determine spill index
+        interval->Spill(0);
+
+        // Remove interval from active/inactive list
+        lists[i]->Remove(head);
+      }
+    }
+  }
 }
 
 
@@ -332,6 +565,56 @@ LInterval* LGen::FromFixed(Register reg, HIRInstruction* instr) {
 }
 
 
+LInterval* LGen::Split(LInterval* i, int pos) {
+  // TODO: Find optimal split position here
+  assert(!i->IsFixed());
+  assert(pos > i->start() && pos < i->end());
+  LInterval* child = CreateVirtual();
+
+  // Move uses from parent to child
+  LUseList::Item* utail = i->uses()->tail();
+  for (; utail != NULL; utail = utail->prev()) {
+    LUse* use = utail->value();
+
+    // Uses are sorted - so break early
+    if (use->instr()->id < pos) break;
+
+    i->uses()->Remove(utail);
+    child->uses()->Unshift(use);
+    use->interval(child);
+  }
+
+  // Move ranges from parent to child
+  LRangeList::Item* rtail = i->ranges()->tail();
+  for (; rtail != NULL; rtail = rtail->prev()) {
+    LRange* range = rtail->value();
+
+    // Ranges are sorted too
+    if (range->end() <= pos)  break;
+
+    i->ranges()->Remove(rtail);
+    if (range->start() < pos) {
+      // Range needs to be splitted first
+      i->AddRange(range->start(), pos);
+      range->start(pos);
+    }
+    child->ranges()->Push(range);
+    range->interval(child);
+  }
+
+  LInterval* parent = i->split_parent() == NULL ? i : i->split_parent();
+  child->split_parent(parent);
+  parent->split_children()->Unshift(child);
+
+  unhandled_.InsertSorted<LIntervalShape>(child);
+
+  assert(parent->end() <= pos);
+  assert(child->start() >= pos);
+
+  return child;
+}
+
+
 LUse* LInterval::Use(LUse::Type type, LInstruction* instr) {
   LUse* use = new LUse(this, type, instr);
 
@@ -383,9 +666,48 @@ LUse* LInterval::UseAt(int pos) {
 }
 
 
-LRange::LRange(LInterval* op, int start, int end) : op_(op),
-                                                   start_(start),
-                                                   end_(end) {
+LUse* LInterval::UseAfter(int pos, LUse::Type use_type) {
+  assert(pos <= end());
+  LUseList::Item* head = uses_.head();
+  for (; head != NULL; head = head->next()) {
+    LUse* use = head->value();
+    if (use->instr()->id >= pos &&
+        (use_type == LUse::kAny || use->type() == use_type)) {
+      return use;
+    }
+  }
+
+  return NULL;
+}
+
+
+int LInterval::FindIntersection(LInterval* with) {
+  LRangeList::Item* ahead = ranges()->head();
+  for (; ahead != NULL; ahead = ahead->next()) {
+    LRangeList::Item* bhead = with->ranges()->head();
+    for (; bhead != NULL; bhead = bhead->next()) {
+      int r = ahead->value()->FindIntersection(bhead->value());
+      if (r != -1) return r;
+    }
+  }
+  return -1;
+}
+
+
+int LRange::FindIntersection(LRange* with) {
+  // First intersection is either our start or `with`'s start
+  if (start() >= with->start() && start() < with->end()) {
+    return start();
+  } else if (with->start() >= start() && with->start() < end()) {
+    return with->start();
+  } else {
+    return -1;
+  }
+}
+
+
+int LIntervalShape::Compare(LInterval* a, LInterval* b) {
+  return a->start() > b->start() ? 1 : a->start() < b->start() ? -1 : 0;
 }
 
 
