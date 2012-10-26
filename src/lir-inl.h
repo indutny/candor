@@ -167,6 +167,18 @@ inline void LInterval::Print(PrintBuffer* p) {
 }
 
 
+inline void LInterval::Allocate(Register reg) {
+  type_ = kRegister;
+  index_ = IndexByRegister(reg);
+}
+
+
+inline void LInterval::Spill(int slot) {
+  type_ = kStackSlot;
+  index_ = slot;
+}
+
+
 inline int LInterval::index() {
   return index_;
 }

@@ -25,6 +25,7 @@ LGen::LGen(HIRGen* hir) : hir_(hir),
   ComputeLocalLiveSets();
   ComputeGlobalLiveSets();
   BuildIntervals();
+  WalkIntervals();
 }
 
 
@@ -234,10 +235,18 @@ void LGen::BuildIntervals() {
 
       // Inputs are initially live from block's start to instruction
       for (int i = 0; i < instr->input_count(); i++) {
-        instr->inputs[i]->interval()->AddRange(l->start_id, instr->id);
+        // If interval's range already covers instruction it should last
+        // up to the block's start
+        if (!instr->inputs[i]->interval()->Covers(instr->id)) {
+          instr->inputs[i]->interval()->AddRange(l->start_id, instr->id);
+        }
       }
     }
   }
+}
+
+
+void LGen::WalkIntervals() {
 }
 
 
@@ -332,12 +341,22 @@ LUse* LInterval::Use(LUse::Type type, LInstruction* instr) {
 }
 
 
-LRange* LInterval::AddRange(int start, int end) {
+void LInterval::AddRange(int start, int end) {
+  // Check if current range can be extended
+  if (ranges_.length() > 0) {
+    LRange* head = ranges_.head()->value();
+    if (head->start() == end) {
+      head->start(start);
+      return;
+    }
+
+    // Create new range and append it to the list
+    assert(end < head->start());
+  }
+
   LRange* range = new LRange(this, start, end);
 
-  ranges_.InsertSorted<LRangeShape>(range);
-
-  return range;
+  ranges_.Unshift(range);
 }
 
 

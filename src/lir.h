@@ -87,9 +87,12 @@ class LInterval : public ZoneObject {
   }
 
   LUse* Use(LUse::Type type, LInstruction* instr);
-  LRange* AddRange(int start, int end);
+  void AddRange(int start, int end);
   bool Covers(int pos);
   LUse* UseAt(int pos);
+
+  inline void Allocate(Register reg);
+  inline void Spill(int slot);
 
   inline bool is_virtual();
   inline bool is_register();
@@ -141,6 +144,7 @@ class LGen : public ZoneObject {
   void ComputeLocalLiveSets();
   void ComputeGlobalLiveSets();
   void BuildIntervals();
+  void WalkIntervals();
 
   void VisitInstruction(HIRInstruction* instr);
   HIR_INSTRUCTION_TYPES(LGEN_VISITOR)

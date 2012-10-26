@@ -54,17 +54,19 @@ void LGen::VisitFunction(HIRInstruction* instr) {
 
 
 void LGen::VisitNot(HIRInstruction* instr) {
-  Bind(LInstruction::kNot)
-      ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister)
-      ->SetResult(FromFixed(rax, CreateVirtual()), LUse::kRegister);
+  LInstruction* op = Bind(LInstruction::kNot)
+      ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister);
+
+  op->SetResult(FromFixed(rax, CreateVirtual()), LUse::kRegister);
 }
 
 
 void LGen::VisitBinOp(HIRInstruction* instr) {
-  Bind(LInstruction::kBinOp)
+  LInstruction* op = Bind(LInstruction::kBinOp)
       ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister)
-      ->AddArg(ToFixed(instr->right(), rbx), LUse::kRegister)
-      ->SetResult(FromFixed(rax, CreateVirtual()), LUse::kRegister);
+      ->AddArg(ToFixed(instr->right(), rbx), LUse::kRegister);
+
+  op->SetResult(FromFixed(rax, CreateVirtual()), LUse::kRegister);
 }
 
 
