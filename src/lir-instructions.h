@@ -80,7 +80,8 @@ class LInstruction : public ZoneObject {
   inline LInstruction* SetResult(LInterval* res, LUse::Type use_type);
   inline LInstruction* SetResult(LInstruction* res, LUse::Type use_type);
   inline LInstruction* SetResult(HIRInstruction* res, LUse::Type use_type);
-  inline LInstruction* Propagate(LUse* use);
+  inline LInstruction* Propagate(LUse* res);
+  inline LInstruction* Propagate(HIRInstruction* res);
 
   inline LInstruction* SetSlot(ScopeSlot* slot);
 

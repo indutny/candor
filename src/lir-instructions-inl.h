@@ -66,8 +66,16 @@ inline LInstruction* LInstruction::SetSlot(ScopeSlot* slot) {
 }
 
 
-inline LInstruction* LInstruction::Propagate(LUse* use) {
-  propagated_ = use;
+inline LInstruction* LInstruction::Propagate(LUse* res) {
+  propagated_ = res;
+
+  return this;
+}
+
+
+inline LInstruction* LInstruction::Propagate(HIRInstruction* res) {
+  assert(res->lir()->propagated_ != NULL);
+  return Propagate(res->lir()->propagated_);
 }
 
 #define LIR_INSTRUCTION_TYPE_STR(I) \

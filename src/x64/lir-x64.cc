@@ -138,6 +138,8 @@ void LGen::VisitStoreProperty(HIRInstruction* instr) {
       ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister)
       ->AddArg(ToFixed(instr->right(), rbx), LUse::kRegister)
       ->SetResult(ToFixed(instr->third(), rcx), LUse::kRegister);
+
+  load->Propagate(instr->third());
 }
 
 
