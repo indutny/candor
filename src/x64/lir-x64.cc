@@ -123,7 +123,7 @@ void LGen::VisitStoreContext(HIRInstruction* instr) {
 
 
 void LGen::VisitLoadProperty(HIRInstruction* instr) {
-  Bind(LInstruction::kLoadProperty)
+  LInstruction* store = Bind(LInstruction::kLoadProperty)
       ->MarkHasCall()
       ->AddScratch(CreateVirtual())
       ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister)

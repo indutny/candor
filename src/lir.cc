@@ -223,10 +223,10 @@ void LGen::BuildIntervals() {
         // Add [id, id+1) range, result isn't used anywhere except in the
         // instruction itself
         if (res->ranges()->length() == 0) {
-          res->AddRange(instr->id, instr->id + 1);
+          res->AddRange(instr->id + 1, instr->id + 2);
         } else {
           // Shorten first range
-          res->ranges()->head()->value()->start(instr->id);
+          res->ranges()->head()->value()->start(instr->id + 1);
         }
       }
 
@@ -336,6 +336,7 @@ void LGen::TryAllocateFreeReg(LInterval* current) {
   for (; head != NULL; head = head->next()) {
     LInterval* active = head->value();
     assert(active->is_register());
+
     free_pos[active->index()] = 0;
   }
 
