@@ -16,6 +16,11 @@ inline int LGen::instr_id() {
 }
 
 
+inline int LGen::interval_id() {
+  return interval_id_++;
+}
+
+
 inline int LGen::virtual_index() {
   return virtual_index_++;
 }
@@ -46,8 +51,8 @@ inline LInterval* LGen::ToFixed(HIRInstruction* instr, Register reg) {
   LInterval* res = CreateRegister(reg);
 
   Add(LInstruction::kMove)
-      ->AddArg(instr, LUse::kAny)
-      ->AddArg(res, LUse::kRegister);
+      ->SetResult(res, LUse::kRegister)
+      ->AddArg(instr, LUse::kAny);
 
   return res;
 }
@@ -57,8 +62,8 @@ inline LInterval* LGen::FromFixed(Register reg, LInterval* interval) {
   LInterval* res = CreateRegister(reg);
 
   Add(LInstruction::kMove)
-      ->AddArg(res, LUse::kRegister)
-      ->AddArg(interval, LUse::kAny);
+      ->SetResult(interval, LUse::kAny)
+      ->AddArg(res, LUse::kRegister);
 
   return res;
 }
@@ -77,6 +82,7 @@ inline LInterval* LGen::FromFixed(Register reg, HIRInstruction* instr) {
 
 inline LInterval* LGen::CreateInterval(LInterval::Type type, int index) {
   LInterval* res = new LInterval(type, index);
+  res->id = interval_id();
   intervals_.Push(res);
   return res;
 }
@@ -103,6 +109,22 @@ inline void LGen::Print(PrintBuffer* p) {
     HIRBlock* b = bhead->value();
     p->Print("# Block: %d\n", b->id);
 
+    LBlock* l = b->lir();
+    p->Print("# in: ");
+    LUseMap::Item* mitem = l->live_in.head();
+    for (; mitem != NULL; mitem = mitem->next_scalar()) {
+      p->Print("%d", static_cast<int>(mitem->key()->value()));
+      if (mitem->next_scalar() != NULL) p->Print(", ");
+    }
+
+    p->Print(", out: ");
+    mitem = l->live_out.head();
+    for (; mitem != NULL; mitem = mitem->next_scalar()) {
+      p->Print("%d", static_cast<int>(mitem->key()->value()));
+      if (mitem->next_scalar() != NULL) p->Print(", ");
+    }
+    p->Print("\n");
+
     LInstructionList::Item* ihead = b->linstructions()->head();
     for (; ihead != NULL; ihead = ihead->next()) {
       ihead->value()->Print(p);
@@ -114,6 +136,12 @@ inline void LGen::Print(PrintBuffer* p) {
 inline void LGen::Print(char* out, int32_t size) {
   PrintBuffer p(out, size);
   Print(&p);
+}
+
+
+inline HIRBlock* LBlock::hir() {
+  assert(hir_ != NULL);
+  return hir_;
 }
 
 
@@ -166,7 +194,7 @@ inline void LInterval::Print(PrintBuffer* p) {
    default: UNEXPECTED
   }
 
-  p->Print("%d", index());
+  p->Print("%d:%d", index(), id);
 }
 
 

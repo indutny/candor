@@ -17,7 +17,6 @@ class HIRPhi;
 class LInstruction;
 
 typedef ZoneList<HIRInstruction*> HIRInstructionList;
-typedef HashMap<NumberKey, HIRInstruction, ZoneObject> HIRInstructionMap;
 typedef ZoneList<HIRPhi*> HIRPhiList;
 
 #define HIR_INSTRUCTION_TYPES(V) \

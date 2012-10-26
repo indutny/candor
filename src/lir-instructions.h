@@ -141,12 +141,11 @@ class LInstruction : public ZoneObject {
     }
 
     if (scratch_count()) {
-      p->Print(" [");
+      p->Print(" # scratches: ");
       for (int i = 0; i < scratch_count(); i++) {
         scratches[i]->Print(p);
         if (i + 1 < scratch_count()) p->Print(", ");
       }
-      p->Print("]");
     }
 
     p->Print("\n");

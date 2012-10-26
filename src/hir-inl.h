@@ -279,43 +279,15 @@ inline int HIRBlock::succ_count() {
 }
 
 
-inline HIRInstructionMap* HIRBlock::live_gen() {
-  return &live_gen_;
+inline LBlock* HIRBlock::lir() {
+  assert(lir_ != NULL);
+  return lir_;
 }
 
 
-inline HIRInstructionMap* HIRBlock::live_kill() {
-  return &live_kill_;
-}
-
-
-inline HIRInstructionMap* HIRBlock::live_in() {
-  return &live_in_;
-}
-
-
-inline HIRInstructionMap* HIRBlock::live_out() {
-  return &live_out_;
-}
-
-
-inline int HIRBlock::start_id() {
-  return start_id_;
-}
-
-
-inline int HIRBlock::end_id() {
-  return end_id_;
-}
-
-
-inline void HIRBlock::start_id(int start_id) {
-  start_id_ = start_id;
-}
-
-
-inline void HIRBlock::end_id(int end_id) {
-  end_id_ = end_id;
+inline void HIRBlock::lir(LBlock* lir) {
+  assert(lir_ == NULL);
+  lir_ = lir;
 }
 
 

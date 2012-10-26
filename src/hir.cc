@@ -491,14 +491,15 @@ HIRInstruction* HIRGen::VisitProperty(AstNode* stmt) {
 
 
 HIRBlock::HIRBlock(HIRGen* g) : id(g->block_id()),
-                          g_(g),
-                          loop_(false),
-                          ended_(false),
-                          env_(NULL),
-                          pred_count_(0),
-                          succ_count_(0),
-                          start_id_(-1),
-                          end_id_(-1) {
+                                g_(g),
+                                loop_(false),
+                                ended_(false),
+                                env_(NULL),
+                                pred_count_(0),
+                                succ_count_(0),
+                                lir_(NULL),
+                                start_id_(-1),
+                                end_id_(-1) {
   pred_[0] = NULL;
   pred_[1] = NULL;
   succ_[0] = NULL;

@@ -19,6 +19,7 @@ class LUse;
 typedef ZoneList<LInterval*> LIntervalList;
 typedef ZoneList<LRange*> LRangeList;
 typedef ZoneList<LUse*> LUseList;
+typedef HashMap<NumberKey, LUse, ZoneObject> LUseMap;
 
 class LRange : public ZoneObject {
  public:
@@ -74,7 +75,7 @@ class LInterval : public ZoneObject {
     kStackSlot
   };
 
-  LInterval(Type type, int index) : type_(type), index_(index) {
+  LInterval(Type type, int index) : id(-1), type_(type), index_(index) {
   }
 
 
@@ -89,11 +90,30 @@ class LInterval : public ZoneObject {
 
   inline void Print(PrintBuffer* p);
 
+  int id;
+
  private:
   Type type_;
   int index_;
   LRangeList ranges_;
   LUseList uses_;
+};
+
+class LBlock : public ZoneObject {
+ public:
+  LBlock(HIRBlock* hir);
+
+  LUseMap live_gen;
+  LUseMap live_kill;
+  LUseMap live_in;
+  LUseMap live_out;
+
+  int start_id;
+  int end_id;
+  inline HIRBlock* hir();
+
+ private:
+  HIRBlock* hir_;
 };
 
 #define LGEN_VISITOR(V) \
@@ -122,6 +142,7 @@ class LGen : public ZoneObject {
   inline LInterval* FromFixed(Register reg, LInterval* interval);
 
   inline int instr_id();
+  inline int interval_id();
   inline int virtual_index();
 
   inline void Print(PrintBuffer* p);
@@ -130,6 +151,7 @@ class LGen : public ZoneObject {
  private:
   HIRGen* hir_;
   int instr_id_;
+  int interval_id_;
   int virtual_index_;
 
   HIRBlock* current_block_;

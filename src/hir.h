@@ -20,6 +20,7 @@ namespace internal {
 class HIRGen;
 class HIRBlock;
 class LInstruction;
+class LBlock;
 
 typedef ZoneList<HIRBlock*> HIRBlockList;
 
@@ -82,14 +83,12 @@ class HIRBlock : public ZoneObject {
   inline HIRBlock* PredAt(int i);
   inline int pred_count();
   inline int succ_count();
-  inline HIRInstructionMap* live_gen();
-  inline HIRInstructionMap* live_kill();
-  inline HIRInstructionMap* live_in();
-  inline HIRInstructionMap* live_out();
-  inline int start_id();
-  inline int end_id();
-  inline void start_id(int start_id);
-  inline void end_id(int end_id);
+  inline HashMap<NumberKey, LInstruction, ZoneObject>* live_gen();
+  inline HashMap<NumberKey, LInstruction, ZoneObject>* live_kill();
+  inline HashMap<NumberKey, LInstruction, ZoneObject>* live_in();
+  inline HashMap<NumberKey, LInstruction, ZoneObject>* live_out();
+  inline LBlock* lir();
+  inline void lir(LBlock* lir);
 
   inline void Print(PrintBuffer* p);
 
@@ -113,10 +112,7 @@ class HIRBlock : public ZoneObject {
   HIRBlock* succ_[2];
 
   // Allocator augmentation
-  HIRInstructionMap live_gen_;
-  HIRInstructionMap live_kill_;
-  HIRInstructionMap live_in_;
-  HIRInstructionMap live_out_;
+  LBlock* lir_;
   int start_id_;
   int end_id_;
 };

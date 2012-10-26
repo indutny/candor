@@ -10,6 +10,7 @@ namespace internal {
 
 LGen::LGen(HIRGen* hir) : hir_(hir),
                           instr_id_(0),
+                          interval_id_(0),
                           virtual_index_(40),
                           current_block_(NULL),
                           current_instruction_(NULL) {
@@ -64,6 +65,9 @@ void LGen::GenerateInstructions() {
     HIRBlock* b = head->value();
     current_block_ = b;
 
+    // Generate lir form of block
+    new LBlock(b);
+
     HIRInstructionList::Item* ihead = b->instructions()->head();
     for (; ihead != NULL; ihead = ihead->next()) {
       current_instruction_ = ihead->value();
@@ -86,10 +90,88 @@ void LGen::VisitInstruction(HIRInstruction* instr) {
 #undef LGEN_VISIT_SWITCH
 
 void LGen::ComputeLocalLiveSets() {
+  HIRBlockList::Item* head = blocks_.head();
+
+  for (; head != NULL; head = head->next()) {
+    HIRBlock* b = head->value();
+    LBlock* l = b->lir();
+
+    LInstructionList::Item* ihead = b->linstructions()->head();
+    for (; ihead != NULL; ihead = ihead->next()) {
+      LInstruction* instr = ihead->value();
+
+      // Inputs to live_gen
+      for (int i = 0; i < instr->input_count(); i++) {
+        LUse* input = instr->inputs[i];
+        NumberKey* key = NumberKey::New(input->interval()->id);
+
+        if (l->live_kill.Get(key) == NULL) {
+          l->live_gen.Set(key, input);
+        }
+      }
+
+      // Scratches to live_kill
+      for (int i = 0; i < instr->scratch_count(); i++) {
+        LUse* scratch = instr->scratches[i];
+        l->live_kill.Set(NumberKey::New(scratch->interval()->id), scratch);
+      }
+
+      // Result to live_kill
+      if (instr->result) {
+        LUse* result = instr->result;
+        l->live_kill.Set(NumberKey::New(result->interval()->id), result);
+      }
+    }
+  }
 }
 
 
 void LGen::ComputeGlobalLiveSets() {
+  bool change;
+  LUseMap::Item* mitem;
+
+  do {
+    change = false;
+
+    // Traverse blocks in reverse order
+    HIRBlockList::Item* tail = blocks_.tail();
+    for (; tail != NULL; tail = tail->prev()) {
+      HIRBlock* b = tail->value();
+      LBlock* l = b->lir();
+
+      // Every successor's input adds to current's output
+      for (int i = 0; i < b->succ_count(); i++) {
+        mitem = b->SuccAt(i)->lir()->live_in.head();
+        for (; mitem != NULL; mitem = mitem->next_scalar()) {
+          if (l->live_out.Get(mitem->key()) == NULL) {
+            l->live_out.Set(mitem->key(), mitem->value());
+            change = true;
+          }
+        }
+      }
+
+      // Inputs are live_gen...
+      mitem = l->live_gen.head();
+      for (; mitem != NULL; mitem = mitem->next_scalar()) {
+        if (l->live_in.Get(mitem->key()) == NULL) {
+          l->live_in.Set(mitem->key(), mitem->value());
+          change = true;
+        }
+      }
+
+      // ...and everything in output that isn't killed by current block
+      mitem = l->live_out.head();
+      for (; mitem != NULL; mitem = mitem->next_scalar()) {
+        if (l->live_in.Get(mitem->key()) == NULL &&
+            l->live_kill.Get(mitem->key()) == NULL) {
+          l->live_in.Set(mitem->key(), mitem->value());
+          change = true;
+        }
+      }
+    }
+
+    // Loop while there're any changes
+  } while (change);
 }
 
 
@@ -125,6 +207,13 @@ int LRangeShape::Compare(LRange* a, LRange* b) {
 int LUseShape::Compare(LUse* a, LUse* b) {
   return a->instr()->id > b->instr()->id ? 1 :
          a->instr()->id < b->instr()->id ? -1 : 0;
+}
+
+
+LBlock::LBlock(HIRBlock* hir) : start_id(-1),
+                                end_id(-1),
+                                hir_(hir) {
+  hir->lir(this);
 }
 
 } // namespace internal

@@ -342,6 +342,7 @@ class HashMap {
                                    next_scalar_(NULL) {
     }
 
+    inline Key* key() { return key_; }
     inline Value* value() { return value_; }
     inline void value(Value* value) { value_ = value; }
     inline Item* next() { return next_; }

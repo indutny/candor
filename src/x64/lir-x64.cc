@@ -112,6 +112,7 @@ void LGen::VisitStoreContext(HIRInstruction* instr) {
 
 void LGen::VisitLoadProperty(HIRInstruction* instr) {
   Bind(LInstruction::kLoadProperty)
+      ->AddScratch(CreateVirtual())
       ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister)
       ->AddArg(ToFixed(instr->right(), rbx), LUse::kRegister)
       ->SetResult(CreateVirtual(), LUse::kRegister);
