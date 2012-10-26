@@ -17,7 +17,7 @@ inline LInstruction* LInstruction::AddArg(LInterval* arg, LUse::Type use_type) {
 inline LInstruction* LInstruction::AddArg(LInstruction* arg,
                                           LUse::Type use_type) {
   assert(arg->result != NULL);
-  return AddArg(arg->result->interval(), use_type);
+  return AddArg(arg->propagated_->interval(), use_type);
 }
 
 
@@ -39,6 +39,7 @@ inline LInstruction* LInstruction::SetResult(LInterval* res,
                                              LUse::Type use_type) {
   assert(result == NULL);
   result = res->Use(use_type, this);
+  propagated_ = result;
 
   return this;
 }
@@ -62,6 +63,11 @@ inline LInstruction* LInstruction::SetSlot(ScopeSlot* slot) {
   slot_ = slot;
 
   return this;
+}
+
+
+inline LInstruction* LInstruction::Propagate(LUse* use) {
+  propagated_ = use;
 }
 
 #define LIR_INSTRUCTION_TYPE_STR(I) \

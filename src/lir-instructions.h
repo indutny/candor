@@ -61,7 +61,8 @@ class LInstruction : public ZoneObject {
                             scratch_count_(0),
                             has_call_(NULL),
                             slot_(NULL),
-                            hir_(NULL) {
+                            hir_(NULL),
+                            propagated_(NULL) {
     inputs[0] = NULL;
     inputs[1] = NULL;
     scratches[0] = NULL;
@@ -79,6 +80,7 @@ class LInstruction : public ZoneObject {
   inline LInstruction* SetResult(LInterval* res, LUse::Type use_type);
   inline LInstruction* SetResult(LInstruction* res, LUse::Type use_type);
   inline LInstruction* SetResult(HIRInstruction* res, LUse::Type use_type);
+  inline LInstruction* Propagate(LUse* use);
 
   inline LInstruction* SetSlot(ScopeSlot* slot);
 
@@ -111,6 +113,7 @@ class LInstruction : public ZoneObject {
 
   ScopeSlot* slot_;
   HIRInstruction* hir_;
+  LUse* propagated_;
 };
 
 #undef LIR_INSTRUCTION_ENUM

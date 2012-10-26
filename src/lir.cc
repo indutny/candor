@@ -544,25 +544,16 @@ LInterval* LGen::ToFixed(HIRInstruction* instr, Register reg) {
 }
 
 
-LInterval* LGen::FromFixed(Register reg, LInterval* interval) {
-  LInterval* res = registers_[IndexByRegister(reg)];
+void LGen::ResultFromFixed(LInstruction* instr, Register reg) {
+  LInterval* ireg = registers_[IndexByRegister(reg)];
+  LInterval* res = CreateVirtual();
 
   Add(LInstruction::kMove)
-      ->SetResult(interval, LUse::kAny)
-      ->AddArg(res, LUse::kRegister);
+      ->SetResult(res, LUse::kAny)
+      ->AddArg(ireg, LUse::kRegister);
 
-  return res;
-}
-
-
-LInterval* LGen::FromFixed(Register reg, HIRInstruction* instr) {
-  LInterval* res = registers_[IndexByRegister(reg)];
-
-  Add(LInstruction::kMove)
-      ->SetResult(instr, LUse::kAny)
-      ->AddArg(res, LUse::kRegister);
-
-  return res;
+  instr->SetResult(ireg, LUse::kRegister);
+  instr->Propagate(res->uses()->head()->value());
 }
 
 

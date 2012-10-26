@@ -61,7 +61,7 @@ void LGen::VisitNot(HIRInstruction* instr) {
       ->MarkHasCall()
       ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister);
 
-  op->SetResult(FromFixed(rax, CreateVirtual()), LUse::kRegister);
+  ResultFromFixed(op, rax);
 }
 
 
@@ -71,7 +71,7 @@ void LGen::VisitBinOp(HIRInstruction* instr) {
       ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister)
       ->AddArg(ToFixed(instr->right(), rbx), LUse::kRegister);
 
-  op->SetResult(FromFixed(rax, CreateVirtual()), LUse::kRegister);
+  ResultFromFixed(op, rax);
 }
 
 

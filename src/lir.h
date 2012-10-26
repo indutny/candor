@@ -191,8 +191,7 @@ class LGen : public ZoneObject {
   inline LInterval* CreateStackSlot(int index);
 
   LInterval* ToFixed(HIRInstruction* instr, Register reg);
-  LInterval* FromFixed(Register reg, HIRInstruction* instr);
-  LInterval* FromFixed(Register reg, LInterval* interval);
+  void ResultFromFixed(LInstruction* instr, Register reg);
   LInterval* Split(LInterval* i, int pos);
 
   inline int instr_id();
