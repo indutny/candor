@@ -61,7 +61,7 @@ inline LInterval* LGen::CreateVirtual() {
 
 
 inline LInterval* LGen::CreateRegister(Register reg) {
-  return CreateInterval(LInterval::kRegister, reg.code());
+  return CreateInterval(LInterval::kRegister, IndexByRegister(reg));
 }
 
 

@@ -1,4 +1,3 @@
-#include "lir-x64.h"
 #include "lir.h"
 #include "lir-inl.h"
 #include "lir-instructions.h"
@@ -57,7 +56,7 @@ void LGen::VisitFunction(HIRInstruction* instr) {
 void LGen::VisitNot(HIRInstruction* instr) {
   Bind(LInstruction::kNot)
       ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister)
-      ->SetResult(CreateVirtual(), LUse::kRegister);
+      ->SetResult(FromFixed(rax, CreateVirtual()), LUse::kRegister);
 }
 
 
@@ -65,7 +64,7 @@ void LGen::VisitBinOp(HIRInstruction* instr) {
   Bind(LInstruction::kBinOp)
       ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister)
       ->AddArg(ToFixed(instr->right(), rbx), LUse::kRegister)
-      ->SetResult(CreateVirtual(), LUse::kRegister);
+      ->SetResult(FromFixed(rax, CreateVirtual()), LUse::kRegister);
 }
 
 
@@ -123,11 +122,10 @@ void LGen::VisitLoadProperty(HIRInstruction* instr) {
 
 void LGen::VisitStoreProperty(HIRInstruction* instr) {
   LInstruction* load = Bind(LInstruction::kStoreProperty)
+      ->MarkHasCall()
       ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister)
       ->AddArg(ToFixed(instr->right(), rbx), LUse::kRegister)
-      ->AddArg(ToFixed(instr->third(), rcx), LUse::kRegister);
-
-  load->SetResult(FromFixed(rax, CreateVirtual()), LUse::kRegister);
+      ->SetResult(ToFixed(instr->third(), rcx), LUse::kRegister);
 }
 
 
@@ -149,8 +147,7 @@ void LGen::VisitCollectGarbage(HIRInstruction* instr) {
 
 
 void LGen::VisitLoadArg(HIRInstruction* instr) {
-  Bind(LInstruction::kLoadArg)
-      ->AddArg(instr->left(), LUse::kAny);
+  Bind(LInstruction::kLoadArg)->SetResult(CreateVirtual(), LUse::kAny);
 }
 
 

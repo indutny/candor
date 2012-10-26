@@ -15,6 +15,11 @@ LGen::LGen(HIRGen* hir) : hir_(hir),
                           virtual_index_(40),
                           current_block_(NULL),
                           current_instruction_(NULL) {
+  // Initialize fixed intervals
+  for (int i = 0; i < kLIRRegisterCount; i++) {
+    registers_[i] = CreateRegister(RegisterByIndex(i));
+  }
+
   FlattenBlocks();
   GenerateInstructions();
   ComputeLocalLiveSets();
@@ -202,7 +207,11 @@ void LGen::BuildIntervals() {
       LInstruction* instr = itail->value();
 
       if (instr->HasCall()) {
-        // XXX: Insert fixed interval for each physical register
+        for (int i = 0; i < kLIRRegisterCount; i++) {
+          if (registers_[i]->Covers(instr->id)) continue;
+          registers_[i]->AddRange(instr->id, instr->id + 1);
+          registers_[i]->Use(LUse::kRegister, instr);
+        }
       }
 
       if (instr->result) {
@@ -210,7 +219,7 @@ void LGen::BuildIntervals() {
 
         // Add [id, id+1) range, result isn't used anywhere except in the
         // instruction itself
-        if (res->ranges() == 0) {
+        if (res->ranges()->length() == 0) {
           res->AddRange(instr->id, instr->id + 1);
         } else {
           // Shorten first range
@@ -253,7 +262,11 @@ void LGen::PrintIntervals(PrintBuffer* p) {
   LIntervalList::Item* ihead = intervals_.head();
   for (; ihead != NULL; ihead = ihead->next()) {
     LInterval* interval = ihead->value();
-    p->Print("%02d: ", interval->id);
+    if (interval->id < kLIRRegisterCount) {
+      p->Print("%s: ", RegisterNameByIndex(interval->id));
+    } else {
+      p->Print("%03d: ", interval->id);
+    }
     for (int i = 0; i < instr_id_; i++) {
       LUse* use = interval->UseAt(i);
       if (use == NULL) {
@@ -278,7 +291,7 @@ void LGen::PrintIntervals(PrintBuffer* p) {
 
 
 LInterval* LGen::ToFixed(HIRInstruction* instr, Register reg) {
-  LInterval* res = CreateRegister(reg);
+  LInterval* res = registers_[IndexByRegister(reg)];
 
   Add(LInstruction::kMove)
       ->SetResult(res, LUse::kRegister)
@@ -289,7 +302,7 @@ LInterval* LGen::ToFixed(HIRInstruction* instr, Register reg) {
 
 
 LInterval* LGen::FromFixed(Register reg, LInterval* interval) {
-  LInterval* res = CreateRegister(reg);
+  LInterval* res = registers_[IndexByRegister(reg)];
 
   Add(LInstruction::kMove)
       ->SetResult(interval, LUse::kAny)
@@ -300,7 +313,7 @@ LInterval* LGen::FromFixed(Register reg, LInterval* interval) {
 
 
 LInterval* LGen::FromFixed(Register reg, HIRInstruction* instr) {
-  LInterval* res = CreateRegister(reg);
+  LInterval* res = registers_[IndexByRegister(reg)];
 
   Add(LInstruction::kMove)
       ->SetResult(instr, LUse::kAny)

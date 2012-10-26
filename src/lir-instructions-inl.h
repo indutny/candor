@@ -90,6 +90,11 @@ inline void LInstruction::Print(PrintBuffer* p) {
   }
 
   p->Print("%s", TypeToStr(type()));
+  if (type() == kLiteral && hir()->ast() != NULL) {
+    p->Print("[");
+    p->PrintValue(hir()->ast()->value(), hir()->ast()->length());
+    p->Print("]");
+  }
 
   for (int i = 0; i < input_count(); i++) {
     if (i == 0) p->Print(" ");

@@ -1,6 +1,12 @@
 #ifndef _SRC_LIR_H_
 #define _SRC_LIR_H_
 
+#if CANDOR_ARCH_x64
+#include "x64/lir-x64.h"
+#elif CANDOR_ARCH_ia32
+#include "ia32/lir-ia32.h"
+#endif
+
 #include "hir.h"
 #include "hir-inl.h"
 #include "macroassembler.h" // Register
@@ -168,6 +174,7 @@ class LGen : public ZoneObject {
   HIRInstruction* current_instruction_;
 
   HIRBlockList blocks_;
+  LInterval* registers_[kLIRRegisterCount];
   LIntervalList intervals_;
   ZoneList<LInstruction*> instructions_;
 };

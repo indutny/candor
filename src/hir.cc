@@ -88,14 +88,15 @@ HIRInstruction* HIRGen::VisitAssign(AstNode* stmt) {
     if (value->slot()->is_stack()) {
       // No instruction is needed
       Assign(value->slot(), rhs);
+      return rhs;
     } else {
-      Add(HIRInstruction::kStoreContext, value->slot())->AddArg(rhs);
+      return Add(HIRInstruction::kStoreContext, value->slot())->AddArg(rhs);
     }
   } else if (stmt->lhs()->is(AstNode::kMember)) {
     HIRInstruction* property = Visit(stmt->lhs()->rhs());
     HIRInstruction* receiver = Visit(stmt->lhs()->lhs());
 
-    Add(HIRInstruction::kStoreProperty)
+    return Add(HIRInstruction::kStoreProperty)
         ->AddArg(receiver)
         ->AddArg(property)
         ->AddArg(rhs);
@@ -103,8 +104,6 @@ HIRInstruction* HIRGen::VisitAssign(AstNode* stmt) {
     // TODO: Set error! Incorrect lhs
     abort();
   }
-
-  return rhs;
 }
 
 
@@ -266,9 +265,9 @@ HIRInstruction* HIRGen::VisitBinOp(AstNode* stmt) {
   HIRInstruction* res;
 
   if (!BinOp::is_bool_logic(op->subtype())) {
-    res = Add(HIRInstruction::kBinOp)
-        ->AddArg(Visit(op->lhs()))
-        ->AddArg(Visit(op->rhs()));
+    HIRInstruction* lhs = Visit(op->lhs());
+    HIRInstruction* rhs = Visit(op->rhs());
+    res = Add(HIRInstruction::kBinOp)->AddArg(lhs)->AddArg(rhs);
   } else {
     HIRInstruction* lhs = Visit(op->lhs());
     HIRBlock* branch = CreateBlock();
