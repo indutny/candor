@@ -48,9 +48,6 @@ typedef ZoneList<LInstruction*> LInstructionList;
 #define LIR_INSTRUCTION_ENUM(I) \
     k##I,
 
-#define LIR_INSTRUCTION_TYPE_STR(I) \
-    case k##I: res = #I; break;
-
 class LInstruction : public ZoneObject {
  public:
   enum Type {
@@ -62,6 +59,7 @@ class LInstruction : public ZoneObject {
                             id(-1),
                             input_count_(0),
                             scratch_count_(0),
+                            has_call_(NULL),
                             slot_(NULL),
                             hir_(NULL) {
     inputs[0] = NULL;
@@ -72,93 +70,27 @@ class LInstruction : public ZoneObject {
     result = NULL;
   }
 
-  inline LInstruction* AddArg(LInterval* arg, LUse::Type use_type) {
-    assert(input_count_ < 2);
-    inputs[input_count_++] = arg->Use(use_type, this);
+  inline LInstruction* AddArg(LInterval* arg, LUse::Type use_type);
+  inline LInstruction* AddArg(LInstruction* arg, LUse::Type use_type);
+  inline LInstruction* AddArg(HIRInstruction* arg, LUse::Type use_type);
 
-    return this;
-  }
+  inline LInstruction* AddScratch(LInterval* scratch);
 
-  inline LInstruction* AddArg(LInstruction* arg, LUse::Type use_type) {
-    assert(arg->result != NULL);
-    return AddArg(arg->result->interval(), use_type);
-  }
+  inline LInstruction* SetResult(LInterval* res, LUse::Type use_type);
+  inline LInstruction* SetResult(LInstruction* res, LUse::Type use_type);
+  inline LInstruction* SetResult(HIRInstruction* res, LUse::Type use_type);
 
-  inline LInstruction* AddArg(HIRInstruction* arg, LUse::Type use_type) {
-    return AddArg(arg->lir(), use_type);
-  }
+  inline LInstruction* SetSlot(ScopeSlot* slot);
 
-  inline LInstruction* AddScratch(LInterval* scratch) {
-    assert(scratch_count_ < 2);
-    scratches[scratch_count_++] = scratch->Use(LUse::kRegister, this);
-
-    return this;
-  }
-
-  inline LInstruction* SetResult(LInterval* res, LUse::Type use_type) {
-    assert(result == NULL);
-    result = res->Use(use_type, this);
-
-    return this;
-  }
-
-  inline LInstruction* SetResult(LInstruction* res, LUse::Type use_type) {
-    assert(res->result != NULL);
-    return SetResult(res->result->interval(), use_type);
-  }
-
-  inline LInstruction* SetResult(HIRInstruction* res, LUse::Type use_type) {
-    return SetResult(res->lir(), use_type);
-  }
-
-  inline LInstruction* SetSlot(ScopeSlot* slot) {
-    assert(slot_ == NULL);
-    slot_ = slot;
-
-    return this;
-  }
+  inline LInstruction* MarkHasCall() { has_call_ = true; return this; }
+  inline bool HasCall() { return has_call_; }
 
   inline Type type() { return type_; }
   int id;
 
-  static inline const char* TypeToStr(Type type) {
-    const char* res = NULL;
-    switch (type) {
-     LIR_INSTRUCTION_TYPES(LIR_INSTRUCTION_TYPE_STR)
-     default:
-      UNEXPECTED
-      break;
-    }
+  static inline const char* TypeToStr(Type type);
 
-    return res;
-  }
-
-  inline void Print(PrintBuffer* p) {
-    p->Print("%d: ", id);
-
-    if (result) {
-      result->Print(p);
-      p->Print(" = ");
-    }
-
-    p->Print("%s", TypeToStr(type()));
-
-    for (int i = 0; i < input_count(); i++) {
-      if (i == 0) p->Print(" ");
-      inputs[i]->Print(p);
-      if (i + 1 < input_count()) p->Print(", ");
-    }
-
-    if (scratch_count()) {
-      p->Print(" # scratches: ");
-      for (int i = 0; i < scratch_count(); i++) {
-        scratches[i]->Print(p);
-        if (i + 1 < scratch_count()) p->Print(", ");
-      }
-    }
-
-    p->Print("\n");
-  }
+  inline void Print(PrintBuffer* p);
 
   int input_count() { return input_count_; }
   int result_count() { return result != NULL; }
@@ -175,6 +107,7 @@ class LInstruction : public ZoneObject {
   Type type_;
   int input_count_;
   int scratch_count_;
+  bool has_call_;
 
   ScopeSlot* slot_;
   HIRInstruction* hir_;

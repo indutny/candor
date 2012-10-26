@@ -3,6 +3,7 @@
 #include "lir.h"
 #include "lir-inl.h"
 #include "lir-instructions.h"
+#include "lir-instructions-inl.h"
 #include <string.h> // memset
 
 namespace candor {
@@ -18,6 +19,7 @@ LGen::LGen(HIRGen* hir) : hir_(hir),
   GenerateInstructions();
   ComputeLocalLiveSets();
   ComputeGlobalLiveSets();
+  BuildIntervals();
 }
 
 
@@ -175,6 +177,139 @@ void LGen::ComputeGlobalLiveSets() {
 }
 
 
+void LGen::BuildIntervals() {
+  // Traverse blocks in reverse order
+  HIRBlockList::Item* tail = blocks_.tail();
+  LUseMap::Item* mitem;
+  for (; tail != NULL; tail = tail->prev()) {
+    HIRBlock* b = tail->value();
+    LBlock* l = b->lir();
+
+    // Set block's start and end instruction ids
+    l->start_id = b->linstructions()->head()->value()->id;
+    l->end_id = b->linstructions()->tail()->value()->id;
+
+    // Add full block range to intervals that live out of this block
+    // (we'll shorten those range later if needed).
+    mitem = l->live_out.head();
+    for (; mitem != NULL; mitem = mitem->next_scalar()) {
+      mitem->value()->interval()->AddRange(l->start_id, l->end_id);
+    }
+
+    // And instructions too
+    LInstructionList::Item* itail = b->linstructions()->tail();
+    for (; itail != NULL; itail = itail->prev()) {
+      LInstruction* instr = itail->value();
+
+      if (instr->HasCall()) {
+        // XXX: Insert fixed interval for each physical register
+      }
+
+      if (instr->result) {
+        LInterval* res = instr->result->interval();
+
+        // Add [id, id+1) range, result isn't used anywhere except in the
+        // instruction itself
+        if (res->ranges() == 0) {
+          res->AddRange(instr->id, instr->id + 1);
+        } else {
+          // Shorten first range
+          res->ranges()->head()->value()->start(instr->id);
+        }
+      }
+
+      // Scratches are live only inside instruction
+      for (int i = 0; i < instr->scratch_count(); i++) {
+        instr->scratches[i]->interval()->AddRange(instr->id, instr->id + 1);
+      }
+
+      // Inputs are initially live from block's start to instruction
+      for (int i = 0; i < instr->input_count(); i++) {
+        instr->inputs[i]->interval()->AddRange(l->start_id, instr->id);
+      }
+    }
+  }
+}
+
+
+void LGen::Print(PrintBuffer* p) {
+  HIRBlockList::Item* bhead = blocks_.head();
+
+  PrintIntervals(p);
+
+  for (; bhead != NULL; bhead = bhead->next()) {
+    HIRBlock* b = bhead->value();
+    b->lir()->PrintHeader(p);
+
+    LInstructionList::Item* ihead = b->linstructions()->head();
+    for (; ihead != NULL; ihead = ihead->next()) {
+      ihead->value()->Print(p);
+    }
+  }
+}
+
+
+void LGen::PrintIntervals(PrintBuffer* p) {
+  LIntervalList::Item* ihead = intervals_.head();
+  for (; ihead != NULL; ihead = ihead->next()) {
+    LInterval* interval = ihead->value();
+    p->Print("%02d: ", interval->id);
+    for (int i = 0; i < instr_id_; i++) {
+      LUse* use = interval->UseAt(i);
+      if (use == NULL) {
+        if (interval->Covers(i)) {
+          p->Print("_");
+        } else {
+          p->Print(".");
+        }
+      } else {
+        switch (use->type()) {
+         case LUse::kRegister: p->Print("R"); break;
+         case LUse::kAny: p->Print("A"); break;
+         default: UNEXPECTED
+        }
+      }
+    }
+    p->Print("\n");
+  }
+
+  p->Print("\n");
+}
+
+
+LInterval* LGen::ToFixed(HIRInstruction* instr, Register reg) {
+  LInterval* res = CreateRegister(reg);
+
+  Add(LInstruction::kMove)
+      ->SetResult(res, LUse::kRegister)
+      ->AddArg(instr, LUse::kAny);
+
+  return res;
+}
+
+
+LInterval* LGen::FromFixed(Register reg, LInterval* interval) {
+  LInterval* res = CreateRegister(reg);
+
+  Add(LInstruction::kMove)
+      ->SetResult(interval, LUse::kAny)
+      ->AddArg(res, LUse::kRegister);
+
+  return res;
+}
+
+
+LInterval* LGen::FromFixed(Register reg, HIRInstruction* instr) {
+  LInterval* res = CreateRegister(reg);
+
+  Add(LInstruction::kMove)
+      ->SetResult(instr, LUse::kAny)
+      ->AddArg(res, LUse::kRegister);
+
+  return res;
+}
+
+
 LUse* LInterval::Use(LUse::Type type, LInstruction* instr) {
   LUse* use = new LUse(this, type, instr);
 
@@ -190,6 +325,29 @@ LRange* LInterval::AddRange(int start, int end) {
   ranges_.InsertSorted<LRangeShape>(range);
 
   return range;
+}
+
+
+bool LInterval::Covers(int pos) {
+  LRangeList::Item* head = ranges_.head();
+  for (; head != NULL; head = head->next()) {
+    LRange* range = head->value();
+    if (range->start() > pos) return false;
+    if (range->end() > pos) return true;
+  }
+
+  return false;
+}
+
+
+LUse* LInterval::UseAt(int pos) {
+  LUseList::Item* head = uses_.head();
+  for (; head != NULL; head = head->next()) {
+    LUse* use = head->value();
+    if (use->instr()->id == pos) return use;
+  }
+
+  return NULL;
 }
 
 

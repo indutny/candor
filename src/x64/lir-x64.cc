@@ -1,6 +1,8 @@
+#include "lir-x64.h"
 #include "lir.h"
 #include "lir-inl.h"
 #include "lir-instructions.h"
+#include "lir-instructions-inl.h"
 #include "macroassembler.h"
 
 namespace candor {

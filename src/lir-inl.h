@@ -47,39 +47,6 @@ inline LInstruction* LGen::Bind(int type) {
 }
 
 
-inline LInterval* LGen::ToFixed(HIRInstruction* instr, Register reg) {
-  LInterval* res = CreateRegister(reg);
-
-  Add(LInstruction::kMove)
-      ->SetResult(res, LUse::kRegister)
-      ->AddArg(instr, LUse::kAny);
-
-  return res;
-}
-
-
-inline LInterval* LGen::FromFixed(Register reg, LInterval* interval) {
-  LInterval* res = CreateRegister(reg);
-
-  Add(LInstruction::kMove)
-      ->SetResult(interval, LUse::kAny)
-      ->AddArg(res, LUse::kRegister);
-
-  return res;
-}
-
-
-inline LInterval* LGen::FromFixed(Register reg, HIRInstruction* instr) {
-  LInterval* res = CreateRegister(reg);
-
-  Add(LInstruction::kMove)
-      ->SetResult(instr, LUse::kAny)
-      ->AddArg(res, LUse::kRegister);
-
-  return res;
-}
-
-
 inline LInterval* LGen::CreateInterval(LInterval::Type type, int index) {
   LInterval* res = new LInterval(type, index);
   res->id = interval_id();
@@ -103,36 +70,6 @@ inline LInterval* LGen::CreateStackSlot(int index) {
 }
 
 
-inline void LGen::Print(PrintBuffer* p) {
-  HIRBlockList::Item* bhead = blocks_.head();
-  for (; bhead != NULL; bhead = bhead->next()) {
-    HIRBlock* b = bhead->value();
-    p->Print("# Block: %d\n", b->id);
-
-    LBlock* l = b->lir();
-    p->Print("# in: ");
-    LUseMap::Item* mitem = l->live_in.head();
-    for (; mitem != NULL; mitem = mitem->next_scalar()) {
-      p->Print("%d", static_cast<int>(mitem->key()->value()));
-      if (mitem->next_scalar() != NULL) p->Print(", ");
-    }
-
-    p->Print(", out: ");
-    mitem = l->live_out.head();
-    for (; mitem != NULL; mitem = mitem->next_scalar()) {
-      p->Print("%d", static_cast<int>(mitem->key()->value()));
-      if (mitem->next_scalar() != NULL) p->Print(", ");
-    }
-    p->Print("\n");
-
-    LInstructionList::Item* ihead = b->linstructions()->head();
-    for (; ihead != NULL; ihead = ihead->next()) {
-      ihead->value()->Print(p);
-    }
-  }
-}
-
-
 inline void LGen::Print(char* out, int32_t size) {
   PrintBuffer p(out, size);
   Print(&p);
@@ -145,8 +82,35 @@ inline HIRBlock* LBlock::hir() {
 }
 
 
+inline void LBlock::PrintHeader(PrintBuffer* p) {
+  p->Print("# Block: %d\n", hir()->id);
+
+  if (live_in.head() != NULL || live_out.head() != NULL) {
+    p->Print("# in: ");
+    LUseMap::Item* mitem = live_in.head();
+    for (; mitem != NULL; mitem = mitem->next_scalar()) {
+      p->Print("%d", static_cast<int>(mitem->key()->value()));
+      if (mitem->next_scalar() != NULL) p->Print(", ");
+    }
+
+    p->Print(", out: ");
+    mitem = live_out.head();
+    for (; mitem != NULL; mitem = mitem->next_scalar()) {
+      p->Print("%d", static_cast<int>(mitem->key()->value()));
+      if (mitem->next_scalar() != NULL) p->Print(", ");
+    }
+  }
+  p->Print("\n");
+}
+
+
 inline int LRange::start() {
   return start_;
+}
+
+
+inline void LRange::start(int start) {
+  start_ = start;
 }
 
 
@@ -157,6 +121,11 @@ inline int LRange::end() {
 
 inline LInstruction* LUse::instr() {
   return instr_;
+}
+
+
+inline LUse::Type LUse::type() {
+  return type_;
 }
 
 
@@ -194,12 +163,22 @@ inline void LInterval::Print(PrintBuffer* p) {
    default: UNEXPECTED
   }
 
-  p->Print("%d:%d", index(), id);
+  p->Print("%d:%d", id, index());
 }
 
 
 inline int LInterval::index() {
   return index_;
+}
+
+
+inline LRangeList* LInterval::ranges() {
+  return &ranges_;
+}
+
+
+inline LUseList* LInterval::uses() {
+  return &uses_;
 }
 
 } // namespace internal

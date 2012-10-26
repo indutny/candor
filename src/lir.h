@@ -26,6 +26,7 @@ class LRange : public ZoneObject {
   LRange(LInterval* op, int start, int end);
 
   inline int start();
+  inline void start(int start);
   inline int end();
 
  private:
@@ -54,6 +55,7 @@ class LUse : public ZoneObject {
   inline void Print(PrintBuffer* p);
 
   inline LInstruction* instr();
+  inline Type type();
   inline LInterval* interval();
 
  private:
@@ -78,15 +80,18 @@ class LInterval : public ZoneObject {
   LInterval(Type type, int index) : id(-1), type_(type), index_(index) {
   }
 
-
   LUse* Use(LUse::Type type, LInstruction* instr);
   LRange* AddRange(int start, int end);
+  bool Covers(int pos);
+  LUse* UseAt(int pos);
 
   inline bool is_virtual();
   inline bool is_register();
   inline bool is_stackslot();
 
   inline int index();
+  inline LRangeList* ranges();
+  inline LUseList* uses();
 
   inline void Print(PrintBuffer* p);
 
@@ -102,6 +107,8 @@ class LInterval : public ZoneObject {
 class LBlock : public ZoneObject {
  public:
   LBlock(HIRBlock* hir);
+
+  inline void PrintHeader(PrintBuffer* p);
 
   LUseMap live_gen;
   LUseMap live_kill;
@@ -127,6 +134,7 @@ class LGen : public ZoneObject {
   void GenerateInstructions();
   void ComputeLocalLiveSets();
   void ComputeGlobalLiveSets();
+  void BuildIntervals();
 
   void VisitInstruction(HIRInstruction* instr);
   HIR_INSTRUCTION_TYPES(LGEN_VISITOR)
@@ -137,15 +145,17 @@ class LGen : public ZoneObject {
   inline LInterval* CreateVirtual();
   inline LInterval* CreateRegister(Register reg);
   inline LInterval* CreateStackSlot(int index);
-  inline LInterval* ToFixed(HIRInstruction* instr, Register reg);
-  inline LInterval* FromFixed(Register reg, HIRInstruction* instr);
-  inline LInterval* FromFixed(Register reg, LInterval* interval);
+
+  LInterval* ToFixed(HIRInstruction* instr, Register reg);
+  LInterval* FromFixed(Register reg, HIRInstruction* instr);
+  LInterval* FromFixed(Register reg, LInterval* interval);
 
   inline int instr_id();
   inline int interval_id();
   inline int virtual_index();
 
-  inline void Print(PrintBuffer* p);
+  void Print(PrintBuffer* p);
+  void PrintIntervals(PrintBuffer* p);
   inline void Print(char* out, int32_t size);
 
  private:
