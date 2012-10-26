@@ -102,6 +102,15 @@ class LInstruction : public ZoneObject {
     return this;
   }
 
+  inline LInstruction* SetResult(LInstruction* res, LUse::Type use_type) {
+    assert(res->result != NULL);
+    return SetResult(res->result->interval(), use_type);
+  }
+
+  inline LInstruction* SetResult(HIRInstruction* res, LUse::Type use_type) {
+    return SetResult(res->lir(), use_type);
+  }
+
   inline LInstruction* SetSlot(ScopeSlot* slot) {
     assert(slot_ == NULL);
     slot_ = slot;

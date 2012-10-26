@@ -73,8 +73,8 @@ inline LInterval* LGen::FromFixed(Register reg, HIRInstruction* instr) {
   LInterval* res = CreateRegister(reg);
 
   Add(LInstruction::kMove)
-      ->AddArg(res, LUse::kRegister)
-      ->AddArg(instr, LUse::kAny);
+      ->SetResult(instr, LUse::kAny)
+      ->AddArg(res, LUse::kRegister);
 
   return res;
 }
