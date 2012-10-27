@@ -522,14 +522,25 @@ void LGen::PrintIntervals(PrintBuffer* p) {
         } else {
           p->Print(".");
         }
-      } else {
+      } else if (use->instr()->result == use) {
         switch (use->type()) {
          case LUse::kRegister: p->Print("R"); break;
          case LUse::kAny: p->Print("A"); break;
          default: UNEXPECTED
         }
+      } else {
+        switch (use->type()) {
+         case LUse::kRegister: p->Print("r"); break;
+         case LUse::kAny: p->Print("a"); break;
+         default: UNEXPECTED
+        }
       }
     }
+
+    if (interval->split_parent() != NULL) {
+      p->Print(" P:%d", interval->split_parent()->id);
+    }
+
     p->Print("\n");
   }
 
@@ -592,10 +603,10 @@ LInterval* LGen::Split(LInterval* i, int pos) {
     i->ranges()->Remove(rtail);
     if (range->start() < pos) {
       // Range needs to be splitted first
-      i->AddRange(range->start(), pos);
+      i->ranges()->Push(new LRange(i, range->start(), pos));
       range->start(pos);
     }
-    child->ranges()->Push(range);
+    child->ranges()->Unshift(range);
     range->interval(child);
   }
 
