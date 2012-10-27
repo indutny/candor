@@ -9,7 +9,6 @@
 TEST_START(lir)
   // Simple assignments
   LIR_TEST("pass = 1\n"
-           "i = 0\n"
            "while (i < 10) {\n"
            "  i++\n"
            "}\n"

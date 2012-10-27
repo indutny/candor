@@ -161,6 +161,7 @@ HIRInstruction* HIRGen::VisitWhile(AstNode* stmt) {
   BreakContinueInfo* old = break_continue_info_;
   HIRBlock* start = CreateBlock();
 
+  current_block()->MarkPreLoop();
   Goto(HIRInstruction::kGoto, start);
 
   // HIRBlock can't be join and branch at the same time
@@ -556,6 +557,19 @@ void HIRBlock::AddPredecessor(HIRBlock* b) {
       // Propagate value
       this->env()->Set(i, curr);
     }
+  }
+}
+
+
+void HIRBlock::MarkPreLoop() {
+  // Every slot that wasn't seen before should have nil value
+  for (int i = 0; i < env()->stack_slots() - 1; i++) {
+    if (env()->At(i) != NULL) continue;
+
+    ScopeSlot* slot = new ScopeSlot(ScopeSlot::kStack);
+    slot->index(i);
+
+    Assign(slot, Add(HIRInstruction::kNil));
   }
 }
 

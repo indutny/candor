@@ -243,25 +243,26 @@ TEST_START(hir)
            "i38 = Return(i36)\n")
 
   // While loop
-  HIR_TEST("a = 0\nwhile (true) { b = a\na = 2 }\nreturn a",
+  HIR_TEST("while (true) { a++ }\nreturn a",
            "# Block 0\n"
            "i0 = Entry\n"
-           "i2 = Literal[0]\n"
+           "i2 = Nil\n"
            "i4 = Goto\n"
            "# succ: 1\n"
            "--------\n"
            "# Block 1 (loop)\n"
            "i6 = Phi(i2, i18)\n"
-           "i10 = Goto\n"
+           "i8 = Goto\n"
            "# succ: 2\n"
            "--------\n"
            "# Block 2\n"
-           "i12 = Literal[true]\n"
-           "i14 = If(i12)\n"
+           "i10 = Literal[true]\n"
+           "i12 = If(i10)\n"
            "# succ: 3 5\n"
            "--------\n"
            "# Block 3\n"
-           "i18 = Literal[2]\n"
+           "i14 = Literal[1]\n"
+           "i18 = BinOp(i14, i6)\n"
            "i20 = Goto\n"
            "# succ: 4\n"
            "--------\n"

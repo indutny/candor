@@ -69,6 +69,7 @@ class HIRBlock : public ZoneObject {
   inline HIRInstruction* Return(HIRInstruction::Type type);
   inline bool IsEnded();
   inline bool IsEmpty();
+  void MarkPreLoop();
   void MarkLoop();
   inline bool IsLoop();
   inline HIRPhi* CreatePhi(ScopeSlot* slot);
