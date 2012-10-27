@@ -213,7 +213,6 @@ void LGen::VisitIf(HIRInstruction* instr) {
   assert(instr->block()->succ_count() == 2);
   Bind(new LBranch(instr->block()->SuccAt(0)->lir(),
                    instr->block()->SuccAt(1)->lir()))
-      ->MarkHasCall()
       ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister);
 }
 

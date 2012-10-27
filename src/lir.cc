@@ -550,13 +550,7 @@ void LGen::PrintIntervals(PrintBuffer* p) {
       }
 
       // Make block boundaries visible
-      HIRBlockList::Item* bhead = blocks_.head();
-      for (; bhead != NULL; bhead = bhead->next()) {
-        if (bhead->value()->lir()->end_id - 1 == i) {
-          p->Print("|");
-          break;
-        }
-      }
+      if (IsBlockStart(i + 1) != NULL) p->Print("|");
     }
 
     if (interval->split_parent() != NULL) {
@@ -641,7 +635,49 @@ LInterval* LGen::Split(LInterval* i, int pos) {
   assert(parent->end() <= pos);
   assert(child->start() >= pos);
 
+  // If parent ends on block's edge - inserting move isn't required
+  if (IsBlockStart(parent->end())) return child;
+
+  // Insert move
+  LGap* move = GetGap(parent->end() + 1);
+  move->Add(parent->last_use(), child->first_use());
+
   return child;
+}
+
+
+LGap* LGen::GetGap(int pos) {
+  // TODO: Optimize
+  LInstructionList::Item* head = instructions_.head();
+  for (; head != NULL; head = head->next()) {
+    LInstruction* instr = head->value();
+    if (instr->id < pos) continue;
+
+    // Return existing gap
+    if (instr->id == pos) return LGap::Cast(instr);
+
+    break;
+  }
+
+  assert(head != NULL && head->prev() != NULL);
+
+  // Create new gap
+  LGap* gap = new LGap();
+  gap->id = pos;
+  gap->block(head->prev()->value()->block());
+
+  // Insert into LIR
+  instructions_.InsertBefore(head, gap);
+
+  // Insert into block
+  head = gap->block()->instructions()->head();
+  for (; head != NULL; head = head->next()) {
+    if (head->value()->id != pos + 1) continue;
+    gap->block()->instructions()->InsertBefore(head, gap);
+    break;
+  }
+
+  return gap;
 }
 
 

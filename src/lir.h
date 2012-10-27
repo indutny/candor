@@ -20,6 +20,7 @@ namespace internal {
 class LGen;
 class LInterval;
 class LInstruction;
+class LGap;
 class LRange;
 class LUse;
 typedef ZoneList<LInterval*> LIntervalList;
@@ -118,6 +119,8 @@ class LInterval : public ZoneObject {
   inline int index();
   inline LRangeList* ranges();
   inline LUseList* uses();
+  inline LUse* first_use();
+  inline LUse* last_use();
   inline LInterval* split_parent();
   inline void split_parent(LInterval* split_parent);
   inline LIntervalList* split_children();
@@ -193,10 +196,12 @@ class LGen : public ZoneObject {
   inline LInterval* CreateVirtual();
   inline LInterval* CreateRegister(Register reg);
   inline LInterval* CreateStackSlot(int index);
+  inline LBlock* IsBlockStart(int pos);
 
   LInterval* ToFixed(HIRInstruction* instr, Register reg);
   void ResultFromFixed(LInstruction* instr, Register reg);
   LInterval* Split(LInterval* i, int pos);
+  LGap* GetGap(int pos);
   void Spill(LInterval* interval);
 
   inline int instr_id();

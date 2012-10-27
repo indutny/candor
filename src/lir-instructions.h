@@ -22,7 +22,7 @@ typedef ZoneList<LInstruction*> LInstructionList;
     V(Label) \
     V(Nil) \
     V(Move) \
-    V(ParallelMove) \
+    V(Gap) \
     V(Entry) \
     V(Return) \
     V(Function) \
@@ -100,7 +100,7 @@ class LInstruction : public ZoneObject {
 
   static inline const char* TypeToStr(Type type);
 
-  inline void Print(PrintBuffer* p);
+  virtual void Print(PrintBuffer* p);
 
   int input_count() { return input_count_; }
   int result_count() { return result != NULL; }
@@ -133,12 +133,35 @@ class LLabel : public LInstruction {
   }
 };
 
-class LParallelMove : public LInstruction {
+class LGap : public LInstruction {
  public:
-  LParallelMove() : LInstruction(kParallelMove) {
+  class Pair : public ZoneObject {
+   public:
+    Pair(LUse* from, LUse* to) : from_(from), to_(to) {
+    }
+
+   private:
+    LUse* from_;
+    LUse* to_;
+
+    friend class LGap;
+  };
+
+  typedef ZoneList<Pair*> PairList;
+
+  LGap() : LInstruction(kGap) {
   }
 
-  void Add(LUse* from, LUse* to);
+  inline void Add(LUse* from, LUse* to);
+
+  void Resolve();
+  void Print(PrintBuffer* p);
+
+  static inline LGap* Cast(LInstruction* instr);
+
+ private:
+  PairList unhandled_pairs_;
+  PairList pairs_;
 };
 
 class LGoto : public LInstruction {

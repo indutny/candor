@@ -9,15 +9,10 @@
 TEST_START(lir)
   // Simple assignments
   LIR_TEST("pass = 5\n"
-           "pass2 = 6\n"
            "if (true) {\n"
-           "  a = 1\n"
-           "  b = 3\n"
-           "} else {\n"
-           "  b = 4\n"
-           "  a = 2\n"
+           "  1 + 2\n"
            "}\n"
-           "return a + b + pass + pass2",
+           "return pass",
            "# Block 0\n"
            "i0 = Entry\n"
            "i2 = Literal[1]\n"

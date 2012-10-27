@@ -95,36 +95,14 @@ inline const char* LInstruction::TypeToStr(LInstruction::Type type) {
 
 #undef LIR_INSTRUCTION_TYPE_STR
 
-inline void LInstruction::Print(PrintBuffer* p) {
-  p->Print("%d: ", id);
+inline void LGap::Add(LUse* from, LUse* to) {
+  unhandled_pairs_.Push(new Pair(from, to));
+}
 
-  if (result) {
-    result->Print(p);
-    p->Print(" = ");
-  }
 
-  p->Print("%s", TypeToStr(type()));
-  if (type() == kLiteral && hir()->ast() != NULL) {
-    p->Print("[");
-    p->PrintValue(hir()->ast()->value(), hir()->ast()->length());
-    p->Print("]");
-  }
-
-  for (int i = 0; i < input_count(); i++) {
-    if (i == 0) p->Print(" ");
-    inputs[i]->Print(p);
-    if (i + 1 < input_count()) p->Print(", ");
-  }
-
-  if (scratch_count()) {
-    p->Print(" # scratches: ");
-    for (int i = 0; i < scratch_count(); i++) {
-      scratches[i]->Print(p);
-      if (i + 1 < scratch_count()) p->Print(", ");
-    }
-  }
-
-  p->Print("\n");
+inline LGap* LGap::Cast(LInstruction* instr) {
+  assert(instr->type() == kGap);
+  return reinterpret_cast<LGap*>(instr);
 }
 
 } // namespace internal

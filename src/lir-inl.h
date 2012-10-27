@@ -85,6 +85,20 @@ inline LInterval* LGen::CreateStackSlot(int index) {
 }
 
 
+inline LBlock* LGen::IsBlockStart(int pos) {
+  HIRBlockList::Item* bhead = blocks_.head();
+  for (; bhead != NULL; bhead = bhead->next()) {
+    LBlock* block = bhead->value()->lir();
+    if (block->start_id == pos) return block;
+
+    // Optimization
+    if (block->start_id > pos) return NULL;
+  }
+
+  return NULL;
+}
+
+
 inline void LGen::Print(char* out, int32_t size) {
   PrintBuffer p(out, size);
   Print(&p);
@@ -243,6 +257,18 @@ inline LRangeList* LInterval::ranges() {
 
 inline LUseList* LInterval::uses() {
   return &uses_;
+}
+
+
+inline LUse* LInterval::first_use() {
+  assert(uses_.length() > 0);
+  return uses_.head()->value();
+}
+
+
+inline LUse* LInterval::last_use() {
+  assert(uses_.length() > 0);
+  return uses_.tail()->value();
 }
 
 
