@@ -1,7 +1,7 @@
 #ifndef _SRC_X64_ASSEMBLER_INL_H_
 #define _SRC_X64_ASSEMBLER_INL_H_
 
-#include "assembler-x64.h"
+#include "assembler.h"
 
 #include <assert.h> // assert
 #include <string.h> // memcpy, memset
@@ -9,32 +9,6 @@
 
 namespace candor {
 namespace internal {
-
-inline void Label::relocate(uint32_t offset) {
-  // Label should be relocated only once
-  assert(pos_ == 0);
-  pos_ = offset;
-
-  // Iterate through all label's uses and insert correct relocation info
-  List<RelocationInfo*, EmptyClass>::Item* item = uses_.head();
-  while (item != NULL) {
-    item->value()->target(pos_);
-    item = item->next();
-  }
-}
-
-
-inline void Label::use(uint32_t offset) {
-  RelocationInfo* info = new RelocationInfo(
-      RelocationInfo::kRelative,
-      RelocationInfo::kLong,
-      offset);
-  // If we already know target position - set it
-  if (pos_ != 0) info->target(pos_);
-  uses_.Push(info);
-  asm_->relocation_info_.Push(info);
-}
-
 
 inline void Assembler::emit_rex_if_high(Register src) {
   if (src.high() == 1) emitb(0x40 | 0x01);

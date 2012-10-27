@@ -2,6 +2,7 @@
 #define _SRC_MARCOASSEMBLER_H_
 
 #include "assembler.h"
+#include "assembler-inl.h"
 #include "ast.h" // AstNode
 #include "code-space.h" // CodeSpace
 #include "heap.h" // Heap::HeapTag and etc

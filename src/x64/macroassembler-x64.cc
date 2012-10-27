@@ -243,7 +243,7 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
       mov(qlength, Immediate(0));
     }
   } else {
-    Label array(this), allocate_map(this);
+    Label array, allocate_map;
 
     cmpq(tag_reg, Immediate(HNumber::Tag(Heap::kTagArray)));
     jmp(kEq, &array);
@@ -315,7 +315,7 @@ void Masm::AllocateVarArgSlots(Spill* vararg, Register argc) {
   addq(argc, scratch);
 
   // Push RoundUp(scratch, 2) nils to stack
-  Label loop_start(this), loop_cond(this);
+  Label loop_start, loop_cond;
 
   mov(rax, Immediate(Heap::kTagNil));
 
@@ -341,7 +341,7 @@ void Masm::Fill(Register start, Register end, Immediate value) {
   Push(start);
   mov(scratch, value);
 
-  Label entry(this), loop(this);
+  Label entry, loop;
   jmp(&entry);
   bind(&loop);
 
@@ -441,7 +441,7 @@ void Masm::StringHash(Register str, Register result) {
   Operand hash_field(str, HString::kHashOffset);
   Operand repr_field(str, HValue::kRepresentationOffset);
 
-  Label call_runtime(this), done(this);
+  Label call_runtime, done;
 
   // Check if hash was already calculated
   mov(result, hash_field);
@@ -472,7 +472,7 @@ void Masm::StringHash(Register str, Register result) {
   addq(str, Immediate(HString::kValueOffset));
 
   // while (rcx != 0)
-  Label loop_start(this), loop_cond(this), loop_end(this);
+  Label loop_start, loop_cond, loop_end;
 
   jmp(&loop_cond);
   bind(&loop_start);
@@ -551,7 +551,7 @@ void Masm::CheckGC() {
   Immediate gc_flag(reinterpret_cast<uint64_t>(heap()->needs_gc_addr()));
   Operand scratch_op(scratch, 0);
 
-  Label done(this);
+  Label done;
 
   // Check needs_gc flag
   mov(scratch, gc_flag);
@@ -637,7 +637,7 @@ void Masm::CallFunction(Register fn) {
   Operand code_slot(fn, HFunction::kCodeOffset);
   Operand root_slot(fn, HFunction::kRootOffset);
 
-  Label binding(this), done(this);
+  Label binding, done;
   mov(context_reg, context_slot);
   mov(root_reg, root_slot);
 

@@ -1,5 +1,5 @@
-#include "assembler-x64.h"
-#include "assembler-x64-inl.h"
+#include "assembler.h"
+#include "assembler-inl.h"
 
 namespace candor {
 namespace internal {
@@ -190,7 +190,7 @@ void Assembler::testl(Register dst, Immediate src) {
 void Assembler::jmp(Label* label) {
   emitb(0xE9);
   emitl(0x11111111);
-  if (label != NULL) label->use(offset() - 4);
+  if (label != NULL) label->use(this, offset() - 4);
 }
 
 
@@ -214,7 +214,7 @@ void Assembler::jmp(Condition cond, Label* label) {
     UNEXPECTED
   }
   emitl(0x11111111);
-  if (label != NULL) label->use(offset() - 4);
+  if (label != NULL) label->use(this, offset() - 4);
 }
 
 

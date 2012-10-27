@@ -1,5 +1,5 @@
-#include "assembler-ia32.h"
-#include "assembler-ia32-inl.h"
+#include "assembler.h"
+#include "assembler-inl.h"
 
 namespace candor {
 namespace internal {
@@ -165,7 +165,7 @@ void Assembler::testl(Register dst, Immediate src) {
 void Assembler::jmp(Label* label) {
   emitb(0xE9);
   emitl(0x12345678);
-  label->use(offset() - 4);
+  label->use(this, offset() - 4);
 }
 
 
@@ -189,7 +189,7 @@ void Assembler::jmp(Condition cond, Label* label) {
     UNEXPECTED
   }
   emitl(0x12345678);
-  label->use(offset() - 4);
+  label->use(this, offset() - 4);
 }
 
 

@@ -161,22 +161,6 @@ class RelocationInfo : public ZoneObject {
   uint32_t target_;
 };
 
-class Label {
- public:
-  Label(Assembler* a) : pos_(0), asm_(a) {
-  }
-
- private:
-  inline void relocate(uint32_t offset);
-  inline void use(uint32_t offset);
-
-  uint32_t pos_;
-  Assembler* asm_;
-  List<RelocationInfo*, EmptyClass> uses_;
-
-  friend class Assembler;
-};
-
 enum Condition {
   kEq,
   kNe,

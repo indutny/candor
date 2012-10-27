@@ -5,6 +5,7 @@
 #include "lir-inl.h"
 #include "hir-instructions.h"
 #include "hir-instructions-inl.h"
+#include "macroassembler.h" // Label
 #include "zone.h"
 #include "utils.h"
 
@@ -133,6 +134,8 @@ class LLabel : public LInstruction {
   }
 
   static inline LLabel* Cast(LInstruction* instr);
+
+  Label label;
 };
 
 class LGap : public LInstruction {

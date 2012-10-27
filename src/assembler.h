@@ -9,4 +9,25 @@
 #include "ia32/assembler-ia32-inl.h"
 #endif
 
+namespace candor {
+namespace internal {
+
+class Label {
+ public:
+  Label() : pos_(0) {
+  }
+
+ private:
+  inline void relocate(uint32_t offset);
+  inline void use(Assembler* a, uint32_t offset);
+
+  uint32_t pos_;
+  List<RelocationInfo*, EmptyClass> uses_;
+
+  friend class Assembler;
+};
+
+} // namespace internal
+} // namespace candor
+
 #endif // _SRC_ASSEMBLER_H_
