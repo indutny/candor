@@ -131,6 +131,8 @@ class LLabel : public LInstruction {
  public:
   LLabel() : LInstruction(kLabel) {
   }
+
+  static inline LLabel* Cast(LInstruction* instr);
 };
 
 class LGap : public LInstruction {
@@ -164,23 +166,37 @@ class LGap : public LInstruction {
   PairList pairs_;
 };
 
-class LGoto : public LInstruction {
+class LControlInstruction : public LInstruction {
  public:
-  LGoto(LBlock* to) : LInstruction(kGoto), to_(to) {
+  LControlInstruction(Type type) : LInstruction(type), target_count_(0) {
+    targets_[0] = NULL;
+    targets_[1] = NULL;
   }
 
+  void Print(PrintBuffer* p);
+
+  inline void AddTarget(LLabel* target);
+  inline LLabel* TargetAt(int i);
+
+  inline int target_count() { return target_count_; }
+
+  static inline LControlInstruction* Cast(LInstruction* instr);
+
  private:
-  LBlock* to_;
+  int target_count_;
+  LLabel* targets_[2];
 };
 
-class LBranch : public LInstruction {
+class LGoto : public LControlInstruction {
  public:
-  LBranch(LBlock* t, LBlock* f) : LInstruction(kBranch), t_(t), f_(f) {
+  LGoto() : LControlInstruction(kGoto) {
   }
+};
 
- private:
-  LBlock* t_;
-  LBlock* f_;
+class LBranch : public LControlInstruction {
+ public:
+  LBranch() : LControlInstruction(kBranch) {
+  }
 };
 
 class LLoadArg: public LInstruction {

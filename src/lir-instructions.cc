@@ -68,5 +68,14 @@ void LGap::Print(PrintBuffer* p) {
 }
 
 
+void LControlInstruction::Print(PrintBuffer* p) {
+  p->Print("%d: %s ", id, TypeToStr(type()));
+  for (int i = 0; i < target_count_; i++) {
+    p->Print("(%d)", targets_[i]->id);
+    if (i + 1 < target_count_) p->Print(", ");
+  }
+  p->Print("\n");
+}
+
 } // namespace internal
 } // namespace candor

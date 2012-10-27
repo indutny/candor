@@ -199,7 +199,7 @@ void LGen::VisitGoto(HIRInstruction* instr) {
         ->AddArg(phi->InputAt(parent_index), LUse::kAny);
   }
 
-  Bind(new LGoto(succ->lir()));
+  Bind(new LGoto());
 }
 
 
@@ -211,8 +211,7 @@ void LGen::VisitPhi(HIRInstruction* instr) {
 
 void LGen::VisitIf(HIRInstruction* instr) {
   assert(instr->block()->succ_count() == 2);
-  Bind(new LBranch(instr->block()->SuccAt(0)->lir(),
-                   instr->block()->SuccAt(1)->lir()))
+  Bind(new LBranch())
       ->MarkHasCall()
       ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister);
 }

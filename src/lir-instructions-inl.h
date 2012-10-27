@@ -95,6 +95,12 @@ inline const char* LInstruction::TypeToStr(LInstruction::Type type) {
 
 #undef LIR_INSTRUCTION_TYPE_STR
 
+inline LLabel* LLabel::Cast(LInstruction* instr) {
+  assert(instr->type() == kLabel);
+  return reinterpret_cast<LLabel*>(instr);
+}
+
+
 inline void LGap::Add(LInterval* from, LInterval* to) {
   unhandled_pairs_.Push(new Pair(from, to));
 }
@@ -103,6 +109,25 @@ inline void LGap::Add(LInterval* from, LInterval* to) {
 inline LGap* LGap::Cast(LInstruction* instr) {
   assert(instr->type() == kGap);
   return reinterpret_cast<LGap*>(instr);
+}
+
+
+inline void LControlInstruction::AddTarget(LLabel* target) {
+  assert(target_count_ < 2);
+  targets_[target_count_++] = target;
+}
+
+
+inline LLabel* LControlInstruction::TargetAt(int i) {
+  assert(i < target_count_);
+  return targets_[i];
+}
+
+
+inline LControlInstruction* LControlInstruction::Cast(LInstruction* instr) {
+  assert(instr->type() == kGoto ||
+         instr->type() == kBranch);
+  return reinterpret_cast<LControlInstruction*>(instr);
 }
 
 } // namespace internal

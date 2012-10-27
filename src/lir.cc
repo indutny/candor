@@ -510,6 +510,7 @@ void LGen::ResolveDataFlow() {
     for (int i = 0; i < b->hir()->succ_count(); i++) {
       LBlock* succ = b->hir()->SuccAt(i)->lir();
 
+      // Create movements for non-matching parts of intervals
       LUseMap::Item* mitem = succ->live_in.head();
       for (; mitem != NULL; mitem = mitem->next_scalar()) {
         LInterval* parent = mitem->value()->interval();
@@ -536,6 +537,29 @@ void LGen::ResolveDataFlow() {
 
           gap->Add(left, right);
         }
+      }
+
+      LInstruction* control = b->instructions()->tail()->value();
+      assert(control->type() == LInstruction::kGoto ||
+             control->type() == LInstruction::kBranch);
+
+      // Remove goto instructions on adjacent blocks
+      if (control->type() == LInstruction::kGoto &&
+          bhead->next()->value()->lir() == succ) {
+        b->instructions()->Pop();
+
+        // Remove instruction from global list
+        LInstructionList::Item* ihead = instructions_.head();
+        for (; ihead != NULL; ihead = ihead->next()) {
+          if (ihead->value() == control) {
+            instructions_.Remove(ihead);
+            break;
+          }
+        }
+      } else {
+        // Assign labels to other movement instructions
+        LLabel* label = LLabel::Cast(succ->instructions()->head()->value());
+        LControlInstruction::Cast(control)->AddTarget(label);
       }
     }
   }
@@ -677,11 +701,12 @@ LInterval* LGen::Split(LInterval* i, int pos) {
   assert(i->end() <= pos);
   assert(child->start() >= pos);
 
-  // If parent ends on block's edge - inserting move isn't required
+  // If parent ends on block's edge - move will be inserted when resolving
+  // data flow
   if (IsBlockStart(i->end())) return child;
 
   // Insert move
-  GetGap(i->end() + 1)->Add(i, child);
+  GetGap(i->end() - 1)->Add(i, child);
 
   return child;
 }
