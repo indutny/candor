@@ -537,6 +537,15 @@ void LGen::PrintIntervals(PrintBuffer* p) {
          default: UNEXPECTED
         }
       }
+
+      // Make block boundaries visible
+      HIRBlockList::Item* bhead = blocks_.head();
+      for (; bhead != NULL; bhead = bhead->next()) {
+        if (bhead->value()->lir()->end_id - 1 == i) {
+          p->Print("|");
+          break;
+        }
+      }
     }
 
     if (interval->split_parent() != NULL) {
