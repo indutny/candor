@@ -70,6 +70,16 @@ void LGap::Print(PrintBuffer* p) {
 
 void LControlInstruction::Print(PrintBuffer* p) {
   p->Print("%d: %s ", id, TypeToStr(type()));
+
+  for (int i = 0; i < input_count(); i++) {
+    inputs[i]->Print(p);
+    if (i + 1 < input_count()) {
+      p->Print(", ");
+    } else {
+      p->Print(" ");
+    }
+  }
+
   for (int i = 0; i < target_count_; i++) {
     p->Print("(%d)", targets_[i]->id);
     if (i + 1 < target_count_) p->Print(", ");

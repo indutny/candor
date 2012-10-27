@@ -566,6 +566,15 @@ void LGen::ResolveDataFlow() {
 }
 
 
+void LGen::Generate(Masm* masm) {
+  // Generate all instructions
+  LInstructionList::Item* ihead = instructions_.head();
+  for (; ihead != NULL; ihead = ihead->next()) {
+    ihead->value()->Generate(masm);
+  }
+}
+
+
 void LGen::Print(PrintBuffer* p) {
   PrintIntervals(p);
 

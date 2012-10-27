@@ -177,6 +177,8 @@ class LGen : public ZoneObject {
  public:
   LGen(HIRGen* hir);
 
+  void Generate(Masm* masm);
+
   void FlattenBlocks();
   void GenerateInstructions();
   void ComputeLocalLiveSets();
