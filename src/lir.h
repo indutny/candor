@@ -197,6 +197,7 @@ class LGen : public ZoneObject {
   LInterval* ToFixed(HIRInstruction* instr, Register reg);
   void ResultFromFixed(LInstruction* instr, Register reg);
   LInterval* Split(LInterval* i, int pos);
+  void Spill(LInterval* interval);
 
   inline int instr_id();
   inline int interval_id();
@@ -224,6 +225,11 @@ class LGen : public ZoneObject {
   LIntervalList unhandled_;
   LIntervalList active_;
   LIntervalList inactive_;
+
+  int spill_index_;
+  LIntervalList active_spills_;
+  LIntervalList inactive_spills_;
+  LIntervalList free_spills_;
 };
 
 #undef LGEN_VISITOR

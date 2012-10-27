@@ -15,7 +15,8 @@ LGen::LGen(HIRGen* hir) : hir_(hir),
                           interval_id_(0),
                           virtual_index_(40),
                           current_block_(NULL),
-                          current_instruction_(NULL) {
+                          current_instruction_(NULL),
+                          spill_index_(0) {
   // Initialize fixed intervals
   for (int i = 0; i < kLIRRegisterCount; i++) {
     registers_[i] = CreateRegister(RegisterByIndex(i));
@@ -277,33 +278,46 @@ void LGen::WalkIntervals() {
     LInterval* current = unhandled_.Shift();
     int pos = current->start();
 
-    // Check for intervals in active that are expired or inactive
-    head = active_.head();
-    for (; head != NULL; head = head->next()) {
-      LInterval* active = head->value();
+    LIntervalList* pairs[6] = {
+      &active_, &inactive_, NULL,
+      &active_spills_, &inactive_spills_, &free_spills_
+    };
 
-      if (active->end() < pos) {
-        // Interval has ended before current position
-        active_.Remove(head);
-      } else if (!active->Covers(pos)){
-        // Interval isn't covering current position - move to inactive
-        active_.Remove(head);
-        inactive_.Push(active);
+    for (int i = 0; i < 6; i += 3) {
+      LIntervalList* active = pairs[i];
+      LIntervalList* inactive = pairs[i + 1];
+      LIntervalList* handled = pairs[i + 2];
+
+      // Check for intervals in active that are expired or inactive
+      head = active->head();
+      for (; head != NULL; head = head->next()) {
+        LInterval* interval = head->value();
+
+        if (interval->end() < pos) {
+          // Interval has ended before current position
+          active->Remove(head);
+          if (handled != NULL) handled->Push(interval);
+        } else if (!interval->Covers(pos)){
+          // Interval isn't covering current position - move to ininterval
+          active->Remove(head);
+          inactive->Push(interval);
+        }
       }
-    }
 
-    // Check for intervals in inactive that are expired or active
-    head = inactive_.head();
-    for (; head != NULL; head = head->next()) {
-      LInterval* inactive = head->value();
+      // Check for intervals in inactive that are expired or active
+      head = inactive->head();
+      for (; head != NULL; head = head->next()) {
+        LInterval* interval = head->value();
 
-      if (inactive->end() < pos) {
-        // Interval has ended before current position
-        inactive_.Remove(head);
-      } else if (inactive->Covers(pos)){
-        // Interval is covering current position - move to active
-        inactive_.Remove(head);
-        active_.Push(inactive);
+        if (interval->end() < pos) {
+          // Interval has ended before current position
+          inactive->Remove(head);
+          if (handled != NULL) handled->Push(interval);
+        } else if (interval->Covers(pos)){
+          // Interval is covering current position - move to active
+          inactive->Remove(head);
+          active->Push(interval);
+        }
       }
     }
 
@@ -443,9 +457,7 @@ void LGen::AllocateBlockedReg(LInterval* current) {
   LUse* first_use = current->UseAfter(current->start());
   assert(first_use != NULL);
   if (use_max < first_use->instr()->id) {
-    // Better spill current
-    // XXX Determine spill index
-    current->Spill(0);
+    Spill(current);
 
     // Split before first use with required register
     LUse* reg_use = current->UseAfter(current->start(), LUse::kRegister);
@@ -477,8 +489,7 @@ void LGen::AllocateBlockedReg(LInterval* current) {
 
         if (pos - 2 > interval->start()) Split(interval, pos - 2);
 
-        // XXX Determine spill index
-        interval->Spill(0);
+        Spill(interval);
 
         // Remove interval from active/inactive list
         lists[i]->Remove(head);
@@ -631,6 +642,34 @@ LInterval* LGen::Split(LInterval* i, int pos) {
   assert(child->start() >= pos);
 
   return child;
+}
+
+
+void LGen::Spill(LInterval* interval) {
+  // Assign one of free spills to the interval
+  if (free_spills_.length() > 0) {
+    LInterval* spill = free_spills_.Shift();
+    interval->Spill(spill->index());
+    inactive_spills_.Push(interval);
+
+    return;
+  }
+
+  // Use inactive spill that isn't intersecting with current interval
+  LIntervalList::Item* head = inactive_spills_.head();
+  for (; head != NULL; head = head->next()) {
+    if (head->value()->FindIntersection(interval) == -1) {
+      interval->Spill(head->value()->index());
+      inactive_spills_.Push(interval);
+      return;
+    }
+  }
+
+
+  // Allocate new spill and put it to the inactive spills
+  // (It will be moved to active if needed)
+  interval->Spill(spill_index_++);
+  inactive_spills_.Push(interval);
 }
 
 

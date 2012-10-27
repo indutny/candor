@@ -8,7 +8,8 @@
 
 TEST_START(lir)
   // Simple assignments
-  LIR_TEST("pass = 1\n"
+  LIR_TEST("pass = 5\n"
+           "pass2 = 6\n"
            "if (true) {\n"
            "  a = 1\n"
            "  b = 3\n"
@@ -16,7 +17,7 @@ TEST_START(lir)
            "  b = 4\n"
            "  a = 2\n"
            "}\n"
-           "return a + b + pass",
+           "return a + b + pass + pass2",
            "# Block 0\n"
            "i0 = Entry\n"
            "i2 = Literal[1]\n"
