@@ -102,7 +102,7 @@ inline ZoneList<LInstruction*>* LBlock::instructions() {
 
 
 inline void LBlock::PrintHeader(PrintBuffer* p) {
-  p->Print("# Block: %d\n", hir()->id);
+  p->Print("# Block %d\n", hir()->id);
 
   if (live_in.head() != NULL || live_out.head() != NULL) {
     p->Print("# in: ");

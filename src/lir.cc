@@ -576,7 +576,8 @@ void LGen::Generate(Masm* masm) {
 
 
 void LGen::Print(PrintBuffer* p) {
-  PrintIntervals(p);
+  // Only for debugging purposes
+  if (0) PrintIntervals(p);
 
   HIRBlockList::Item* bhead = blocks_.head();
   for (; bhead != NULL; bhead = bhead->next()) {

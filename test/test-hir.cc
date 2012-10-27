@@ -5,6 +5,14 @@
 #include <hir-inl.h>
 
 TEST_START(hir)
+  HIR_TEST("return 1 + 2\n",
+           "# Block 0\n"
+           "i0 = Entry\n"
+           "i2 = Literal[1]\n"
+           "i4 = Literal[2]\n"
+           "i6 = BinOp(i2, i4)\n"
+           "i8 = Return(i6)\n")
+
   // Simple assignments
   HIR_TEST("a = 1\nb = 1\nreturn a",
            "# Block 0\n"

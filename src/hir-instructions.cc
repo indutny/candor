@@ -19,15 +19,16 @@ HIRInstruction::HIRInstruction(HIRGen* g, HIRBlock* block, Type type) :
 
 
 HIRInstruction::HIRInstruction(HIRGen* g,
-                          HIRBlock* block,
-                          Type type,
-                          ScopeSlot* slot) :
+                               HIRBlock* block,
+                               Type type,
+                               ScopeSlot* slot) :
     id(g->instr_id()),
     g_(g),
     block_(block),
     type_(type),
     slot_(slot),
     ast_(NULL),
+    lir_(NULL),
     removed_(false) {
 }
 
