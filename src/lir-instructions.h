@@ -137,12 +137,12 @@ class LGap : public LInstruction {
  public:
   class Pair : public ZoneObject {
    public:
-    Pair(LUse* from, LUse* to) : from_(from), to_(to) {
+    Pair(LInterval* from, LInterval* to) : from_(from), to_(to) {
     }
 
    private:
-    LUse* from_;
-    LUse* to_;
+    LInterval* from_;
+    LInterval* to_;
 
     friend class LGap;
   };
@@ -152,7 +152,7 @@ class LGap : public LInstruction {
   LGap() : LInstruction(kGap) {
   }
 
-  inline void Add(LUse* from, LUse* to);
+  inline void Add(LInterval* from, LInterval* to);
 
   void Resolve();
   void Print(PrintBuffer* p);

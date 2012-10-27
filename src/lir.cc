@@ -29,6 +29,7 @@ LGen::LGen(HIRGen* hir) : hir_(hir),
   ComputeGlobalLiveSets();
   BuildIntervals();
   WalkIntervals();
+  ResolveDataFlow();
 }
 
 
@@ -198,13 +199,13 @@ void LGen::BuildIntervals() {
 
     // Set block's start and end instruction ids
     l->start_id = b->lir()->instructions()->head()->value()->id;
-    l->end_id = b->lir()->instructions()->tail()->value()->id + 2;
+    l->end_id = b->lir()->instructions()->tail()->value()->id;
 
     // Add full block range to intervals that live out of this block
     // (we'll shorten those range later if needed).
     mitem = l->live_out.head();
     for (; mitem != NULL; mitem = mitem->next_scalar()) {
-      mitem->value()->interval()->AddRange(l->start_id, l->end_id);
+      mitem->value()->interval()->AddRange(l->start_id, l->end_id + 2);
     }
 
     // And instructions too
@@ -499,11 +500,51 @@ void LGen::AllocateBlockedReg(LInterval* current) {
 }
 
 
-void LGen::Print(PrintBuffer* p) {
+void LGen::ResolveDataFlow() {
   HIRBlockList::Item* bhead = blocks_.head();
+  for (; bhead != NULL; bhead = bhead->next()) {
+    LBlock* b = bhead->value()->lir();
+    LGap* gap = NULL;
 
+    for (int i = 0; i < b->hir()->succ_count(); i++) {
+      LBlock* succ = b->hir()->SuccAt(i)->lir();
+
+      LUseMap::Item* mitem = succ->live_in.head();
+      for (; mitem != NULL; mitem = mitem->next_scalar()) {
+        LInterval* parent = mitem->value()->interval();
+        if (parent->split_parent()) parent = parent->split_parent();
+
+        // Skip intervals that wasn't split
+        if (parent->split_children()->length() == 0) continue;
+
+        LInterval* left = parent->ChildAt(b->end_id);
+        LInterval* right = parent->ChildAt(succ->start_id);
+        assert(left != NULL && right != NULL);
+
+        if (left != right) {
+          // Lazily allocate gap
+          if (gap == NULL) {
+            if (b->hir()->succ_count() == 2) {
+              // Gap should be inserted in branch
+              gap = GetGap(succ->start_id + 1);
+            } else {
+              // Or before join
+              gap = GetGap(b->end_id - 1);
+            }
+          }
+
+          gap->Add(left, right);
+        }
+      }
+    }
+  }
+}
+
+
+void LGen::Print(PrintBuffer* p) {
   PrintIntervals(p);
 
+  HIRBlockList::Item* bhead = blocks_.head();
   for (; bhead != NULL; bhead = bhead->next()) {
     HIRBlock* b = bhead->value();
     b->lir()->PrintHeader(p);
@@ -639,8 +680,7 @@ LInterval* LGen::Split(LInterval* i, int pos) {
   if (IsBlockStart(parent->end())) return child;
 
   // Insert move
-  LGap* move = GetGap(parent->end() + 1);
-  move->Add(parent->last_use(), child->first_use());
+  GetGap(parent->end() + 1)->Add(parent, child);
 
   return child;
 }
@@ -785,6 +825,19 @@ int LInterval::FindIntersection(LInterval* with) {
     }
   }
   return -1;
+}
+
+
+LInterval* LInterval::ChildAt(int pos) {
+  if (Covers(pos)) return this;
+
+  LIntervalList::Item* head = split_children_.head();
+  for (; head != NULL; head = head->next()) {
+    LInterval* child = head->value();
+    if (child->Covers(pos)) return child;
+  }
+
+  return NULL;
 }
 
 

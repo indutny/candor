@@ -106,6 +106,7 @@ class LInterval : public ZoneObject {
   LUse* UseAt(int pos);
   LUse* UseAfter(int pos, LUse::Type = LUse::kAny);
   int FindIntersection(LInterval* with);
+  LInterval* ChildAt(int pos);
 
   inline void Allocate(int reg);
   inline void Spill(int slot);
@@ -182,6 +183,7 @@ class LGen : public ZoneObject {
   void ComputeGlobalLiveSets();
   void BuildIntervals();
   void WalkIntervals();
+  void ResolveDataFlow();
   void TryAllocateFreeReg(LInterval* current);
   void AllocateBlockedReg(LInterval* current);
 
