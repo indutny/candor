@@ -1,6 +1,8 @@
 #ifndef _SRC_VISITOR_H_
 #define _SRC_VISITOR_H_
 
+#include "utils.h"
+
 namespace candor {
 namespace internal {
 
@@ -96,7 +98,7 @@ class Visitor {
 
   inline AstNode* current_node() { return current_node_; }
 
- private:
+ protected:
   Type type_;
 
   AstNode* current_node_;

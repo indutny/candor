@@ -171,7 +171,7 @@ class LBlock : public ZoneObject {
 };
 
 #define LGEN_VISITOR(V) \
-    void Visit##V(HIRInstruction* instr); 
+    void Visit##V(HIRInstruction* instr);
 
 class LGen : public ZoneObject {
  public:

@@ -7,6 +7,8 @@
 #include "macroassembler.h" // Masm
 #include "hir.h" // HIR
 #include "hir-inl.h" // HIR
+#include "lir.h" // LIR
+#include "lir-inl.h" // LIR
 #include "stubs.h" // EntryStub
 #include "utils.h" // GetPageSize
 
@@ -85,28 +87,20 @@ char* CodeSpace::Compile(const char* filename,
   Scope::Analyze(ast);
 
   // Generate CFG with SSA
-  HIRGen gen(heap(), ast);
+  HIRGen hir(heap(), ast);
 
-  /*
-  // TODO: Handle errors (like invalid lhs) in HIR!
-  if (hir.has_error()) {
-    *error = CreateError(filename,
-                         source,
-                         length,
-                         hir.error_msg(),
-                         hir.error_pos());
-    return NULL;
-  }
-  */
-
-  abort();
+  // Generate LIR
+  LGen lir(&hir);
 
   // Store root
-  // *root = hir.root()->Allocate()->addr();
+  *root = hir.root()->Allocate()->addr();
 
   // Generate low-level representation
   Masm masm(this);
 
+  lir.Generate(&masm);
+
+  // Put code into code space
   char* addr = Put(&masm);
 
   // Relocate source map

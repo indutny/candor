@@ -101,8 +101,7 @@ HIRInstruction* HIRGen::VisitAssign(AstNode* stmt) {
         ->AddArg(property)
         ->AddArg(rhs);
   } else {
-    // TODO: Set error! Incorrect lhs
-    abort();
+    UNEXPECTED
   }
 }
 

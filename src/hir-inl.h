@@ -110,6 +110,11 @@ inline void HIRGen::Print(PrintBuffer* p) {
 }
 
 
+inline Root* HIRGen::root() {
+  return &root_;
+}
+
+
 inline int HIRGen::block_id() {
   return block_id_++;
 }

@@ -3,6 +3,7 @@
 
 #include "lexer.h"
 #include "ast.h"
+#include "utils.h"
 
 #include <assert.h> // assert
 #include <stdlib.h> // NULL
@@ -11,7 +12,7 @@ namespace candor {
 namespace internal {
 
 // Creates AST tree from plain source code
-class Parser : public Lexer {
+class Parser : public Lexer, public ErrorHandler {
  public:
   enum ParserSign {
     kNormal,
@@ -29,9 +30,6 @@ class Parser : public Lexer {
   };
 
   Parser(const char* source, uint32_t length) : Lexer(source, length) {
-    error_pos_ = 0;
-    error_msg_ = NULL;
-
     ast_ = new FunctionLiteral(NULL);
     ast_->make_root();
     sign_ = kNormal;
@@ -99,25 +97,13 @@ class Parser : public Lexer {
     }
   }
 
-  inline bool has_error() { return error_msg_ != NULL; }
-  inline const char* error_msg() { return error_msg_; }
-  inline uint32_t error_pos() { return error_pos_; }
-
-  inline void SetError(const char* msg) {
-    if (msg == NULL) {
-      error_msg_ = NULL;
-      error_pos_ = 0;
-    }
-
-    if (error_pos_ < Peek()->offset()) {
-      error_pos_ = Peek()->offset();
-      error_msg_ = msg;
-    }
-  }
-
   // AST (result)
   inline AstNode* ast() {
     return ast_;
+  }
+
+  inline void SetError(const char* msg) {
+    ErrorHandler::SetError(msg, Peek()->offset());
   }
 
   // Prints AST into buffer (debug purposes only)
@@ -135,9 +121,6 @@ class Parser : public Lexer {
   AstNode* ParseBlock(AstNode* block);
 
   ParserSign sign_;
-
-  uint32_t error_pos_;
-  const char* error_msg_;
 
   AstNode* ast_;
 };

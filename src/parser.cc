@@ -258,6 +258,12 @@ AstNode* Parser::ParseExpression(int priority) {
       return NULL;
     }
 
+    if (member->type() != AstNode::kName &&
+        member->type() != AstNode::kMember) {
+      SetError("Invalid lhs");
+      return NULL;
+    }
+
     // member "=" expr
     {
       Lexer::Token* token = Peek();

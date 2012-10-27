@@ -783,7 +783,30 @@ class PrintBuffer {
   int32_t total_;
 };
 
+class ErrorHandler {
+ public:
+  ErrorHandler() : error_pos_(0), error_msg_(NULL) {}
 
+  inline bool has_error() { return error_msg_ != NULL; }
+  inline const char* error_msg() { return error_msg_; }
+  inline uint32_t error_pos() { return error_pos_; }
+
+  inline void SetError(const char* msg, int offset) {
+    if (msg == NULL) {
+      error_msg_ = NULL;
+      error_pos_ = 0;
+    }
+
+    if (error_pos_ < offset) {
+      error_pos_ = offset;
+      error_msg_ = msg;
+    }
+  }
+
+ protected:
+  uint32_t error_pos_;
+  const char* error_msg_;
+};
 
 // Find minimum number that's greater than value and is dividable by to
 inline uint32_t RoundUp(uint32_t value, uint32_t to) {

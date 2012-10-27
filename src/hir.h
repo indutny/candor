@@ -186,8 +186,11 @@ class HIRGen : public Visitor<HIRInstruction> {
 
   inline HIRInstruction* CreateInstruction(HIRInstruction::Type type);
   inline HIRPhi* CreatePhi(ScopeSlot* slot);
+
   inline void Print(PrintBuffer* p);
   inline void Print(char* out, int32_t size);
+
+  inline Root* root();
 
   inline int block_id();
   inline int instr_id();
