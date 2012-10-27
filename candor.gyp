@@ -36,6 +36,7 @@
           'src/x64/assembler-x64.cc',
           'src/x64/macroassembler-x64.cc',
           'src/x64/stubs-x64.cc',
+          'src/x64/lir-builder-x64.cc',
           'src/x64/lir-x64.cc',
         ]
       }],
