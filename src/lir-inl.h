@@ -27,19 +27,33 @@ inline int LGen::virtual_index() {
 }
 
 
+inline LInstruction* LGen::Add(LInstruction* instr) {
+  instr->id = instr_id();
+  instr->block(current_block_);
+  instructions_.Push(instr);
+  current_block_->instructions()->Push(instr);
+
+  return instr;
+}
+
+
 inline LInstruction* LGen::Add(int type) {
-  LInstruction* r = new LInstruction(static_cast<LInstruction::Type>(type));
-
-  r->id = instr_id();
-  instructions_.Push(r);
-  current_block_->linstructions()->Push(r);
-
-  return r;
+  return Add(new LInstruction(static_cast<LInstruction::Type>(type)));
 }
 
 
 inline LInstruction* LGen::Bind(int type) {
   LInstruction* r = Add(type);
+
+  current_instruction_->lir(r);
+  r->hir(current_instruction_);
+
+  return r;
+}
+
+
+inline LInstruction* LGen::Bind(LInstruction* instr) {
+  LInstruction* r = Add(instr);
 
   current_instruction_->lir(r);
   r->hir(current_instruction_);
@@ -83,6 +97,11 @@ inline HIRBlock* LBlock::hir() {
 }
 
 
+inline ZoneList<LInstruction*>* LBlock::instructions() {
+  return &instructions_;
+}
+
+
 inline void LBlock::PrintHeader(PrintBuffer* p) {
   p->Print("# Block: %d\n", hir()->id);
 
@@ -100,8 +119,8 @@ inline void LBlock::PrintHeader(PrintBuffer* p) {
       p->Print("%d", static_cast<int>(mitem->key()->value()));
       if (mitem->next_scalar() != NULL) p->Print(", ");
     }
+    p->Print("\n");
   }
-  p->Print("\n");
 }
 
 

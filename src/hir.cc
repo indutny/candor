@@ -30,14 +30,14 @@ HIRGen::HIRGen(Heap* heap, AstNode* root) : Visitor<HIRInstruction>(kPreorder),
     Visit(current->ast());
   }
 
-  PruneHIRPhis();
+  PrunePhis();
 }
 
 
-void HIRGen::PruneHIRPhis() {
+void HIRGen::PrunePhis() {
   HIRBlockList::Item* head = blocks_.head();
   for (; head != NULL; head = head->next()) {
-    head->value()->PruneHIRPhis();
+    head->value()->PrunePhis();
   }
 }
 
@@ -541,7 +541,7 @@ void HIRBlock::AddPredecessor(HIRBlock* b) {
 
       // Create phi if needed
       if (phi == NULL || phi->block() != this) {
-        assert(IsEmpty());
+        assert(phis_.length() == instructions_.length());
 
         phi = CreatePhi(curr->slot());
         Add(phi);
@@ -602,12 +602,11 @@ void HIRBlock::Remove(HIRInstruction* instr) {
 }
 
 
-void HIRBlock::PruneHIRPhis() {
+void HIRBlock::PrunePhis() {
   HIRPhiList queue_;
 
-  HIRPhiList::Item* head = phis_.head();
-  for (; head != NULL; head = head->next()) {
-    queue_.Push(head->value());
+  while (phis_.length() > 0) {
+    queue_.Push(phis_.Shift());
   }
 
   while (queue_.length() > 0) {
@@ -633,6 +632,14 @@ void HIRBlock::PruneHIRPhis() {
         queue_.Push(HIRPhi::Cast(phi->InputAt(i)));
       }
     }
+  }
+
+  // Put pruned phis back in the list
+  HIRInstructionList::Item* ihead = instructions_.head();
+  for (; ihead != NULL; ihead = ihead->next()) {
+    HIRInstruction* instr = ihead->value();
+    if (!instr->Is(HIRInstruction::kPhi)) continue;
+    phis_.Push(HIRPhi::Cast(instr));
   }
 }
 

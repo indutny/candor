@@ -115,13 +115,12 @@ inline HIRInstruction* HIRInstruction::third() {
 
 
 inline LInstruction* HIRInstruction::lir() {
-  assert(lir_ != NULL);
   return lir_;
 }
 
 
 inline void HIRInstruction::lir(LInstruction* lir) {
-  assert(lir_ == NULL);
+  assert(lir_ == NULL || lir_ == lir);
   lir_ = lir;
 }
 
@@ -167,6 +166,11 @@ inline HIRFunction* HIRFunction::Cast(HIRInstruction* instr) {
 inline HIRLoadArg* HIRLoadArg::Cast(HIRInstruction* instr) {
   assert(instr->Is(kLoadArg));
   return reinterpret_cast<HIRLoadArg*>(instr);
+}
+
+
+inline int HIRLoadArg::index() {
+  return index_;
 }
 
 } // namespace internal

@@ -164,7 +164,8 @@ void LGen::VisitCollectGarbage(HIRInstruction* instr) {
 
 
 void LGen::VisitLoadArg(HIRInstruction* instr) {
-  Bind(LInstruction::kLoadArg)->SetResult(CreateVirtual(), LUse::kAny);
+  Bind(new LLoadArg(HIRLoadArg::Cast(instr)->index()))
+      ->SetResult(CreateVirtual(), LUse::kAny);
 }
 
 
@@ -174,17 +175,46 @@ void LGen::VisitCall(HIRInstruction* instr) {
 
 
 void LGen::VisitGoto(HIRInstruction* instr) {
-  // XXX
+  HIRBlock* succ = instr->block()->SuccAt(0);
+  int parent_index = succ->PredAt(0) != instr->block();
+
+  HIRPhiList::Item* head = succ->phis()->head();
+  for (; head != NULL; head = head->next()) {
+    HIRPhi* phi = head->value();
+    LInstruction* lphi = NULL;
+
+    // Initialize LIR representation of phi
+    if (phi->lir() == NULL) {
+      lphi = new LInstruction(LInstruction::kPhi);
+      lphi->AddArg(CreateVirtual(), LUse::kAny);
+
+      phi->lir(lphi);
+    } else {
+      lphi = phi->lir();
+    }
+    assert(lphi != NULL);
+
+    Add(LInstruction::kMove)
+        ->SetResult(lphi->inputs[0]->interval(), LUse::kAny)
+        ->AddArg(phi->InputAt(parent_index), LUse::kAny);
+  }
+
+  Bind(new LGoto(succ->lir()));
 }
 
 
 void LGen::VisitPhi(HIRInstruction* instr) {
-  // XXX
+  Bind(instr->lir())
+      ->SetResult(CreateVirtual(), LUse::kAny);
 }
 
 
 void LGen::VisitIf(HIRInstruction* instr) {
-  // XXX
+  assert(instr->block()->succ_count() == 2);
+  Bind(new LBranch(instr->block()->SuccAt(0)->lir(),
+                   instr->block()->SuccAt(1)->lir()))
+      ->MarkHasCall()
+      ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister);
 }
 
 } // namespace internal

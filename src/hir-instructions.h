@@ -138,6 +138,7 @@ class HIRLoadArg : public HIRInstruction {
 
   void Print(PrintBuffer* p);
   static inline HIRLoadArg* Cast(HIRInstruction* instr);
+  inline int index();
 
  private:
   int index_;

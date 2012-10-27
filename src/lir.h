@@ -159,9 +159,11 @@ class LBlock : public ZoneObject {
   int start_id;
   int end_id;
   inline HIRBlock* hir();
+  inline ZoneList<LInstruction*>* instructions();
 
  private:
   HIRBlock* hir_;
+  ZoneList<LInstruction*> instructions_;
 };
 
 #define LGEN_VISITOR(V) \
@@ -183,7 +185,9 @@ class LGen : public ZoneObject {
   void VisitInstruction(HIRInstruction* instr);
   HIR_INSTRUCTION_TYPES(LGEN_VISITOR)
 
+  inline LInstruction* Add(LInstruction* instr);
   inline LInstruction* Add(int type);
+  inline LInstruction* Bind(LInstruction* instr);
   inline LInstruction* Bind(int type);
   inline LInterval* CreateInterval(LInterval::Type type, int index);
   inline LInterval* CreateVirtual();
@@ -208,7 +212,7 @@ class LGen : public ZoneObject {
   int interval_id_;
   int virtual_index_;
 
-  HIRBlock* current_block_;
+  LBlock* current_block_;
   HIRInstruction* current_instruction_;
 
   HIRBlockList blocks_;

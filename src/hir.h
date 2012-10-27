@@ -19,7 +19,6 @@ namespace internal {
 // Forward declaration
 class HIRGen;
 class HIRBlock;
-class LInstruction;
 class LBlock;
 
 typedef ZoneList<HIRBlock*> HIRBlockList;
@@ -57,7 +56,7 @@ class HIRBlock : public ZoneObject {
 
   HIRInstruction* Assign(ScopeSlot* slot, HIRInstruction* value);
   void Remove(HIRInstruction* instr);
-  void PruneHIRPhis();
+  void PrunePhis();
 
   inline HIRBlock* AddSuccessor(HIRBlock* b);
   inline HIRInstruction* Add(HIRInstruction::Type type);
@@ -77,16 +76,11 @@ class HIRBlock : public ZoneObject {
   inline HIREnvironment* env();
   inline void env(HIREnvironment* env);
   inline HIRInstructionList* instructions();
-  inline ZoneList<LInstruction*>* linstructions();
   inline HIRPhiList* phis();
   inline HIRBlock* SuccAt(int i);
   inline HIRBlock* PredAt(int i);
   inline int pred_count();
   inline int succ_count();
-  inline HashMap<NumberKey, LInstruction, ZoneObject>* live_gen();
-  inline HashMap<NumberKey, LInstruction, ZoneObject>* live_kill();
-  inline HashMap<NumberKey, LInstruction, ZoneObject>* live_in();
-  inline HashMap<NumberKey, LInstruction, ZoneObject>* live_out();
   inline LBlock* lir();
   inline void lir(LBlock* lir);
 
@@ -103,8 +97,6 @@ class HIRBlock : public ZoneObject {
   HIREnvironment* env_;
   HIRInstructionList instructions_;
   HIRPhiList phis_;
-
-  ZoneList<LInstruction*> linstructions_;
 
   int pred_count_;
   int succ_count_;
@@ -136,7 +128,7 @@ class HIRGen : public Visitor<HIRInstruction> {
  public:
   HIRGen(Heap* heap, AstNode* root);
 
-  void PruneHIRPhis();
+  void PrunePhis();
   void Replace(HIRInstruction* o, HIRInstruction* n);
 
   HIRInstruction* VisitFunction(AstNode* stmt);

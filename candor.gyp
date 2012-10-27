@@ -20,6 +20,7 @@
       'src/hir.cc',
       'src/hir-instructions.cc',
       'src/lir.cc',
+      'src/lir-instructions.cc',
       'src/lexer.cc',
       'src/parser.cc',
       'src/root.cc',

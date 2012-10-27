@@ -2,6 +2,7 @@
 #define _SRC_LIR_INSTRUCTIONS_H_
 
 #include "lir.h"
+#include "lir-inl.h"
 #include "hir-instructions.h"
 #include "hir-instructions-inl.h"
 #include "zone.h"
@@ -12,13 +13,16 @@ namespace internal {
 
 // Forward declarations
 class LInstruction;
+class LBlock;
 class ScopeSlot;
 typedef ZoneList<LInstruction*> LInstructionList;
 
 #define LIR_INSTRUCTION_TYPES(V) \
     V(Nop) \
+    V(Label) \
     V(Nil) \
     V(Move) \
+    V(ParallelMove) \
     V(Entry) \
     V(Return) \
     V(Function) \
@@ -28,7 +32,7 @@ typedef ZoneList<LInstruction*> LInstructionList;
     V(LoadProperty) \
     V(StoreProperty) \
     V(DeleteProperty) \
-    V(If) \
+    V(Branch) \
     V(Literal) \
     V(Goto) \
     V(Not) \
@@ -60,6 +64,7 @@ class LInstruction : public ZoneObject {
                             input_count_(0),
                             scratch_count_(0),
                             has_call_(NULL),
+                            block_(NULL),
                             slot_(NULL),
                             hir_(NULL),
                             propagated_(NULL) {
@@ -89,6 +94,8 @@ class LInstruction : public ZoneObject {
   inline bool HasCall() { return has_call_; }
 
   inline Type type() { return type_; }
+  inline LBlock* block() { return block_; }
+  inline void block(LBlock* block) { block_ = block; }
   int id;
 
   static inline const char* TypeToStr(Type type);
@@ -112,12 +119,55 @@ class LInstruction : public ZoneObject {
   int scratch_count_;
   bool has_call_;
 
+  LBlock* block_;
   ScopeSlot* slot_;
   HIRInstruction* hir_;
   LUse* propagated_;
 };
 
 #undef LIR_INSTRUCTION_ENUM
+
+class LLabel : public LInstruction {
+ public:
+  LLabel() : LInstruction(kLabel) {
+  }
+};
+
+class LParallelMove : public LInstruction {
+ public:
+  LParallelMove() : LInstruction(kParallelMove) {
+  }
+
+  void Add(LUse* from, LUse* to);
+};
+
+class LGoto : public LInstruction {
+ public:
+  LGoto(LBlock* to) : LInstruction(kGoto), to_(to) {
+  }
+
+ private:
+  LBlock* to_;
+};
+
+class LBranch : public LInstruction {
+ public:
+  LBranch(LBlock* t, LBlock* f) : LInstruction(kBranch), t_(t), f_(f) {
+  }
+
+ private:
+  LBlock* t_;
+  LBlock* f_;
+};
+
+class LLoadArg: public LInstruction {
+ public:
+  LLoadArg(int index) : LInstruction(kLoadArg), index_(index) {
+  }
+
+ private:
+  int index_;
+};
 
 } // namespace internal
 } // namespace candor

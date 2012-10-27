@@ -59,6 +59,9 @@ void LGen::FlattenBlocks() {
       continue;
     }
 
+    // Generate lir form of block
+    LBlock* l = new LBlock(b);
+
     blocks_.Push(b);
 
     for (int i = b->succ_count() - 1; i >= 0; i--) {
@@ -73,10 +76,9 @@ void LGen::GenerateInstructions() {
 
   for (; head != NULL; head = head->next()) {
     HIRBlock* b = head->value();
-    current_block_ = b;
 
-    // Generate lir form of block
-    new LBlock(b);
+    current_block_ = b->lir();
+    Add(new LLabel());
 
     HIRInstructionList::Item* ihead = b->instructions()->head();
     for (; ihead != NULL; ihead = ihead->next()) {
@@ -106,7 +108,7 @@ void LGen::ComputeLocalLiveSets() {
     HIRBlock* b = head->value();
     LBlock* l = b->lir();
 
-    LInstructionList::Item* ihead = b->linstructions()->head();
+    LInstructionList::Item* ihead = b->lir()->instructions()->head();
     for (; ihead != NULL; ihead = ihead->next()) {
       LInstruction* instr = ihead->value();
 
@@ -194,8 +196,8 @@ void LGen::BuildIntervals() {
     LBlock* l = b->lir();
 
     // Set block's start and end instruction ids
-    l->start_id = b->linstructions()->head()->value()->id;
-    l->end_id = b->linstructions()->tail()->value()->id;
+    l->start_id = b->lir()->instructions()->head()->value()->id;
+    l->end_id = b->lir()->instructions()->tail()->value()->id + 2;
 
     // Add full block range to intervals that live out of this block
     // (we'll shorten those range later if needed).
@@ -205,7 +207,7 @@ void LGen::BuildIntervals() {
     }
 
     // And instructions too
-    LInstructionList::Item* itail = b->linstructions()->tail();
+    LInstructionList::Item* itail = b->lir()->instructions()->tail();
     for (; itail != NULL; itail = itail->prev()) {
       LInstruction* instr = itail->value();
 
@@ -493,10 +495,12 @@ void LGen::Print(PrintBuffer* p) {
     HIRBlock* b = bhead->value();
     b->lir()->PrintHeader(p);
 
-    LInstructionList::Item* ihead = b->linstructions()->head();
+    LInstructionList::Item* ihead = b->lir()->instructions()->head();
     for (; ihead != NULL; ihead = ihead->next()) {
       ihead->value()->Print(p);
     }
+
+    p->Print("\n");
   }
 }
 
@@ -560,6 +564,7 @@ void LGen::ResultFromFixed(LInstruction* instr, Register reg) {
 LInterval* LGen::Split(LInterval* i, int pos) {
   // TODO: Find optimal split position here
   assert(!i->IsFixed());
+
   assert(pos > i->start() && pos < i->end());
   LInterval* child = CreateVirtual();
 

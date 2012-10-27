@@ -244,11 +244,6 @@ inline HIRInstructionList* HIRBlock::instructions() {
 }
 
 
-inline ZoneList<LInstruction*>* HIRBlock::linstructions() {
-  return &linstructions_;
-}
-
-
 inline HIRPhiList* HIRBlock::phis() {
   return &phis_;
 }
