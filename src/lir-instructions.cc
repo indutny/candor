@@ -60,6 +60,8 @@ void LGap::Print(PrintBuffer* p) {
     pair->from_->Print(p);
     p->Print(" => ");
     pair->to_->Print(p);
+
+    if (head->next() != NULL) p->Print(", ");
   }
 
   p->Print("]\n");

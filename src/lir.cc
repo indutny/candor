@@ -457,7 +457,8 @@ void LGen::AllocateBlockedReg(LInterval* current) {
 
   LUse* first_use = current->UseAfter(current->start());
   assert(first_use != NULL);
-  if (use_max < first_use->instr()->id) {
+  if (use_max < first_use->instr()->id ||
+      block_pos[use_reg] - 2 <= current->start()) {
     Spill(current);
 
     // Split before first use with required register
@@ -472,7 +473,7 @@ void LGen::AllocateBlockedReg(LInterval* current) {
     // If register is blocked somewhere before interval's end
     if (block_pos[use_reg] <= current->end()) {
       // Interval should be splitted
-      Split(current, block_pos[use_reg]);
+      Split(current, block_pos[use_reg] - 2);
     }
 
     // Split and spill all intersecting intervals
@@ -673,14 +674,14 @@ LInterval* LGen::Split(LInterval* i, int pos) {
 
   unhandled_.InsertSorted<LIntervalShape>(child);
 
-  assert(parent->end() <= pos);
+  assert(i->end() <= pos);
   assert(child->start() >= pos);
 
   // If parent ends on block's edge - inserting move isn't required
-  if (IsBlockStart(parent->end())) return child;
+  if (IsBlockStart(i->end())) return child;
 
   // Insert move
-  GetGap(parent->end() + 1)->Add(parent, child);
+  GetGap(i->end() + 1)->Add(i, child);
 
   return child;
 }
