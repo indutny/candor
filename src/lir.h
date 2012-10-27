@@ -191,9 +191,7 @@ class LGen : public ZoneObject {
   HIR_INSTRUCTION_TYPES(LGEN_VISITOR)
 
   inline LInstruction* Add(LInstruction* instr);
-  inline LInstruction* Add(int type);
   inline LInstruction* Bind(LInstruction* instr);
-  inline LInstruction* Bind(int type);
   inline LInterval* CreateInterval(LInterval::Type type, int index);
   inline LInterval* CreateVirtual();
   inline LInterval* CreateRegister(Register reg);

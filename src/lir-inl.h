@@ -37,21 +37,6 @@ inline LInstruction* LGen::Add(LInstruction* instr) {
 }
 
 
-inline LInstruction* LGen::Add(int type) {
-  return Add(new LInstruction(static_cast<LInstruction::Type>(type)));
-}
-
-
-inline LInstruction* LGen::Bind(int type) {
-  LInstruction* r = Add(type);
-
-  current_instruction_->lir(r);
-  r->hir(current_instruction_);
-
-  return r;
-}
-
-
 inline LInstruction* LGen::Bind(LInstruction* instr) {
   LInstruction* r = Add(instr);
 

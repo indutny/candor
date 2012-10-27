@@ -18,24 +18,19 @@ class LBlock;
 class ScopeSlot;
 typedef ZoneList<LInstruction*> LInstructionList;
 
-#define LIR_INSTRUCTION_TYPES(V) \
+#define LIR_INSTRUCTION_SIMPLE_TYPES(V) \
     V(Nop) \
-    V(Label) \
     V(Nil) \
     V(Move) \
-    V(Gap) \
     V(Entry) \
     V(Return) \
     V(Function) \
-    V(LoadArg) \
     V(LoadContext) \
     V(StoreContext) \
     V(LoadProperty) \
     V(StoreProperty) \
     V(DeleteProperty) \
-    V(Branch) \
     V(Literal) \
-    V(Goto) \
     V(Not) \
     V(BinOp) \
     V(Typeof) \
@@ -46,9 +41,16 @@ typedef ZoneList<LInstruction*> LInstructionList;
     V(CollectGarbage) \
     V(GetStackTrace) \
     V(AllocateObject) \
-    V(CloneObject) \
     V(AllocateArray) \
     V(Phi)
+
+#define LIR_INSTRUCTION_TYPES(V) \
+    V(Label) \
+    V(Gap) \
+    V(LoadArg) \
+    V(Branch) \
+    V(Goto) \
+    LIR_INSTRUCTION_SIMPLE_TYPES(V)
 
 #define LIR_INSTRUCTION_ENUM(I) \
     k##I,
@@ -101,6 +103,7 @@ class LInstruction : public ZoneObject {
 
   static inline const char* TypeToStr(Type type);
 
+  virtual void Generate(Masm* masm) = 0;
   virtual void Print(PrintBuffer* p);
 
   int input_count() { return input_count_; }
@@ -128,12 +131,18 @@ class LInstruction : public ZoneObject {
 
 #undef LIR_INSTRUCTION_ENUM
 
+#define INSTRUCTION_METHODS(Name) \
+      void Generate(Masm* masm); \
+      static inline L##Name* Cast(LInstruction* instr) { \
+        assert(instr->type() == k##Name);\
+        return reinterpret_cast<L##Name*>(instr); \
+      }
+
 class LLabel : public LInstruction {
  public:
-  LLabel() : LInstruction(kLabel) {
-  }
+  LLabel() : LInstruction(kLabel) {}
 
-  static inline LLabel* Cast(LInstruction* instr);
+  INSTRUCTION_METHODS(Label)
 
   Label label;
 };
@@ -154,15 +163,14 @@ class LGap : public LInstruction {
 
   typedef ZoneList<Pair*> PairList;
 
-  LGap() : LInstruction(kGap) {
-  }
+  LGap() : LInstruction(kGap) {}
+
+  INSTRUCTION_METHODS(Gap)
 
   inline void Add(LInterval* from, LInterval* to);
 
   void Resolve();
   void Print(PrintBuffer* p);
-
-  static inline LGap* Cast(LInstruction* instr);
 
  private:
   PairList unhandled_pairs_;
@@ -194,12 +202,16 @@ class LGoto : public LControlInstruction {
  public:
   LGoto() : LControlInstruction(kGoto) {
   }
+
+  INSTRUCTION_METHODS(Goto)
 };
 
 class LBranch : public LControlInstruction {
  public:
   LBranch() : LControlInstruction(kBranch) {
   }
+
+  INSTRUCTION_METHODS(Branch)
 };
 
 class LLoadArg: public LInstruction {
@@ -207,9 +219,23 @@ class LLoadArg: public LInstruction {
   LLoadArg(int index) : LInstruction(kLoadArg), index_(index) {
   }
 
+  INSTRUCTION_METHODS(LoadArg)
+
  private:
   int index_;
 };
+
+#define DEFAULT_INSTR_IMPLEMENTATION(V) \
+  class L##V : public LInstruction { \
+   public: \
+    L##V() : LInstruction(k##V) {} \
+    INSTRUCTION_METHODS(V) \
+  };
+
+LIR_INSTRUCTION_SIMPLE_TYPES(DEFAULT_INSTR_IMPLEMENTATION)
+
+#undef DEFAULT_INSTR_IMPLEMENTATION
+#undef INSTRUCTION_METHODS
 
 } // namespace internal
 } // namespace candor

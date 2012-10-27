@@ -633,7 +633,7 @@ void LGen::PrintIntervals(PrintBuffer* p) {
 LInterval* LGen::ToFixed(HIRInstruction* instr, Register reg) {
   LInterval* res = registers_[IndexByRegister(reg)];
 
-  Add(LInstruction::kMove)
+  Add(new LMove())
       ->SetResult(res, LUse::kRegister)
       ->AddArg(instr, LUse::kAny);
 
@@ -645,7 +645,7 @@ void LGen::ResultFromFixed(LInstruction* instr, Register reg) {
   LInterval* ireg = registers_[IndexByRegister(reg)];
   LInterval* res = CreateVirtual();
 
-  Add(LInstruction::kMove)
+  Add(new LMove())
       ->SetResult(res, LUse::kAny)
       ->AddArg(ireg, LUse::kRegister);
 

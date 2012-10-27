@@ -95,20 +95,8 @@ inline const char* LInstruction::TypeToStr(LInstruction::Type type) {
 
 #undef LIR_INSTRUCTION_TYPE_STR
 
-inline LLabel* LLabel::Cast(LInstruction* instr) {
-  assert(instr->type() == kLabel);
-  return reinterpret_cast<LLabel*>(instr);
-}
-
-
 inline void LGap::Add(LInterval* from, LInterval* to) {
   unhandled_pairs_.Push(new Pair(from, to));
-}
-
-
-inline LGap* LGap::Cast(LInstruction* instr) {
-  assert(instr->type() == kGap);
-  return reinterpret_cast<LGap*>(instr);
 }
 
 

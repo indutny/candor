@@ -12,37 +12,37 @@ void LGen::VisitNop(HIRInstruction* instr) {
 
 
 void LGen::VisitNil(HIRInstruction* instr) {
-  Bind(LInstruction::kNil)
+  Bind(new LNil())
       ->SetResult(CreateVirtual(), LUse::kAny);
 }
 
 
 void LGen::VisitEntry(HIRInstruction* instr) {
-  Bind(LInstruction::kEntry);
+  Bind(new LEntry());
 }
 
 
 void LGen::VisitReturn(HIRInstruction* instr) {
-  Bind(LInstruction::kReturn)
+  Bind(new LReturn())
       ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister);
 }
 
 
 void LGen::VisitLiteral(HIRInstruction* instr) {
-  Bind(LInstruction::kLiteral)
+  Bind(new LLiteral())
       ->SetResult(CreateVirtual(), LUse::kRegister);
 }
 
 
 void LGen::VisitAllocateObject(HIRInstruction* instr) {
-  Bind(LInstruction::kAllocateObject)
+  Bind(new LAllocateObject())
       ->MarkHasCall()
       ->SetResult(CreateVirtual(), LUse::kRegister);
 }
 
 
 void LGen::VisitAllocateArray(HIRInstruction* instr) {
-  Bind(LInstruction::kAllocateArray)
+  Bind(new LAllocateArray())
       ->MarkHasCall()
       ->SetResult(CreateVirtual(), LUse::kRegister);
 }
@@ -50,14 +50,14 @@ void LGen::VisitAllocateArray(HIRInstruction* instr) {
 
 void LGen::VisitFunction(HIRInstruction* instr) {
   // XXX : Store address somewhere
-  Bind(LInstruction::kFunction)
+  Bind(new LFunction())
       ->MarkHasCall()
       ->SetResult(CreateVirtual(), LUse::kRegister);
 }
 
 
 void LGen::VisitNot(HIRInstruction* instr) {
-  LInstruction* op = Bind(LInstruction::kNot)
+  LInstruction* op = Bind(new LNot())
       ->MarkHasCall()
       ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister);
 
@@ -66,7 +66,7 @@ void LGen::VisitNot(HIRInstruction* instr) {
 
 
 void LGen::VisitBinOp(HIRInstruction* instr) {
-  LInstruction* op = Bind(LInstruction::kBinOp)
+  LInstruction* op = Bind(new LBinOp())
       ->MarkHasCall()
       ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister)
       ->AddArg(ToFixed(instr->right(), rbx), LUse::kRegister);
@@ -76,7 +76,7 @@ void LGen::VisitBinOp(HIRInstruction* instr) {
 
 
 void LGen::VisitSizeof(HIRInstruction* instr) {
-  Bind(LInstruction::kSizeof)
+  Bind(new LSizeof())
       ->MarkHasCall()
       ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister)
       ->SetResult(CreateVirtual(), LUse::kRegister);
@@ -84,7 +84,7 @@ void LGen::VisitSizeof(HIRInstruction* instr) {
 
 
 void LGen::VisitTypeof(HIRInstruction* instr) {
-  Bind(LInstruction::kTypeof)
+  Bind(new LTypeof())
       ->MarkHasCall()
       ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister)
       ->SetResult(CreateVirtual(), LUse::kRegister);
@@ -92,7 +92,7 @@ void LGen::VisitTypeof(HIRInstruction* instr) {
 
 
 void LGen::VisitKeysof(HIRInstruction* instr) {
-  Bind(LInstruction::kKeysof)
+  Bind(new LKeysof())
       ->MarkHasCall()
       ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister)
       ->SetResult(CreateVirtual(), LUse::kRegister);
@@ -100,7 +100,7 @@ void LGen::VisitKeysof(HIRInstruction* instr) {
 
 
 void LGen::VisitClone(HIRInstruction* instr) {
-  Bind(LInstruction::kClone)
+  Bind(new LClone())
       ->MarkHasCall()
       ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister)
       ->SetResult(CreateVirtual(), LUse::kRegister);
@@ -108,14 +108,14 @@ void LGen::VisitClone(HIRInstruction* instr) {
 
 
 void LGen::VisitLoadContext(HIRInstruction* instr) {
-  Bind(LInstruction::kLoadContext)
+  Bind(new LLoadContext())
       ->SetSlot(instr->slot())
       ->SetResult(CreateVirtual(), LUse::kRegister);
 }
 
 
 void LGen::VisitStoreContext(HIRInstruction* instr) {
-  Bind(LInstruction::kStoreContext)
+  Bind(new LStoreContext())
       ->SetSlot(instr->slot())
       ->AddArg(instr->left(), LUse::kRegister)
       ->SetResult(CreateVirtual(), LUse::kRegister);
@@ -123,7 +123,7 @@ void LGen::VisitStoreContext(HIRInstruction* instr) {
 
 
 void LGen::VisitLoadProperty(HIRInstruction* instr) {
-  LInstruction* store = Bind(LInstruction::kLoadProperty)
+  LInstruction* store = Bind(new LLoadProperty())
       ->MarkHasCall()
       ->AddScratch(CreateVirtual())
       ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister)
@@ -133,7 +133,7 @@ void LGen::VisitLoadProperty(HIRInstruction* instr) {
 
 
 void LGen::VisitStoreProperty(HIRInstruction* instr) {
-  LInstruction* load = Bind(LInstruction::kStoreProperty)
+  LInstruction* load = Bind(new LStoreProperty())
       ->MarkHasCall()
       ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister)
       ->AddArg(ToFixed(instr->right(), rbx), LUse::kRegister)
@@ -144,7 +144,7 @@ void LGen::VisitStoreProperty(HIRInstruction* instr) {
 
 
 void LGen::VisitDeleteProperty(HIRInstruction* instr) {
-  Bind(LInstruction::kDeleteProperty)
+  Bind(new LDeleteProperty())
       ->MarkHasCall()
       ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister)
       ->AddArg(ToFixed(instr->right(), rbx), LUse::kRegister);
@@ -152,13 +152,13 @@ void LGen::VisitDeleteProperty(HIRInstruction* instr) {
 
 
 void LGen::VisitGetStackTrace(HIRInstruction* instr) {
-  Bind(LInstruction::kGetStackTrace)
+  Bind(new LGetStackTrace())
       ->MarkHasCall();
 }
 
 
 void LGen::VisitCollectGarbage(HIRInstruction* instr) {
-  Bind(LInstruction::kCollectGarbage)
+  Bind(new LCollectGarbage())
       ->MarkHasCall();
 }
 
@@ -185,7 +185,7 @@ void LGen::VisitGoto(HIRInstruction* instr) {
 
     // Initialize LIR representation of phi
     if (phi->lir() == NULL) {
-      lphi = new LInstruction(LInstruction::kPhi);
+      lphi = new LPhi();
       lphi->AddArg(CreateVirtual(), LUse::kAny);
 
       phi->lir(lphi);
@@ -194,7 +194,7 @@ void LGen::VisitGoto(HIRInstruction* instr) {
     }
     assert(lphi != NULL);
 
-    Add(LInstruction::kMove)
+    Add(new LMove())
         ->SetResult(lphi->inputs[0]->interval(), LUse::kAny)
         ->AddArg(phi->InputAt(parent_index), LUse::kAny);
   }
@@ -214,6 +214,123 @@ void LGen::VisitIf(HIRInstruction* instr) {
   Bind(new LBranch())
       ->MarkHasCall()
       ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister);
+}
+
+// Generator
+
+void LNop::Generate(Masm* masm) {
+}
+
+
+void LNil::Generate(Masm* masm) {
+}
+
+
+void LMove::Generate(Masm* masm) {
+}
+
+
+void LEntry::Generate(Masm* masm) {
+}
+
+
+void LReturn::Generate(Masm* masm) {
+}
+
+
+void LFunction::Generate(Masm* masm) {
+}
+
+
+void LLoadContext::Generate(Masm* masm) {
+}
+
+
+void LStoreContext::Generate(Masm* masm) {
+}
+
+
+void LLoadProperty::Generate(Masm* masm) {
+}
+
+
+void LStoreProperty::Generate(Masm* masm) {
+}
+
+
+void LDeleteProperty::Generate(Masm* masm) {
+}
+
+
+void LLiteral::Generate(Masm* masm) {
+}
+
+
+void LNot::Generate(Masm* masm) {
+}
+
+
+void LBinOp::Generate(Masm* masm) {
+}
+
+
+void LTypeof::Generate(Masm* masm) {
+}
+
+
+void LSizeof::Generate(Masm* masm) {
+}
+
+
+void LKeysof::Generate(Masm* masm) {
+}
+
+
+void LClone::Generate(Masm* masm) {
+}
+
+
+void LCall::Generate(Masm* masm) {
+}
+
+
+void LCollectGarbage::Generate(Masm* masm) {
+}
+
+
+void LGetStackTrace::Generate(Masm* masm) {
+}
+
+
+void LAllocateObject::Generate(Masm* masm) {
+}
+
+
+void LAllocateArray::Generate(Masm* masm) {
+}
+
+
+void LPhi::Generate(Masm* masm) {
+}
+
+
+void LLabel::Generate(Masm* masm) {
+}
+
+
+void LGap::Generate(Masm* masm) {
+}
+
+
+void LLoadArg::Generate(Masm* masm) {
+}
+
+
+void LBranch::Generate(Masm* masm) {
+}
+
+
+void LGoto::Generate(Masm* masm) {
 }
 
 } // namespace internal
