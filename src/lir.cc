@@ -356,14 +356,15 @@ void LGen::TryAllocateFreeReg(LInterval* current) {
   }
 
   // Now we need to find register that is free for maximum time
-  int max = 0;
+  int max = -1;
   int max_reg = 0;
   for (int i = 0; i < kLIRRegisterCount; i++) {
-    if (free_pos[i] >= max) {
+    if (free_pos[i] > max) {
       max = free_pos[i];
       max_reg = i;
     }
   }
+  assert(max >= 0);
 
   // All registers are occupied - failure
   if (max - 2 <= current->start()) return;
@@ -429,14 +430,15 @@ void LGen::AllocateBlockedReg(LInterval* current) {
     }
   }
 
-  int use_max = 0;
+  int use_max = -1;
   int use_reg = 0;
   for (int i = 0; i < kLIRRegisterCount; i++) {
-    if (use_pos[i] >= use_max) {
+    if (use_pos[i] > use_max) {
       use_max = use_pos[i];
       use_reg = i;
     }
   }
+  assert(use_max >= 0);
 
   LUse* first_use = current->UseAfter(current->start());
   assert(first_use != NULL);
