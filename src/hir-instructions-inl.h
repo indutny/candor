@@ -127,6 +127,7 @@ inline void HIRInstruction::lir(LInstruction* lir) {
 
 inline void HIRPhi::AddInput(HIRInstruction* instr) {
   assert(input_count_ < 2);
+  assert(instr != NULL);
   inputs_[input_count_++] = instr;
 
   AddArg(instr);

@@ -7,6 +7,7 @@ namespace candor {
 namespace internal {
 
 inline LInstruction* LInstruction::AddArg(LInterval* arg, LUse::Type use_type) {
+  assert(arg != NULL);
   assert(input_count_ < 2);
   inputs[input_count_++] = arg->Use(use_type, this);
 
@@ -16,6 +17,7 @@ inline LInstruction* LInstruction::AddArg(LInterval* arg, LUse::Type use_type) {
 
 inline LInstruction* LInstruction::AddArg(LInstruction* arg,
                                           LUse::Type use_type) {
+  assert(arg != NULL);
   assert(arg->result != NULL);
   return AddArg(arg->propagated_->interval(), use_type);
 }
@@ -23,6 +25,7 @@ inline LInstruction* LInstruction::AddArg(LInstruction* arg,
 
 inline LInstruction* LInstruction::AddArg(HIRInstruction* arg,
                                           LUse::Type use_type) {
+  assert(arg != NULL);
   return AddArg(arg->lir(), use_type);
 }
 

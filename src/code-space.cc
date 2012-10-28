@@ -101,13 +101,6 @@ char* CodeSpace::Compile(const char* filename,
     // Generate LIR
     LGen lir(&hir, head->value());
 
-    /*
-    char out[10240];
-
-    lir.Print(out, 10240, true);
-    fprintf(stdout, "%s\n", out);
-    */
-
     // Generate Masm code
     lir.Generate(&masm);
 

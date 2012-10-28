@@ -56,7 +56,6 @@ class HIRBlock : public ZoneObject {
 
   HIRInstruction* Assign(ScopeSlot* slot, HIRInstruction* value);
   void Remove(HIRInstruction* instr);
-  void PrunePhis();
 
   inline HIRBlock* AddSuccessor(HIRBlock* b);
   inline HIRInstruction* Add(HIRInstruction::Type type);

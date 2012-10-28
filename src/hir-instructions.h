@@ -62,7 +62,7 @@ class HIRInstruction : public ZoneObject {
 
   int id;
 
-  void ReplaceArg(HIRInstruction* o, HIRInstruction* n);
+  virtual void ReplaceArg(HIRInstruction* o, HIRInstruction* n);
   void RemoveUse(HIRInstruction* i);
 
   inline HIRInstruction* AddArg(Type type);
@@ -115,6 +115,8 @@ class HIRInstruction : public ZoneObject {
 class HIRPhi : public HIRInstruction {
  public:
   HIRPhi(HIRGen* g, HIRBlock* block, ScopeSlot* slot);
+
+  void ReplaceArg(HIRInstruction* o, HIRInstruction* n);
 
   inline void AddInput(HIRInstruction* instr);
   inline HIRInstruction* InputAt(int i);

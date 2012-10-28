@@ -74,7 +74,7 @@ void LGap::Generate(Masm* masm) {
   PairList::Item* head = pairs_.head();
   for (; head != NULL; head = head->next()) {
     Pair* p = head->value();
-    __ Move(p->dst_->first_use(), p->src_->last_use());
+    __ Move(p->dst_->Use(LUse::kAny, this), p->src_->Use(LUse::kAny, this));
   }
 }
 

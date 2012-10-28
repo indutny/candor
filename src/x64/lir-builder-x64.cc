@@ -185,10 +185,13 @@ void LGen::VisitGoto(HIRInstruction* instr) {
     HIRPhi* phi = head->value();
     LInstruction* lphi = NULL;
 
+    assert(!phi->IsRemoved());
+
     // Initialize LIR representation of phi
     if (phi->lir() == NULL) {
       lphi = new LPhi();
-      lphi->AddArg(CreateVirtual(), LUse::kAny);
+      lphi->AddArg(CreateVirtual(), LUse::kAny)
+          ->SetResult(CreateVirtual(), LUse::kAny);
 
       phi->lir(lphi);
     } else {
@@ -196,9 +199,21 @@ void LGen::VisitGoto(HIRInstruction* instr) {
     }
     assert(lphi != NULL);
 
+    HIRInstruction* input = phi->InputAt(parent_index);
+    // Inputs can be not generated yet
+    if (input->Is(HIRInstruction::kPhi) && input->lir() == NULL) {
+      assert(!input->IsRemoved());
+
+      LPhi* pinput = new LPhi();
+      pinput->AddArg(CreateVirtual(), LUse::kAny)
+            ->SetResult(CreateVirtual(), LUse::kAny);
+
+      input->lir(pinput);
+    }
+
     Add(new LMove())
         ->SetResult(lphi->inputs[0]->interval(), LUse::kAny)
-        ->AddArg(phi->InputAt(parent_index), LUse::kAny);
+        ->AddArg(input, LUse::kAny);
   }
 
   Bind(new LGoto());
@@ -206,8 +221,11 @@ void LGen::VisitGoto(HIRInstruction* instr) {
 
 
 void LGen::VisitPhi(HIRInstruction* instr) {
-  Bind(instr->lir())
-      ->SetResult(CreateVirtual(), LUse::kAny);
+  assert(instr->lir() != NULL);
+  assert(instr->lir()->input_count() == 1);
+  assert(instr->lir()->result != NULL);
+
+  Bind(instr->lir());
 }
 
 

@@ -99,6 +99,15 @@ HIRPhi::HIRPhi(HIRGen* g, HIRBlock* block, ScopeSlot* slot) :
 }
 
 
+void HIRPhi::ReplaceArg(HIRInstruction* o, HIRInstruction* n) {
+  HIRInstruction::ReplaceArg(o, n);
+
+  for (int i = 0; i < input_count(); i++) {
+    if (inputs_[i] == o) inputs_[i] = n;
+  }
+}
+
+
 HIRLiteral::HIRLiteral(HIRGen* g, HIRBlock* block, ScopeSlot* slot) :
     HIRInstruction(g, block, kLiteral),
     root_slot_(slot) {

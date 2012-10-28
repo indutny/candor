@@ -47,14 +47,6 @@ inline LInstruction* LGen::Bind(LInstruction* instr) {
 }
 
 
-inline LInterval* LGen::CreateInterval(LInterval::Type type, int index) {
-  LInterval* res = new LInterval(type, index);
-  res->id = interval_id();
-  intervals_.Push(res);
-  return res;
-}
-
-
 inline LInterval* LGen::CreateVirtual() {
   return CreateInterval(LInterval::kVirtual, virtual_index());
 }
@@ -267,18 +259,6 @@ inline LRangeList* LInterval::ranges() {
 
 inline LUseList* LInterval::uses() {
   return &uses_;
-}
-
-
-inline LUse* LInterval::first_use() {
-  assert(uses_.length() > 0);
-  return uses_.head()->value();
-}
-
-
-inline LUse* LInterval::last_use() {
-  assert(uses_.length() > 0);
-  return uses_.tail()->value();
 }
 
 

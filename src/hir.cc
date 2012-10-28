@@ -35,9 +35,42 @@ HIRGen::HIRGen(Heap* heap, AstNode* root) : Visitor<HIRInstruction>(kPreorder),
 
 
 void HIRGen::PrunePhis() {
-  HIRBlockList::Item* head = blocks_.head();
-  for (; head != NULL; head = head->next()) {
-    head->value()->PrunePhis();
+  HIRPhiList queue_;
+
+  // First - get list of all phis in all blocks
+  // (and remove them from those blocks for now).
+  HIRBlockList::Item* bhead = blocks_.head();
+  for (; bhead != NULL; bhead = bhead->next()) {
+    HIRBlock* block = bhead->value();
+
+    while (block->phis()->length() > 0) {
+      queue_.Push(block->phis()->Shift());
+    }
+  }
+
+  // Filter out phis that have zero or one inputs
+  HIRPhiList::Item* phead = queue_.head();
+  for (; phead != NULL; phead = phead->next()) {
+    HIRPhi* phi = phead->value();
+
+    if (phi->input_count() == 2) continue;
+    queue_.Remove(phead);
+
+    if (phi->input_count() == 0) {
+      phi->Nilify();
+    } else if (phi->input_count() == 1) {
+      Replace(phi, phi->InputAt(0));
+      phi->block()->Remove(phi);
+    }
+  }
+
+  // Put phis back into blocks
+  phead = queue_.head();
+  for (; phead != NULL; phead = phead->next()) {
+    HIRPhi* phi = phead->value();
+
+    assert(!phi->IsRemoved());
+    phi->block()->phis()->Push(phi);
   }
 }
 
@@ -615,48 +648,6 @@ void HIRBlock::Remove(HIRInstruction* instr) {
   }
 
   instr->Remove();
-}
-
-
-void HIRBlock::PrunePhis() {
-  HIRPhiList queue_;
-
-  while (phis_.length() > 0) {
-    queue_.Push(phis_.Shift());
-  }
-
-  while (queue_.length() > 0) {
-    HIRPhi* phi = queue_.Shift();
-
-    switch (phi->input_count()) {
-     case 0:
-      phi->Nilify();
-      break;
-     case 1:
-      g_->Replace(phi, phi->InputAt(0));
-      if (phi->block() == this) Remove(phi);
-      break;
-     case 2:
-      break;
-     default:
-      UNEXPECTED
-    }
-
-    // Check recursive uses too
-    for (int i = 0; i < phi->input_count(); i++) {
-      if (phi->InputAt(i)->Is(HIRInstruction::kPhi)) {
-        queue_.Push(HIRPhi::Cast(phi->InputAt(i)));
-      }
-    }
-  }
-
-  // Put pruned phis back in the list
-  HIRInstructionList::Item* ihead = instructions_.head();
-  for (; ihead != NULL; ihead = ihead->next()) {
-    HIRInstruction* instr = ihead->value();
-    if (!instr->Is(HIRInstruction::kPhi)) continue;
-    phis_.Push(HIRPhi::Cast(instr));
-  }
 }
 
 

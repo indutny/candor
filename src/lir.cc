@@ -256,6 +256,9 @@ void LGen::WalkIntervals() {
   for (; head != NULL; head = head->next()) {
     LInterval* interval = head->value();
 
+    // Skip empty intervals
+    if (interval->ranges()->length() == 0) continue;
+
     if (interval->IsFixed()) {
       // Fixed register
 
@@ -268,6 +271,7 @@ void LGen::WalkIntervals() {
       unhandled_.Push(interval);
     }
   }
+
   // Sort by starting position
   unhandled_.Sort<LIntervalShape>();
   inactive_.Sort<LIntervalShape>();
@@ -454,8 +458,8 @@ void LGen::AllocateBlockedReg(LInterval* current) {
   assert(use_max >= 0);
 
   LUse* first_use = current->UseAfter(current->start());
-  assert(first_use != NULL);
-  if (use_max < first_use->instr()->id ||
+  if (first_use == NULL ||
+      use_max < first_use->instr()->id ||
       block_pos[use_reg] - 1 <= current->start()) {
     Spill(current);
 
@@ -605,7 +609,7 @@ void LGen::PrintIntervals(PrintBuffer* p) {
     }
     for (int i = 0; i < instr_id_; i++) {
       LUse* use = interval->UseAt(i);
-      if (use == NULL || true) {
+      if (use == NULL) {
         if (interval->Covers(i)) {
           p->Print("_");
         } else {
@@ -637,6 +641,14 @@ void LGen::PrintIntervals(PrintBuffer* p) {
   }
 
   p->Print("\n");
+}
+
+
+LInterval* LGen::CreateInterval(LInterval::Type type, int index) {
+  LInterval* res = new LInterval(type, index);
+  res->id = interval_id();
+  intervals_.Push(res);
+  return res;
 }
 
 
@@ -773,16 +785,32 @@ void LGen::Spill(LInterval* interval) {
     return;
   }
 
-  // Use inactive spill that isn't intersecting with current interval
-  LIntervalList::Item* head = inactive_spills_.head();
+  // Initally count all spills as free
+  bool* is_blocked = reinterpret_cast<bool*>(Zone::current()->Allocate(
+        sizeof(*is_blocked) * spill_index_));
+  for (int i = 0; i < spill_index_; i++) {
+    is_blocked[i] = false;
+  }
+
+  LIntervalList::Item* head = active_spills_.head();
   for (; head != NULL; head = head->next()) {
-    if (head->value()->FindIntersection(interval) == -1) {
-      interval->Spill(head->value()->index());
-      inactive_spills_.Push(interval);
-      return;
+    is_blocked[head->value()->index()] = true;
+  }
+
+  head = inactive_spills_.head();
+  for (; head != NULL; head = head->next()) {
+    if (head->value()->FindIntersection(interval) != -1) {
+      is_blocked[head->value()->index()] = true;
     }
   }
 
+  // Reuse spill if it's unused now
+  for (int i = 0; i < spill_index_; i++) {
+    if (is_blocked[i]) continue;
+    interval->Spill(i);
+    inactive_spills_.Push(interval);
+    return;
+  }
 
   // Allocate new spill and put it to the inactive spills
   // (It will be moved to active if needed)

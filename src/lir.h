@@ -129,8 +129,6 @@ class LInterval : public ZoneObject {
   inline int index();
   inline LRangeList* ranges();
   inline LUseList* uses();
-  inline LUse* first_use();
-  inline LUse* last_use();
   inline LInterval* split_parent();
   inline void split_parent(LInterval* split_parent);
   inline LIntervalList* split_children();
@@ -204,7 +202,7 @@ class LGen : public ZoneObject {
 
   inline LInstruction* Add(LInstruction* instr);
   inline LInstruction* Bind(LInstruction* instr);
-  inline LInterval* CreateInterval(LInterval::Type type, int index);
+  LInterval* CreateInterval(LInterval::Type type, int index);
   inline LInterval* CreateVirtual();
   inline LInterval* CreateRegister(Register reg);
   inline LInterval* CreateStackSlot(int index);
