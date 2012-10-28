@@ -339,7 +339,7 @@ char* RuntimeToBoolean(Heap* heap, char* value) {
 }
 
 
-size_t RuntimeStrictCompare(Heap* heap, char* lhs, char* rhs) {
+intptr_t RuntimeStrictCompare(Heap* heap, char* lhs, char* rhs) {
   // Fast case - pointers are equal
   if (lhs == rhs) return 0;
 
@@ -370,7 +370,7 @@ size_t RuntimeStrictCompare(Heap* heap, char* lhs, char* rhs) {
 }
 
 
-size_t RuntimeStringCompare(Heap* heap, char* lhs, char* rhs) {
+intptr_t RuntimeStringCompare(Heap* heap, char* lhs, char* rhs) {
   uint32_t lhs_length = HString::Length(lhs);
   uint32_t rhs_length = HString::Length(rhs);
 

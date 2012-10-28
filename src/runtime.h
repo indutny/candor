@@ -44,9 +44,9 @@ char* RuntimeToString(Heap* heap, char* value);
 char* RuntimeToNumber(Heap* heap, char* value);
 char* RuntimeToBoolean(Heap* heap, char* value);
 
-typedef size_t (*RuntimeCompareCallback)(Heap* heap, char* lhs, char* rhs);
-size_t RuntimeStrictCompare(Heap* heap, char* lhs, char* rhs);
-size_t RuntimeStringCompare(Heap* heap, char* lhs, char* rhs);
+typedef intptr_t (*RuntimeCompareCallback)(Heap* heap, char* lhs, char* rhs);
+intptr_t RuntimeStrictCompare(Heap* heap, char* lhs, char* rhs);
+intptr_t RuntimeStringCompare(Heap* heap, char* lhs, char* rhs);
 
 char* RuntimeConcatenateStrings(Heap* heap, char* lhs, char* rhs);
 
