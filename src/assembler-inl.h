@@ -4,6 +4,13 @@
 namespace candor {
 namespace internal {
 
+inline void Label::AddUse(Assembler* a, RelocationInfo* use) {
+  // If we already know target position - set it
+  if (pos_ != 0) use->target(pos_);
+  uses_.Push(use);
+  a->relocation_info_.Push(use);
+}
+
 inline void Label::relocate(uint32_t offset) {
   // Label should be relocated only once
   assert(pos_ == 0);
@@ -23,10 +30,7 @@ inline void Label::use(Assembler* a, uint32_t offset) {
       RelocationInfo::kRelative,
       RelocationInfo::kLong,
       offset);
-  // If we already know target position - set it
-  if (pos_ != 0) info->target(pos_);
-  uses_.Push(info);
-  a->relocation_info_.Push(info);
+  AddUse(a, info);
 }
 
 } // namespace internal

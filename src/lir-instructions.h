@@ -240,7 +240,9 @@ class LBranch : public LControlInstruction {
 
 class LFunction : public LInstruction {
  public:
-  LFunction(LBlock* block) : LInstruction(kFunction), block_(block) {
+  LFunction(LBlock* block, int arg_count) : LInstruction(kFunction),
+                                            block_(block),
+                                            arg_count_(arg_count) {
     assert(block_ != NULL);
   }
 
@@ -248,6 +250,7 @@ class LFunction : public LInstruction {
 
  private:
   LBlock* block_;
+  int arg_count_;
 };
 
 class LLiteral : public LInstruction {

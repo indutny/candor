@@ -106,6 +106,8 @@ HIRInstruction* HIRGen::VisitFunction(AstNode* stmt) {
     return NULL;
   } else {
     HIRFunction* f = new HIRFunction(this, current_block(), stmt);
+    f->arg_count = fn->args()->length();
+
     work_queue_.Push(f);
     return Add(f);
   }

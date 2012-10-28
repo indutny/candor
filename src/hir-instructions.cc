@@ -116,7 +116,8 @@ HIRLiteral::HIRLiteral(HIRGen* g, HIRBlock* block, ScopeSlot* slot) :
 
 HIRFunction::HIRFunction(HIRGen* g, HIRBlock* block, AstNode* ast) :
     HIRInstruction(g, block, kFunction),
-    body(NULL) {
+    body(NULL),
+    arg_count(0) {
   ast_ = ast;
 }
 

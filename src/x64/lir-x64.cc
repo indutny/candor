@@ -229,12 +229,21 @@ void LBinOp::Generate(Masm* masm) {
   // result -> rax
 }
 
-
 #undef BINARY_SUB_ENUM
 #undef BINARY_SUB_TYPES
 
-
 void LFunction::Generate(Masm* masm) {
+  // Get function's body address from relocation info
+  __ mov(scratches[0]->ToRegister(), Immediate(0));
+  RelocationInfo* addr = new RelocationInfo(RelocationInfo::kAbsolute,
+                                            RelocationInfo::kQuad,
+                                            masm->offset() - 8);
+  block_->label()->label.AddUse(masm, addr);
+
+  // Call stub
+  __ push(Immediate(arg_count_));
+  __ push(scratches[0]->ToRegister());
+  __ Call(masm->stubs()->GetAllocateFunctionStub());
 }
 
 

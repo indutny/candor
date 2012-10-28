@@ -148,6 +148,7 @@ class HIRFunction : public HIRInstruction {
   HIRFunction(HIRGen* g, HIRBlock* block, AstNode* ast);
 
   HIRBlock* body;
+  int arg_count;
 
   void Print(PrintBuffer* p);
 

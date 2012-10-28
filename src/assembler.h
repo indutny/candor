@@ -17,6 +17,8 @@ class Label {
   Label() : pos_(0) {
   }
 
+  inline void AddUse(Assembler* a, RelocationInfo* use);
+
  private:
   inline void relocate(uint32_t offset);
   inline void use(Assembler* a, uint32_t offset);

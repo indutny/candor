@@ -59,8 +59,9 @@ void LGen::FlattenBlocks(HIRBlock* root) {
       continue;
     }
 
-    // Generate lir form of block
-    LBlock* l = new LBlock(b);
+    // Generate lir form of block if needed
+    // (It may be generated in LFunction)
+    if (b->lir() == NULL) new LBlock(b);
 
     blocks_.Push(b);
 
@@ -78,7 +79,7 @@ void LGen::GenerateInstructions() {
     HIRBlock* b = head->value();
 
     current_block_ = b->lir();
-    Add(new LLabel());
+    Add(current_block_->label());
 
     HIRInstructionList::Item* ihead = b->instructions()->head();
     for (; ihead != NULL; ihead = ihead->next()) {
@@ -685,6 +686,8 @@ void LGen::Generate(Masm* masm) {
   for (; ihead != NULL; ihead = ihead->next()) {
     ihead->value()->Generate(masm);
   }
+
+  masm->AlignCode();
 }
 
 
@@ -1017,7 +1020,8 @@ int LUseShape::Compare(LUse* a, LUse* b) {
 
 LBlock::LBlock(HIRBlock* hir) : start_id(-1),
                                 end_id(-1),
-                                hir_(hir) {
+                                hir_(hir),
+                                label_(new LLabel()) {
   hir->lir(this);
 }
 

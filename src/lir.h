@@ -20,6 +20,7 @@ namespace internal {
 class LGen;
 class LInterval;
 class LInstruction;
+class LLabel;
 class LGap;
 class LRange;
 class LUse;
@@ -171,10 +172,12 @@ class LBlock : public ZoneObject {
   int start_id;
   int end_id;
   inline HIRBlock* hir();
+  inline LLabel* label();
   inline ZoneList<LInstruction*>* instructions();
 
  private:
   HIRBlock* hir_;
+  LLabel* label_;
   ZoneList<LInstruction*> instructions_;
 };
 

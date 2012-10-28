@@ -88,6 +88,12 @@ inline HIRBlock* LBlock::hir() {
 }
 
 
+inline LLabel* LBlock::label() {
+  assert(label_ != NULL);
+  return label_;
+}
+
+
 inline ZoneList<LInstruction*>* LBlock::instructions() {
   return &instructions_;
 }

@@ -96,10 +96,15 @@ char* CodeSpace::Compile(const char* filename,
 
   // For each root in reverse order generate lir
   // (Generate children first, parents later)
-  HIRBlockList::Item* head = hir.roots()->tail();
-  for (; head != NULL; head = head->prev()) {
+  HIRBlockList::Item* head = hir.roots()->head();
+  for (; head != NULL; head = head->next()) {
     // Generate LIR
     LGen lir(&hir, head->value());
+
+    char out[102400];
+
+    lir.Print(out, 102400, true);
+    fprintf(stdout, "%s\n", out);
 
     // Generate Masm code
     lir.Generate(&masm);

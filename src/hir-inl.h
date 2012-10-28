@@ -280,7 +280,6 @@ inline int HIRBlock::succ_count() {
 
 
 inline LBlock* HIRBlock::lir() {
-  assert(lir_ != NULL);
   return lir_;
 }
 

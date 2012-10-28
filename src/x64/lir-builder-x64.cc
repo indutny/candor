@@ -51,10 +51,15 @@ void LGen::VisitAllocateArray(HIRInstruction* instr) {
 void LGen::VisitFunction(HIRInstruction* instr) {
   HIRFunction* fn = HIRFunction::Cast(instr);
 
+  // Generate block and label if needed
+  if (fn->body->lir() == NULL) new LBlock(fn->body);
+
   // XXX : Store address somewhere
-  Bind(new LFunction(fn->body->lir()))
+  LInstruction* op = Bind(new LFunction(fn->body->lir(), fn->arg_count))
       ->MarkHasCall()
-      ->SetResult(CreateVirtual(), LUse::kRegister);
+      ->AddScratch(CreateVirtual());
+
+  ResultFromFixed(op, rax);
 }
 
 
