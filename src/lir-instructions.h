@@ -22,9 +22,7 @@ typedef ZoneList<LInstruction*> LInstructionList;
     V(Nop) \
     V(Nil) \
     V(Move) \
-    V(Entry) \
     V(Return) \
-    V(Function) \
     V(LoadContext) \
     V(StoreContext) \
     V(LoadProperty) \
@@ -45,9 +43,11 @@ typedef ZoneList<LInstruction*> LInstructionList;
     V(Phi)
 
 #define LIR_INSTRUCTION_TYPES(V) \
+    V(Entry) \
     V(Label) \
     V(Gap) \
     V(LoadArg) \
+    V(Function) \
     V(Branch) \
     V(Goto) \
     LIR_INSTRUCTION_SIMPLE_TYPES(V)
@@ -138,6 +138,18 @@ class LInstruction : public ZoneObject {
         return reinterpret_cast<L##Name*>(instr); \
       }
 
+class LEntry : public LInstruction {
+ public:
+  LEntry(int context_slots) : LInstruction(kEntry),
+                              context_slots_(context_slots) {
+  }
+
+  INSTRUCTION_METHODS(Entry)
+
+ private:
+  int context_slots_;
+};
+
 class LLabel : public LInstruction {
  public:
   LLabel() : LInstruction(kLabel) {}
@@ -212,6 +224,18 @@ class LBranch : public LControlInstruction {
   }
 
   INSTRUCTION_METHODS(Branch)
+};
+
+class LFunction : public LInstruction {
+ public:
+  LFunction(LBlock* block) : LInstruction(kFunction), block_(block) {
+    assert(block_ != NULL);
+  }
+
+  INSTRUCTION_METHODS(Function)
+
+ private:
+  LBlock* block_;
 };
 
 class LLoadArg: public LInstruction {

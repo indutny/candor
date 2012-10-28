@@ -18,7 +18,7 @@ void LGen::VisitNil(HIRInstruction* instr) {
 
 
 void LGen::VisitEntry(HIRInstruction* instr) {
-  Bind(new LEntry());
+  Bind(new LEntry(HIREntry::Cast(instr)->context_slots()));
 }
 
 
@@ -49,8 +49,10 @@ void LGen::VisitAllocateArray(HIRInstruction* instr) {
 
 
 void LGen::VisitFunction(HIRInstruction* instr) {
+  HIRFunction* fn = HIRFunction::Cast(instr);
+
   // XXX : Store address somewhere
-  Bind(new LFunction())
+  Bind(new LFunction(fn->body->lir()))
       ->MarkHasCall()
       ->SetResult(CreateVirtual(), LUse::kRegister);
 }

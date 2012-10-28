@@ -12,9 +12,14 @@ namespace internal {
 void LEntry::Generate(Masm* masm) {
   __ push(rbp);
   __ mov(rbp, rsp);
-  __ emitb(0xcc);
 
   // Allocate spills
+  __ AllocateSpills();
+
+  // Allocate context slots
+  __ AllocateContext(context_slots_);
+
+  __ emitb(0xcc);
 }
 
 
@@ -26,6 +31,11 @@ void LReturn::Generate(Masm* masm) {
 
 
 void LNop::Generate(Masm* masm) {
+  // No need to generate real nops, they're only clobbering alignment
+}
+
+
+void LMove::Generate(Masm* masm) {
 }
 
 
@@ -33,7 +43,7 @@ void LNil::Generate(Masm* masm) {
 }
 
 
-void LMove::Generate(Masm* masm) {
+void LLiteral::Generate(Masm* masm) {
 }
 
 
@@ -58,10 +68,6 @@ void LStoreProperty::Generate(Masm* masm) {
 
 
 void LDeleteProperty::Generate(Masm* masm) {
-}
-
-
-void LLiteral::Generate(Masm* masm) {
 }
 
 
