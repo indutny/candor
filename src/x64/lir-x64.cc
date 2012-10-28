@@ -3,6 +3,7 @@
 #include "lir-instructions.h"
 #include "lir-instructions-inl.h"
 #include "macroassembler.h"
+#include "stubs.h" // Stubs
 #include <unistd.h> // intptr_t
 
 namespace candor {
@@ -18,7 +19,7 @@ Register LUse::ToRegister() {
 
 Operand* LUse::ToOperand() {
   assert(is_stackslot());
-  return new Operand(rbp, -HValue::kPointerSize * interval()->index());
+  return new Operand(rbp, HValue::kPointerSize * (interval()->index() + 2));
 }
 
 #define __ masm->
@@ -32,8 +33,6 @@ void LEntry::Generate(Masm* masm) {
 
   // Allocate context slots
   __ AllocateContext(context_slots_);
-
-  __ emitb(0xcc);
 }
 
 
@@ -56,6 +55,18 @@ void LMove::Generate(Masm* masm) {
 }
 
 
+void LGap::Generate(Masm* masm) {
+  // Resolve loops
+  Resolve();
+
+  PairList::Item* head = pairs_.head();
+  for (; head != NULL; head = head->next()) {
+    Pair* p = head->value();
+    __ Move(p->dst_->first_use(), p->src_->last_use());
+  }
+}
+
+
 void LNil::Generate(Masm* masm) {
   __ Move(result, Immediate(Heap::kTagNil));
 }
@@ -66,10 +77,27 @@ void LLiteral::Generate(Masm* masm) {
     __ Move(result,
             Immediate(reinterpret_cast<intptr_t>(root_slot_->value())));
   } else {
-    assert(root_slot_->is_stack());
+    assert(root_slot_->is_context());
+    assert(root_slot_->depth() == -2);
     Operand slot(root_reg, HContext::GetIndexDisp(root_slot_->index()));
     __ Move(result, slot);
   }
+}
+
+
+void LAllocateObject::Generate(Masm* masm) {
+  // XXX Use correct size here
+  __ push(Immediate(HNumber::Tag(16)));
+  __ push(Immediate(HNumber::Tag(Heap::kTagObject)));
+  __ Call(masm->stubs()->GetAllocateObjectStub());
+}
+
+
+void LAllocateArray::Generate(Masm* masm) {
+  // XXX Use correct size here
+  __ push(Immediate(HNumber::Tag(16)));
+  __ push(Immediate(HNumber::Tag(Heap::kTagArray)));
+  __ Call(masm->stubs()->GetAllocateObjectStub());
 }
 
 
@@ -133,23 +161,11 @@ void LGetStackTrace::Generate(Masm* masm) {
 }
 
 
-void LAllocateObject::Generate(Masm* masm) {
-}
-
-
-void LAllocateArray::Generate(Masm* masm) {
-}
-
-
 void LPhi::Generate(Masm* masm) {
 }
 
 
 void LLabel::Generate(Masm* masm) {
-}
-
-
-void LGap::Generate(Masm* masm) {
 }
 
 

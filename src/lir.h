@@ -120,6 +120,7 @@ class LInterval : public ZoneObject {
   inline void Spill(int slot);
   inline void MarkFixed();
   inline bool IsFixed();
+  inline bool IsEqual(LInterval* i);
 
   inline bool is_virtual();
   inline bool is_register();

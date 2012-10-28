@@ -35,16 +35,16 @@ void LGen::VisitLiteral(HIRInstruction* instr) {
 
 
 void LGen::VisitAllocateObject(HIRInstruction* instr) {
-  Bind(new LAllocateObject())
-      ->MarkHasCall()
-      ->SetResult(CreateVirtual(), LUse::kRegister);
+  LInstruction* op = Bind(new LAllocateObject())->MarkHasCall();
+
+  ResultFromFixed(op, rax);
 }
 
 
 void LGen::VisitAllocateArray(HIRInstruction* instr) {
-  Bind(new LAllocateArray())
-      ->MarkHasCall()
-      ->SetResult(CreateVirtual(), LUse::kRegister);
+  LInstruction* op = Bind(new LAllocateArray())->MarkHasCall();
+
+  ResultFromFixed(op, rax);
 }
 
 

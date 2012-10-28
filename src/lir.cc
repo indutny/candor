@@ -383,7 +383,7 @@ void LGen::TryAllocateFreeReg(LInterval* current) {
 
   if (max <= current->end()) {
     // Split before `max` is needed
-    Split(current, max - 2);
+    Split(current, max % 2  == 0 ? (max - 2) : (max - 1));
   }
 
   // Register is available for whole interval's lifetime
@@ -536,11 +536,11 @@ void LGen::ResolveDataFlow() {
         }
       }
 
+      // Remove goto instructions on adjacent blocks
       LInstruction* control = b->instructions()->tail()->value();
       assert(control->type() == LInstruction::kGoto ||
              control->type() == LInstruction::kBranch);
 
-      // Remove goto instructions on adjacent blocks
       if (control->type() == LInstruction::kGoto &&
           bhead->next()->value()->lir() == succ) {
         b->instructions()->Pop();
@@ -736,8 +736,13 @@ LGap* LGen::GetGap(int pos) {
 
   assert(head != NULL && head->prev() != NULL);
 
+  // Create temporary spill for gap
+  LInterval* tmp = CreateVirtual();
+  tmp->AddRange(pos, pos + 1);
+  Spill(tmp);
+
   // Create new gap
-  LGap* gap = new LGap();
+  LGap* gap = new LGap(tmp);
   gap->id = pos;
   gap->block(head->prev()->value()->block());
 

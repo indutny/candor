@@ -161,30 +161,42 @@ class LLabel : public LInstruction {
 
 class LGap : public LInstruction {
  public:
+  enum PairStatus {
+    kToMove,
+    kBeingMoved,
+    kMoved
+  };
+
   class Pair : public ZoneObject {
    public:
-    Pair(LInterval* from, LInterval* to) : from_(from), to_(to) {
+    Pair(LInterval* src, LInterval* dst) : status(kToMove),
+                                           src_(src),
+                                           dst_(dst) {
     }
 
    private:
-    LInterval* from_;
-    LInterval* to_;
+    LInterval* src_;
+    LInterval* dst_;
+    PairStatus status;
 
     friend class LGap;
   };
 
   typedef ZoneList<Pair*> PairList;
 
-  LGap() : LInstruction(kGap) {}
+  LGap(LInterval* tmp) : LInstruction(kGap), tmp_(tmp) {}
 
   INSTRUCTION_METHODS(Gap)
 
-  inline void Add(LInterval* from, LInterval* to);
+  inline void Add(LInterval* src, LInterval* dst);
 
   void Resolve();
   void Print(PrintBuffer* p);
 
  private:
+  void MovePair(Pair* pair);
+
+  LInterval* tmp_;
   PairList unhandled_pairs_;
   PairList pairs_;
 };

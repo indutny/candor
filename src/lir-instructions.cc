@@ -39,7 +39,54 @@ void LInstruction::Print(PrintBuffer* p) {
 }
 
 
+void LGap::MovePair(LGap::Pair* pair) {
+  // Fast case - two equal intervals
+  if (pair->src_->IsEqual(pair->dst_)) {
+    pair->status = kMoved;
+    return;
+  }
+
+  pair->status = kBeingMoved;
+
+  PairList::Item* head = unhandled_pairs_.head();
+  for (; head != NULL; head = head->next()) {
+    Pair* other = head->value();
+
+    if (pair->dst_->IsEqual(other->src_)) {
+      switch (other->status) {
+       case kToMove:
+        MovePair(other);
+        break;
+       case kBeingMoved:
+        // Loop detected, add scratch here
+        pairs_.Push(new Pair(other->src_, tmp_));
+        other->src_ = tmp_;
+        break;
+       case kMoved:
+        // No loop
+        break;
+       default:
+        UNEXPECTED
+      }
+    }
+    pairs_.Push(new Pair(other->src_, other->dst_));
+  }
+}
+
+
 void LGap::Resolve() {
+  PairList::Item* head = unhandled_pairs_.head();
+  for (; head != NULL; head = head->next()) {
+    Pair* pair = head->value();
+
+    if (pair->status == kToMove) MovePair(pair);
+  }
+
+  // Remove all pairs
+  while (unhandled_pairs_.length() > 0) {
+    Pair* pair = unhandled_pairs_.Pop();
+    assert(pair->status = kMoved);
+  }
 }
 
 
@@ -57,9 +104,9 @@ void LGap::Print(PrintBuffer* p) {
 
   for (; head != NULL; head = head->next()) {
     Pair* pair = head->value();
-    pair->from_->Print(p);
+    pair->src_->Print(p);
     p->Print(" => ");
-    pair->to_->Print(p);
+    pair->dst_->Print(p);
 
     if (head->next() != NULL) p->Print(", ");
   }

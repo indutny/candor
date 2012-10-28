@@ -164,8 +164,7 @@ inline bool LUse::is_stackslot() {
 
 
 inline bool LUse::IsEqual(LUse* use) {
-  return use->interval()->type() == this->interval()->type() &&
-         use->interval()->index() == this->interval()->index();
+  return interval()->IsEqual(use->interval());
 }
 
 
@@ -207,6 +206,11 @@ inline bool LInterval::is_register() {
 
 inline bool LInterval::is_stackslot() {
   return type_ == kStackSlot;
+}
+
+
+inline bool LInterval::IsEqual(LInterval* i) {
+  return i->type() == this->type() && i->index() == this->index();
 }
 
 
