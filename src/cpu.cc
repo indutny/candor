@@ -6,8 +6,8 @@
 #include "macroassembler-inl.h"
 
 #include <stdint.h> // uint32_t
+#include <unistd.h> // intptr_t
 #include <string.h> // memcpy
-#include <sys/types.h> // off_t
 
 namespace candor {
 namespace internal {
@@ -30,7 +30,7 @@ void CPU::Probe() {
   memcpy(code, a.buffer(), a.length());
   a.Relocate(code);
 
-  int32_t features = reinterpret_cast<off_t>(
+  int32_t features = reinterpret_cast<intptr_t>(
       reinterpret_cast<CPUProbeCallback>(code)());
 
   cpu_features_.SSE4_1 = (features & (1 << 19)) != 0;

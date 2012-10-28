@@ -105,6 +105,13 @@ class HIRInstruction : public ZoneObject {
 
 #undef HIR_INSTRUCTION_ENUM
 
+#define HIR_DEFAULT_METHODS(V) \
+  static inline HIR##V* Cast(HIRInstruction* instr) { \
+    assert(instr->type() == k##V); \
+    return reinterpret_cast<HIR##V*>(instr); \
+  }
+
+
 class HIRPhi : public HIRInstruction {
  public:
   HIRPhi(HIRGen* g, HIRBlock* block, ScopeSlot* slot);
@@ -113,13 +120,25 @@ class HIRPhi : public HIRInstruction {
   inline HIRInstruction* InputAt(int i);
   inline void Nilify();
 
-  static inline HIRPhi* Cast(HIRInstruction* instr);
-
   inline int input_count();
+
+  HIR_DEFAULT_METHODS(Phi)
 
  private:
   int input_count_;
   HIRInstruction* inputs_[2];
+};
+
+class HIRLiteral : public HIRInstruction {
+ public:
+  HIRLiteral(HIRGen* g, HIRBlock* block, ScopeSlot* slot);
+
+  inline ScopeSlot* root_slot();
+
+  HIR_DEFAULT_METHODS(Literal)
+
+ private:
+  ScopeSlot* root_slot_;
 };
 
 class HIRFunction : public HIRInstruction {
@@ -129,7 +148,8 @@ class HIRFunction : public HIRInstruction {
   HIRBlock* body;
 
   void Print(PrintBuffer* p);
-  static inline HIRFunction* Cast(HIRInstruction* instr);
+
+  HIR_DEFAULT_METHODS(Function)
 };
 
 class HIRLoadArg : public HIRInstruction {
@@ -137,8 +157,9 @@ class HIRLoadArg : public HIRInstruction {
   HIRLoadArg(HIRGen* g, HIRBlock* block, int index);
 
   void Print(PrintBuffer* p);
-  static inline HIRLoadArg* Cast(HIRInstruction* instr);
   inline int index();
+
+  HIR_DEFAULT_METHODS(LoadArg)
 
  private:
   int index_;
@@ -149,13 +170,15 @@ class HIREntry : public HIRInstruction {
   HIREntry(HIRGen* g, HIRBlock* block, int context_slots);
 
   void Print(PrintBuffer* p);
-  static inline HIREntry* Cast(HIRInstruction* instr);
-
   inline int context_slots();
+
+  HIR_DEFAULT_METHODS(Entry)
 
  private:
   int context_slots_;
 };
+
+#undef HIR_DEFAULT_METHODS
 
 } // namespace internal
 } // namespace candor

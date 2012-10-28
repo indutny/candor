@@ -451,7 +451,8 @@ HIRInstruction* HIRGen::VisitClone(AstNode* stmt) {
 
 
 HIRInstruction* HIRGen::VisitLiteral(AstNode* stmt) {
-  HIRInstruction* i = Add(HIRInstruction::kLiteral, root_.Put(stmt));
+  HIRInstruction* i = Add(
+      new HIRLiteral(this, current_block(), root_.Put(stmt)));
 
   i->ast(stmt);
 

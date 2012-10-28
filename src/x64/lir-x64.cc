@@ -3,9 +3,23 @@
 #include "lir-instructions.h"
 #include "lir-instructions-inl.h"
 #include "macroassembler.h"
+#include <unistd.h> // intptr_t
 
 namespace candor {
 namespace internal {
+
+// Masm helpers
+
+Register LUse::ToRegister() {
+  assert(is_register());
+  return RegisterByIndex(interval()->index());
+}
+
+
+Operand* LUse::ToOperand() {
+  assert(is_stackslot());
+  return new Operand(rbp, -HValue::kPointerSize * interval()->index());
+}
 
 #define __ masm->
 
@@ -36,14 +50,26 @@ void LNop::Generate(Masm* masm) {
 
 
 void LMove::Generate(Masm* masm) {
+  // Ignore nop moves
+  if (result->IsEqual(inputs[0])) return;
+  __ Move(result, inputs[0]);
 }
 
 
 void LNil::Generate(Masm* masm) {
+  __ Move(result, Immediate(Heap::kTagNil));
 }
 
 
 void LLiteral::Generate(Masm* masm) {
+  if (root_slot_->is_immediate()) {
+    __ Move(result,
+            Immediate(reinterpret_cast<intptr_t>(root_slot_->value())));
+  } else {
+    assert(root_slot_->is_stack());
+    Operand slot(root_reg, HContext::GetIndexDisp(root_slot_->index()));
+    __ Move(result, slot);
+  }
 }
 
 

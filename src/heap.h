@@ -16,6 +16,7 @@
 #include "utils.h"
 
 #include <stdint.h> // uint32_t
+#include <unistd.h> // intptr_t
 #include <sys/types.h> // size_t
 
 namespace candor {
@@ -222,7 +223,7 @@ class Heap {
 
   char* pending_exception_;
 
-  off_t needs_gc_;
+  intptr_t needs_gc_;
 
   HValueRefList references_;
   HValueRefList reloc_references_;
@@ -371,7 +372,7 @@ class HContext : public HValue {
     return reinterpret_cast<char**>(addr() + kParentOffset);
   }
   inline uint32_t slots() {
-    return *reinterpret_cast<off_t*>(addr() + kSlotsOffset);
+    return *reinterpret_cast<intptr_t*>(addr() + kSlotsOffset);
   }
 
   static const int kParentOffset = HINTERIOR_OFFSET(1);

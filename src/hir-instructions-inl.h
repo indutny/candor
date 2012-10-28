@@ -151,32 +151,13 @@ inline int HIRPhi::input_count() {
 }
 
 
-inline HIRPhi* HIRPhi::Cast(HIRInstruction* instr) {
-  assert(instr->Is(kPhi));
-  return reinterpret_cast<HIRPhi*>(instr);
-}
-
-
-inline HIRFunction* HIRFunction::Cast(HIRInstruction* instr) {
-  assert(instr->Is(kFunction));
-  return reinterpret_cast<HIRFunction*>(instr);
-}
-
-
-inline HIRLoadArg* HIRLoadArg::Cast(HIRInstruction* instr) {
-  assert(instr->Is(kLoadArg));
-  return reinterpret_cast<HIRLoadArg*>(instr);
+inline ScopeSlot* HIRLiteral::root_slot() {
+  return root_slot_;
 }
 
 
 inline int HIRLoadArg::index() {
   return index_;
-}
-
-
-inline HIREntry* HIREntry::Cast(HIRInstruction* instr) {
-  assert(instr->Is(kEntry));
-  return reinterpret_cast<HIREntry*>(instr);
 }
 
 

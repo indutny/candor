@@ -67,7 +67,15 @@ class LUse : public ZoneObject {
                                                         instr_(instr) {
   }
 
+  Register ToRegister();
+  Operand* ToOperand();
+
   inline void Print(PrintBuffer* p);
+
+  inline bool IsEqual(LUse* use);
+  inline bool is_virtual();
+  inline bool is_register();
+  inline bool is_stackslot();
 
   inline LInstruction* instr();
   inline Type type();
@@ -126,6 +134,7 @@ class LInterval : public ZoneObject {
   inline void split_parent(LInterval* split_parent);
   inline LIntervalList* split_children();
 
+  inline Type type();
   inline int start();
   inline int end();
 

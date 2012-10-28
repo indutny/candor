@@ -29,8 +29,8 @@ void LGen::VisitReturn(HIRInstruction* instr) {
 
 
 void LGen::VisitLiteral(HIRInstruction* instr) {
-  Bind(new LLiteral())
-      ->SetResult(CreateVirtual(), LUse::kRegister);
+  Bind(new LLiteral(HIRLiteral::Cast(instr)->root_slot()))
+      ->SetResult(CreateVirtual(), LUse::kAny);
 }
 
 

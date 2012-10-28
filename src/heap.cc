@@ -2,8 +2,7 @@
 #include "heap-inl.h"
 #include "runtime.h" // RuntimeLookupProperty
 
-#include <stdint.h> // uint32_t
-#include <sys/types.h> // off_t
+#include <stdint.h> // uint32_t, intptr_t
 #include <stdlib.h> // NULL
 #include <string.h> // memcpy
 #include <zone.h> // Zone::Allocate
@@ -115,13 +114,13 @@ const char* Heap::ErrorToString(Error err) {
 
 char* Heap::AllocateTagged(HeapTag tag, TenureType tenure, uint32_t bytes) {
   char* result = space(tenure)->Allocate(bytes + 8);
-  off_t qtag = tag;
+  intptr_t qtag = tag;
   if (tenure == kTenureOld) {
     int bit_offset = (HValue::kGenerationOffset -
                       HValue::interior_offset(0)) << 3;
     qtag = qtag | (kMinOldSpaceGeneration << bit_offset);
   }
-  *reinterpret_cast<off_t*>(result + HValue::kTagOffset) = qtag;
+  *reinterpret_cast<intptr_t*>(result + HValue::kTagOffset) = qtag;
 
   return result;
 }
@@ -243,7 +242,7 @@ char* HContext::New(Heap* heap,
   *reinterpret_cast<char**>(result + kParentOffset) = HNil::New();
 
   // Put size
-  *reinterpret_cast<off_t*>(result + kSlotsOffset) = values->length();
+  *reinterpret_cast<intptr_t*>(result + kSlotsOffset) = values->length();
 
   // Put all values
   char** slot = reinterpret_cast<char**>(result + GetIndexDisp(0));
@@ -284,9 +283,9 @@ char* HString::New(Heap* heap,
                                       length + 3 * kPointerSize);
 
   // Zero hash
-  *reinterpret_cast<off_t*>(result + kHashOffset) = 0;
+  *reinterpret_cast<intptr_t*>(result + kHashOffset) = 0;
   // Set length
-  *reinterpret_cast<off_t*>(result + kLengthOffset) = length;
+  *reinterpret_cast<intptr_t*>(result + kLengthOffset) = length;
 
   return result;
 }
@@ -419,14 +418,14 @@ void HObject::Init(Heap* heap, char* obj) {
   static const uint32_t size = 16;
 
   // Set mask
-  *reinterpret_cast<off_t*>(obj + kMaskOffset) = (size - 1) * kPointerSize;
+  *reinterpret_cast<intptr_t*>(obj + kMaskOffset) = (size - 1) * kPointerSize;
   // Set map
   *reinterpret_cast<char**>(obj + kMapOffset) = HMap::NewEmpty(heap, size);
 }
 
 
 char** HObject::LookupProperty(Heap* heap, char* addr, char* key, int insert) {
-  off_t offset = RuntimeLookupProperty(heap, addr, key, insert);
+  intptr_t offset = RuntimeLookupProperty(heap, addr, key, insert);
   return reinterpret_cast<char**>(HObject::Map(addr) + offset);
 }
 
@@ -481,7 +480,7 @@ char* HMap::NewEmpty(Heap* heap, uint32_t size) {
                                    ((size << 1) + 1) * kPointerSize);
 
   // Set map's size
-  *reinterpret_cast<off_t*>(map + kSizeOffset) = size;
+  *reinterpret_cast<intptr_t*>(map + kSizeOffset) = size;
 
   // Nullify all map's slots (both keys and values)
   size = (size << 1) * kPointerSize;

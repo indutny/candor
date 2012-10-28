@@ -2,8 +2,9 @@
 #include "heap.h"
 #include "heap-inl.h"
 
-#include <sys/types.h> // off_t
 #include <stdlib.h> // NULL
+#include <stdint.h> // int32_t and others
+#include <unistd.h> // intptr_t
 #include <assert.h> // assert
 
 namespace candor {
@@ -119,7 +120,7 @@ void GC::ColourFrames(char* stack_top) {
   while (frame != NULL) {
     // Skip C++ frames
     while (frame != NULL &&
-           static_cast<uint32_t>(reinterpret_cast<off_t>(*frame)) ==
+           static_cast<uint32_t>(reinterpret_cast<intptr_t>(*frame)) ==
            Heap::kEnterFrameTag) {
       frame = reinterpret_cast<char**>(*(frame + 1));
     }

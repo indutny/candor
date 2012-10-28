@@ -564,7 +564,7 @@ void LGen::ResolveDataFlow() {
 
 
 void LGen::Generate(Masm* masm) {
-  masm->spill_offset(spill_index_);
+  masm->stack_slots(spill_index_);
 
   // Generate all instructions
   LInstructionList::Item* ihead = instructions_.head();

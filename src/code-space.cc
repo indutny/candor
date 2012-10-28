@@ -12,7 +12,6 @@
 #include "stubs.h" // EntryStub
 #include "utils.h" // GetPageSize
 
-#include <sys/types.h> // off_t
 #include <stdlib.h> // NULL
 #include <string.h> // memcpy, memset
 #include <sys/mman.h> // mmap

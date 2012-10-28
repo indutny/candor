@@ -148,6 +148,27 @@ inline int LRange::end() {
 }
 
 
+inline bool LUse::is_virtual() {
+  return interval()->is_virtual();
+}
+
+
+inline bool LUse::is_register() {
+  return interval()->is_register();
+}
+
+
+inline bool LUse::is_stackslot() {
+  return interval()->is_stackslot();
+}
+
+
+inline bool LUse::IsEqual(LUse* use) {
+  return use->interval()->type() == this->interval()->type() &&
+         use->interval()->index() == this->interval()->index();
+}
+
+
 inline LInstruction* LUse::instr() {
   return instr_;
 }
@@ -269,6 +290,11 @@ inline void LInterval::split_parent(LInterval* split_parent) {
 
 inline LIntervalList* LInterval::split_children() {
   return &split_children_;
+}
+
+
+inline LInterval::Type LInterval::type() {
+  return type_;
 }
 
 

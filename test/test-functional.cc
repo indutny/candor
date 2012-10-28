@@ -2,13 +2,6 @@
 
 TEST_START(functional)
   // Basics: return + assign
-  FUN_TEST("return", {
-    assert(result->Is<Nil>());
-  })
-
-  FUN_TEST("return 1", {
-    assert(result->As<Number>()->Value() == 1);
-  })
 
   FUN_TEST("a = 32\nreturn a", {
     assert(result->As<Number>()->Value() == 32);

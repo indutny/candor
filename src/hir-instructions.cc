@@ -99,6 +99,12 @@ HIRPhi::HIRPhi(HIRGen* g, HIRBlock* block, ScopeSlot* slot) :
 }
 
 
+HIRLiteral::HIRLiteral(HIRGen* g, HIRBlock* block, ScopeSlot* slot) :
+    HIRInstruction(g, block, kLiteral),
+    root_slot_(slot) {
+}
+
+
 HIRFunction::HIRFunction(HIRGen* g, HIRBlock* block, AstNode* ast) :
     HIRInstruction(g, block, kFunction),
     body(NULL) {

@@ -6,6 +6,7 @@
 #include "ast.h" // BinOp
 
 #include <stdint.h> // uint32_t
+#include <unistd.h> // intptr_t
 #include <sys/types.h> // size_t
 
 namespace candor {
@@ -19,19 +20,19 @@ char* RuntimeAllocate(Heap* heap, uint32_t bytes);
 typedef void (*RuntimeCollectGarbageCallback)(Heap* heap, char* stack_top);
 void RuntimeCollectGarbage(Heap* heap, char* stack_top);
 
-typedef off_t (*RuntimeGetHashCallback)(Heap* heap, char* value);
-off_t RuntimeGetHash(Heap* heap, char* value);
+typedef intptr_t (*RuntimeGetHashCallback)(Heap* heap, char* value);
+intptr_t RuntimeGetHash(Heap* heap, char* value);
 
 // Performs lookup into a hashmap
 // if insert=1 - inserts key into map space
-typedef off_t (*RuntimeLookupPropertyCallback)(Heap* heap,
-                                               char* obj,
-                                               char* key,
-                                               off_t insert);
-off_t RuntimeLookupProperty(Heap* heap,
-                            char* obj,
-                            char* key,
-                            off_t insert);
+typedef intptr_t (*RuntimeLookupPropertyCallback)(Heap* heap,
+                                                  char* obj,
+                                                  char* key,
+                                                  intptr_t insert);
+intptr_t RuntimeLookupProperty(Heap* heap,
+                               char* obj,
+                               char* key,
+                               intptr_t insert);
 
 typedef char* (*RuntimeGrowObjectCallback)(Heap* heap,
                                            char* obj,

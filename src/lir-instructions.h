@@ -28,7 +28,6 @@ typedef ZoneList<LInstruction*> LInstructionList;
     V(LoadProperty) \
     V(StoreProperty) \
     V(DeleteProperty) \
-    V(Literal) \
     V(Not) \
     V(BinOp) \
     V(Typeof) \
@@ -48,6 +47,7 @@ typedef ZoneList<LInstruction*> LInstructionList;
     V(Gap) \
     V(LoadArg) \
     V(Function) \
+    V(Literal) \
     V(Branch) \
     V(Goto) \
     LIR_INSTRUCTION_SIMPLE_TYPES(V)
@@ -236,6 +236,18 @@ class LFunction : public LInstruction {
 
  private:
   LBlock* block_;
+};
+
+class LLiteral : public LInstruction {
+ public:
+  LLiteral(ScopeSlot* slot) : LInstruction(kLiteral), root_slot_(slot) {
+    assert(slot != NULL);
+  }
+
+  INSTRUCTION_METHODS(Literal)
+
+ private:
+  ScopeSlot* root_slot_;
 };
 
 class LLoadArg: public LInstruction {

@@ -13,6 +13,7 @@ namespace internal {
 
 // Forward declaration
 class BaseStub;
+class LUse;
 
 class Masm : public Assembler {
  public:
@@ -115,6 +116,12 @@ class Masm : public Assembler {
   void IsTrue(Register reference, Label* is_false, Label* is_true);
   void IsDenseArray(Register reference, Label* non_dense, Label* dense);
 
+  // Generic move, LIR augmentation
+  void Move(LUse* dst, LUse* src);
+  void Move(LUse* dst, Register src);
+  void Move(LUse* dst, Operand& src);
+  void Move(LUse* dst, Immediate src);
+
   // Sets correct environment and calls function
   void Call(Register addr);
   void Call(Operand& addr);
@@ -139,8 +146,8 @@ class Masm : public Assembler {
   inline Heap* heap() { return space_->heap(); }
   inline Stubs* stubs() { return space_->stubs(); }
 
-  inline void spill_offset(uint32_t spill_offset) {
-    spill_offset_ = spill_offset;
+  inline void stack_slots(uint32_t stack_slots) {
+    spill_offset_ = (1 + stack_slots) * HValue::kPointerSize;
   }
 
  protected:

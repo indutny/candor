@@ -4,10 +4,9 @@
 #include <stdlib.h> // NULL
 #include <stdarg.h> // va_list
 #include <stdint.h> // uint32_t
-#include <sys/types.h> // off_t
 #include <stdio.h> // vsnprintf
 #include <string.h> // strncmp, memset
-#include <unistd.h> // sysconf or getpagesize
+#include <unistd.h> // sysconf or getpagesize, intptr_t
 #include <assert.h> // assert
 
 namespace candor {
