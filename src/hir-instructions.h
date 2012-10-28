@@ -144,6 +144,19 @@ class HIRLoadArg : public HIRInstruction {
   int index_;
 };
 
+class HIREntry : public HIRInstruction {
+  public:
+  HIREntry(HIRGen* g, HIRBlock* block, int context_slots);
+
+  void Print(PrintBuffer* p);
+  static inline HIREntry* Cast(HIRInstruction* instr);
+
+  inline int context_slots();
+
+ private:
+  int context_slots_;
+};
+
 } // namespace internal
 } // namespace candor
 

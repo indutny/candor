@@ -173,6 +173,17 @@ inline int HIRLoadArg::index() {
   return index_;
 }
 
+
+inline HIREntry* HIREntry::Cast(HIRInstruction* instr) {
+  assert(instr->Is(kEntry));
+  return reinterpret_cast<HIREntry*>(instr);
+}
+
+
+inline int HIREntry::context_slots() {
+  return context_slots_;
+}
+
 } // namespace internal
 } // namespace candor
 

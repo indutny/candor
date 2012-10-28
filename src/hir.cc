@@ -47,7 +47,7 @@ HIRInstruction* HIRGen::VisitFunction(AstNode* stmt) {
 
   if (current_root() == current_block() &&
       current_block()->IsEmpty()) {
-    Add(HIRInstruction::kEntry);
+    Add(new HIREntry(this, current_block(), stmt->context_slots()));
 
     AstList::Item* args_head = fn->args()->head();
     for (int i = 0; args_head != NULL; args_head = args_head->next(), i++) {

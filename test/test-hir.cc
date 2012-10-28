@@ -7,7 +7,7 @@
 TEST_START(hir)
   HIR_TEST("return 1 + 2\n",
            "# Block 0\n"
-           "i0 = Entry\n"
+           "i0 = Entry[0]\n"
            "i2 = Literal[1]\n"
            "i4 = Literal[2]\n"
            "i6 = BinOp(i2, i4)\n"
@@ -16,13 +16,13 @@ TEST_START(hir)
   // Simple assignments
   HIR_TEST("a = 1\nb = 1\nreturn a",
            "# Block 0\n"
-           "i0 = Entry\n"
+           "i0 = Entry[0]\n"
            "i2 = Literal[1]\n"
            "i4 = Literal[1]\n"
            "i6 = Return(i2)\n")
   HIR_TEST("return { a: 1 }",
            "# Block 0\n"
-           "i0 = Entry\n"
+           "i0 = Entry[0]\n"
            "i2 = AllocateObject\n"
            "i4 = Literal[1]\n"
            "i6 = Literal[a]\n"
@@ -30,7 +30,7 @@ TEST_START(hir)
            "i10 = Return(i2)\n")
   HIR_TEST("return ['a']",
            "# Block 0\n"
-           "i0 = Entry\n"
+           "i0 = Entry[0]\n"
            "i2 = AllocateArray\n"
            "i4 = Literal\n"
            "i6 = Literal[a]\n"
@@ -38,7 +38,7 @@ TEST_START(hir)
            "i10 = Return(i2)\n")
   HIR_TEST("a = {}\na.b = 1\ndelete a.b\nreturn a.b",
            "# Block 0\n"
-           "i0 = Entry\n"
+           "i0 = Entry[0]\n"
            "i2 = AllocateObject\n"
            "i4 = Literal[1]\n"
            "i6 = Literal[b]\n"
@@ -51,7 +51,7 @@ TEST_START(hir)
            "i20 = Return(i18)\n")
   HIR_TEST("a = global\nreturn a:b(1,2,3)",
            "# Block 0\n"
-           "i0 = Entry\n"
+           "i0 = Entry[0]\n"
            "i2 = LoadContext\n"
            "i4 = Literal[1]\n"
            "i6 = Literal[2]\n"
@@ -64,27 +64,27 @@ TEST_START(hir)
   // Unary operations
   HIR_TEST("i = 0\nreturn !i",
            "# Block 0\n"
-           "i0 = Entry\n"
+           "i0 = Entry[0]\n"
            "i2 = Literal[0]\n"
            "i4 = Not(i2)\n"
            "i6 = Return(i4)\n")
   HIR_TEST("i = 1\nreturn +i",
            "# Block 0\n"
-           "i0 = Entry\n"
+           "i0 = Entry[0]\n"
            "i2 = Literal[1]\n"
            "i4 = Literal[0]\n"
            "i6 = BinOp(i4, i2)\n"
            "i8 = Return(i6)\n")
   HIR_TEST("i = 0\nreturn ++i",
            "# Block 0\n"
-           "i0 = Entry\n"
+           "i0 = Entry[0]\n"
            "i2 = Literal[0]\n"
            "i4 = Literal[1]\n"
            "i6 = BinOp(i4, i2)\n"
            "i8 = Return(i6)\n")
   HIR_TEST("i = 0\nreturn i++",
            "# Block 0\n"
-           "i0 = Entry\n"
+           "i0 = Entry[0]\n"
            "i2 = Literal[0]\n"
            "i4 = Literal[1]\n"
            "i6 = BinOp(i4, i2)\n"
@@ -93,7 +93,7 @@ TEST_START(hir)
   // Logical operations
   HIR_TEST("i = 0\nreturn i && 1",
            "# Block 0\n"
-           "i0 = Entry\n"
+           "i0 = Entry[0]\n"
            "i2 = Literal[0]\n"
            "i4 = Goto\n"
            "# succ: 1\n"
@@ -116,7 +116,7 @@ TEST_START(hir)
            "i16 = Return(i14)\n")
   HIR_TEST("i = 0\nreturn i || 1",
            "# Block 0\n"
-           "i0 = Entry\n"
+           "i0 = Entry[0]\n"
            "i2 = Literal[0]\n"
            "i4 = Goto\n"
            "# succ: 1\n"
@@ -139,20 +139,24 @@ TEST_START(hir)
            "i16 = Return(i14)\n")
 
   // Functions
-  HIR_TEST("return a(x) { return x }",
+  HIR_TEST("x = 1\nreturn a(y) { return x + y }",
            "# Block 0\n"
-           "i0 = Entry\n"
-           "i2 = Function[b1]\n"
-           "i4 = Return(i2)\n"
+           "i0 = Entry[1]\n"
+           "i2 = Literal[1]\n"
+           "i4 = StoreContext(i2)\n"
+           "i6 = Function[b1]\n"
+           "i8 = Return(i6)\n"
            "# Block 1\n"
-           "i6 = Entry\n"
-           "i8 = LoadArg[0]\n"
-           "i10 = Return(i8)\n")
+           "i10 = Entry[0]\n"
+           "i12 = LoadArg[0]\n"
+           "i14 = LoadContext\n"
+           "i16 = BinOp(i14, i12)\n"
+           "i18 = Return(i16)\n")
 
   // Multiple blocks and phi
   HIR_TEST("if (a) { a = 2 }\nreturn a",
            "# Block 0\n"
-           "i0 = Entry\n"
+           "i0 = Entry[0]\n"
            "i2 = Nil\n"
            "i4 = If(i2)\n"
            "# succ: 1 2\n"
@@ -172,7 +176,7 @@ TEST_START(hir)
 
   HIR_TEST("if (a) { a = 2 } else { a = 3 }\nreturn a",
            "# Block 0\n"
-           "i0 = Entry\n"
+           "i0 = Entry[0]\n"
            "i2 = Nil\n"
            "i4 = If(i2)\n"
            "# succ: 1 2\n"
@@ -204,7 +208,7 @@ TEST_START(hir)
            "}\n"
            "return a",
            "# Block 0\n"
-           "i0 = Entry\n"
+           "i0 = Entry[0]\n"
            "i2 = Literal[1]\n"
            "i4 = If(i2)\n"
            "# succ: 1 2\n"
@@ -253,7 +257,7 @@ TEST_START(hir)
   // While loop
   HIR_TEST("while (true) { a++ }\nreturn a",
            "# Block 0\n"
-           "i0 = Entry\n"
+           "i0 = Entry[0]\n"
            "i2 = Nil\n"
            "i4 = Goto\n"
            "# succ: 1\n"
@@ -294,7 +298,7 @@ TEST_START(hir)
            "}\n"
            "return a",
            "# Block 0\n"
-           "i0 = Entry\n"
+           "i0 = Entry[0]\n"
            "i2 = Literal[1]\n"
            "i4 = Goto\n"
            "# succ: 1\n"

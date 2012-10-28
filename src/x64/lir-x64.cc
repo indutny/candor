@@ -7,6 +7,24 @@
 namespace candor {
 namespace internal {
 
+#define __ masm->
+
+void LEntry::Generate(Masm* masm) {
+  __ push(rbp);
+  __ mov(rbp, rsp);
+  __ emitb(0xcc);
+
+  // Allocate spills
+}
+
+
+void LReturn::Generate(Masm* masm) {
+  __ mov(rsp, rbp);
+  __ pop(rbp);
+  __ ret(0);
+}
+
+
 void LNop::Generate(Masm* masm) {
 }
 
@@ -16,14 +34,6 @@ void LNil::Generate(Masm* masm) {
 
 
 void LMove::Generate(Masm* masm) {
-}
-
-
-void LEntry::Generate(Masm* masm) {
-}
-
-
-void LReturn::Generate(Masm* masm) {
 }
 
 

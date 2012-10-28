@@ -93,7 +93,7 @@ using namespace internal;
       Scope::Analyze(ast);\
       assert(ast != NULL);\
       HIRGen hgen(&heap, ast);\
-      LGen lgen(&hgen);\
+      LGen lgen(&hgen, hgen.roots()->head()->value());\
       lgen.Print(out, sizeof(out));\
       if (strcmp(expected, out) != 0) {\
         fprintf(stderr, "HIR test failed, got:\n%s\n expected:\n%s\n",\

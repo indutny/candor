@@ -89,16 +89,22 @@ char* CodeSpace::Compile(const char* filename,
   // Generate CFG with SSA
   HIRGen hir(heap(), ast);
 
-  // Generate LIR
-  LGen lir(&hir);
-
   // Store root
   *root = hir.root()->Allocate()->addr();
 
   // Generate low-level representation
   Masm masm(this);
 
-  lir.Generate(&masm);
+  // For each root in reverse order generate lir
+  // (Generate children first, parents later)
+  HIRBlockList::Item* head = hir.roots()->tail();
+  for (; head != NULL; head = head->prev()) {
+    // Generate LIR
+    LGen lir(&hir, head->value());
+
+    // Generate Masm code
+    lir.Generate(&masm);
+  }
 
   // Put code into code space
   char* addr = Put(&masm);

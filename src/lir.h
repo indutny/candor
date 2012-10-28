@@ -175,11 +175,11 @@ class LBlock : public ZoneObject {
 
 class LGen : public ZoneObject {
  public:
-  LGen(HIRGen* hir);
+  LGen(HIRGen* hir, HIRBlock* root);
 
   void Generate(Masm* masm);
 
-  void FlattenBlocks();
+  void FlattenBlocks(HIRBlock* root);
   void GenerateInstructions();
   void ComputeLocalLiveSets();
   void ComputeGlobalLiveSets();

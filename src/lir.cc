@@ -10,20 +10,20 @@
 namespace candor {
 namespace internal {
 
-LGen::LGen(HIRGen* hir) : hir_(hir),
-                          instr_id_(0),
-                          interval_id_(0),
-                          virtual_index_(40),
-                          current_block_(NULL),
-                          current_instruction_(NULL),
-                          spill_index_(0) {
+LGen::LGen(HIRGen* hir, HIRBlock* root) : hir_(hir),
+                                          instr_id_(0),
+                                          interval_id_(0),
+                                          virtual_index_(40),
+                                          current_block_(NULL),
+                                          current_instruction_(NULL),
+                                          spill_index_(0) {
   // Initialize fixed intervals
   for (int i = 0; i < kLIRRegisterCount; i++) {
     registers_[i] = CreateRegister(RegisterByIndex(i));
     registers_[i]->MarkFixed();
   }
 
-  FlattenBlocks();
+  FlattenBlocks(root);
   GenerateInstructions();
   ComputeLocalLiveSets();
   ComputeGlobalLiveSets();
@@ -33,7 +33,7 @@ LGen::LGen(HIRGen* hir) : hir_(hir),
 }
 
 
-void LGen::FlattenBlocks() {
+void LGen::FlattenBlocks(HIRBlock* root) {
   int* visits = reinterpret_cast<int*>(Zone::current()->Allocate(
       sizeof(*visits) * hir_->blocks()->length()));
   memset(visits, 0, sizeof(*visits) * hir_->blocks()->length());
@@ -41,11 +41,8 @@ void LGen::FlattenBlocks() {
   // Flatten blocks in a linear structure
   HIRBlockList work_queue;
 
-  // Enqueue roots
-  HIRBlockList::Item* head = hir_->roots()->head();
-  for (; head != NULL; head = head->next()) {
-    work_queue.Push(head->value());
-  }
+  // Enqueue root
+  work_queue.Push(root);
 
   while (work_queue.length() > 0) {
     HIRBlock* b = work_queue.Shift();
@@ -567,6 +564,8 @@ void LGen::ResolveDataFlow() {
 
 
 void LGen::Generate(Masm* masm) {
+  masm->spill_offset(spill_index_);
+
   // Generate all instructions
   LInstructionList::Item* ihead = instructions_.head();
   for (; ihead != NULL; ihead = ihead->next()) {
