@@ -69,8 +69,10 @@ void LGap::MovePair(LGap::Pair* pair) {
         UNEXPECTED
       }
     }
-    pairs_.Push(new Pair(other->src_, other->dst_));
   }
+
+  pair->status = kMoved;
+  pairs_.Push(new Pair(pair->src_, pair->dst_));
 }
 
 
@@ -85,7 +87,7 @@ void LGap::Resolve() {
   // Remove all pairs
   while (unhandled_pairs_.length() > 0) {
     Pair* pair = unhandled_pairs_.Pop();
-    assert(pair->status = kMoved);
+    assert(pair->status == kMoved);
   }
 }
 

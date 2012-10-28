@@ -785,11 +785,13 @@ void LGen::Spill(LInterval* interval) {
     return;
   }
 
+  // XXX: There is some bug in following algorithm
+  /*
   // Initally count all spills as free
   bool* is_blocked = reinterpret_cast<bool*>(Zone::current()->Allocate(
         sizeof(*is_blocked) * spill_index_));
   for (int i = 0; i < spill_index_; i++) {
-    is_blocked[i] = false;
+    is_blocked[i] = true;
   }
 
   LIntervalList::Item* head = active_spills_.head();
@@ -811,6 +813,7 @@ void LGen::Spill(LInterval* interval) {
     inactive_spills_.Push(interval);
     return;
   }
+  */
 
   // Allocate new spill and put it to the inactive spills
   // (It will be moved to active if needed)
