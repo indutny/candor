@@ -99,6 +99,60 @@ void LGen::VisitInstruction(HIRInstruction* instr) {
   }
 }
 
+// Common functions
+
+void LGen::VisitGoto(HIRInstruction* instr) {
+  HIRBlock* succ = instr->block()->SuccAt(0);
+  int parent_index = succ->PredAt(0) != instr->block();
+
+  HIRPhiList::Item* head = succ->phis()->head();
+  for (; head != NULL; head = head->next()) {
+    HIRPhi* phi = head->value();
+    LInstruction* lphi = NULL;
+
+    assert(!phi->IsRemoved());
+
+    // Initialize LIR representation of phi
+    if (phi->lir() == NULL) {
+      lphi = new LPhi();
+      lphi->AddArg(CreateVirtual(), LUse::kAny)
+          ->SetResult(CreateVirtual(), LUse::kAny);
+
+      phi->lir(lphi);
+    } else {
+      lphi = phi->lir();
+    }
+    assert(lphi != NULL);
+
+    HIRInstruction* input = phi->InputAt(parent_index);
+    // Inputs can be not generated yet
+    if (input->Is(HIRInstruction::kPhi) && input->lir() == NULL) {
+      assert(!input->IsRemoved());
+
+      LPhi* pinput = new LPhi();
+      pinput->AddArg(CreateVirtual(), LUse::kAny)
+            ->SetResult(CreateVirtual(), LUse::kAny);
+
+      input->lir(pinput);
+    }
+
+    Add(new LMove())
+        ->SetResult(lphi->inputs[0]->interval(), LUse::kAny)
+        ->AddArg(input, LUse::kAny);
+  }
+
+  Bind(new LGoto());
+}
+
+
+void LGen::VisitPhi(HIRInstruction* instr) {
+  assert(instr->lir() != NULL);
+  assert(instr->lir()->input_count() == 1);
+  assert(instr->lir()->result != NULL);
+
+  Bind(instr->lir());
+}
+
 #undef LGEN_VISIT_SWITCH
 
 void LGen::ComputeLocalLiveSets() {
