@@ -24,6 +24,10 @@ Operand* LUse::ToOperand() {
 
 #define __ masm->
 
+void LLabel::Generate(Masm* masm) {
+  __ bind(&this->label);
+}
+
 void LEntry::Generate(Masm* masm) {
   __ push(rbp);
   __ mov(rbp, rsp);
@@ -50,6 +54,14 @@ void LNop::Generate(Masm* masm) {
 
 void LMove::Generate(Masm* masm) {
   // Ignore nop moves
+  if (result->IsEqual(inputs[0])) return;
+  __ Move(result, inputs[0]);
+}
+
+
+void LPhi::Generate(Masm* masm) {
+  // Phi is absolutely the same thing as Move
+  // (it's here just for semantic meaning)
   if (result->IsEqual(inputs[0])) return;
   __ Move(result, inputs[0]);
 }
@@ -101,6 +113,126 @@ void LAllocateArray::Generate(Masm* masm) {
 }
 
 
+void LGoto::Generate(Masm* masm) {
+  __ jmp(&TargetAt(0)->label);
+}
+
+
+void LBranch::Generate(Masm* masm) {
+  // Coerce value to boolean first
+  __ Call(masm->stubs()->GetCoerceToBooleanStub());
+
+  // Jmp to `right` block if value is `false`
+  Operand bvalue(rax, HBoolean::kValueOffset);
+  __ cmpb(bvalue, Immediate(0));
+  __ jmp(kEq, &TargetAt(1)->label);
+}
+
+
+void LLoadProperty::Generate(Masm* masm) {
+  __ push(rax);
+  __ push(rax);
+
+  // rax <- object
+  // rbx <- property
+  __ mov(rcx, Immediate(0));
+  __ Call(masm->stubs()->GetLookupPropertyStub());
+
+  Label done;
+
+  __ pop(rbx);
+  __ pop(rbx);
+
+  __ IsNil(rax, NULL, &done);
+  Operand qmap(rbx, HObject::kMapOffset);
+  __ mov(rbx, qmap);
+  __ addq(rax, rbx);
+
+  Operand slot(rax, 0);
+  __ mov(rax, slot);
+
+  __ bind(&done);
+  __ Move(result, rax);
+}
+
+
+void LStoreProperty::Generate(Masm* masm) {
+  __ push(rcx);
+  __ push(rax);
+
+  // rax <- object
+  // rbx <- property
+  // rcx <- value
+  __ mov(rcx, Immediate(1));
+  __ Call(masm->stubs()->GetLookupPropertyStub());
+
+  // Make rax look like unboxed number to GC
+  __ dec(rax);
+  __ CheckGC();
+  __ inc(rax);
+
+  Label done;
+
+  __ Pop(rbx);
+  __ Pop(rcx);
+
+  __ IsNil(rax, NULL, &done);
+  Operand qmap(rbx, HObject::kMapOffset);
+  __ mov(rbx, qmap);
+  __ addq(rax, rbx);
+
+  Operand slot(rax, 0);
+  __ mov(slot, rcx);
+
+  __ bind(&done);
+}
+
+#define BINARY_SUB_TYPES(V) \
+    V(Add) \
+    V(Sub) \
+    V(Mul) \
+    V(Div) \
+    V(Mod) \
+    V(BAnd) \
+    V(BOr) \
+    V(BXor) \
+    V(Shl) \
+    V(Shr) \
+    V(UShr) \
+    V(Eq) \
+    V(StrictEq) \
+    V(Ne) \
+    V(StrictNe) \
+    V(Lt) \
+    V(Gt) \
+    V(Le) \
+    V(Ge)
+
+#define BINARY_SUB_ENUM(V)\
+    case BinOp::k##V: stub = masm->stubs()->GetBinary##V##Stub(); break;
+
+
+void LBinOp::Generate(Masm* masm) {
+  char* stub = NULL;
+
+  switch (HIRBinOp::Cast(hir())->binop_type()) {
+   BINARY_SUB_TYPES(BINARY_SUB_ENUM)
+   default: UNEXPECTED
+  }
+
+  assert(stub != NULL);
+
+  // rax <- lhs
+  // rbx <- rhs
+  __ Call(stub);
+  // result -> rax
+}
+
+
+#undef BINARY_SUB_ENUM
+#undef BINARY_SUB_TYPES
+
+
 void LFunction::Generate(Masm* masm) {
 }
 
@@ -113,23 +245,11 @@ void LStoreContext::Generate(Masm* masm) {
 }
 
 
-void LLoadProperty::Generate(Masm* masm) {
-}
-
-
-void LStoreProperty::Generate(Masm* masm) {
-}
-
-
 void LDeleteProperty::Generate(Masm* masm) {
 }
 
 
 void LNot::Generate(Masm* masm) {
-}
-
-
-void LBinOp::Generate(Masm* masm) {
 }
 
 
@@ -161,23 +281,7 @@ void LGetStackTrace::Generate(Masm* masm) {
 }
 
 
-void LPhi::Generate(Masm* masm) {
-}
-
-
-void LLabel::Generate(Masm* masm) {
-}
-
-
 void LLoadArg::Generate(Masm* masm) {
-}
-
-
-void LBranch::Generate(Masm* masm) {
-}
-
-
-void LGoto::Generate(Masm* masm) {
 }
 
 } // namespace internal

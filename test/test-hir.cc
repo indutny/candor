@@ -80,14 +80,14 @@ TEST_START(hir)
            "i0 = Entry[0]\n"
            "i2 = Literal[0]\n"
            "i4 = Literal[1]\n"
-           "i6 = BinOp(i4, i2)\n"
+           "i6 = BinOp(i2, i4)\n"
            "i8 = Return(i6)\n")
   HIR_TEST("i = 0\nreturn i++",
            "# Block 0\n"
            "i0 = Entry[0]\n"
            "i2 = Literal[0]\n"
            "i4 = Literal[1]\n"
-           "i6 = BinOp(i4, i2)\n"
+           "i6 = BinOp(i2, i4)\n"
            "i8 = Return(i2)\n")
 
   // Logical operations
@@ -274,7 +274,7 @@ TEST_START(hir)
            "--------\n"
            "# Block 3\n"
            "i14 = Literal[1]\n"
-           "i18 = BinOp(i14, i6)\n"
+           "i18 = BinOp(i6, i14)\n"
            "i20 = Goto\n"
            "# succ: 4\n"
            "--------\n"

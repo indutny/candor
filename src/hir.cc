@@ -211,6 +211,7 @@ HIRInstruction* HIRGen::VisitContinue(AstNode* stmt) {
 
 HIRInstruction* HIRGen::VisitUnOp(AstNode* stmt) {
   UnOp* op = UnOp::Cast(stmt);
+  BinOp::BinOpType type;
 
   if (op->is_changing()) {
     // ++i, i++
@@ -220,19 +221,19 @@ HIRInstruction* HIRGen::VisitUnOp(AstNode* stmt) {
     one->value("1");
     one->length(1);
 
-    AstNode* wrap = new BinOp(
-        (op->subtype() == UnOp::kPreInc || op->subtype() == UnOp::kPostInc) ?
-            BinOp::kAdd : BinOp::kSub,
-        one,
-        op->lhs());
+    type = (op->subtype() == UnOp::kPreInc || op->subtype() == UnOp::kPostInc) ?
+          BinOp::kAdd : BinOp::kSub;
+
+    AstNode* wrap = new BinOp(type, op->lhs(), one);
 
     if (op->subtype() == UnOp::kPreInc || op->subtype() == UnOp::kPreDec) {
       return Assign(slot, Visit(wrap));
     } else {
       HIRInstruction* ione = Visit(one);
       HIRInstruction* res = Visit(op->lhs());
-      HIRInstruction* bin = Add(HIRInstruction::kBinOp)->AddArg(ione)
-                                                       ->AddArg(res);
+      HIRInstruction* bin = Add(new HIRBinOp(this, current_block(), type))
+          ->AddArg(res)
+          ->AddArg(ione);
 
       bin->ast(wrap);
       Assign(slot, bin);
@@ -246,10 +247,9 @@ HIRInstruction* HIRGen::VisitUnOp(AstNode* stmt) {
     zero->value("0");
     zero->length(1);
 
-    AstNode* wrap = new BinOp(
-        op->subtype() == UnOp::kPlus ? BinOp::kAdd : BinOp::kSub,
-        zero,
-        op->lhs());
+    type = op->subtype() == UnOp::kPlus ? BinOp::kAdd : BinOp::kSub;
+
+    AstNode* wrap = new BinOp(type, zero, op->lhs());
 
     return Visit(wrap);
   } else if (op->subtype() == UnOp::kNot) {
@@ -267,7 +267,9 @@ HIRInstruction* HIRGen::VisitBinOp(AstNode* stmt) {
   if (!BinOp::is_bool_logic(op->subtype())) {
     HIRInstruction* lhs = Visit(op->lhs());
     HIRInstruction* rhs = Visit(op->rhs());
-    res = Add(HIRInstruction::kBinOp)->AddArg(lhs)->AddArg(rhs);
+    res = Add(new HIRBinOp(this, current_block(), op->subtype()))
+        ->AddArg(lhs)
+        ->AddArg(rhs);
   } else {
     HIRInstruction* lhs = Visit(op->lhs());
     HIRBlock* branch = CreateBlock();

@@ -165,6 +165,11 @@ inline int HIREntry::context_slots() {
   return context_slots_;
 }
 
+
+inline BinOp::BinOpType HIRBinOp::binop_type() {
+  return binop_type_;
+}
+
 } // namespace internal
 } // namespace candor
 

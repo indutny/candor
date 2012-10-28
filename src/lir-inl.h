@@ -84,9 +84,9 @@ inline LBlock* LGen::IsBlockStart(int pos) {
 }
 
 
-inline void LGen::Print(char* out, int32_t size) {
+inline void LGen::Print(char* out, int32_t size, bool extended) {
   PrintBuffer p(out, size);
-  Print(&p);
+  Print(&p, extended);
 }
 
 

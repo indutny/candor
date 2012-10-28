@@ -138,5 +138,11 @@ void HIREntry::Print(PrintBuffer* p) {
   p->Print("i%d = Entry[%d]\n", id, context_slots_);
 }
 
+
+HIRBinOp::HIRBinOp(HIRGen* g, HIRBlock* block, BinOp::BinOpType type) :
+    HIRInstruction(g, block, kBinOp),
+    binop_type_(type) {
+}
+
 } // namespace internal
 } // namespace candor

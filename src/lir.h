@@ -220,9 +220,9 @@ class LGen : public ZoneObject {
   inline int interval_id();
   inline int virtual_index();
 
-  void Print(PrintBuffer* p);
+  void Print(PrintBuffer* p, bool extended = false);
   void PrintIntervals(PrintBuffer* p);
-  inline void Print(char* out, int32_t size);
+  inline void Print(char* out, int32_t size, bool extended = false);
 
  private:
   HIRGen* hir_;

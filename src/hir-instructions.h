@@ -178,6 +178,18 @@ class HIREntry : public HIRInstruction {
   int context_slots_;
 };
 
+class HIRBinOp : public HIRInstruction {
+  public:
+  HIRBinOp(HIRGen* g, HIRBlock* block, BinOp::BinOpType type);
+
+  inline BinOp::BinOpType binop_type();
+
+  HIR_DEFAULT_METHODS(BinOp)
+
+ private:
+  BinOp::BinOpType binop_type_;
+};
+
 #undef HIR_DEFAULT_METHODS
 
 } // namespace internal

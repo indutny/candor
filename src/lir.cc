@@ -224,16 +224,17 @@ void LGen::BuildIntervals() {
         // Add [id, id+1) range, result isn't used anywhere except in the
         // instruction itself
         if (res->ranges()->length() == 0) {
-          res->AddRange(instr->id + 1, instr->id + 2);
+          res->AddRange(instr->id, instr->id + 1);
         } else {
           // Shorten first range
-          res->ranges()->head()->value()->start(instr->id + 1);
+          res->ranges()->head()->value()->start(instr->id);
         }
       }
 
-      // Scratches are live only inside instruction
+      // Scratches are live only right before instruction
+      // (this way fixed intervals wouldn't spill it)
       for (int i = 0; i < instr->scratch_count(); i++) {
-        instr->scratches[i]->interval()->AddRange(instr->id, instr->id + 1);
+        instr->scratches[i]->interval()->AddRange(instr->id - 1, instr->id);
       }
 
       // Inputs are initially live from block's start to instruction
@@ -383,7 +384,7 @@ void LGen::TryAllocateFreeReg(LInterval* current) {
 
   if (max <= current->end()) {
     // Split before `max` is needed
-    Split(current, max % 2  == 0 ? (max - 2) : (max - 1));
+    Split(current, max % 2  == 0 ? (max - 1) : (max - 2));
   }
 
   // Register is available for whole interval's lifetime
@@ -455,13 +456,13 @@ void LGen::AllocateBlockedReg(LInterval* current) {
   LUse* first_use = current->UseAfter(current->start());
   assert(first_use != NULL);
   if (use_max < first_use->instr()->id ||
-      block_pos[use_reg] - 2 <= current->start()) {
+      block_pos[use_reg] - 1 <= current->start()) {
     Spill(current);
 
     // Split before first use with required register
     LUse* reg_use = current->UseAfter(current->start(), LUse::kRegister);
     if (reg_use != NULL && reg_use->instr()->id > current->start()) {
-      Split(current, reg_use->instr()->id);
+      Split(current, reg_use->instr()->id - 1);
     }
   } else {
     // Intervals using register will be spilled
@@ -470,7 +471,7 @@ void LGen::AllocateBlockedReg(LInterval* current) {
     // If register is blocked somewhere before interval's end
     if (block_pos[use_reg] <= current->end()) {
       // Interval should be splitted
-      Split(current, block_pos[use_reg] - 2);
+      Split(current, block_pos[use_reg] - 1);
     }
 
     // Split and spill all intersecting intervals
@@ -486,7 +487,7 @@ void LGen::AllocateBlockedReg(LInterval* current) {
         int pos = current->FindIntersection(interval);
         if (pos == -1) continue;
 
-        if (pos - 2 > interval->start()) Split(interval, pos - 2);
+        if (pos - 1 > interval->start()) Split(interval, pos - 1);
 
         Spill(interval);
 
@@ -502,9 +503,9 @@ void LGen::ResolveDataFlow() {
   HIRBlockList::Item* bhead = blocks_.head();
   for (; bhead != NULL; bhead = bhead->next()) {
     LBlock* b = bhead->value()->lir();
-    LGap* gap = NULL;
 
     for (int i = 0; i < b->hir()->succ_count(); i++) {
+      LGap* gap = NULL;
       LBlock* succ = b->hir()->SuccAt(i)->lir();
 
       // Create movements for non-matching parts of intervals
@@ -574,9 +575,9 @@ void LGen::Generate(Masm* masm) {
 }
 
 
-void LGen::Print(PrintBuffer* p) {
+void LGen::Print(PrintBuffer* p, bool extended) {
   // Only for debugging purposes
-  if (0) PrintIntervals(p);
+  if (extended) PrintIntervals(p);
 
   HIRBlockList::Item* bhead = blocks_.head();
   for (; bhead != NULL; bhead = bhead->next()) {
@@ -604,7 +605,7 @@ void LGen::PrintIntervals(PrintBuffer* p) {
     }
     for (int i = 0; i < instr_id_; i++) {
       LUse* use = interval->UseAt(i);
-      if (use == NULL) {
+      if (use == NULL || true) {
         if (interval->Covers(i)) {
           p->Print("_");
         } else {
@@ -714,8 +715,9 @@ LInterval* LGen::Split(LInterval* i, int pos) {
   // data flow
   if (IsBlockStart(i->end())) return child;
 
-  // Insert move
-  GetGap(i->end() - 1)->Add(i, child);
+  // Insert move right before split position, because
+  // left side is definitely live here and right side haven't been used yet
+  GetGap(pos)->Add(i, child);
 
   return child;
 }
@@ -738,7 +740,7 @@ LGap* LGen::GetGap(int pos) {
 
   // Create temporary spill for gap
   LInterval* tmp = CreateVirtual();
-  tmp->AddRange(pos, pos + 1);
+  tmp->AddRange(pos - 1, pos + 1);
   Spill(tmp);
 
   // Create new gap
