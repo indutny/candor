@@ -30,6 +30,7 @@ LGen::LGen(HIRGen* hir, HIRBlock* root) : hir_(hir),
   BuildIntervals();
   WalkIntervals();
   ResolveDataFlow();
+  AllocateSpills();
 }
 
 
@@ -217,6 +218,7 @@ void LGen::BuildIntervals() {
           registers_[i]->Use(LUse::kRegister, instr);
         }
       }
+      LIntervalList::Item* head = intervals_.head();
 
       if (instr->result) {
         LInterval* res = instr->result->interval();
@@ -245,6 +247,44 @@ void LGen::BuildIntervals() {
           instr->inputs[i]->interval()->AddRange(l->start_id, instr->id);
         }
       }
+    }
+  }
+}
+
+
+void LGen::ShuffleIntervals(LIntervalList* active,
+                            LIntervalList* inactive,
+                            LIntervalList* handled,
+                            int pos) {
+  // Check for intervals in active that are expired or inactive
+  LIntervalList::Item* head = active->head();
+  for (; head != NULL; head = head->next()) {
+    LInterval* interval = head->value();
+
+    if (interval->end() < pos) {
+      // Interval has ended before current position
+      active->Remove(head);
+      if (handled != NULL) handled->Push(interval);
+    } else if (!interval->Covers(pos)){
+      // Interval isn't covering current position - move to ininterval
+      active->Remove(head);
+      inactive->Push(interval);
+    }
+  }
+
+  // Check for intervals in inactive that are expired or active
+  head = inactive->head();
+  for (; head != NULL; head = head->next()) {
+    LInterval* interval = head->value();
+
+    if (interval->end() < pos) {
+      // Interval has ended before current position
+      inactive->Remove(head);
+      if (handled != NULL) handled->Push(interval);
+    } else if (interval->Covers(pos)){
+      // Interval is covering current position - move to active
+      inactive->Remove(head);
+      active->Push(interval);
     }
   }
 }
@@ -281,48 +321,7 @@ void LGen::WalkIntervals() {
     LInterval* current = unhandled_.Shift();
     int pos = current->start();
 
-    LIntervalList* pairs[6] = {
-      &active_, &inactive_, NULL,
-      &active_spills_, &inactive_spills_, &free_spills_
-    };
-
-    for (int i = 0; i < 6; i += 3) {
-      LIntervalList* active = pairs[i];
-      LIntervalList* inactive = pairs[i + 1];
-      LIntervalList* handled = pairs[i + 2];
-
-      // Check for intervals in active that are expired or inactive
-      head = active->head();
-      for (; head != NULL; head = head->next()) {
-        LInterval* interval = head->value();
-
-        if (interval->end() < pos) {
-          // Interval has ended before current position
-          active->Remove(head);
-          if (handled != NULL) handled->Push(interval);
-        } else if (!interval->Covers(pos)){
-          // Interval isn't covering current position - move to ininterval
-          active->Remove(head);
-          inactive->Push(interval);
-        }
-      }
-
-      // Check for intervals in inactive that are expired or active
-      head = inactive->head();
-      for (; head != NULL; head = head->next()) {
-        LInterval* interval = head->value();
-
-        if (interval->end() < pos) {
-          // Interval has ended before current position
-          inactive->Remove(head);
-          if (handled != NULL) handled->Push(interval);
-        } else if (interval->Covers(pos)){
-          // Interval is covering current position - move to active
-          inactive->Remove(head);
-          active->Push(interval);
-        }
-      }
-    }
+    ShuffleIntervals(&active_, &inactive_, NULL, pos);
 
     // Find free register for current interval
     TryAllocateFreeReg(current);
@@ -568,6 +567,62 @@ void LGen::ResolveDataFlow() {
 }
 
 
+void LGen::AllocateSpills() {
+  // Sort by starting position
+  unhandled_spills_.Sort<LIntervalShape>();
+
+  while (unhandled_spills_.length() > 0) {
+    LInterval* current = unhandled_spills_.Shift();
+    int pos = current->start();
+
+    ShuffleIntervals(&active_spills_, &inactive_spills_, &free_spills_, pos);
+
+    // Assign free spill
+    if (free_spills_.length() > 0) {
+      LInterval* f = free_spills_.Shift();
+      current->Spill(f->index());
+      active_spills_.Push(current);
+      continue;
+    }
+
+    HashMap<NumberKey, LInterval, ZoneObject> blocked;
+    int max_index = 0;
+
+    LIntervalList::Item* head = active_spills_.head();
+    for (; head != NULL; head = head->next()) {
+      LInterval* active = head->value();
+      blocked.Set(NumberKey::New(active->index()), active);
+      if (active->index() > max_index) max_index = active->index();
+    }
+
+    head = inactive_spills_.head();
+    for (; head != NULL; head = head->next()) {
+      LInterval* inactive = head->value();
+      if (inactive->FindIntersection(current) != -1) {
+        blocked.Set(NumberKey::New(inactive->index()), inactive);
+        if (inactive->index() > max_index) max_index = inactive->index();
+      }
+    }
+
+    // Reuse spill if it's unused now
+    for (int i = 0; i < max_index; i++) {
+      if (blocked.Get(NumberKey::New(i)) == NULL) {
+        current->Spill(i);
+        active_spills_.Push(current);
+        break;
+      }
+    }
+
+    // If succeed - move to next spill
+    if (current->index() != -1) continue;
+
+    // Allocate new spill
+    current->Spill(spill_index_++);
+    active_spills_.Push(current);
+  }
+}
+
+
 void LGen::Generate(Masm* masm) {
   masm->stack_slots(spill_index_);
 
@@ -603,10 +658,13 @@ void LGen::PrintIntervals(PrintBuffer* p) {
   for (; ihead != NULL; ihead = ihead->next()) {
     LInterval* interval = ihead->value();
     if (interval->id < kLIRRegisterCount) {
-      p->Print("%s: ", RegisterNameByIndex(interval->id));
+      p->Print("%s     : ", RegisterNameByIndex(interval->id));
+    } else if (interval->is_stackslot()) {
+      p->Print("%03d [%02d]: ", interval->id, interval->index());
     } else {
-      p->Print("%03d: ", interval->id);
+      p->Print("%03d     : ", interval->id);
     }
+
     for (int i = 0; i < instr_id_; i++) {
       LUse* use = interval->UseAt(i);
       if (use == NULL) {
@@ -776,49 +834,10 @@ LGap* LGen::GetGap(int pos) {
 
 
 void LGen::Spill(LInterval* interval) {
-  // Assign one of free spills to the interval
-  if (free_spills_.length() > 0) {
-    LInterval* spill = free_spills_.Shift();
-    interval->Spill(spill->index());
-    inactive_spills_.Push(interval);
+  assert(!interval->is_stackslot());
 
-    return;
-  }
-
-  // XXX: There is some bug in following algorithm
-  /*
-  // Initally count all spills as free
-  bool* is_blocked = reinterpret_cast<bool*>(Zone::current()->Allocate(
-        sizeof(*is_blocked) * spill_index_));
-  for (int i = 0; i < spill_index_; i++) {
-    is_blocked[i] = true;
-  }
-
-  LIntervalList::Item* head = active_spills_.head();
-  for (; head != NULL; head = head->next()) {
-    is_blocked[head->value()->index()] = true;
-  }
-
-  head = inactive_spills_.head();
-  for (; head != NULL; head = head->next()) {
-    if (head->value()->FindIntersection(interval) != -1) {
-      is_blocked[head->value()->index()] = true;
-    }
-  }
-
-  // Reuse spill if it's unused now
-  for (int i = 0; i < spill_index_; i++) {
-    if (is_blocked[i]) continue;
-    interval->Spill(i);
-    inactive_spills_.Push(interval);
-    return;
-  }
-  */
-
-  // Allocate new spill and put it to the inactive spills
-  // (It will be moved to active if needed)
-  interval->Spill(spill_index_++);
-  inactive_spills_.Push(interval);
+  interval->Spill(-1);
+  unhandled_spills_.Push(interval);
 }
 
 

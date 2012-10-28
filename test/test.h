@@ -96,7 +96,7 @@ using namespace internal;
       LGen lgen(&hgen, hgen.roots()->head()->value());\
       lgen.Print(out, sizeof(out));\
       if (strcmp(expected, out) != 0) {\
-        fprintf(stderr, "HIR test failed, got:\n%s\n expected:\n%s\n",\
+        fprintf(stderr, "LIR test failed, got:\n%s\n expected:\n%s\n",\
                 out,\
                 expected);\
         abort();\

@@ -103,7 +103,6 @@ char* CodeSpace::Compile(const char* filename,
 
     // Generate Masm code
     lir.Generate(&masm);
-
   }
 
   // Put code into code space

@@ -192,10 +192,15 @@ class LGen : public ZoneObject {
   void ComputeLocalLiveSets();
   void ComputeGlobalLiveSets();
   void BuildIntervals();
+  void ShuffleIntervals(LIntervalList* active,
+                        LIntervalList* inactive,
+                        LIntervalList* handled,
+                        int pos);
   void WalkIntervals();
   void ResolveDataFlow();
   void TryAllocateFreeReg(LInterval* current);
   void AllocateBlockedReg(LInterval* current);
+  void AllocateSpills();
 
   void VisitInstruction(HIRInstruction* instr);
   HIR_INSTRUCTION_TYPES(LGEN_VISITOR)
@@ -242,6 +247,7 @@ class LGen : public ZoneObject {
   LIntervalList inactive_;
 
   int spill_index_;
+  LIntervalList unhandled_spills_;
   LIntervalList active_spills_;
   LIntervalList inactive_spills_;
   LIntervalList free_spills_;

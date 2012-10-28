@@ -208,17 +208,10 @@ inline bool LInterval::IsEqual(LInterval* i) {
 
 inline void LInterval::Print(PrintBuffer* p) {
   switch (type_) {
-   case kVirtual: p->Print("v"); break;
-   case kRegister: p->Print("r"); break;
-   case kStackSlot: p->Print("s"); break;
+   case kVirtual: p->Print("v%d", id); break;
+   case kRegister: p->Print("%s:%d", RegisterNameByIndex(index()), id); break;
+   case kStackSlot: p->Print("[%d]:%d", index(), id); break;
    default: UNEXPECTED
-  }
-
-  p->Print("%d", id);
-  if (type_ == kRegister) {
-    p->Print(":%s", RegisterNameByIndex(index()));
-  } else {
-    p->Print(":%d", index());
   }
 }
 
