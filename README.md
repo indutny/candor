@@ -243,10 +243,11 @@ Things that are implemented currently:
 * C++/C bindings support for candor
 * C++/C bindings documentation
 * Dense arrays
+* Cons strings
+* HIR/LIR Compiler!!!
 
 Things to come:
 
-* Cons strings
 * On-stack replacement and profile-based optimizations
 * Incremental GC
 * Usage in multiple-threads (aka isolates)
@@ -264,13 +265,10 @@ No problem at all - I prepared a list of papers that may help you understand
 things going in Candor better:
 [Compiler-papers](https://github.com/indutny/candor/wiki/Compiler-papers).
 
-*Please keep in mind, that at the moment all development is going in
-[feature-ssa](https://github.com/indutny/candor/tree/feature-ssa) branch.*
-
 ## Credits
 
 Special thanks to:
-* [creationix](https://github.com/creationix) for suggesting the name of thi
+* [creationix](https://github.com/creationix) for suggesting the name for this
   project!
 * [hij1nx](https://github.com/hij1nx) for contributing awesome logo!
 

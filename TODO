@@ -1,20 +1,8 @@
-HIR/LIR todos:
-* HasCall and instruction with result
-* Pipeline: mov 1, eax; mov eax, ebx => mov 1, ebx
-
-* Move context variables get/set to instructions (with index as imm arg)
-  (No values for them, as they may be changed by side-effect instructions)
-* Vararg arguments (call)
-* Speeding up HIR construction
-* Cleanup masm
-* Cleanup stubs
-
-Postponed todos (old):
-* a && b (b should not be executed)
+* Less moves between registers
+* More instructions without !HasCall()
 * Tail-call elimination
 * On-stack replacement and profile-based optimizations (register allocation too)
 * Incremental GC
 * Usage in multiple-threads (aka isolates)
 * gdbjit
-* Ast node ids
 * Dtrace :)
