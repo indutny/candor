@@ -306,7 +306,7 @@ void LLoadArg::Generate(Masm* masm) {
   __ addq(scratch, Immediate(4));
   __ shl(scratch, 2);
   __ addq(scratch, rbp);
-  __ mov(result->ToRegister(), slot);
+  __ Move(result, slot);
 }
 
 

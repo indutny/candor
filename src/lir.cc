@@ -579,7 +579,6 @@ void LGen::ResolveDataFlow() {
 
         LInterval* left = parent->ChildAt(b->end_id);
         LInterval* right = parent->ChildAt(succ->start_id);
-        assert(left != NULL && right != NULL);
 
         if (left != right) {
           // Lazily allocate gap
@@ -627,6 +626,7 @@ void LGen::ResolveDataFlow() {
 void LGen::AllocateSpills() {
   // Sort by starting position
   unhandled_spills_.Sort<LIntervalShape>();
+  LIntervalList::Item* head;
 
   while (unhandled_spills_.length() > 0) {
     LInterval* current = unhandled_spills_.Shift();
@@ -636,16 +636,37 @@ void LGen::AllocateSpills() {
 
     // Assign free spill
     if (free_spills_.length() > 0) {
-      LInterval* f = free_spills_.Shift();
-      current->Spill(f->index());
-      active_spills_.Push(current);
-      continue;
+      LInterval* f = NULL;
+      do {
+        f = free_spills_.Shift();
+
+        // Check that this spill is really free
+        head = active_spills_.head();
+        for (; f != NULL && head != NULL; head = head->next()) {
+          if (head->value()->IsEqual(f)) f = NULL;
+        }
+
+        head = inactive_spills_.head();
+        for (; f != NULL && head != NULL; head = head->next()) {
+          LInterval* inactive = head->value();
+          if (inactive->IsEqual(f) &&
+              inactive->FindIntersection(current) != -1) {
+            f = NULL;
+          }
+        }
+      } while (f == NULL && free_spills_.length() > 0);
+
+      if (f != NULL) {
+        current->Spill(f->index());
+        active_spills_.Push(current);
+        continue;
+      }
     }
 
     HashMap<NumberKey, LInterval, ZoneObject> blocked;
     int max_index = 0;
 
-    LIntervalList::Item* head = active_spills_.head();
+    head = active_spills_.head();
     for (; head != NULL; head = head->next()) {
       LInterval* active = head->value();
       blocked.Set(NumberKey::New(active->index()), active);
@@ -981,6 +1002,7 @@ int LInterval::FindIntersection(LInterval* with) {
 
 
 LInterval* LInterval::ChildAt(int pos) {
+  if (split_parent() != NULL) return split_parent()->ChildAt(pos);
   if (Covers(pos)) return this;
 
   LIntervalList::Item* head = split_children_.head();
@@ -989,7 +1011,7 @@ LInterval* LInterval::ChildAt(int pos) {
     if (child->Covers(pos)) return child;
   }
 
-  return NULL;
+  UNEXPECTED
 }
 
 
