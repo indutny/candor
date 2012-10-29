@@ -1198,6 +1198,7 @@ void BinOpStub::Generate() {
   __ bind(&done);
 
   // Cleanup
+  __ xorq(rdx, rdx);
   __ xorq(rcx, rcx);
   __ xorq(rbx, rbx);
 

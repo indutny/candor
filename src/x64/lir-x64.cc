@@ -428,6 +428,11 @@ void LLoadVarArg::Generate(Masm* masm) {
   __ jmp(&loop);
 
   __ bind(&end);
+
+  // Cleanup?
+  __ xorq(rax, rax);
+  __ xorq(rbx, rbx);
+  __ xorq(rdx, rdx);
   // rcx <- holds result
 }
 
