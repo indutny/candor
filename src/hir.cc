@@ -31,6 +31,15 @@ HIRGen::HIRGen(Heap* heap, AstNode* root) : Visitor<HIRInstruction>(kPreorder),
 }
 
 
+HIRInstruction* HIRGen::Visit(AstNode* stmt) {
+  HIRInstruction* res = Visitor<HIRInstruction>::Visit(stmt);
+
+  if (res != NULL && res->ast() == NULL) res->ast(stmt);
+
+  return res;
+}
+
+
 void HIRGen::PrunePhis() {
   HIRPhiList queue_;
 

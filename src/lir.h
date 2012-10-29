@@ -24,6 +24,7 @@ class LLabel;
 class LGap;
 class LRange;
 class LUse;
+class SourceMap;
 typedef ZoneList<LInterval*> LIntervalList;
 typedef ZoneList<LRange*> LRangeList;
 typedef ZoneList<LUse*> LUseList;
@@ -188,7 +189,7 @@ class LGen : public ZoneObject {
  public:
   LGen(HIRGen* hir, HIRBlock* root);
 
-  void Generate(Masm* masm);
+  void Generate(Masm* masm, SourceMap* map);
 
   void FlattenBlocks(HIRBlock* root);
   void GenerateInstructions();

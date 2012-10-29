@@ -9,6 +9,7 @@
 #include "hir-inl.h" // HIR
 #include "lir.h" // LIR
 #include "lir-inl.h" // LIR
+#include "source-map.h" // SourceMap
 #include "stubs.h" // EntryStub
 #include "utils.h" // GetPageSize
 
@@ -102,7 +103,7 @@ char* CodeSpace::Compile(const char* filename,
     LGen lir(&hir, head->value());
 
     // Generate Masm code
-    lir.Generate(&masm);
+    lir.Generate(&masm, heap()->source_map());
   }
 
   // Put code into code space

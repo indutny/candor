@@ -4,6 +4,7 @@
 #include "lir-inl.h"
 #include "lir-instructions.h"
 #include "lir-instructions-inl.h"
+#include "source-map.h" // SourceMap
 #include <limits.h> // INT_MAX
 #include <string.h> // memset
 
@@ -701,13 +702,19 @@ void LGen::AllocateSpills() {
 }
 
 
-void LGen::Generate(Masm* masm) {
-  masm->stack_slots(spill_index_);
+void LGen::Generate(Masm* masm, SourceMap* map) {
+  // +1 for argc
+  masm->stack_slots(spill_index_ + 1);
 
   // Generate all instructions
   LInstructionList::Item* ihead = instructions_.head();
   for (; ihead != NULL; ihead = ihead->next()) {
-    ihead->value()->Generate(masm);
+    LInstruction* instr = ihead->value();
+    instr->Generate(masm);
+    if (instr->hir() != NULL && instr->hir()->ast() != NULL &&
+        instr->hir()->ast()->offset() >= 0) {
+      map->Push(masm->offset(), instr->hir()->ast()->offset());
+    }
   }
 
   masm->FinalizeSpills();

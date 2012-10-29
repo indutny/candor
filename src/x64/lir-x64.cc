@@ -19,7 +19,9 @@ Register LUse::ToRegister() {
 
 Operand* LUse::ToOperand() {
   assert(is_stackslot());
-  return new Operand(rbp, -HValue::kPointerSize * (interval()->index() + 2));
+
+  // Argc and return address
+  return new Operand(rbp, -HValue::kPointerSize * (interval()->index() + 3));
 }
 
 #define __ masm->
@@ -34,6 +36,10 @@ void LEntry::Generate(Masm* masm) {
 
   // Allocate spills
   __ AllocateSpills();
+
+  // Save argc
+  Operand argc(rbp, -HValue::kPointerSize * 2);
+  __ mov(argc, rax);
 
   // Allocate context slots
   __ AllocateContext(context_slots_);
@@ -301,12 +307,28 @@ void LCall::Generate(Masm* masm) {
 void LLoadArg::Generate(Masm* masm) {
   Operand slot(scratch, 0);
 
+  Label oob, skip;
+
   // NOTE: input is aligned number
   __ mov(scratch, inputs[0]->ToRegister());
+
+  // Check if we're trying to get argument that wasn't passed in
+  Operand argc(rbp, -HValue::kPointerSize * 2);
+  __ cmpq(scratch, argc);
+  __ jmp(kGe, &oob);
+
   __ addq(scratch, Immediate(4));
   __ shl(scratch, 2);
   __ addq(scratch, rbp);
   __ Move(result, slot);
+
+  __ jmp(&skip);
+  __ bind(&oob);
+
+  // NOTE: result may have the same value as input
+  __ Move(result, Immediate(Heap::kTagNil));
+
+  __ bind(&skip);
 }
 
 

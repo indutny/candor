@@ -67,7 +67,8 @@ void HIRInstruction::Print(PrintBuffer* p) {
 
   p->Print("%s", TypeToStr(type_));
 
-  if (ast() != NULL && ast()->value() != NULL) {
+  if (type() == HIRInstruction::kLiteral &&
+      ast() != NULL && ast()->value() != NULL) {
     p->Print("[");
     p->PrintValue(ast()->value(), ast()->length());
     p->Print("]");
