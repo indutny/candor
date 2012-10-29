@@ -131,7 +131,6 @@ class HIRGen : public Visitor<HIRInstruction> {
   void PrunePhis();
   void Replace(HIRInstruction* o, HIRInstruction* n);
 
-  HIRInstruction* Visit(AstNode* stmt);
   HIRInstruction* VisitFunction(AstNode* stmt);
   HIRInstruction* VisitAssign(AstNode* stmt);
   HIRInstruction* VisitReturn(AstNode* stmt);

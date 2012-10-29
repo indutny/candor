@@ -545,9 +545,16 @@ void LGen::AllocateBlockedReg(LInterval* current) {
 
         int pos = current->FindIntersection(interval);
         if (pos == -1) continue;
-
         pos = pos % 2 == 0 ? (pos - 1) : (pos - 2);
 
+        LUse* reg_use = interval->UseAfter(0, LUse::kRegister);
+        // If interval is used as register before current one - just split it,
+        // it'll be spilled later
+        if (reg_use != NULL && reg_use->instr()->id <= current->start()) {
+          Split(interval, current->start() % 2 == 0 ?
+              (current->start() - 1) : (current->start() - 2));
+          continue;
+        }
         if (pos > interval->start()) Split(interval, pos);
 
         Spill(interval);
@@ -710,11 +717,12 @@ void LGen::Generate(Masm* masm, SourceMap* map) {
   LInstructionList::Item* ihead = instructions_.head();
   for (; ihead != NULL; ihead = ihead->next()) {
     LInstruction* instr = ihead->value();
-    instr->Generate(masm);
+
     if (instr->hir() != NULL && instr->hir()->ast() != NULL &&
         instr->hir()->ast()->offset() >= 0) {
       map->Push(masm->offset(), instr->hir()->ast()->offset());
     }
+    instr->Generate(masm);
   }
 
   masm->FinalizeSpills();
@@ -981,7 +989,6 @@ LUse* LInterval::UseAt(int pos) {
 
 
 LUse* LInterval::UseAfter(int pos, LUse::Type use_type) {
-  assert(pos <= end());
   LUseList::Item* head = uses_.head();
   for (; head != NULL; head = head->next()) {
     LUse* use = head->value();
@@ -989,6 +996,12 @@ LUse* LInterval::UseAfter(int pos, LUse::Type use_type) {
         (use_type == LUse::kAny || use->type() == use_type)) {
       return use;
     }
+  }
+
+  LIntervalList::Item* ihead = split_children_.head();
+  for (; ihead != NULL; ihead = ihead->next()) {
+    LUse* result = ihead->value()->UseAfter(pos, use_type);
+    if (result != NULL) return result;
   }
 
   return NULL;

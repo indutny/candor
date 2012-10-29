@@ -156,6 +156,7 @@ inline HIRInstruction* HIRBlock::Add(HIRInstruction::Type type,
 
 
 inline HIRInstruction* HIRBlock::Add(HIRInstruction* instr) {
+  instr->ast(g_->current_node());
   if (!ended_) instructions_.Push(instr);
 
   return instr;

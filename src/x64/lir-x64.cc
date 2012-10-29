@@ -455,6 +455,15 @@ void LCollectGarbage::Generate(Masm* masm) {
 
 
 void LGetStackTrace::Generate(Masm* masm) {
+  uint32_t ip = masm->offset();
+
+  // Pass ip
+  __ mov(rax, Immediate(0));
+  RelocationInfo* r = new RelocationInfo(RelocationInfo::kAbsolute,
+                                         RelocationInfo::kQuad,
+                                         masm->offset() - 8);
+  masm->relocation_info_.Push(r);
+  r->target(ip);
   __ Call(masm->stubs()->GetStackTraceStub());
 }
 

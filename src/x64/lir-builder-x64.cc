@@ -162,8 +162,10 @@ void LGen::VisitDeleteProperty(HIRInstruction* instr) {
 
 
 void LGen::VisitGetStackTrace(HIRInstruction* instr) {
-  Bind(new LGetStackTrace())
+  LInstruction* trace = Bind(new LGetStackTrace())
       ->MarkHasCall();
+
+  ResultFromFixed(trace, rax);
 }
 
 

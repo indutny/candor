@@ -31,15 +31,6 @@ HIRGen::HIRGen(Heap* heap, AstNode* root) : Visitor<HIRInstruction>(kPreorder),
 }
 
 
-HIRInstruction* HIRGen::Visit(AstNode* stmt) {
-  HIRInstruction* res = Visitor<HIRInstruction>::Visit(stmt);
-
-  if (res != NULL && res->ast() == NULL) res->ast(stmt);
-
-  return res;
-}
-
-
 void HIRGen::PrunePhis() {
   HIRPhiList queue_;
 
@@ -472,8 +463,7 @@ HIRInstruction* HIRGen::VisitCall(AstNode* stmt) {
       return Add(HIRInstruction::kNil);
     } else if (name->length() == 8 &&
                strncmp(name->value(), "__$trace", 8) == 0) {
-      Add(HIRInstruction::kGetStackTrace);
-      return Add(HIRInstruction::kNil);
+      return Add(HIRInstruction::kGetStackTrace);
     }
   }
 
