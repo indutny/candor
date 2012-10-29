@@ -260,7 +260,18 @@ void LFunction::Generate(Masm* masm) {
 
 
 void LCall::Generate(Masm* masm) {
-  Label not_function, done;
+  Label not_function, even_argc, done;
+
+  // argc * 2
+  __ mov(scratch, rax);
+
+  __ testb(scratch, Immediate(HNumber::Tag(1)));
+  __ jmp(kEq, &even_argc);
+  __ addq(scratch, Immediate(HNumber::Tag(1)));
+  __ bind(&even_argc);
+  __ shl(scratch, Immediate(2));
+  __ addq(scratch, rsp);
+  Masm::Spill rsp_s(masm, scratch);
 
   // rax <- argc
   // rbx <- fn
@@ -270,7 +281,6 @@ void LCall::Generate(Masm* masm) {
   __ IsHeapObject(Heap::kTagFunction, rbx, &not_function, NULL);
 
   Masm::Spill ctx(masm, context_reg), root(masm, root_reg);
-  Masm::Spill rsp_s(masm, rsp);
   Masm::Spill fn_s(masm, rbx);
 
   // rax <- argc
@@ -291,7 +301,6 @@ void LCall::Generate(Masm* masm) {
   __ mov(r13, scratch);
 
   fn_s.Unspill();
-  rsp_s.Unspill();
   root.Unspill();
   ctx.Unspill();
 
@@ -301,6 +310,9 @@ void LCall::Generate(Masm* masm) {
   __ mov(rax, Immediate(Heap::kTagNil));
 
   __ bind(&done);
+
+  // Unwind all arguments pushed on stack
+  rsp_s.Unspill(rsp);
 }
 
 
