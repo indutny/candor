@@ -143,5 +143,17 @@ HIRBinOp::HIRBinOp(HIRGen* g, HIRBlock* block, BinOp::BinOpType type) :
     binop_type_(type) {
 }
 
+
+HIRLoadContext::HIRLoadContext(HIRGen* g, HIRBlock* block, ScopeSlot* slot) :
+    HIRInstruction(g, block, kLoadContext),
+    context_slot_(slot) {
+}
+
+
+HIRStoreContext::HIRStoreContext(HIRGen* g, HIRBlock* block, ScopeSlot* slot) :
+    HIRInstruction(g, block, kStoreContext),
+    context_slot_(slot) {
+}
+
 } // namespace internal
 } // namespace candor

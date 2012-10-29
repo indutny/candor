@@ -110,7 +110,8 @@ HIRInstruction* HIRGen::VisitFunction(AstNode* stmt) {
         // No instruction is needed
         Assign(value->slot(), load_arg);
       } else {
-        Add(HIRInstruction::kStoreContext, value->slot())->AddArg(load_arg);
+        Add(new HIRStoreContext(this, current_block(), value->slot()))
+            ->AddArg(load_arg);
       }
 
       // Do not generate index if args has ended
@@ -174,7 +175,8 @@ HIRInstruction* HIRGen::VisitAssign(AstNode* stmt) {
       Assign(value->slot(), rhs);
       return rhs;
     } else {
-      return Add(HIRInstruction::kStoreContext, value->slot())->AddArg(rhs);
+      return Add(new HIRStoreContext(this, current_block(), value->slot()))
+          ->AddArg(rhs);
     }
   } else if (stmt->lhs()->is(AstNode::kMember)) {
     HIRInstruction* property = Visit(stmt->lhs()->rhs());
@@ -212,7 +214,7 @@ HIRInstruction* HIRGen::VisitValue(AstNode* stmt) {
       return Add(Assign(slot, phi));
     }
   } else {
-    return Add(HIRInstruction::kLoadContext, slot);
+    return Add(new HIRLoadContext(this, current_block(), slot));
   }
 }
 
@@ -457,10 +459,12 @@ HIRInstruction* HIRGen::VisitCall(AstNode* stmt) {
   if (fn->variable()->is(AstNode::kValue)) {
     AstNode* name = AstValue::Cast(fn->variable())->name();
     if (name->length() == 5 && strncmp(name->value(), "__$gc", 5) == 0) {
-      return Add(HIRInstruction::kCollectGarbage);
+      Add(HIRInstruction::kCollectGarbage);
+      return Add(HIRInstruction::kNil);
     } else if (name->length() == 8 &&
                strncmp(name->value(), "__$trace", 8) == 0) {
-      return Add(HIRInstruction::kGetStackTrace);
+      Add(HIRInstruction::kGetStackTrace);
+      return Add(HIRInstruction::kNil);
     }
   }
 

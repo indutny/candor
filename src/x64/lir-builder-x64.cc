@@ -83,47 +83,52 @@ void LGen::VisitBinOp(HIRInstruction* instr) {
 
 
 void LGen::VisitSizeof(HIRInstruction* instr) {
-  Bind(new LSizeof())
+  LInstruction* op = Bind(new LSizeof())
       ->MarkHasCall()
-      ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister)
-      ->SetResult(CreateVirtual(), LUse::kRegister);
+      ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister);
+
+  ResultFromFixed(op, rax);
 }
 
 
 void LGen::VisitTypeof(HIRInstruction* instr) {
-  Bind(new LTypeof())
+  LInstruction* op = Bind(new LTypeof())
       ->MarkHasCall()
-      ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister)
-      ->SetResult(CreateVirtual(), LUse::kRegister);
+      ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister);
+
+  ResultFromFixed(op, rax);
 }
 
 
 void LGen::VisitKeysof(HIRInstruction* instr) {
-  Bind(new LKeysof())
+  LInstruction* op = Bind(new LKeysof())
       ->MarkHasCall()
-      ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister)
-      ->SetResult(CreateVirtual(), LUse::kRegister);
+      ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister);
+
+  ResultFromFixed(op, rax);
 }
 
 
 void LGen::VisitClone(HIRInstruction* instr) {
-  Bind(new LClone())
+  LInstruction* op = Bind(new LClone())
       ->MarkHasCall()
-      ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister)
-      ->SetResult(CreateVirtual(), LUse::kRegister);
+      ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister);
+
+  ResultFromFixed(op, rax);
 }
 
 
 void LGen::VisitLoadContext(HIRInstruction* instr) {
   Bind(new LLoadContext())
-      ->SetSlot(instr->slot())
+      ->SetSlot(HIRLoadContext::Cast(instr)->context_slot())
       ->SetResult(CreateVirtual(), LUse::kRegister);
 }
 
 
 void LGen::VisitStoreContext(HIRInstruction* instr) {
   Bind(new LStoreContext())
-      ->SetSlot(instr->slot())
+      ->SetSlot(HIRStoreContext::Cast(instr)->context_slot())
+      ->AddScratch(CreateVirtual())
       ->AddArg(instr->left(), LUse::kRegister)
       ->SetResult(CreateVirtual(), LUse::kRegister);
 }

@@ -166,6 +166,16 @@ inline BinOp::BinOpType HIRBinOp::binop_type() {
   return binop_type_;
 }
 
+
+inline ScopeSlot* HIRLoadContext::context_slot() {
+  return context_slot_;
+}
+
+
+inline ScopeSlot* HIRStoreContext::context_slot() {
+  return context_slot_;
+}
+
 } // namespace internal
 } // namespace candor
 

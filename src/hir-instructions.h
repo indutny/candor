@@ -184,6 +184,30 @@ class HIRBinOp : public HIRInstruction {
   BinOp::BinOpType binop_type_;
 };
 
+class HIRLoadContext : public HIRInstruction {
+ public:
+  HIRLoadContext(HIRGen* g, HIRBlock* block, ScopeSlot* slot);
+
+  inline ScopeSlot* context_slot();
+
+  HIR_DEFAULT_METHODS(LoadContext)
+
+ private:
+  ScopeSlot* context_slot_;
+};
+
+class HIRStoreContext : public HIRInstruction {
+ public:
+  HIRStoreContext(HIRGen* g, HIRBlock* block, ScopeSlot* slot);
+
+  inline ScopeSlot* context_slot();
+
+  HIR_DEFAULT_METHODS(StoreContext)
+
+ private:
+  ScopeSlot* context_slot_;
+};
+
 #undef HIR_DEFAULT_METHODS
 
 } // namespace internal

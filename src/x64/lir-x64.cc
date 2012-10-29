@@ -188,6 +188,13 @@ void LStoreProperty::Generate(Masm* masm) {
   __ bind(&done);
 }
 
+
+void LDeleteProperty::Generate(Masm* masm) {
+  // rax <- object
+  // rbx <- property
+  __ Call(masm->stubs()->GetDeletePropertyStub());
+}
+
 #define BINARY_SUB_TYPES(V) \
     V(Add) \
     V(Sub) \
@@ -327,42 +334,107 @@ void LAlignStack::Generate(Masm* masm) {
 
 
 void LLoadContext::Generate(Masm* masm) {
+  int depth = slot()->depth();
+
+  if (depth == -1) {
+    // Global object lookup
+    Operand global(root_reg, HContext::GetIndexDisp(Heap::kRootGlobalIndex));
+    __ mov(result->ToRegister(), global);
+    return;
+  }
+
+  __ mov(result->ToRegister(), context_reg);
+
+  // Lookup context
+  while (--depth >= 0) {
+    Operand parent(result->ToRegister(), HContext::kParentOffset);
+    __ mov(result->ToRegister(), parent);
+  }
+
+  Operand res(result->ToRegister(),
+              HContext::GetIndexDisp(slot()->index()));
+  __ mov(result->ToRegister(), res);
 }
 
 
 void LStoreContext::Generate(Masm* masm) {
-}
+  int depth = slot()->depth();
 
+  // Global can't be replaced
+  if (depth == -1) return;
 
-void LDeleteProperty::Generate(Masm* masm) {
+  __ mov(scratches[0]->ToRegister(), context_reg);
+
+  // Lookup context
+  while (--depth >= 0) {
+    Operand parent(scratches[0]->ToRegister(), HContext::kParentOffset);
+    __ mov(scratches[0]->ToRegister(), parent);
+  }
+
+  Operand res(scratches[0]->ToRegister(),
+              HContext::GetIndexDisp(slot()->index()));
+  __ mov(res, inputs[0]->ToRegister());
 }
 
 
 void LNot::Generate(Masm* masm) {
+  // rax <- value
+
+  // Coerce value to boolean first
+  __ Call(masm->stubs()->GetCoerceToBooleanStub());
+
+  Label on_false, done;
+
+  // Jmp to `right` block if value is `false`
+  Operand bvalue(rax, HBoolean::kValueOffset);
+  __ cmpb(bvalue, Immediate(0));
+  __ jmp(kEq, &on_false);
+
+  Operand truev(root_reg, HContext::GetIndexDisp(Heap::kRootTrueIndex));
+  Operand falsev(root_reg, HContext::GetIndexDisp(Heap::kRootFalseIndex));
+
+  // !true = false
+  __ mov(rax, falsev);
+
+  __ jmp(&done);
+  __ bind(&on_false);
+
+  // !false = true
+  __ mov(rax, truev);
+
+  __ bind(&done);
+
+  // result -> rax
 }
 
 
 void LTypeof::Generate(Masm* masm) {
+  __ Call(masm->stubs()->GetTypeofStub());
 }
 
 
 void LSizeof::Generate(Masm* masm) {
+  __ Call(masm->stubs()->GetSizeofStub());
 }
 
 
 void LKeysof::Generate(Masm* masm) {
+  __ Call(masm->stubs()->GetKeysofStub());
 }
 
 
 void LClone::Generate(Masm* masm) {
+  __ Call(masm->stubs()->GetCloneObjectStub());
 }
 
 
 void LCollectGarbage::Generate(Masm* masm) {
+  __ Call(masm->stubs()->GetCollectGarbageStub());
 }
 
 
 void LGetStackTrace::Generate(Masm* masm) {
+  __ Call(masm->stubs()->GetStackTraceStub());
 }
 
 } // namespace internal

@@ -114,6 +114,7 @@ class LInstruction : public ZoneObject {
   int result_count() { return result != NULL; }
   int scratch_count() { return scratch_count_; }
 
+  inline ScopeSlot* slot() { assert(slot_ != NULL); return slot_; }
   inline HIRInstruction* hir() { return hir_; }
   inline void hir(HIRInstruction* hir) { hir_ = hir; }
 
