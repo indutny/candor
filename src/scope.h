@@ -112,6 +112,7 @@ class Scope : public HashMap<StringKey<ZoneObject>, ScopeSlot, ZoneObject> {
   Scope* parent_;
 
   friend class ScopeSlot;
+  friend class ScopeAnalyze;
 };
 
 // Runs on complete AST tree to wrap each kName into AstValue

@@ -38,7 +38,12 @@ using namespace internal;
       }\
       p.Print(out, 1000);\
       assert(ast != NULL);\
-      assert(strcmp(expected, out) == 0);\
+      if (strcmp(expected, out) != 0) {\
+        fprintf(stderr, "PARSER test failed, got:\n%s\n expected:\n%s\n",\
+                out,\
+                expected);\
+        abort();\
+      }\
       ast = NULL;\
     }
 

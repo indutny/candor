@@ -58,6 +58,7 @@ TEST_START(parser)
   PARSER_TEST("a().x", "[kMember [kCall [a] @[] ] [kProperty x]]")
   PARSER_TEST("a()()()", "[kCall [kCall [kCall [a] @[] ] @[] ] @[] ]")
   PARSER_TEST("a(b,c,d)", "[kCall [a] @[[b] [c] [d]] ]")
+  PARSER_TEST("a(b,c,d...)", "[kCall [a] @[[b] [c] [kVarArg d [d]]] ]")
   PARSER_TEST("a:b()",
               "[kCall [kMember [a] [kProperty b]] @[[kSelf ]] ]")
   PARSER_TEST("a:b(c, d)",

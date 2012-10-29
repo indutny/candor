@@ -200,8 +200,26 @@ AstNode* ScopeAnalyze::VisitFunction(AstNode* node) {
   if (fn->children()->length() != 0) {
     AstList::Item* item = fn->args()->head();
     for (; item != NULL; item = item->next()) {
-      AstNode* next = Visit(item->value());
-      if (next != NULL) item->value(next);
+      AstNode* arg = item->value();
+      bool varg = false;
+      if (arg->is(AstNode::kVarArg)) {
+        arg = arg->lhs();
+        varg = true;
+      }
+      assert(arg->is(AstNode::kName));
+
+      ScopeSlot* slot = new ScopeSlot(ScopeSlot::kStack);
+      scope.Set(new StringKey<ZoneObject>(arg->value(), arg->length()), slot);
+      scope.stack_count_++;
+
+      AstValue* value = new AstValue(slot, arg);
+
+      if (varg) {
+        item->value()->children()->Pop();
+        item->value()->children()->Push(value);
+      } else {
+        item->value(value);
+      }
     }
   }
 

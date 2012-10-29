@@ -13,6 +13,12 @@ TEST_START(scope)
   SCOPE_TEST("() { a }", "[kFunction (anonymous) @[] [a @stack:0]]")
   SCOPE_TEST("a\n() { a }", "[a @context[0]:0] "
                             "[kFunction (anonymous) @[] [a @context[1]:0]]")
+  SCOPE_TEST("a\n(a) { a }", "[a @stack:0] "
+                            "[kFunction (anonymous) @[[a @stack:0]] [a @stack:0]]")
+  SCOPE_TEST("a\n(a, b) { a\nb }",
+             "[a @stack:0] "
+             "[kFunction (anonymous) @[[a @stack:0] [b @stack:1]] "
+             "[a @stack:0] [b @stack:1]]")
   SCOPE_TEST("() { a\n() { a } }",
              "[kFunction (anonymous) @[] [a @context[0]:0] "
              "[kFunction (anonymous) @[] [a @context[1]:0]]]")
