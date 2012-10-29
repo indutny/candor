@@ -79,7 +79,7 @@ inline Condition Masm::BinOpToCondition(BinOp::BinOpType type,
 
 inline void Masm::SpillSlot(uint32_t index, Operand& op) {
   op.base(rbp);
-  op.disp(-spill_offset_ - HValue::kPointerSize * index);
+  op.disp(-spill_offset_ - 8 - HValue::kPointerSize * index);
 }
 
 } // namespace internal

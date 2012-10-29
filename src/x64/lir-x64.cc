@@ -19,7 +19,7 @@ Register LUse::ToRegister() {
 
 Operand* LUse::ToOperand() {
   assert(is_stackslot());
-  return new Operand(rbp, HValue::kPointerSize * (interval()->index() + 2));
+  return new Operand(rbp, -HValue::kPointerSize * (interval()->index() + 2));
 }
 
 #define __ masm->

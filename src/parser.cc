@@ -157,21 +157,23 @@ AstNode* Parser::ParseStatement(ParseStatementType type) {
 
 #define BINOP_PRI1\
     case kLOr:\
-    case kLAnd:
 
 #define BINOP_PRI2\
+    case kLAnd:\
+
+#define BINOP_PRI3\
     case kEq:\
     case kNe:\
     case kStrictEq:\
     case kStrictNe:
 
-#define BINOP_PRI3\
+#define BINOP_PRI4\
     case kLt:\
     case kGt:\
     case kLe:\
     case kGe:
 
-#define BINOP_PRI4\
+#define BINOP_PRI5\
     case kBOr:\
     case kBAnd:\
     case kBXor:\
@@ -180,11 +182,11 @@ AstNode* Parser::ParseStatement(ParseStatementType type) {
     case kShr:\
     case kUShr:
 
-#define BINOP_PRI5\
+#define BINOP_PRI6\
     case kAdd:\
     case kSub:
 
-#define BINOP_PRI6\
+#define BINOP_PRI7\
     case kMul:\
     case kDiv:
 
@@ -329,6 +331,8 @@ AstNode* Parser::ParseExpression(int priority) {
      case 6:
       BINOP_SWITCH(type, result, 6, BINOP_PRI6)
      case 7:
+      BINOP_SWITCH(type, result, 7, BINOP_PRI7)
+     case 8:
       break;
       // Do not parse binary operations
     }
@@ -348,7 +352,7 @@ AstNode* Parser::ParsePrefixUnOp(TokenType type) {
   {
     NegateSign n(this, type);
 
-    expr = ParseExpression(7);
+    expr = ParseExpression(8);
   }
 
   if (expr == NULL) {

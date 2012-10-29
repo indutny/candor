@@ -540,7 +540,7 @@ void LGen::AllocateBlockedReg(LInterval* current) {
         LInterval* interval = head->value();
 
         // Fixed intervals can't be split
-        if (interval->IsFixed()) continue;
+        if (interval->IsFixed() || !interval->IsEqual(current)) continue;
 
         int pos = current->FindIntersection(interval);
         if (pos == -1) continue;
