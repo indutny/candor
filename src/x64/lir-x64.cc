@@ -153,13 +153,12 @@ void LLoadProperty::Generate(Masm* masm) {
   __ mov(rax, slot);
 
   __ bind(&done);
-  __ Move(result, rax);
 }
 
 
 void LStoreProperty::Generate(Masm* masm) {
-  __ push(rcx);
   __ push(rax);
+  __ push(rcx);
 
   // rax <- object
   // rbx <- property
@@ -172,12 +171,12 @@ void LStoreProperty::Generate(Masm* masm) {
   __ CheckGC();
   __ inc(rax);
 
+  __ pop(rcx);
+  __ pop(rbx);
+
   Label done;
-
-  __ Pop(rbx);
-  __ Pop(rcx);
-
   __ IsNil(rax, NULL, &done);
+
   Operand qmap(rbx, HObject::kMapOffset);
   __ mov(rbx, qmap);
   __ addq(rax, rbx);

@@ -173,11 +173,11 @@ HIRInstruction* HIRGen::VisitAssign(AstNode* stmt) {
     if (value->slot()->is_stack()) {
       // No instruction is needed
       Assign(value->slot(), rhs);
-      return rhs;
     } else {
-      return Add(new HIRStoreContext(this, current_block(), value->slot()))
+      Add(new HIRStoreContext(this, current_block(), value->slot()))
           ->AddArg(rhs);
     }
+    return rhs;
   } else if (stmt->lhs()->is(AstNode::kMember)) {
     HIRInstruction* property = Visit(stmt->lhs()->rhs());
     HIRInstruction* receiver = Visit(stmt->lhs()->lhs());

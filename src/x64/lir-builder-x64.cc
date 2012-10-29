@@ -129,17 +129,17 @@ void LGen::VisitStoreContext(HIRInstruction* instr) {
   Bind(new LStoreContext())
       ->SetSlot(HIRStoreContext::Cast(instr)->context_slot())
       ->AddScratch(CreateVirtual())
-      ->AddArg(instr->left(), LUse::kRegister)
-      ->SetResult(CreateVirtual(), LUse::kRegister);
+      ->AddArg(instr->left(), LUse::kRegister);
 }
 
 
 void LGen::VisitLoadProperty(HIRInstruction* instr) {
-  LInstruction* store = Bind(new LLoadProperty())
+  LInstruction* load = Bind(new LLoadProperty())
       ->MarkHasCall()
       ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister)
-      ->AddArg(ToFixed(instr->right(), rbx), LUse::kRegister)
-      ->SetResult(CreateVirtual(), LUse::kRegister);
+      ->AddArg(ToFixed(instr->right(), rbx), LUse::kRegister);
+
+  ResultFromFixed(load, rax);
 }
 
 
@@ -150,8 +150,6 @@ void LGen::VisitStoreProperty(HIRInstruction* instr) {
       ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister)
       ->AddArg(ToFixed(instr->right(), rbx), LUse::kRegister)
       ->SetResult(ToFixed(instr->third(), rcx), LUse::kRegister);
-
-  load->Propagate(instr->third());
 }
 
 
