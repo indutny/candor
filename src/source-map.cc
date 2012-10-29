@@ -2,7 +2,8 @@
 #include "utils.h" // HashMap
 
 #include <stdlib.h> // NULL
-#include <sys/types.h> // off_t
+#include <unistd.h> // intptr_t
+#include <stdint.h> // uint32_t
 
 namespace candor {
 namespace internal {
@@ -17,7 +18,7 @@ void SourceMap::Commit(const char* filename,
                        const char* source,
                        uint32_t length,
                        char* addr) {
-  off_t addr_o = reinterpret_cast<off_t>(addr);
+  intptr_t addr_o = reinterpret_cast<intptr_t>(addr);
 
   SourceInfo* info;
   while ((info = queue()->Shift()) != NULL) {
@@ -32,7 +33,7 @@ void SourceMap::Commit(const char* filename,
 
 
 SourceInfo* SourceMap::Get(char* addr) {
-  off_t addr_o = reinterpret_cast<off_t>(addr);
+  intptr_t addr_o = reinterpret_cast<intptr_t>(addr);
 
   return SourceMapBase::Get(NumberKey::New(addr_o));
 }

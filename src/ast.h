@@ -17,7 +17,7 @@ class AstNode;
 class AstValue;
 
 // Just to simplify future use cases
-typedef List<AstNode*, ZoneObject> AstList;
+typedef ZoneList<AstNode*> AstList;
 
 #define TYPE_MAPPING_NORMAL(V)\
     V(kBlock)\
@@ -388,6 +388,9 @@ class UnOp : public AstNode {
     return subtype_ == kPreInc || subtype_ == kPostInc ||
            subtype_ == kPreDec || subtype_ == kPostDec;
   }
+  inline bool is_postfix() {
+    return subtype_ == kPostInc || subtype_ == kPostDec;
+  }
   inline UnOpType subtype() { return subtype_; }
 
  protected:
@@ -458,9 +461,11 @@ class FunctionLiteral : public AstNode {
 
       // VarArg should be the last argument of a call statement
       AstList::Item* head;
-      for (head = children()->head(); head != NULL; head = head->next()) {
-        if (head->value()->is(kVarArg) && head->next() != NULL) {
-          return false;
+      bool varg = false;
+      for (head = args_.head(); head != NULL; head = head->next()) {
+        if (head->value()->is(kVarArg)) {
+          if (varg) return false;
+          varg = true;
         }
       }
 

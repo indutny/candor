@@ -1,5 +1,5 @@
-#include "assembler-x64.h"
-#include "assembler-x64-inl.h"
+#include "assembler.h"
+#include "assembler-inl.h"
 
 namespace candor {
 namespace internal {
@@ -13,6 +13,15 @@ void RelocationInfo::Relocate(char* buffer) {
     addr = target_;
   } else {
     addr = target_ - offset_;
+
+    // Add offset
+    switch (size_) {
+     case kByte: addr -= 1; break;
+     case kWord: addr -= 2; break;
+     case kLong: addr -= 4; break;
+     case kQuad: addr -= 8; break;
+     default: UNEXPECTED break;
+    }
   }
 
   switch (size_) {
@@ -29,13 +38,14 @@ void RelocationInfo::Relocate(char* buffer) {
     *reinterpret_cast<uint64_t*>(buffer + offset_) = addr;
     break;
    default:
+    UNEXPECTED
     break;
   }
 }
 
 
 void Assembler::Relocate(char* buffer) {
-  List<RelocationInfo*, ZoneObject>::Item* item = relocation_info_.head();
+  ZoneList<RelocationInfo*>::Item* item = relocation_info_.head();
   while (item != NULL) {
     item->value()->Relocate(buffer);
     item = item->next();
@@ -179,8 +189,8 @@ void Assembler::testl(Register dst, Immediate src) {
 
 void Assembler::jmp(Label* label) {
   emitb(0xE9);
-  emitl(0x12345678);
-  label->use(offset() - 4);
+  emitl(0x11111111);
+  if (label != NULL) label->use(this, offset() - 4);
 }
 
 
@@ -203,41 +213,50 @@ void Assembler::jmp(Condition cond, Label* label) {
    default:
     UNEXPECTED
   }
-  emitl(0x12345678);
-  label->use(offset() - 4);
+  emitl(0x11111111);
+  if (label != NULL) label->use(this, offset() - 4);
 }
 
 
-void Assembler::movq(Register dst, Register src) {
+void Assembler::mov(Register dst, Register src) {
   emit_rexw(dst, src);
   emitb(0x8B);
   emit_modrm(dst, src);
 }
 
 
-void Assembler::movq(Register dst, Operand& src) {
+void Assembler::mov(Register dst, Operand& src) {
   emit_rexw(dst, src);
   emitb(0x8B);
   emit_modrm(dst, src);
 }
 
 
-void Assembler::movq(Operand& dst, Register src) {
+void Assembler::mov(Operand& dst, Register src) {
   emit_rexw(src, dst);
   emitb(0x89);
   emit_modrm(src, dst);
 }
 
 
-void Assembler::movq(Register dst, Immediate src) {
+void Assembler::mov(Register dst, Immediate src) {
   emit_rexw(rax, dst);
   emitb(0xB8 | dst.low());
   emitq(src.value());
 }
 
 
-void Assembler::movq(Operand& dst, Immediate src) {
-  emit_rexw(dst);
+void Assembler::mov(Operand& dst, Immediate src) {
+  // One can't just load 64bit value into the operand
+  if (src.value() >= UINT32_MAX) {
+    push(scratch);
+    mov(scratch, src);
+    mov(dst, scratch);
+    pop(scratch);
+    return;
+  }
+
+  emit_rexw(rax, dst);
   emitb(0xC7);
   emit_modrm(dst);
   emitl(src.value());
@@ -486,7 +505,7 @@ void Assembler::callq(Operand& dst) {
 // Floating point instructions
 
 
-void Assembler::movqd(DoubleRegister dst, Register src) {
+void Assembler::movd(DoubleRegister dst, Register src) {
   emitb(0x66);
   emit_rexw(dst, src);
   emitb(0x0F);
@@ -495,7 +514,7 @@ void Assembler::movqd(DoubleRegister dst, Register src) {
 }
 
 
-void Assembler::movqd(Register dst, DoubleRegister src) {
+void Assembler::movd(Register dst, DoubleRegister src) {
   emitb(0x66);
   emit_rexw(src, dst);
   emitb(0x0F);
@@ -504,7 +523,7 @@ void Assembler::movqd(Register dst, DoubleRegister src) {
 }
 
 
-void Assembler::movqd(Operand& dst, DoubleRegister src) {
+void Assembler::movd(Operand& dst, DoubleRegister src) {
   emitb(0x66);
   emit_rexw(src, dst);
   emitb(0x0F);

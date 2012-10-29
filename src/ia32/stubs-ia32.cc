@@ -58,7 +58,7 @@ void EntryStub::Generate() {
   __ EnterFramePrologue();
 
   // Push all arguments to stack
-  Label even(masm()), args(masm()), args_loop(masm()), unwind_even(masm());
+  Label even, args, args_loop, unwind_even;
   __ movl(eax, esi);
   __ Untag(eax);
 
@@ -133,7 +133,7 @@ void AllocateStub::Generate() {
   Operand size(ebp, 3 * 4);
   Operand tag(ebp, 2 * 4);
 
-  Label runtime_allocate(masm()), done(masm());
+  Label runtime_allocate, done;
 
   Heap* heap = masm()->heap();
   Immediate heapref(reinterpret_cast<uint32_t>(heap));
@@ -277,7 +277,7 @@ void VarArgStub::Generate() {
   // Array index
   __ xorl(esi, esi);
 
-  Label loop_start(masm()), loop_cond(masm());
+  Label loop_start, loop_cond;
 
   argc_s.Unspill(ecx);
   __ jmp(&loop_cond);
@@ -353,7 +353,7 @@ void PutVarArgStub::Generate() {
 
   Masm::Spill scratch_s(masm(), scratch);
 
-  Label loop_start(masm()), loop_cond(masm());
+  Label loop_start, loop_cond;
 
   // ebx <- index
   __ movl(ebx, Immediate(HNumber::Tag(0)));
@@ -432,7 +432,7 @@ void TypeofStub::Generate() {
 
   // edx <- root register
 
-  Label not_nil(masm()), not_unboxed(masm()), done(masm());
+  Label not_nil, not_unboxed, done;
 
   // Typeof 1 = 'number'
   __ IsUnboxed(eax, &not_unboxed, NULL);
@@ -527,8 +527,8 @@ void LookupPropertyStub::Generate() {
   __ push(ebx);
   __ push(ecx);
 
-  Label is_object(masm()), is_array(masm()), cleanup(masm()), slow_case(masm());
-  Label non_object_error(masm()), done(masm());
+  Label is_object, is_array, cleanup, slow_case;
+  Label non_object_error, done;
 
   // eax <- object
   // edx <- property
@@ -569,7 +569,7 @@ void LookupPropertyStub::Generate() {
     __ movl(esi, qmap);
     __ addl(esi, ebx);
 
-    Label match(masm());
+    Label match;
 
     // ebx now contains pointer to the key slot in map's space
     // compare key's addresses
@@ -586,7 +586,7 @@ void LookupPropertyStub::Generate() {
 
     __ bind(&match);
 
-    Label fast_case_end(masm());
+    Label fast_case_end;
 
     // Insert key if was asked
     __ cmpl(ecx, Immediate(0));
@@ -640,7 +640,7 @@ void LookupPropertyStub::Generate() {
     key_s.Unspill(edx);
 
     // Check if length was increased
-    Label length_set(masm());
+    Label length_set;
 
     Operand qlength(eax, HArray::kLengthOffset);
     __ movl(ebx, qlength);
@@ -723,7 +723,7 @@ void CoerceToBooleanStub::Generate() {
 
   // edx <- root register
 
-  Label unboxed(masm()), truel(masm()), not_bool(masm()), coerced_type(masm());
+  Label unboxed, truel, not_bool, coerced_type;
 
   // Check type and coerce if not boolean
   __ IsUnboxed(eax, NULL, &unboxed);
@@ -787,7 +787,7 @@ void CloneObjectStub::Generate() {
   __ push(ebx);
   __ push(ecx);
 
-  Label non_object(masm()), done(masm());
+  Label non_object, done;
 
   // eax <- object
   __ IsUnboxed(eax, NULL, &non_object);
@@ -820,7 +820,7 @@ void CloneObjectStub::Generate() {
   // NOTE: ecx is tagged here
 
   // Copy all fields from it
-  Label loop_start(masm()), loop_cond(masm());
+  Label loop_start, loop_cond;
   __ jmp(&loop_cond);
   __ bind(&loop_start);
 
@@ -967,8 +967,8 @@ void BinOpStub::Generate() {
   // Allocate space for spill slots
   __ AllocateSpills(0);
 
-  Label not_unboxed(masm()), done(masm());
-  Label lhs_to_heap(masm()), rhs_to_heap(masm());
+  Label not_unboxed, done;
+  Label lhs_to_heap, rhs_to_heap;
 
   if (type() != BinOp::kDiv) {
     // Try working with unboxed numbers
@@ -1034,7 +1034,7 @@ void BinOpStub::Generate() {
       // Otherwise cmp won't work for negative numbers
       __ cmpl(eax, ecx);
 
-      Label true_(masm()), cond_end(masm());
+      Label true_, cond_end;
 
       Operand truev(edx, HContext::GetIndexDisp(Heap::kRootTrueIndex));
       Operand falsev(edx, HContext::GetIndexDisp(Heap::kRootFalseIndex));
@@ -1058,8 +1058,8 @@ void BinOpStub::Generate() {
 
   __ bind(&not_unboxed);
 
-  Label box_rhs(masm()), both_boxed(masm());
-  Label call_runtime(masm()), nil_result(masm());
+  Label box_rhs, both_boxed;
+  Label call_runtime, nil_result;
 
   __ IsNil(eax, NULL, &call_runtime);
   __ IsNil(ecx, NULL, &call_runtime);
@@ -1156,7 +1156,7 @@ void BinOpStub::Generate() {
     Condition cond = masm()->BinOpToCondition(type(), Masm::kDouble);
     __ ucomisd(xmm1, xmm2);
 
-    Label true_(masm()), comp_end(masm());
+    Label true_, comp_end;
 
     Operand truev(edx, HContext::GetIndexDisp(Heap::kRootTrueIndex));
     Operand falsev(edx, HContext::GetIndexDisp(Heap::kRootFalseIndex));
@@ -1189,7 +1189,7 @@ void BinOpStub::Generate() {
   }
 #undef BINARY_ENUM_CASES
 
-  Label call(masm());
+  Label call;
 
   __ Pushad();
 

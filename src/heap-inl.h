@@ -1,8 +1,7 @@
 #ifndef _SRC_HEAP_INL_H_
 #define _SRC_HEAP_INL_H_
 
-#include <stdint.h> // int64_t
-#include <sys/types.h> // off_t
+#include <stdint.h> // int64_t, intptr_t
 
 namespace candor {
 namespace internal {
@@ -106,7 +105,7 @@ inline int64_t HNumber::Tag(int64_t value) {
 
 
 inline char* HNumber::ToPointer(int64_t value) {
-  off_t oval = static_cast<off_t>(HNumber::Tag(value));
+  intptr_t oval = static_cast<intptr_t>(HNumber::Tag(value));
   return reinterpret_cast<char*>(oval);
 }
 

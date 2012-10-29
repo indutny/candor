@@ -135,7 +135,7 @@ class Lexer {
     return offset_ + num - 1 < length_;
   }
 
-  inline List<Token*, ZoneObject>* queue() {
+  inline ZoneList<Token*>* queue() {
     return &queue_;
   }
 
@@ -143,7 +143,7 @@ class Lexer {
   uint32_t offset_;
   uint32_t length_;
 
-  List<Token*, ZoneObject> queue_;
+  ZoneList<Token*> queue_;
 };
 
 } // namespace internal

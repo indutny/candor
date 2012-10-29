@@ -2,6 +2,8 @@
 #define _SRC_STUBS_H_
 
 #include "macroassembler.h" // Masm
+#include "macroassembler-inl.h"
+
 #include "code-space.h" // CodeSpace
 #include "zone.h" // Zone
 #include "ast.h" // BinOpType
@@ -15,6 +17,8 @@ namespace internal {
 #define STUBS_LIST(V)\
     V(Entry)\
     V(Allocate)\
+    V(AllocateObject)\
+    V(AllocateFunction)\
     V(CallBinding)\
     V(VarArg)\
     V(PutVarArg)\

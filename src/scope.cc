@@ -143,12 +143,23 @@ void ScopeSlot::Enumerate(void* scope, ScopeSlot* slot) {
 }
 
 
+void ScopeSlot::Print(PrintBuffer* p) {
+  if (is_stack()) {
+    p->Print("[st:%d]", index());
+  } else if (is_context()) {
+    p->Print("[ctx %d:%d]", depth(), index());
+  } else if (is_immediate()) {
+    p->Print("[imm %p]", value());
+  }
+}
+
+
 void Scope::Analyze(AstNode* ast) {
   ScopeAnalyze a(ast);
 }
 
 
-ScopeAnalyze::ScopeAnalyze(AstNode* ast) : Visitor(kBreadthFirst),
+ScopeAnalyze::ScopeAnalyze(AstNode* ast) : Visitor<AstNode>(kBreadthFirst),
                                            ast_(ast),
                                            scope_(NULL) {
   Visit(ast);
@@ -160,15 +171,26 @@ AstNode* ScopeAnalyze::VisitFunction(AstNode* node) {
 
   // Put variable into outer scope
   if (fn->variable() != NULL) {
-    fn->variable(Visit(fn->variable()));
+    if (fn->children()->length() != 0) {
+      AstNode* assign = new AstNode(AstNode::kAssign);
+      assign->children()->Push(fn->variable());
+      assign->children()->Push(fn);
+      fn->variable(NULL);
+      Visit(assign);
+
+      return assign;
+    } else {
+      AstNode* next = Visit(fn->variable());
+      if (next != NULL) fn->variable(next);
+    }
   }
 
   // Call takes variables from outer scope
   if (fn->children()->length() == 0) {
     AstList::Item* item = fn->args()->head();
-    while (item != NULL) {
-      item->value(Visit(item->value()));
-      item = item->next();
+    for (; item != NULL; item = item->next()) {
+      AstNode* next = Visit(item->value());
+      if (next != NULL) item->value(next);
     }
   }
 
@@ -177,9 +199,27 @@ AstNode* ScopeAnalyze::VisitFunction(AstNode* node) {
   // Put variables in functions scope
   if (fn->children()->length() != 0) {
     AstList::Item* item = fn->args()->head();
-    while (item != NULL) {
-      item->value(Visit(item->value()));
-      item = item->next();
+    for (; item != NULL; item = item->next()) {
+      AstNode* arg = item->value();
+      bool varg = false;
+      if (arg->is(AstNode::kVarArg)) {
+        arg = arg->lhs();
+        varg = true;
+      }
+      assert(arg->is(AstNode::kName));
+
+      ScopeSlot* slot = new ScopeSlot(ScopeSlot::kStack);
+      scope.Set(new StringKey<ZoneObject>(arg->value(), arg->length()), slot);
+      scope.stack_count_++;
+
+      AstValue* value = new AstValue(slot, arg);
+
+      if (varg) {
+        item->value()->children()->Pop();
+        item->value()->children()->Push(value);
+      } else {
+        item->value(value);
+      }
     }
   }
 
@@ -192,12 +232,39 @@ AstNode* ScopeAnalyze::VisitFunction(AstNode* node) {
 
 
 AstNode* ScopeAnalyze::VisitCall(AstNode* node) {
-  return VisitFunction(node);
+  AstNode* res = VisitFunction(node);
+  return res == NULL ? node : res;
 }
 
 
 AstNode* ScopeAnalyze::VisitName(AstNode* node) {
   return new AstValue(scope(), node);
+}
+
+
+void ScopeAnalyze::VisitChildren(AstNode* node) {
+  ZoneList<AstList::Item*> blocks_queue;
+
+  AstList::Item* child = node->children()->head();
+  for (; child != NULL; child = child->next()) {
+    // In breadth-first visiting
+    // do not increase depth until all same-level nodes will be visited
+    if (child->value()->is(AstNode::kFunction)) {
+      blocks_queue.Push(child);
+    } else {
+      AstNode* next = Visit(child->value());
+
+      // Update child
+      if (next != NULL) child->value(next);
+    }
+  }
+
+  while ((child = blocks_queue.Shift()) != NULL) {
+    AstNode* next = Visit(child->value());
+
+    // Update child
+    if (next != NULL) child->value(next);
+  }
 }
 
 } // namespace internal

@@ -4,11 +4,15 @@
 #include "heap-inl.h" // Heap
 #include "parser.h" // Parser
 #include "scope.h" // Scope
-#include "fullgen.h" // Fullgen, Masm
+#include "macroassembler.h" // Masm
+#include "hir.h" // HIR
+#include "hir-inl.h" // HIR
+#include "lir.h" // LIR
+#include "lir-inl.h" // LIR
+#include "source-map.h" // SourceMap
 #include "stubs.h" // EntryStub
 #include "utils.h" // GetPageSize
 
-#include <sys/types.h> // off_t
 #include <stdlib.h> // NULL
 #include <string.h> // memcpy, memset
 #include <sys/mman.h> // mmap
@@ -17,7 +21,6 @@ namespace candor {
 namespace internal {
 
 CodeSpace::CodeSpace(Heap* heap) : heap_(heap) {
-  pages_.allocated = true;
   stubs_ = new Stubs(this);
   entry_ = stubs()->GetEntryStub();
 }
@@ -63,7 +66,6 @@ char* CodeSpace::Compile(const char* filename,
                          Error** error) {
   Zone zone;
   Parser p(source, length);
-  Fullgen f(this, heap()->source_map());
 
   AstNode* ast = p.Execute();
 
@@ -84,23 +86,28 @@ char* CodeSpace::Compile(const char* filename,
   // Add scope information to variables (i.e. stack vs context, and indexes)
   Scope::Analyze(ast);
 
-  // Generate machine code
-  f.Generate(ast);
-
-  if (f.has_error()) {
-    *error = CreateError(filename,
-                         source,
-                         length,
-                         f.error_msg(),
-                         f.error_pos());
-    return NULL;
-  }
+  // Generate CFG with SSA
+  HIRGen hir(heap(), ast);
 
   // Store root
-  *root = f.AllocateRoot();
+  *root = hir.root()->Allocate()->addr();
 
-  // Get address of code
-  char* addr = Put(&f);
+  // Generate low-level representation
+  Masm masm(this);
+
+  // For each root in reverse order generate lir
+  // (Generate children first, parents later)
+  HIRBlockList::Item* head = hir.roots()->head();
+  for (; head != NULL; head = head->next()) {
+    // Generate LIR
+    LGen lir(&hir, head->value());
+
+    // Generate Masm code
+    lir.Generate(&masm, heap()->source_map());
+  }
+
+  // Put code into code space
+  char* addr = Put(&masm);
 
   // Relocate source map
   heap()->source_map()->Commit(filename, source, length, addr);

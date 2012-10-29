@@ -2,14 +2,6 @@
 
 TEST_START(functional)
   // Basics: return + assign
-  FUN_TEST("return 1", {
-    assert(result->As<Number>()->Value() == 1);
-  })
-
-  FUN_TEST("return", {
-    assert(result->Is<Nil>());
-  })
-
   FUN_TEST("a = 32\nreturn a", {
     assert(result->As<Number>()->Value() == 32);
   })
@@ -26,38 +18,32 @@ TEST_START(functional)
     assert(result->Is<Nil>());
   })
 
+  FUN_TEST("return {}", {
+    assert(result->Is<Object>());
+  });
+
+  // Spill tests
+  FUN_TEST("a=1\nc=2\nb={}\nreturn a", {
+    assert(result->As<Number>()->Value() == 1);
+  });
+
+  FUN_TEST("a=1\nb=2\nc=3\nd=4\nd\nc\nb\nreturn c", {
+    assert(result->As<Number>()->Value() == 3);
+  })
+
+  // NOTE: `{}` causes a stub call, which has side-effects
+  // That means that every active register will be spilled and restored
+  // after that call.
+  FUN_TEST("a=1\nb=2\nc=3\nd=4\ne=5\nf=6\ng=7\nh=8\ni=9\nj=10\nk=11\nl=12\n"
+           "x={}\n"
+           "b\nc\nd\ne\na\ng\nh\ni\nj\nk\nl\nreturn f", {
+    assert(result->As<Number>()->Value() == 6);
+  })
+
   FUN_TEST("return 'abcdef'", {
     String* str = result->As<String>();
     assert(str->Length() == 6);
     assert(strncmp(str->Value(), "abcdef", str->Length()) == 0);
-  })
-
-  // Prefix
-  FUN_TEST("return typeof nil", {
-    String* str = result->As<String>();
-    assert(str->Length() == 3);
-    assert(strncmp(str->Value(), "nil", str->Length()) == 0);
-  })
-
-  FUN_TEST("return typeof 1", {
-    String* str = result->As<String>();
-    assert(str->Length() == 6);
-    assert(strncmp(str->Value(), "number", str->Length()) == 0);
-  })
-
-  FUN_TEST("return typeof '123'", {
-    String* str = result->As<String>();
-    assert(str->Length() == 6);
-    assert(strncmp(str->Value(), "string", str->Length()) == 0);
-  })
-
-  FUN_TEST("return sizeof '123'", {
-    assert(result->As<Number>()->Value() == 3);
-  })
-
-  FUN_TEST("return keysof { a: 1, b: 2 }", {
-    assert(result->As<Array>()->Length() == 2);
-    assert(result->As<Array>()->Get(1)->Is<String>());
   })
 
   // Boolean
@@ -69,12 +55,119 @@ TEST_START(functional)
     assert(result->As<Boolean>()->IsFalse());
   })
 
+  // If
+  FUN_TEST("if (true) { return 1 }", {
+    assert(result->As<Number>()->Value() == 1);
+  })
+
+  FUN_TEST("if (true) { a = 1 } else { a = 2 }\n return a", {
+    assert(result->As<Number>()->Value() == 1);
+  })
+
+  FUN_TEST("if (false) {\n return 1\n} else {\nreturn 2\n}", {
+    assert(result->As<Number>()->Value() == 2);
+  })
+
+  FUN_TEST("if (1) {\n return 1\n} else {\nreturn 2\n}", {
+    assert(result->As<Number>()->Value() == 1);
+  })
+
+  FUN_TEST("if (0) {\n return 1\n} else {\nreturn 2\n}", {
+    assert(result->As<Number>()->Value() == 2);
+  })
+
+  FUN_TEST("if ('123') {\n return 1\n} else {\nreturn 2\n}", {
+    assert(result->As<Number>()->Value() == 1);
+  })
+
+  FUN_TEST("if ('') {\n return 1\n} else {\nreturn 2\n}", {
+    assert(result->As<Number>()->Value() == 2);
+  })
+
+  FUN_TEST("if (nil) {\n return 1\n} else {\nreturn 2\n}", {
+    assert(result->As<Number>()->Value() == 2);
+  })
+
+  // Objects
+  FUN_TEST("a = {a:1,b:2,c:3}\nreturn a.c", {
+    assert(result->As<Number>()->Value() == 3);
+  })
+
+  FUN_TEST("return ({a:1,b:2,c:3}).c", {
+    assert(result->As<Number>()->Value() == 3);
+  })
+
+  // While
+  FUN_TEST("i = 10\n"
+           "while (i--) {}\n"
+           "return i", {
+    assert(result->As<Number>()->Value() == -1);
+  })
+
+  FUN_TEST("i = 10\nj = 0\n"
+           "while (i--) { j = j + 1\n}\n"
+           "return j", {
+    assert(result->As<Number>()->Value() == 10);
+  })
+
+  FUN_TEST("i = 10\nk = 0\n"
+           "while (--i) {\n"
+           "  j = 10\n"
+           "  while (--j) {\n"
+           "    k = k + 1\n"
+           "  }\n"
+           "}\n"
+           "return k", {
+    assert(result->As<Number>()->Value() == 81);
+  })
+
+  FUN_TEST("i = 10\nj = 0\nk = 0\n"
+           "while (--i) {\n"
+           "  j = 10\n"
+           "  while (--j) {\n"
+           "    k = k + 1\n"
+           "  }\n"
+           "}\n"
+           "return k", {
+    assert(result->As<Number>()->Value() == 81);
+  })
+
+  FUN_TEST("i = 10\nj = 0\nk = 0\nl = 0\n"
+           "while (--i) {\n"
+           "  j = 10\n"
+           "  k = 0\n"
+           "  while (--j) {\n"
+           "    k = 10\n"
+           "    while (--k) {\n"
+          "       l = l + 1\n"
+          "     }\n"
+           "  }\n"
+           "}\n"
+           "return l", {
+    assert(result->As<Number>()->Value() == 729);
+  })
+
+  FUN_TEST("i = 3\na = 0\n"
+           "while (--i) {\n"
+           "  j = 3\n"
+           "  while (--j) {\n"
+           "    a = { x : { y : a } }\n"
+           "  }\n"
+           "}\n"
+           "return a.x.y", {
+    assert(result->Is<Object>());
+  })
+
   // Functions
   FUN_TEST("a() {}\nreturn a", {
     assert(result->Is<Function>());
   })
 
   FUN_TEST("a() { return 1 }\nreturn a()", {
+    assert(result->As<Number>()->Value() == 1);
+  })
+
+  FUN_TEST("a(x) { return x }\nreturn a(1)", {
     assert(result->As<Number>()->Value() == 1);
   })
 
@@ -139,6 +232,34 @@ TEST_START(functional)
     assert(result->As<Number>()->Value() == 4);
   });
 
+  // Prefix
+  FUN_TEST("return typeof nil", {
+    String* str = result->As<String>();
+    assert(str->Length() == 3);
+    assert(strncmp(str->Value(), "nil", str->Length()) == 0);
+  })
+
+  FUN_TEST("return typeof 1", {
+    String* str = result->As<String>();
+    assert(str->Length() == 6);
+    assert(strncmp(str->Value(), "number", str->Length()) == 0);
+  })
+
+  FUN_TEST("return typeof '123'", {
+    String* str = result->As<String>();
+    assert(str->Length() == 6);
+    assert(strncmp(str->Value(), "string", str->Length()) == 0);
+  })
+
+  FUN_TEST("return sizeof '123'", {
+    assert(result->As<Number>()->Value() == 3);
+  })
+
+  FUN_TEST("return keysof { a: 1, b: 2 }", {
+    assert(result->As<Array>()->Length() == 2);
+    assert(result->As<Array>()->Get(1)->Is<String>());
+  })
+
   // Unary ops
   FUN_TEST("a = 1\nreturn ++a", {
     assert(result->As<Number>()->Value() == 2);
@@ -176,6 +297,10 @@ TEST_START(functional)
   FUN_TEST("a = {a:1,b:2,c:3,d:4,e:5,f:6,g:7}\n"
            "return a.a + a.b + a.c + a.d + a.e + a.f + a.g", {
     assert(result->As<Number>()->Value() == 28);
+  })
+
+  FUN_TEST("a = {}\na.x = 1\nreturn a.x", {
+    assert(result->As<Number>()->Value() == 1);
   })
 
   // Nil slot lookup
@@ -241,41 +366,5 @@ TEST_START(functional)
   // Global lookup
   FUN_TEST("global.a = 1\nreturn global.a", {
     assert(result->As<Number>()->Value() == 1);
-  })
-
-  // If
-  FUN_TEST("if (true) {\n return 1\n} else {\nreturn 2\n}", {
-    assert(result->As<Number>()->Value() == 1);
-  })
-
-  FUN_TEST("if (false) {\n return 1\n} else {\nreturn 2\n}", {
-    assert(result->As<Number>()->Value() == 2);
-  })
-
-  FUN_TEST("if (1) {\n return 1\n} else {\nreturn 2\n}", {
-    assert(result->As<Number>()->Value() == 1);
-  })
-
-  FUN_TEST("if (0) {\n return 1\n} else {\nreturn 2\n}", {
-    assert(result->As<Number>()->Value() == 2);
-  })
-
-  FUN_TEST("if ('123') {\n return 1\n} else {\nreturn 2\n}", {
-    assert(result->As<Number>()->Value() == 1);
-  })
-
-  FUN_TEST("if ('') {\n return 1\n} else {\nreturn 2\n}", {
-    assert(result->As<Number>()->Value() == 2);
-  })
-
-  FUN_TEST("if (nil) {\n return 1\n} else {\nreturn 2\n}", {
-    assert(result->As<Number>()->Value() == 2);
-  })
-
-  // While
-  FUN_TEST("i = 10\nj = 0\n"
-           "while (i--) { j = j + 1\n}\n"
-           "return j", {
-    assert(result->As<Number>()->Value() == 10);
   })
 TEST_END(functional)

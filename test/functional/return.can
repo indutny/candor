@@ -9,6 +9,11 @@ returnNil() {
 }
 assert(returnNil() === nil, "return Nil")
 
+returnNil2(a) {
+  return a
+}
+assert(returnNil2() === nil, "return Nil #2")
+
 one() {
   return 1
 }
@@ -74,7 +79,7 @@ returnKeysOfDict() {
   return keysof { a: 1, b: 2}
 }
 keys = returnKeysOfDict()
-assert(keys[0] === 'a' && keys[1] === 'b', "return keys of a dict")
+assert(keys[0] === 'a' && keys[1] === 'b' || keys[0] === 'b' && keys[1] === 'a', "return keys of a dict")
 
 // Boolean
 returnTrue() {

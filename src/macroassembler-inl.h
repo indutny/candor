@@ -1,7 +1,8 @@
-#ifndef _SRC_X64_MARCOASSEMBLER_INL_H_
-#define _SRC_X64_MARCOASSEMBLER_INL_H_
+#ifndef _SRC_MARCOASSEMBLER_INL_H_
+#define _SRC_MARCOASSEMBLER_INL_H_
 
-#include "macroassembler-x64.h"
+#include "macroassembler.h"
+#include "heap.h" // HValue
 
 namespace candor {
 namespace internal {
@@ -34,6 +35,12 @@ inline void Masm::TagNumber(Register src) {
 
 inline void Masm::Untag(Register src) {
   sar(src, Immediate(1));
+}
+
+
+inline Operand& Masm::SpillToOperand(int index) {
+  spill_operand_.disp(- 8 * (index + 1));
+  return spill_operand_;
 }
 
 
@@ -72,10 +79,10 @@ inline Condition Masm::BinOpToCondition(BinOp::BinOpType type,
 
 inline void Masm::SpillSlot(uint32_t index, Operand& op) {
   op.base(rbp);
-  op.disp(-spill_offset_ - 8 * index);
+  op.disp(-spill_offset_ - 8 - HValue::kPointerSize * index);
 }
 
 } // namespace internal
 } // namespace candor
 
-#endif // _SRC_X64_MARCOASSEMBLER_INL_H_
+#endif // _SRC_MARCOASSEMBLER_INL_H_

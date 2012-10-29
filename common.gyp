@@ -19,7 +19,14 @@
     'defines': [ 'CANDOR_ARCH_<(target_arch)' ],
     'conditions': [
       ['OS == "mac"', {
-        'defines': [ 'CANDOR_PLATFORM_DARWIN' ]
+        'defines': [ 'CANDOR_PLATFORM_DARWIN' ],
+        'xcode_settings': {
+          'GCC_VERSION': '4.1',
+          'GCC_WARN_ABOUT_MISSING_NEWLINE': 'YES',  # -Wnewline-eof
+          'PREBINDING': 'NO',                       # No -Wl,-prebind
+          'MACOSX_DEPLOYMENT_TARGET': '10.5',       # -mmacosx-version-min=10.5
+          'USE_HEADERMAP': 'NO'
+        }
       }, {
         'defines': [ 'CANDOR_PLATFORM_LINUX' ]
       }],
@@ -37,10 +44,10 @@
         }
       },
       'Release': {
-        'cflags': [ '-O3' ],
+        'cflags': [ '-g', '-O3' ],
         'defines': [ 'NDEBUG' ],
         'xcode_settings': {
-          'OTHER_CFLAGS': [ '-O3' ]
+          'OTHER_CFLAGS': [ '-g', '-O3' ]
         }
       }
     }

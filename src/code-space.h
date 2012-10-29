@@ -3,8 +3,6 @@
 
 #include "utils.h" // List
 
-#include <sys/types.h> // off_t
-
 namespace candor {
 
 // Forward declaration

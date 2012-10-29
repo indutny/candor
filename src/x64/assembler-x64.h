@@ -13,6 +13,7 @@ namespace internal {
 
 // Forward declaration
 class Assembler;
+class Label;
 
 struct Register {
   int high() {
@@ -54,8 +55,63 @@ const Register r13 = { 13 };
 const Register r14 = { 14 };
 const Register r15 = { 15 };
 
-const Register scratch = r11;
-const Register root_reg = r10;
+const Register context_reg = rsi;
+const Register root_reg = rdi;
+const Register scratch = r14;
+
+static inline Register RegisterByIndex(int index) {
+  // rsi, rdi, r14, r15 are reserved
+  switch (index) {
+   case 0: return rax;
+   case 1: return rbx;
+   case 2: return rcx;
+   case 3: return rdx;
+   case 4: return r8;
+   case 5: return r9;
+   case 6: return r10;
+   case 7: return r11;
+   case 8: return r12;
+   case 9: return r13;
+   default: UNEXPECTED return reg_nil;
+  }
+}
+
+
+static inline const char* RegisterNameByIndex(int index) {
+  // rsi, rdi, r14, r15 are reserved
+  switch (index) {
+   case 0: return "rax";
+   case 1: return "rbx";
+   case 2: return "rcx";
+   case 3: return "rdx";
+   case 4: return "r8 ";
+   case 5: return "r9 ";
+   case 6: return "r10";
+   case 7: return "r11";
+   case 8: return "r12";
+   case 9: return "r13";
+   default: UNEXPECTED return "rnil";
+  }
+}
+
+
+static inline int IndexByRegister(Register reg) {
+  // rsi, rdi, r14, r15 are reserved
+  switch (reg.code()) {
+   case 0: return 0;
+   case 1: return 2;
+   case 2: return 3;
+   case 3: return 1;
+   case 8: return 4;
+   case 9: return 5;
+   case 10: return 6;
+   case 11: return 7;
+   case 12: return 8;
+   case 13: return 9;
+   default: UNEXPECTED return -1;
+  }
+}
+
 
 struct DoubleRegister {
   int high() {
@@ -182,22 +238,6 @@ class RelocationInfo : public ZoneObject {
   uint32_t target_;
 };
 
-class Label {
- public:
-  Label(Assembler* a) : pos_(0), asm_(a) {
-  }
-
- private:
-  inline void relocate(uint32_t offset);
-  inline void use(uint32_t offset);
-
-  uint32_t pos_;
-  Assembler* asm_;
-  List<RelocationInfo*, EmptyClass> uses_;
-
-  friend class Assembler;
-};
-
 enum Condition {
   kEq,
   kNe,
@@ -260,11 +300,11 @@ class Assembler {
   void testb(Register dst, Immediate src);
   void testl(Register dst, Immediate src);
 
-  void movq(Register dst, Register src);
-  void movq(Register dst, Operand& src);
-  void movq(Operand& dst, Register src);
-  void movq(Register dst, Immediate src);
-  void movq(Operand& dst, Immediate src);
+  void mov(Register dst, Register src);
+  void mov(Register dst, Operand& src);
+  void mov(Operand& dst, Register src);
+  void mov(Register dst, Immediate src);
+  void mov(Operand& dst, Immediate src);
   void movl(Operand& dst, Immediate src);
   void movb(Register dst, Immediate src);
   void movb(Operand& dst, Immediate src);
@@ -305,9 +345,9 @@ class Assembler {
   void callq(Operand& dst);
 
   // Floating point instructions
-  void movqd(DoubleRegister dst, Register src);
-  void movqd(Register dst, DoubleRegister src);
-  void movqd(Operand& dst, DoubleRegister src);
+  void movd(DoubleRegister dst, Register src);
+  void movd(Register dst, DoubleRegister src);
+  void movd(Operand& dst, DoubleRegister src);
   void addqd(DoubleRegister dst, DoubleRegister src);
   void subqd(DoubleRegister dst, DoubleRegister src);
   void mulqd(DoubleRegister dst, DoubleRegister src);
@@ -359,7 +399,7 @@ class Assembler {
   uint32_t offset_;
   uint32_t length_;
 
-  List<RelocationInfo*, ZoneObject> relocation_info_;
+  ZoneList<RelocationInfo*> relocation_info_;
 };
 
 } // namespace internal

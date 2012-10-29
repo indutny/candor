@@ -38,7 +38,12 @@ using namespace internal;
       }\
       p.Print(out, 1000);\
       assert(ast != NULL);\
-      assert(strcmp(expected, out) == 0);\
+      if (strcmp(expected, out) != 0) {\
+        fprintf(stderr, "PARSER test failed, got:\n%s\n expected:\n%s\n",\
+                out,\
+                expected);\
+        abort();\
+      }\
       ast = NULL;\
     }
 
@@ -50,9 +55,57 @@ using namespace internal;
       AstNode* ast = p.Execute();\
       assert(!p.has_error());\
       Scope::Analyze(ast);\
-      p.Print(out, 1000);\
+      p.Print(out, sizeof(out));\
       assert(ast != NULL);\
-      assert(strcmp(expected, out) == 0);\
+      if (strcmp(expected, out) != 0) {\
+        fprintf(stderr, "SCOPE test failed, got:\n%s\n expected:\n%s\n",\
+                out,\
+                expected);\
+        abort();\
+      }\
+      ast = NULL;\
+    }
+
+#define HIR_TEST(code, expected)\
+    {\
+      Zone z;\
+      char out[10024];\
+      Heap heap(2 * 1024 * 1024);\
+      Parser p(code, strlen(code));\
+      AstNode* ast = p.Execute();\
+      assert(!p.has_error());\
+      Scope::Analyze(ast);\
+      assert(ast != NULL);\
+      HIRGen gen(&heap, ast);\
+      gen.Print(out, sizeof(out));\
+      if (strcmp(expected, out) != 0) {\
+        fprintf(stderr, "HIR test failed, got:\n%s\n expected:\n%s\n",\
+                out,\
+                expected);\
+        abort();\
+      }\
+      ast = NULL;\
+    }
+
+#define LIR_TEST(code, expected)\
+    {\
+      Zone z;\
+      char out[10024];\
+      Heap heap(2 * 1024 * 1024);\
+      Parser p(code, strlen(code));\
+      AstNode* ast = p.Execute();\
+      assert(!p.has_error());\
+      Scope::Analyze(ast);\
+      assert(ast != NULL);\
+      HIRGen hgen(&heap, ast);\
+      LGen lgen(&hgen, hgen.roots()->head()->value());\
+      lgen.Print(out, sizeof(out));\
+      if (strcmp(expected, out) != 0) {\
+        fprintf(stderr, "LIR test failed, got:\n%s\n expected:\n%s\n",\
+                out,\
+                expected);\
+        abort();\
+      }\
       ast = NULL;\
     }
 

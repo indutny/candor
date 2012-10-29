@@ -4,16 +4,15 @@
 #include <stdlib.h> // NULL
 #include <stdarg.h> // va_list
 #include <stdint.h> // uint32_t
-#include <sys/types.h> // off_t
 #include <stdio.h> // vsnprintf
 #include <string.h> // strncmp, memset
-#include <unistd.h> // sysconf or getpagesize
+#include <unistd.h> // sysconf or getpagesize, intptr_t
 #include <assert.h> // assert
 
 namespace candor {
 namespace internal {
 
-#define UNEXPECTED assert(0 && "Unexpected");
+#define UNEXPECTED { assert(0 && "Unexpected"); abort(); }
 
 inline uint32_t ComputeHash(int64_t key) {
   uint32_t hash = 0;
@@ -107,8 +106,21 @@ class Stack {
   Item* head_;
 };
 
-template <class T, class ItemParent>
-class List {
+class NopPolicy {
+ public:
+  static inline void Delete(void* value) {}
+};
+
+template <class T>
+class DeletePolicy {
+ public:
+  static inline void Delete(T value) {
+    delete value;
+  }
+};
+
+template <class T, class ItemParent, class Policy>
+class GenericList {
  public:
   class Item : public ItemParent {
    public:
@@ -117,8 +129,12 @@ class List {
 
     inline T value() { return value_; }
     inline void value(T value) { value_ = value; }
-    inline Item* next() { return next_; }
+
     inline Item* prev() { return prev_; }
+    inline Item* next() { return next_; }
+    inline void prev(Item* prev) { prev_ = prev; }
+    inline void next(Item* next) { next_ = next; }
+
     inline void remove() {
       if (prev_ != NULL) prev_->next_ = next_;
       if (next_ != NULL) next_->prev_ = prev_;
@@ -129,41 +145,37 @@ class List {
     Item* prev_;
     Item* next_;
 
-    friend class List;
+    friend class GenericList;
   };
 
-  List() : allocated(false), head_(NULL), current_(NULL), length_(0) {
+  GenericList() : head_(NULL), tail_(NULL), length_(0) {
   }
 
 
-  ~List() {
-    if (allocated) {
-      while (length_ > 0) delete Shift();
-    } else {
-      while (length_ > 0) Shift();
-    }
+  ~GenericList() {
+    while (length() > 0) Policy::Delete(Shift());
   }
 
 
   void Push(T item) {
     Item* next = new Item(item);
-    next->prev_ = current_;
+    next->prev_ = tail_;
 
     if (head_ == NULL) {
       head_ = next;
-    } else {
-      current_->next_ = next;
+    } else if (tail_ != NULL) {
+      tail_->next_ = next;
     }
 
-    current_ = next;
+    tail_ = next;
     length_++;
   }
 
 
   void Remove(Item* item) {
-    if (current_ == item) current_ = item->prev_;
+    if (tail_ == item) tail_ = item->prev_;
     if (head_ == item) head_ = item->next_;
-    if (allocated) delete item->value();
+    Policy::Delete(item->value());
 
     item->remove();
     delete item;
@@ -181,8 +193,61 @@ class List {
     next->prev_ = NULL;
     next->next_ = head_;
     head_ = next;
-    if (current_ == NULL) current_ = head_;
+    if (tail_ == NULL) tail_ = head_;
     length_++;
+  }
+
+
+  void InsertBefore(Item* next, T value) {
+    Item* item = new Item(value);
+
+    // `value` is a new head of list
+    if (next->prev() == NULL) return Unshift(value);
+
+    next->prev()->next(item);
+    item->prev(next->prev());
+    item->next(next);
+    next->prev(item);
+
+    // Increase length
+    length_++;
+  }
+
+
+  // Sorted insertion
+  template <class Shape>
+  void InsertSorted(T value) {
+    if (head() == NULL) return Push(value);
+
+    Item* current = tail();
+    Item* insert_node = NULL;
+    while (current != NULL && Shape::Compare(value, current->value()) < 0) {
+      insert_node = current;
+      current = current->prev();
+    }
+
+    // `value` is a new tail of list
+    if (insert_node == NULL) return Push(value);
+
+    // Insert before `insert_node`
+    InsertBefore(insert_node, value);
+  }
+
+
+  T Pop() {
+    if (tail_ == NULL) return NULL;
+
+    Item* tmp = tail_;
+    T value = tail_->value();
+
+    if (tail_ == head_) head_ = NULL;
+    if (tail_->prev_ != NULL) tail_->prev()->next_ = NULL;
+
+    tail_ = tail_->prev();
+    delete tmp;
+    length_--;
+
+    return value;
   }
 
 
@@ -192,7 +257,7 @@ class List {
     Item* tmp = head_;
     T value = head_->value();
 
-    if (head_ == current_) current_ = NULL;
+    if (head_ == tail_) tail_ = NULL;
     if (head_->next_ != NULL) head_->next()->prev_ = NULL;
 
     head_ = head_->next();
@@ -203,16 +268,38 @@ class List {
   }
 
 
-  inline Item* head() { return head_; }
-  inline Item* tail() { return current_; }
-  inline uint32_t length() { return length_; }
+  // Quicksort
+  template <class Shape>
+  void Sort() {
+    // XXX: Replace it with qsort eventually
+    Item* a;
+    Item* b;
+    for (a = head(); a != NULL; a = a->next()) {
+      for (b = a->next(); b != NULL; b = b->next()) {
+        if (Shape::Compare(a->value(), b->value()) > 0) {
+          T tmp = a->value();
+          a->value(b->value());
+          b->value(tmp);
+        }
+      }
+    }
+  }
 
-  bool allocated;
+
+  inline Item* head() { return head_; }
+  inline Item* tail() { return tail_; }
+  inline int32_t length() { return length_; }
 
  private:
   Item* head_;
-  Item* current_;
-  uint32_t length_;
+  Item* tail_;
+  int32_t length_;
+};
+
+
+template <class T, class I>
+class List : public GenericList<T, I, DeletePolicy<T> > {
+ public:
 };
 
 
@@ -254,6 +341,7 @@ class HashMap {
                                    next_scalar_(NULL) {
     }
 
+    inline Key* key() { return key_; }
     inline Value* value() { return value_; }
     inline void value(Value* value) { value_ = value; }
     inline Item* next() { return next_; }
@@ -290,7 +378,29 @@ class HashMap {
   void Set(Key* key, Value* value) {
     uint32_t index = Key::Hash(key) & mask_;
     Item* i = map_[index];
-    Item* next = new Item(key, value);
+    Item* next = NULL;
+
+    if (i == NULL) {
+      next = new Item(key, value);
+      map_[index] = next;
+    } else {
+      while (Key::Compare(i->key_, key) != 0 && i->next() != NULL) {
+        i = i->next();
+      }
+
+      // Overwrite key
+      if (Key::Compare(i->key_, key) == 0) {
+        i->value_ = value;
+      } else {
+        next = new Item(key, value);
+
+        assert(i->next_ == NULL);
+        i->next_ = next;
+      }
+    }
+
+    // In case of overwrite value already present in scalar list
+    if (next == NULL) return;
 
     // Setup head or append item to linked list
     // (Needed for enumeration)
@@ -300,13 +410,6 @@ class HashMap {
       current_->next_scalar_ = next;
     }
     current_ = next;
-
-    if (i == NULL) {
-      map_[index] = next;
-    } else {
-      while (i->next() != NULL) i = i->next();
-      i->next_ = next;
-    }
   }
 
 
@@ -334,11 +437,13 @@ class HashMap {
     }
   }
 
+  inline Item* head() { return head_; }
+
   bool allocated;
 
  private:
-  static const uint32_t size_ = 64;
-  static const uint32_t mask_ = 63;
+  static const uint32_t size_ = 128;
+  static const uint32_t mask_ = 127;
   Item* map_[size_];
   Item* head_;
   Item* current_;
@@ -347,17 +452,25 @@ class HashMap {
 
 class NumberKey {
  public:
-  static NumberKey* New(const off_t value) {
+  static NumberKey* New(const intptr_t value) {
     return reinterpret_cast<NumberKey*>(value);
   }
 
-  off_t value() {
-    return reinterpret_cast<off_t>(this);
+  static NumberKey* New(char* value) {
+    return reinterpret_cast<NumberKey*>(value);
+  }
+
+  intptr_t value() {
+    return reinterpret_cast<intptr_t>(this);
+  }
+
+  static uint32_t Hash(NumberKey* key) {
+    return ComputeHash(key->value());
   }
 
   static int Compare(NumberKey* left, NumberKey* right) {
-    off_t l = reinterpret_cast<off_t>(left);
-    off_t r = reinterpret_cast<off_t>(right);
+    intptr_t l = reinterpret_cast<intptr_t>(left);
+    intptr_t r = reinterpret_cast<intptr_t>(right);
     return l == r ? 0 : l > r ? 1 : -1;
   }
 };
@@ -414,7 +527,6 @@ class AVLTree {
 
   ~AVLTree() {
     List<Item*, EmptyClass> queue;
-    queue.allocated = true;
 
     queue.Push(head());
     Item* item;
@@ -580,6 +692,50 @@ class AVLTree {
 };
 
 
+template <class T, int size>
+class FreeList {
+ public:
+  FreeList() : length_(0) {
+  }
+
+  inline bool IsEmpty() { return length_ == 0; }
+  inline T Get() { return list_[--length_]; }
+  inline void Release(T value) {
+    assert(!Has(value));
+    list_[length_++] = value;
+  }
+
+  inline void Remove(T value) {
+    for (int i = 0; i < length_; i++) {
+      // TODO: Use Shape class here
+      if (list_[i] != value) continue;
+
+      // Shift all registers to the left
+      for (int j = i + 1; j < length_; j++) {
+        list_[j - 1] = list_[j];
+      }
+
+      // Decrement length
+      length_--;
+      return;
+    }
+  }
+
+  inline bool Has(T value) {
+    for (int i = 0; i < length_; i++) {
+      // TODO: Use Shape class here
+      if (list_[i] == value) return true;
+    }
+
+    return false;
+  }
+
+ private:
+  T list_[size];
+  int length_;
+};
+
+
 // For debug printing AST and other things
 class PrintBuffer {
  public:
@@ -626,7 +782,30 @@ class PrintBuffer {
   int32_t total_;
 };
 
+class ErrorHandler {
+ public:
+  ErrorHandler() : error_pos_(0), error_msg_(NULL) {}
 
+  inline bool has_error() { return error_msg_ != NULL; }
+  inline const char* error_msg() { return error_msg_; }
+  inline uint32_t error_pos() { return error_pos_; }
+
+  inline void SetError(const char* msg, int offset) {
+    if (msg == NULL) {
+      error_msg_ = NULL;
+      error_pos_ = 0;
+    }
+
+    if (error_pos_ < offset) {
+      error_pos_ = offset;
+      error_msg_ = msg;
+    }
+  }
+
+ protected:
+  uint32_t error_pos_;
+  const char* error_msg_;
+};
 
 // Find minimum number that's greater than value and is dividable by to
 inline uint32_t RoundUp(uint32_t value, uint32_t to) {

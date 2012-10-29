@@ -1,0 +1,118 @@
+#include "test.h"
+#include <parser.h>
+#include <ast.h>
+#include <hir.h>
+#include <hir-inl.h>
+#include <lir.h>
+#include <lir-inl.h>
+
+TEST_START(lir)
+  // Simpliest
+  LIR_TEST("return 1\n",
+           "# Block 0\n"
+           "0: Label\n"
+           "2: Entry\n"
+           "4: rax:4 = Literal[1]\n"
+           "6: @rax:0 = Move rax:4\n"
+           "8: Return @rax:0\n\n")
+
+  LIR_TEST("return 1 + 2\n",
+           "# Block 0\n"
+           "0: Label\n"
+           "2: Entry\n"
+           "4: rax:4 = Literal[1]\n"
+           "6: rbx:5 = Literal[2]\n"
+           "8: @rbx:1 = Move rbx:5\n"
+           "10: @rax:0 = Move rax:4\n"
+           "12: @rax:0 = BinOp @rax:0, @rbx:1\n"
+           "14: rax:6 = Move @rax:0\n"
+           "16: @rax:0 = Move rax:6\n"
+           "18: Return @rax:0\n\n")
+
+  // Ifs
+  LIR_TEST("if (true) { a = 1 } else { a = 2}\nreturn a\n",
+           "# Block 0\n"
+           "0: Label\n"
+           "2: Entry\n"
+           "4: rax:4 = Literal[true]\n"
+           "6: @rax:0 = Move rax:4\n"
+           "8: Branch @rax:0 (10), (18)\n"
+           "\n"
+           "# Block 1\n"
+           "# in: , out: 7\n"
+           "10: Label\n"
+           "12: rax:5 = Literal[1]\n"
+           "14: rax:7 = Move rax:5\n"
+           "16: Goto (26)\n"
+           "\n"
+           "# Block 2\n"
+           "# in: , out: 7\n"
+           "18: Label\n"
+           "20: rax:8 = Literal[2]\n"
+           "22: rax:7 = Move rax:8\n"
+           "\n"
+           "# Block 3\n"
+           "# in: 7, out: \n"
+           "26: Label\n"
+           "28: rax:6 = Phi rax:7\n"
+           "30: @rax:0 = Move rax:6\n"
+           "32: Return @rax:0\n\n")
+
+  LIR_TEST("pass_through = 1\n"
+           "while (i < 10) { i++ }\n"
+           "return i + pass_through",
+           "# Block 0\n"
+           "# in: , out: 7, 4\n"
+           "0: Label\n"
+           "2: Entry\n"
+           "4: rcx:4 = Literal[1]\n"
+           "6: rax:5 = Nil\n"
+           "8: rax:7 = Move rax:5\n"
+           "\n"
+           "# Block 1\n"
+           "# in: 7, 4, out: 6, 4\n"
+           "12: Label\n"
+           "14: rdx:6 = Phi rax:7\n"
+           "\n"
+           "# Block 2\n"
+           "# in: 6, 4, out: 6, 4\n"
+           "18: Label\n"
+           "20: rax:8 = Literal[10]\n"
+           "22: @rbx:1 = Move rax:8\n"
+           "24: @rax:0 = Move rdx:6\n"
+           "25: Gap[rcx:4 => [1]:13, rdx:6 => [2]:15]\n"
+           "26: @rax:0 = BinOp @rax:0, @rbx:1\n"
+           "28: rax:9 = Move @rax:0\n"
+           "30: @rax:0 = Move rax:9\n"
+           "32: Branch @rax:0 (34), (54)\n"
+           "\n"
+           "# Block 3\n"
+           "# in: 6, 4, out: 11, 4\n"
+           "34: Label\n"
+           "36: rax:10 = Literal[1]\n"
+           "38: @rbx:1 = Move rax:10\n"
+           "40: @rax:0 = Move [2]:15\n"
+           "42: @rax:0 = BinOp @rax:0, @rbx:1\n"
+           "44: rax:11 = Move @rax:0\n"
+           "\n"
+           "# Block 4\n"
+           "# in: 11, 4, out: 7, 4\n"
+           "48: Label\n"
+           "50: rax:7 = Move rax:11\n"
+           "51: Gap[[1]:13 => rcx:4]\n"
+           "52: Goto (12)\n"
+           "\n"
+           "# Block 5\n"
+           "# in: 4, 6, out: 4, 6\n"
+           "54: Label\n"
+           "\n"
+           "# Block 6\n"
+           "# in: 4, 6, out: \n"
+           "58: Label\n"
+           "60: @rbx:1 = Move [1]:13\n"
+           "62: @rax:0 = Move [2]:15\n"
+           "64: @rax:0 = BinOp @rax:0, @rbx:1\n"
+           "66: rax:12 = Move @rax:0\n"
+           "68: @rax:0 = Move rax:12\n"
+           "70: Return @rax:0\n\n")
+TEST_END(lir)

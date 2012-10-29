@@ -16,6 +16,7 @@
 #include "utils.h"
 
 #include <stdint.h> // uint32_t
+#include <unistd.h> // intptr_t
 #include <sys/types.h> // size_t
 
 namespace candor {
@@ -164,9 +165,6 @@ class Heap {
                              needs_gc_(kGCNone),
                              gc_(this) {
     current_ = this;
-    references_.allocated = true;
-    reloc_references_.allocated = true;
-    weak_references_.allocated = true;
   }
 
   // TODO: Use thread id
@@ -225,7 +223,7 @@ class Heap {
 
   char* pending_exception_;
 
-  off_t needs_gc_;
+  intptr_t needs_gc_;
 
   HValueRefList references_;
   HValueRefList reloc_references_;
@@ -360,7 +358,7 @@ class HNil : public HValue {
 class HContext : public HValue {
  public:
   static char* New(Heap* heap,
-                   List<char*, ZoneObject>* values);
+                   ZoneList<char*>* values);
 
   inline bool HasSlot(uint32_t index);
   inline HValue* GetSlot(uint32_t index);
@@ -374,7 +372,7 @@ class HContext : public HValue {
     return reinterpret_cast<char**>(addr() + kParentOffset);
   }
   inline uint32_t slots() {
-    return *reinterpret_cast<off_t*>(addr() + kSlotsOffset);
+    return *reinterpret_cast<intptr_t*>(addr() + kSlotsOffset);
   }
 
   static const int kParentOffset = HINTERIOR_OFFSET(1);

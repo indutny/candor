@@ -20,16 +20,23 @@ class ScopeAnalyze;
 // After parse end indexes will be allocated
 class ScopeSlot : public ZoneObject {
  public:
-  typedef List<ScopeSlot*, ZoneObject> UseList;
+  typedef ZoneList<ScopeSlot*> UseList;
+
   enum Type {
     kStack,
-    kContext
+    kContext,
+    kImmediate
   };
 
-  ScopeSlot(Type type) : type_(type), index_(-1), depth_(0), use_count_(0) {
+  ScopeSlot(Type type) : type_(type),
+                         value_(NULL),
+                         index_(-1),
+                         depth_(0),
+                         use_count_(0) {
   }
 
   ScopeSlot(Type type, int32_t depth) : type_(type),
+                                        value_(NULL),
                                         index_(depth < 0 ? 0 : -1),
                                         depth_(depth),
                                         use_count_(0) {
@@ -39,8 +46,13 @@ class ScopeSlot : public ZoneObject {
 
   inline bool is_stack() { return type_ == kStack; }
   inline bool is_context() { return type_ == kContext; }
+  inline bool is_immediate() { return type_ == kImmediate; }
 
   inline void type(Type type) { type_ = type; }
+
+  // Register slots should have a value (unboxed nil or number)
+  inline char* value() { assert(is_immediate()); return value_; }
+  inline void value(char* value) { assert(is_immediate()); value_ = value; }
 
   inline int32_t index() { return index_; }
   inline void index(int32_t index) { index_ = index; }
@@ -52,8 +64,12 @@ class ScopeSlot : public ZoneObject {
 
   inline UseList* uses() { return &uses_; }
 
+  void Print(PrintBuffer* p);
+
  private:
   Type type_;
+  char* value_;
+
   int32_t index_;
   int32_t depth_;
   int use_count_;
@@ -96,17 +112,19 @@ class Scope : public HashMap<StringKey<ZoneObject>, ScopeSlot, ZoneObject> {
   Scope* parent_;
 
   friend class ScopeSlot;
+  friend class ScopeAnalyze;
 };
 
 // Runs on complete AST tree to wrap each kName into AstValue
 // and put it either in stack or in some context
-class ScopeAnalyze : public Visitor {
+class ScopeAnalyze : public Visitor<AstNode> {
  public:
   ScopeAnalyze(AstNode* ast);
 
   AstNode* VisitFunction(AstNode* node);
   AstNode* VisitCall(AstNode* node);
   AstNode* VisitName(AstNode* node);
+  void VisitChildren(AstNode* node);
 
   inline Scope* scope() { return scope_; }
 
