@@ -247,7 +247,82 @@ void LFunction::Generate(Masm* masm) {
 }
 
 
+void LCall::Generate(Masm* masm) {
+  Label not_function, done;
+
+  // rax <- argc
+  // rbx <- fn
+
+  __ IsUnboxed(rbx, NULL, &not_function);
+  __ IsNil(rbx, NULL, &not_function);
+  __ IsHeapObject(Heap::kTagFunction, rbx, &not_function, NULL);
+
+  Masm::Spill ctx(masm, context_reg), root(masm, root_reg);
+  Masm::Spill rsp_s(masm, rsp);
+  Masm::Spill fn_s(masm, rbx);
+
+  // rax <- argc
+  // scratch <- fn
+  __ mov(scratch, rbx);
+  __ CallFunction(scratch);
+
+  // Reset all registers to nil
+  __ mov(scratch, Immediate(Heap::kTagNil));
+  __ mov(rbx, scratch);
+  __ mov(rcx, scratch);
+  __ mov(rdx, scratch);
+  __ mov(r8, scratch);
+  __ mov(r9, scratch);
+  __ mov(r10, scratch);
+  __ mov(r11, scratch);
+  __ mov(r12, scratch);
+  __ mov(r13, scratch);
+
+  fn_s.Unspill();
+  rsp_s.Unspill();
+  root.Unspill();
+  ctx.Unspill();
+
+  __ jmp(&done);
+  __ bind(&not_function);
+
+  __ mov(rax, Immediate(Heap::kTagNil));
+
+  __ bind(&done);
+}
+
+
 void LLoadArg::Generate(Masm* masm) {
+  Operand slot(scratch, 0);
+
+  // NOTE: input is aligned number
+  __ mov(scratch, inputs[0]->ToRegister());
+  __ addq(scratch, Immediate(4));
+  __ shl(scratch, 2);
+  __ addq(scratch, rbp);
+  __ mov(result->ToRegister(), slot);
+}
+
+
+void LLoadVarArg::Generate(Masm* masm) {
+}
+
+
+void LStoreArg::Generate(Masm* masm) {
+  __ push(inputs[0]->ToRegister());
+}
+
+
+void LStoreVarArg::Generate(Masm* masm) {
+}
+
+
+void LAlignStack::Generate(Masm* masm) {
+  Label even;
+  __ testb(inputs[0]->ToRegister(), Immediate(HNumber::Tag(1)));
+  __ jmp(kEq, &even);
+  __ push(Immediate(Heap::kTagNil));
+  __ bind(&even);
 }
 
 
@@ -280,10 +355,6 @@ void LKeysof::Generate(Masm* masm) {
 
 
 void LClone::Generate(Masm* masm) {
-}
-
-
-void LCall::Generate(Masm* masm) {
 }
 
 

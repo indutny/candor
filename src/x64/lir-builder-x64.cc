@@ -171,26 +171,44 @@ void LGen::VisitCollectGarbage(HIRInstruction* instr) {
 
 
 void LGen::VisitLoadArg(HIRInstruction* instr) {
-  // XXX
-  Bind(new LLoadArg(0))
+  Bind(new LLoadArg())
+      ->AddArg(instr->left(), LUse::kRegister)
       ->SetResult(CreateVirtual(), LUse::kAny);
 }
 
 
 void LGen::VisitLoadVarArg(HIRInstruction* instr) {
+  Bind(new LLoadVarArg())
+      ->AddArg(instr->left(), LUse::kRegister)
+      ->SetResult(CreateVirtual(), LUse::kAny);
 }
 
 
 void LGen::VisitStoreArg(HIRInstruction* instr) {
+  Bind(new LStoreArg())
+      ->AddArg(instr->left(), LUse::kRegister);
+}
+
+
+void LGen::VisitAlignStack(HIRInstruction* instr) {
+  Bind(new LAlignStack())
+      ->AddArg(instr->left(), LUse::kRegister);
 }
 
 
 void LGen::VisitStoreVarArg(HIRInstruction* instr) {
+  Bind(new LStoreVarArg())
+      ->AddArg(instr->left(), LUse::kRegister);
 }
 
 
 void LGen::VisitCall(HIRInstruction* instr) {
-  // XXX
+  LInstruction* op = Bind(new LCall())
+      ->MarkHasCall()
+      ->AddArg(ToFixed(instr->left(), rbx), LUse::kRegister)
+      ->AddArg(ToFixed(instr->right(), rax), LUse::kRegister);
+
+  ResultFromFixed(op, rax);
 }
 
 

@@ -57,7 +57,7 @@ class Masm : public Assembler {
 
   // Allocate slots for spills
   void AllocateSpills();
-  void FinalizeSpills(int spills);
+  void FinalizeSpills();
 
   // Skip some bytes to make code aligned
   void AlignCode();

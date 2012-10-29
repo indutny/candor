@@ -687,6 +687,7 @@ void LGen::Generate(Masm* masm) {
     ihead->value()->Generate(masm);
   }
 
+  masm->FinalizeSpills();
   masm->AlignCode();
 }
 

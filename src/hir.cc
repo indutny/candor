@@ -113,6 +113,9 @@ HIRInstruction* HIRGen::VisitFunction(AstNode* stmt) {
         Add(HIRInstruction::kStoreContext, value->slot())->AddArg(load_arg);
       }
 
+      // Do not generate index if args has ended
+      if (args_head->next() == NULL) continue;
+
       // Increment index
       if (!varg) {
         // By 1
@@ -482,10 +485,27 @@ HIRInstruction* HIRGen::VisitCall(AstNode* stmt) {
       rhs = Visit(arg);
     }
 
-    HIRInstruction* current = new HIRInstruction(this, current_block(), type);
+    HIRInstruction* current = CreateInstruction(type);
     current->AddArg(rhs);
 
     stores_.Unshift(current);
+  }
+
+  // Determine argc and alignment
+  int argc = fn->args()->length();
+  if (vararg != NULL) argc--;
+
+  HIRInstruction* hargc = GetNumber(argc);
+
+  // If call has vararg - increase argc by ...
+  if (vararg != NULL) {
+    HIRInstruction* length = Add(HIRInstruction::kSizeof)
+        ->AddArg(vararg);
+
+    // ... by the length of vararg
+    hargc = Add(new HIRBinOp(this, current_block(), BinOp::kAdd))
+        ->AddArg(hargc)
+        ->AddArg(length);
   }
 
   // Process self argument
@@ -493,9 +513,7 @@ HIRInstruction* HIRGen::VisitCall(AstNode* stmt) {
   if (fn->args()->length() > 0 &&
       fn->args()->head()->value()->is(AstNode::kSelf)) {
     receiver = Visit(fn->variable()->lhs());
-    HIRInstruction* store = new HIRInstruction(this,
-                                               current_block(),
-                                               HIRInstruction::kStoreArg);
+    HIRInstruction* store = CreateInstruction(HIRInstruction::kStoreArg);
     store->AddArg(receiver);
     stores_.Unshift(store);
   }
@@ -513,30 +531,17 @@ HIRInstruction* HIRGen::VisitCall(AstNode* stmt) {
     var = Visit(fn->variable());
   }
 
+  // Add stack alignment instruction
+  Add(HIRInstruction::kAlignStack)->AddArg(hargc);
+
   // Now add stores to hir
   HIRInstructionList::Item* hhead = stores_.head();
   for (; hhead != NULL; hhead = hhead->next()) {
     Add(hhead->value());
   }
 
-  HIRInstruction* argc;
-
-  // If call has vararg - increase argc by ...
-  if (vararg != NULL) {
-    argc = GetNumber(fn->args()->length() - 1);
-    HIRInstruction* length = Add(HIRInstruction::kSizeof)
-        ->AddArg(vararg);
-
-    // ... by the length of vararg
-    argc = Add(new HIRBinOp(this, current_block(), BinOp::kAdd))
-        ->AddArg(argc)
-        ->AddArg(length);
-  } else {
-    argc = GetNumber(fn->args()->length());
-  }
-
   HIRInstruction* call = CreateInstruction(HIRInstruction::kCall)
-      ->AddArg(var)->AddArg(argc);
+      ->AddArg(var)->AddArg(hargc);
 
   return Add(call);
 }

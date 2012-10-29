@@ -29,6 +29,7 @@ typedef ZoneList<HIRPhi*> HIRPhiList;
     V(LoadVarArg) \
     V(StoreArg) \
     V(StoreVarArg) \
+    V(AlignStack) \
     V(LoadContext) \
     V(StoreContext) \
     V(LoadProperty) \

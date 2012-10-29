@@ -28,6 +28,11 @@ typedef ZoneList<LInstruction*> LInstructionList;
     V(LoadProperty) \
     V(StoreProperty) \
     V(DeleteProperty) \
+    V(LoadArg) \
+    V(LoadVarArg) \
+    V(StoreArg) \
+    V(StoreVarArg) \
+    V(AlignStack) \
     V(Not) \
     V(BinOp) \
     V(Typeof) \
@@ -45,7 +50,6 @@ typedef ZoneList<LInstruction*> LInstructionList;
     V(Entry) \
     V(Label) \
     V(Gap) \
-    V(LoadArg) \
     V(Function) \
     V(Literal) \
     V(Branch) \
@@ -263,17 +267,6 @@ class LLiteral : public LInstruction {
 
  private:
   ScopeSlot* root_slot_;
-};
-
-class LLoadArg: public LInstruction {
- public:
-  LLoadArg(int index) : LInstruction(kLoadArg), index_(index) {
-  }
-
-  INSTRUCTION_METHODS(LoadArg)
-
- private:
-  int index_;
 };
 
 #define DEFAULT_INSTR_IMPLEMENTATION(V) \

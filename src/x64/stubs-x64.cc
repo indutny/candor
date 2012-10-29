@@ -138,7 +138,7 @@ void EntryStub::Generate() {
   __ pop(rbx);
   __ pop(rbp);
 
-  __ FinalizeSpills(0);
+  __ FinalizeSpills();
 
   GenerateEpilogue(0);
 }
@@ -273,7 +273,7 @@ void AllocateObjectStub::Generate() {
   __ mov(rbx, size);
   __ AllocateObjectLiteral(Heap::kTagNil, rcx, rbx, rax);
 
-  __ FinalizeSpills(0);
+  __ FinalizeSpills();
 
   GenerateEpilogue(2);
 }
@@ -388,7 +388,7 @@ void VarArgStub::Generate() {
 
   __ CheckGC();
 
-  __ FinalizeSpills(0);
+  __ FinalizeSpills();
 
   GenerateEpilogue(0);
 }
@@ -451,7 +451,7 @@ void PutVarArgStub::Generate() {
   __ cmpq(rbx, scratch);
   __ jmp(kLt, &loop_start);
 
-  __ FinalizeSpills(0);
+  __ FinalizeSpills();
 
   GenerateEpilogue(0);
 }
@@ -721,7 +721,7 @@ void LookupPropertyStub::Generate() {
 
   __ bind(&done);
 
-  __ FinalizeSpills(0);
+  __ FinalizeSpills();
   GenerateEpilogue(0);
 }
 
@@ -842,7 +842,7 @@ void CloneObjectStub::Generate() {
 
   __ bind(&done);
 
-  __ FinalizeSpills(0);
+  __ FinalizeSpills();
 
   GenerateEpilogue(0);
 }
@@ -1203,7 +1203,7 @@ void BinOpStub::Generate() {
 
   __ CheckGC();
 
-  __ FinalizeSpills(0);
+  __ FinalizeSpills();
 
   GenerateEpilogue(0);
 }
