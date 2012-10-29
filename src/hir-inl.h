@@ -4,6 +4,9 @@
 #include "hir.h"
 #include "assert.h"
 
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h> // PRIu64
+
 namespace candor {
 namespace internal {
 
@@ -206,6 +209,40 @@ inline HIRBlock* HIRGen::Join(HIRBlock* b1, HIRBlock* b2) {
 
 inline HIRInstruction* HIRGen::Assign(ScopeSlot* slot, HIRInstruction* value) {
   return current_block()->Assign(slot, value);
+}
+
+
+inline HIRInstruction* HIRGen::GetNumber(uint64_t i) {
+  AstNode* index = new AstNode(AstNode::kNumber);
+
+  // Fast-case
+  if (i >= 0 && i < 10) {
+    switch (i) {
+     case 0: index->value("0"); break;
+     case 1: index->value("1"); break;
+     case 2: index->value("2"); break;
+     case 3: index->value("3"); break;
+     case 4: index->value("4"); break;
+     case 5: index->value("5"); break;
+     case 6: index->value("6"); break;
+     case 7: index->value("7"); break;
+     case 8: index->value("8"); break;
+     case 9: index->value("9"); break;
+     default: UNEXPECTED
+    }
+    index->length(1);
+
+    return Visit(index);
+  }
+
+  char keystr[32];
+  index->value(keystr);
+  index->length(snprintf(keystr, sizeof(keystr), "%" PRIu64, i));
+
+  HIRInstruction* r = Visit(index);
+  r->ast(NULL);
+
+  return r;
 }
 
 

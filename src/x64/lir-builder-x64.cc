@@ -171,8 +171,21 @@ void LGen::VisitCollectGarbage(HIRInstruction* instr) {
 
 
 void LGen::VisitLoadArg(HIRInstruction* instr) {
-  Bind(new LLoadArg(HIRLoadArg::Cast(instr)->index()))
+  // XXX
+  Bind(new LLoadArg(0))
       ->SetResult(CreateVirtual(), LUse::kAny);
+}
+
+
+void LGen::VisitLoadVarArg(HIRInstruction* instr) {
+}
+
+
+void LGen::VisitStoreArg(HIRInstruction* instr) {
+}
+
+
+void LGen::VisitStoreVarArg(HIRInstruction* instr) {
 }
 
 

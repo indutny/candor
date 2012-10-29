@@ -179,6 +179,7 @@ class HIRGen : public Visitor<HIRInstruction> {
   inline HIRInstruction* Return(HIRInstruction::Type type);
   inline HIRBlock* Join(HIRBlock* b1, HIRBlock* b2);
   inline HIRInstruction* Assign(ScopeSlot* slot, HIRInstruction* value);
+  inline HIRInstruction* GetNumber(uint64_t i);
 
   inline HIRBlock* CreateBlock(int stack_slots);
   inline HIRBlock* CreateBlock();

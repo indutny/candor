@@ -2,9 +2,6 @@
 #include "hir-inl.h"
 #include <string.h> // memset, memcpy
 
-#define __STDC_FORMAT_MACROS
-#include <inttypes.h> // PRIu64
-
 namespace candor {
 namespace internal {
 
@@ -81,17 +78,66 @@ HIRInstruction* HIRGen::VisitFunction(AstNode* stmt) {
   if (current_root() == current_block() &&
       current_block()->IsEmpty()) {
     Add(new HIREntry(this, current_block(), stmt->context_slots()));
+    HIRInstruction* index = NULL;
+    int flat_index = 0;
+    bool seen_varg = false;
+
+    if (fn->args()->length() > 0) {
+      index = GetNumber(0);
+    }
 
     AstList::Item* args_head = fn->args()->head();
-    for (int i = 0; args_head != NULL; args_head = args_head->next(), i++) {
-      AstValue* value = AstValue::Cast(args_head->value());
+    for (; args_head != NULL; args_head = args_head->next()) {
+      AstNode* arg = args_head->value();
+      HIRInstruction::Type type;
+      bool varg = false;
 
-      HIRInstruction* arg = Add(new HIRLoadArg(this, current_block(), i));
+      if (arg->is(AstNode::kVarArg)) {
+        assert(arg->lhs()->is(AstNode::kValue));
+        arg = arg->lhs();
+
+        varg = true;
+        seen_varg = true;
+        type = HIRInstruction::kLoadVarArg;
+      } else {
+        type = HIRInstruction::kLoadArg;
+      }
+
+      AstValue* value = AstValue::Cast(arg);
+
+      HIRInstruction* load_arg = Add(type)->AddArg(index);
       if (value->slot()->is_stack()) {
         // No instruction is needed
-        Assign(value->slot(), arg);
+        Assign(value->slot(), load_arg);
       } else {
-        Add(HIRInstruction::kStoreContext, value->slot())->AddArg(arg);
+        Add(HIRInstruction::kStoreContext, value->slot())->AddArg(load_arg);
+      }
+
+      // Increment index
+      if (!varg) {
+        // By 1
+        if (!seen_varg) {
+          // Index is linear here, just generate new literal
+          index = GetNumber(++flat_index);
+        } else {
+          // Do "Full" math
+          AstNode* one = new AstNode(AstNode::kNumber, stmt);
+
+          one->value("1");
+          one->length(1);
+
+          index = Add(new HIRBinOp(this, current_block(), BinOp::kAdd))
+              ->AddArg(index)
+              ->AddArg(Visit(one));
+        }
+      } else {
+        HIRInstruction* length = Add(HIRInstruction::kSizeof)
+            ->AddArg(load_arg);
+
+        // By length of vararg
+        index = Add(new HIRBinOp(this, current_block(), BinOp::kAdd))
+            ->AddArg(index)
+            ->AddArg(length);
       }
     }
 
@@ -371,16 +417,8 @@ HIRInstruction* HIRGen::VisitArrayLiteral(AstNode* stmt) {
 
   AstList::Item* head = stmt->children()->head();
   for (uint64_t i = 0; head != NULL; head = head->next(), i++) {
-    AstNode* index = new AstNode(AstNode::kNumber);
-    char keystr[32];
-    index->value(keystr);
-    index->length(snprintf(keystr, sizeof(keystr), "%" PRIu64, i));
-
-    HIRInstruction* key = Visit(index);
+    HIRInstruction* key = GetNumber(i);
     HIRInstruction* value = Visit(head->value());
-
-    // keystr is on-stack variable, nullify ast just for sanity
-    key->ast(NULL);
 
     Add(HIRInstruction::kStoreProperty)
         ->AddArg(res)
@@ -423,23 +461,43 @@ HIRInstruction* HIRGen::VisitCall(AstNode* stmt) {
     }
   }
 
-  HIRInstruction* receiver = NULL;
+  // Generate all arg's values and populate list of stores
+  HIRInstruction* vararg = NULL;
+  HIRInstructionList stores_;
+  AstList::Item* item = fn->args()->head();
+  for (; item != NULL; item = item->next()) {
+    AstNode* arg = item->value();
+    HIRInstruction::Type type;
+    HIRInstruction* rhs;
 
+    if (arg->is(AstNode::kSelf)) {
+      // Process self argument later
+      continue;
+    } else if (arg->is(AstNode::kVarArg)) {
+      type = HIRInstruction::kStoreVarArg;
+      rhs = Visit(arg->lhs());
+      vararg = rhs;
+    } else {
+      type = HIRInstruction::kStoreArg;
+      rhs = Visit(arg);
+    }
+
+    HIRInstruction* current = new HIRInstruction(this, current_block(), type);
+    current->AddArg(rhs);
+
+    stores_.Unshift(current);
+  }
+
+  // Process self argument
+  HIRInstruction* receiver = NULL;
   if (fn->args()->length() > 0 &&
       fn->args()->head()->value()->is(AstNode::kSelf)) {
     receiver = Visit(fn->variable()->lhs());
-  }
-
-  HIRInstructionList args;
-
-  AstList::Item* item = fn->args()->head();
-  for (; item != NULL; item = item->next()) {
-    if (item->value()->is(AstNode::kSelf)) {
-      assert(receiver != NULL);
-      args.Push(receiver);
-    } else {
-      args.Push(Visit(item->value()));
-    }
+    HIRInstruction* store = new HIRInstruction(this,
+                                               current_block(),
+                                               HIRInstruction::kStoreArg);
+    store->AddArg(receiver);
+    stores_.Unshift(store);
   }
 
   HIRInstruction* var;
@@ -454,12 +512,31 @@ HIRInstruction* HIRGen::VisitCall(AstNode* stmt) {
   } else {
     var = Visit(fn->variable());
   }
-  HIRInstruction* call = CreateInstruction(HIRInstruction::kCall)->AddArg(var);
 
-  HIRInstructionList::Item* ihead = args.head();
-  for (; ihead != NULL; ihead = ihead->next()) {
-    call->AddArg(ihead->value());
+  // Now add stores to hir
+  HIRInstructionList::Item* hhead = stores_.head();
+  for (; hhead != NULL; hhead = hhead->next()) {
+    Add(hhead->value());
   }
+
+  HIRInstruction* argc;
+
+  // If call has vararg - increase argc by ...
+  if (vararg != NULL) {
+    argc = GetNumber(fn->args()->length() - 1);
+    HIRInstruction* length = Add(HIRInstruction::kSizeof)
+        ->AddArg(vararg);
+
+    // ... by the length of vararg
+    argc = Add(new HIRBinOp(this, current_block(), BinOp::kAdd))
+        ->AddArg(argc)
+        ->AddArg(length);
+  } else {
+    argc = GetNumber(fn->args()->length());
+  }
+
+  HIRInstruction* call = CreateInstruction(HIRInstruction::kCall)
+      ->AddArg(var)->AddArg(argc);
 
   return Add(call);
 }

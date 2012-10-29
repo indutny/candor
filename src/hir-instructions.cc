@@ -127,17 +127,6 @@ void HIRFunction::Print(PrintBuffer* p) {
 }
 
 
-HIRLoadArg::HIRLoadArg(HIRGen* g, HIRBlock* block, int index) :
-    HIRInstruction(g, block, kLoadArg),
-    index_(index) {
-}
-
-
-void HIRLoadArg::Print(PrintBuffer* p) {
-  p->Print("i%d = LoadArg[%d]\n", id, index_);
-}
-
-
 HIREntry::HIREntry(HIRGen* g, HIRBlock* block, int context_slots_) :
     HIRInstruction(g, block, kEntry),
     context_slots_(context_slots_) {

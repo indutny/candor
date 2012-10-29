@@ -157,11 +157,6 @@ inline ScopeSlot* HIRLiteral::root_slot() {
 }
 
 
-inline int HIRLoadArg::index() {
-  return index_;
-}
-
-
 inline int HIREntry::context_slots() {
   return context_slots_;
 }

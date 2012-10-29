@@ -247,6 +247,10 @@ void LFunction::Generate(Masm* masm) {
 }
 
 
+void LLoadArg::Generate(Masm* masm) {
+}
+
+
 void LLoadContext::Generate(Masm* masm) {
 }
 
@@ -288,10 +292,6 @@ void LCollectGarbage::Generate(Masm* masm) {
 
 
 void LGetStackTrace::Generate(Masm* masm) {
-}
-
-
-void LLoadArg::Generate(Masm* masm) {
 }
 
 } // namespace internal

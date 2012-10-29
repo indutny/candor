@@ -32,7 +32,7 @@ TEST_START(hir)
            "# Block 0\n"
            "i0 = Entry[0]\n"
            "i2 = AllocateArray\n"
-           "i4 = Literal\n"
+           "i4 = Literal[0]\n"
            "i6 = Literal[a]\n"
            "i8 = StoreProperty(i2, i4, i6)\n"
            "i10 = Return(i2)\n")
@@ -54,12 +54,60 @@ TEST_START(hir)
            "i0 = Entry[0]\n"
            "i2 = LoadContext\n"
            "i4 = Literal[1]\n"
-           "i6 = Literal[2]\n"
-           "i8 = Literal[3]\n"
-           "i10 = Literal[b]\n"
-           "i12 = LoadProperty(i2, i10)\n"
-           "i14 = Call(i12, i2, i4, i6, i8)\n"
-           "i16 = Return(i14)\n")
+           "i8 = Literal[2]\n"
+           "i12 = Literal[3]\n"
+           "i18 = Literal[b]\n"
+           "i20 = LoadProperty(i2, i18)\n"
+           "i16 = StoreArg(i2)\n"
+           "i14 = StoreArg(i12)\n"
+           "i10 = StoreArg(i8)\n"
+           "i6 = StoreArg(i4)\n"
+           "i22 = Literal[4]\n"
+           "i24 = Call(i20, i22)\n"
+           "i26 = Return(i24)\n")
+
+  // Var arg
+  HIR_TEST("fn(a, b..., c) { return a + b[0] + b[1] + c }\n"
+           "return fn(1, 2, [3,4]...)",
+           "# Block 0\n"
+           "i0 = Entry[0]\n"
+           "i2 = Function[b1]\n"
+           "i4 = Literal[1]\n"
+           "i8 = Literal[2]\n"
+           "i12 = AllocateArray\n"
+           "i14 = Literal[0]\n"
+           "i16 = Literal[3]\n"
+           "i18 = StoreProperty(i12, i14, i16)\n"
+           "i20 = Literal[1]\n"
+           "i22 = Literal[4]\n"
+           "i24 = StoreProperty(i12, i20, i22)\n"
+           "i26 = StoreVarArg(i12)\n"
+           "i10 = StoreArg(i8)\n"
+           "i6 = StoreArg(i4)\n"
+           "i28 = Literal[2]\n"
+           "i30 = Sizeof(i12)\n"
+           "i32 = BinOp(i28, i30)\n"
+           "i34 = Call(i2, i32)\n"
+           "i36 = Return(i34)\n"
+           "# Block 1\n"
+           "i38 = Entry[0]\n"
+           "i40 = Literal[0]\n"
+           "i42 = LoadArg(i40)\n"
+           "i44 = Literal[1]\n"
+           "i46 = LoadVarArg(i44)\n"
+           "i48 = Sizeof(i46)\n"
+           "i50 = BinOp(i44, i48)\n"
+           "i52 = LoadArg(i50)\n"
+           "i54 = Literal[1]\n"
+           "i56 = BinOp(i50, i54)\n"
+           "i58 = Literal[0]\n"
+           "i60 = LoadProperty(i46, i58)\n"
+           "i62 = Literal[1]\n"
+           "i64 = LoadProperty(i46, i62)\n"
+           "i66 = BinOp(i64, i52)\n"
+           "i68 = BinOp(i60, i66)\n"
+           "i70 = BinOp(i42, i68)\n"
+           "i72 = Return(i70)\n")
 
   // Unary operations
   HIR_TEST("i = 0\nreturn !i",
@@ -137,21 +185,6 @@ TEST_START(hir)
            "# Block 4\n"
            "i14 = Phi(i2, i8)\n"
            "i16 = Return(i14)\n")
-
-  // Functions
-  HIR_TEST("x = 1\nreturn a(y) { return x + y }",
-           "# Block 0\n"
-           "i0 = Entry[1]\n"
-           "i2 = Literal[1]\n"
-           "i4 = StoreContext(i2)\n"
-           "i6 = Function[b1]\n"
-           "i8 = Return(i6)\n"
-           "# Block 1\n"
-           "i10 = Entry[0]\n"
-           "i12 = LoadArg[0]\n"
-           "i14 = LoadContext\n"
-           "i16 = BinOp(i14, i12)\n"
-           "i18 = Return(i16)\n")
 
   // Multiple blocks and phi
   HIR_TEST("if (a) { a = 2 }\nreturn a",

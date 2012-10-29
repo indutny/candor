@@ -26,6 +26,9 @@ typedef ZoneList<HIRPhi*> HIRPhiList;
     V(Return) \
     V(Function) \
     V(LoadArg) \
+    V(LoadVarArg) \
+    V(StoreArg) \
+    V(StoreVarArg) \
     V(LoadContext) \
     V(StoreContext) \
     V(LoadProperty) \
@@ -153,19 +156,6 @@ class HIRFunction : public HIRInstruction {
   void Print(PrintBuffer* p);
 
   HIR_DEFAULT_METHODS(Function)
-};
-
-class HIRLoadArg : public HIRInstruction {
- public:
-  HIRLoadArg(HIRGen* g, HIRBlock* block, int index);
-
-  void Print(PrintBuffer* p);
-  inline int index();
-
-  HIR_DEFAULT_METHODS(LoadArg)
-
- private:
-  int index_;
 };
 
 class HIREntry : public HIRInstruction {
