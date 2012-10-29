@@ -545,7 +545,9 @@ void LGen::AllocateBlockedReg(LInterval* current) {
         int pos = current->FindIntersection(interval);
         if (pos == -1) continue;
 
-        if (pos - 1 > interval->start()) Split(interval, pos - 1);
+        pos = pos % 2 == 0 ? (pos - 1) : (pos - 2);
+
+        if (pos > interval->start()) Split(interval, pos);
 
         Spill(interval);
 

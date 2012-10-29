@@ -247,6 +247,15 @@ void Assembler::mov(Register dst, Immediate src) {
 
 
 void Assembler::mov(Operand& dst, Immediate src) {
+  // One can't just load 64bit value into the operand
+  if (src.value() >= UINT32_MAX) {
+    push(scratch);
+    mov(scratch, src);
+    mov(dst, scratch);
+    pop(scratch);
+    return;
+  }
+
   emit_rexw(rax, dst);
   emitb(0xC7);
   emit_modrm(dst);
