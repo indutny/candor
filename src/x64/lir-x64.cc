@@ -333,6 +333,90 @@ void LLoadArg::Generate(Masm* masm) {
 
 
 void LLoadVarArg::Generate(Masm* masm) {
+  // offset and rest are unboxed
+  Register offset = rax;
+  Register rest = rbx;
+  Register arr = rcx;
+  Operand argc(rbp, -HValue::kPointerSize * 2);
+  Operand qmap(arr, HObject::kMapOffset);
+  Operand slot(scratch, 0);
+  Operand stack_slot(offset, 0);
+
+  Label loop, preloop, end;
+
+  // Calculate length of vararg array
+  __ mov(scratch, offset);
+  __ addq(scratch, rest);
+
+  // If offset + rest <= argc - return immediately
+  __ cmpq(scratch, argc);
+  __ jmp(kGe, &end);
+
+  // rdx = argc - offset - rest
+  __ mov(rdx, argc);
+  __ subq(rdx, scratch);
+
+  // Array index
+  __ mov(rbx, Immediate(HNumber::Tag(0)));
+
+  Masm::Spill arr_s(masm, arr), rdx_s(masm);
+  Masm::Spill offset_s(masm, offset), rbx_s(masm);
+
+  __ bind(&loop);
+
+  // while (rdx > 0)
+  __ cmpq(rdx, Immediate(HNumber::Tag(0)));
+  __ jmp(kEq, &end);
+
+  rdx_s.SpillReg(rdx);
+  rbx_s.SpillReg(rbx);
+
+  __ mov(rax, arr);
+
+  // rax <- object
+  // rbx <- property
+  __ mov(rcx, Immediate(1));
+  __ Call(masm->stubs()->GetLookupPropertyStub());
+
+  arr_s.Unspill();
+  rbx_s.Unspill();
+
+  // Make rax look like unboxed number to GC
+  __ dec(rax);
+  __ CheckGC();
+  __ inc(rax);
+
+  __ IsNil(rax, NULL, &preloop);
+
+  __ mov(arr, qmap);
+  __ addq(rax, arr);
+  __ mov(scratch, rax);
+
+  // Get stack offset
+  offset_s.Unspill();
+  __ addq(offset, Immediate(4));
+  __ addq(offset, rbx);
+  __ shl(offset, 2);
+  __ addq(offset, rbp);
+  __ mov(offset, stack_slot);
+
+  // Put argument in array
+  __ mov(slot, offset);
+
+  arr_s.Unspill();
+
+  __ bind(&preloop);
+
+  // Increment array index
+  __ addq(rbx, Immediate(HNumber::Tag(1)));
+
+  // rdx --
+  rdx_s.Unspill();
+  __ subq(rdx, Immediate(HNumber::Tag(1)));
+  __ jmp(&loop);
+
+  __ bind(&end);
+  // rcx <- holds result
 }
 
 
@@ -342,6 +426,97 @@ void LStoreArg::Generate(Masm* masm) {
 
 
 void LStoreVarArg::Generate(Masm* masm) {
+  Register varg = rax;
+  Register index = rbx;
+  Register map = rcx;
+
+  // rax <- varg
+  Label loop, not_array, odd_end, r1_nil, r2_nil;
+  Masm::Spill index_s(masm), map_s(masm), array_s(masm), r1(masm);
+  Operand slot(rax, 0);
+
+  __ IsUnboxed(varg, NULL, &not_array);
+  __ IsNil(varg, NULL, &not_array);
+  __ IsHeapObject(Heap::kTagArray, varg, &not_array, NULL);
+
+  Operand qmap(varg, HObject::kMapOffset);
+  __ mov(map, qmap);
+  map_s.SpillReg(map);
+
+  // index = sizeof(array)
+  Operand qlength(varg, HArray::kLengthOffset);
+  __ mov(index, qlength);
+  __ TagNumber(index);
+
+  // while ...
+  __ bind(&loop);
+
+  array_s.SpillReg(varg);
+
+  // while ... (index != 0) {
+  __ cmpq(index, Immediate(HNumber::Tag(0)));
+  __ jmp(kEq, &not_array);
+
+  // index--;
+  __ subq(index, Immediate(HNumber::Tag(1)));
+
+  index_s.SpillReg(index);
+
+  // odd case: array[index]
+  __ mov(rbx, index);
+  __ mov(rcx, Immediate(0));
+  __ Call(masm->stubs()->GetLookupPropertyStub());
+
+  __ IsNil(rax, NULL, &r1_nil);
+  map_s.Unspill();
+  __ addq(rax, map);
+  __ mov(rax, slot);
+
+  __ bind(&r1_nil);
+  r1.SpillReg(rax);
+
+  index_s.Unspill();
+
+  // if (index == 0) goto odd_end;
+  __ cmpq(index, Immediate(HNumber::Tag(0)));
+  __ jmp(kEq, &odd_end);
+
+  // index--;
+  __ subq(index, Immediate(HNumber::Tag(1)));
+
+  array_s.Unspill();
+  index_s.SpillReg(index);
+
+  // even case: array[index]
+  __ mov(rbx, index);
+  __ mov(rcx, Immediate(0));
+  __ Call(masm->stubs()->GetLookupPropertyStub());
+
+  __ IsNil(rax, NULL, &r2_nil);
+  map_s.Unspill();
+  __ addq(rax, map);
+  __ mov(rax, slot);
+
+  __ bind(&r2_nil);
+
+  // Push two item at the same time (to preserve alignment)
+  r1.Unspill(index);
+  __ push(index);
+  __ push(rax);
+
+  index_s.Unspill();
+  array_s.Unspill();
+
+  __ jmp(&loop);
+
+  __ bind(&odd_end);
+
+  r1.Unspill(rax);
+  __ push(rax);
+
+  __ bind(&not_array);
+
+  __ xorq(map, map);
 }
 
 

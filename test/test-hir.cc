@@ -94,18 +94,20 @@ TEST_START(hir)
            "i42 = Literal[0]\n"
            "i44 = LoadArg(i42)\n"
            "i46 = Literal[1]\n"
-           "i48 = LoadVarArg(i46)\n"
-           "i50 = Sizeof(i48)\n"
-           "i52 = BinOp(i46, i50)\n"
-           "i54 = LoadArg(i52)\n"
-           "i56 = Literal[0]\n"
-           "i58 = LoadProperty(i48, i56)\n"
-           "i60 = Literal[1]\n"
+           "i48 = AllocateArray\n"
+           "i50 = Literal[1]\n"
+           "i52 = LoadVarArg(i46, i50, i48)\n"
+           "i54 = Sizeof(i48)\n"
+           "i56 = BinOp(i46, i54)\n"
+           "i58 = LoadArg(i56)\n"
+           "i60 = Literal[0]\n"
            "i62 = LoadProperty(i48, i60)\n"
-           "i64 = BinOp(i62, i54)\n"
-           "i66 = BinOp(i58, i64)\n"
-           "i68 = BinOp(i44, i66)\n"
-           "i70 = Return(i68)\n")
+           "i64 = Literal[1]\n"
+           "i66 = LoadProperty(i48, i64)\n"
+           "i68 = BinOp(i66, i58)\n"
+           "i70 = BinOp(i62, i68)\n"
+           "i72 = BinOp(i44, i70)\n"
+           "i74 = Return(i72)\n")
 
   // Unary operations
   HIR_TEST("i = 0\nreturn !i",

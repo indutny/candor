@@ -184,8 +184,10 @@ void LGen::VisitLoadArg(HIRInstruction* instr) {
 
 void LGen::VisitLoadVarArg(HIRInstruction* instr) {
   Bind(new LLoadVarArg())
-      ->AddArg(instr->left(), LUse::kRegister)
-      ->SetResult(CreateVirtual(), LUse::kAny);
+      ->MarkHasCall()
+      ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister)
+      ->AddArg(ToFixed(instr->right(), rbx), LUse::kRegister)
+      ->SetResult(ToFixed(instr->third(), rcx), LUse::kAny);
 }
 
 
@@ -203,7 +205,9 @@ void LGen::VisitAlignStack(HIRInstruction* instr) {
 
 void LGen::VisitStoreVarArg(HIRInstruction* instr) {
   Bind(new LStoreVarArg())
-      ->AddArg(instr->left(), LUse::kRegister);
+      ->MarkHasCall()
+      ->AddScratch(CreateVirtual())
+      ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister);
 }
 
 

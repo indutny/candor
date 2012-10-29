@@ -461,9 +461,11 @@ class FunctionLiteral : public AstNode {
 
       // VarArg should be the last argument of a call statement
       AstList::Item* head;
-      for (head = children()->head(); head != NULL; head = head->next()) {
-        if (head->value()->is(kVarArg) && head->next() != NULL) {
-          return false;
+      bool varg = false;
+      for (head = args_.head(); head != NULL; head = head->next()) {
+        if (head->value()->is(kVarArg)) {
+          if (varg) return false;
+          varg = true;
         }
       }
 
