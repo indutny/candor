@@ -26,40 +26,34 @@ void BaseStub::GenerateEpilogue(int args) {
   __ mov(esp, ebp);
   __ pop(ebp);
 
-  // tag + size
-  __ ret(args * 4);
+  // Caller should unwind stack
+  __ ret(0);
 }
 
 
 void EntryStub::Generate() {
   GeneratePrologue();
 
-  // Align stack and allocate some spill slots
-  // (for root_slot)
-  __ subl(esp, Immediate(3 * 4));
+  __ AllocateSpills();
+
+  // Store callee-save registers
+  __ push(ebx);
+  __ push(esi);
+  __ push(edi);
+  __ push(edi);
 
   Operand fn(ebp, 2 * 4);
   Operand argc(ebp, 3 * 4);
   Operand argv(ebp, 4 * 4);
 
-  // Store registers
-  __ push(ebx);
-  __ push(ecx);
-  __ push(edi);
-
-  __ mov(edi, fn);
-  __ mov(ecx, argc);
-  __ mov(edx, argv);
-
-  // edi <- function addr
-  // ecx <- unboxed arguments count (tagged)
-  // edx <- pointer to arguments array
+  // Store address of root context
+  __ mov(fn_reg, fn);
 
   __ EnterFramePrologue();
 
   // Push all arguments to stack
   Label even, args, args_loop, unwind_even;
-  __ mov(eax, ecx);
+  __ mov(eax, argc);
   __ Untag(eax);
 
   // Odd arguments count check (for alignment)
@@ -71,6 +65,7 @@ void EntryStub::Generate() {
   // Get pointer to the end of arguments array
   __ mov(ebx, eax);
   __ shl(ebx, Immediate(2));
+  __ mov(edx, argv);
   __ addl(ebx, edx);
 
   __ jmp(&args_loop);
@@ -90,43 +85,49 @@ void EntryStub::Generate() {
   __ jmp(kNe, &args);
 
   // Nullify all registers to help GC distinguish on-stack values
-  __ xorl(eax, eax);
   __ xorl(ebx, ebx);
   __ xorl(ecx, ecx);
   __ xorl(edx, edx);
 
+  // Put argc
+  __ mov(eax, argc);
+
   // Call code
-  __ mov(scratch, edi);
+  __ mov(scratch, fn_reg);
   __ CallFunction(scratch);
 
   // Unwind arguments
-  __ mov(ecx, argc);
-  __ Untag(ecx);
+  __ mov(scratch, argc);
+  __ Untag(scratch);
 
-  __ testl(ecx, Immediate(1));
+  __ testb(scratch, Immediate(1));
   __ jmp(kEq, &unwind_even);
-  __ inc(ecx);
+  __ inc(scratch);
   __ bind(&unwind_even);
 
-  __ shl(ecx, Immediate(2));
-  __ addl(esp, ecx);
+  __ shl(scratch, Immediate(2));
+  __ addl(esp, scratch);
 
   __ EnterFrameEpilogue();
 
-  // Restore registers
+  // Restore callee-save registers
   __ pop(edi);
-  __ pop(ecx);
+  __ pop(edi);
+  __ pop(esi);
   __ pop(ebx);
 
-  GenerateEpilogue(0);
+  __ FinalizeSpills();
+
+  GenerateEpilogue();
 }
 
 
 void AllocateStub::Generate() {
   GeneratePrologue();
+
   // Align stack
   __ push(Immediate(0));
-  __ push(edx);
+  __ push(ebx);
 
   // Arguments
   Operand size(ebp, 3 * 4);
@@ -135,9 +136,9 @@ void AllocateStub::Generate() {
   Label runtime_allocate, done;
 
   Heap* heap = masm()->heap();
-  Immediate heapref(reinterpret_cast<uint32_t>(heap));
-  Immediate top(reinterpret_cast<uint32_t>(heap->new_space()->top()));
-  Immediate limit(reinterpret_cast<uint32_t>(heap->new_space()->limit()));
+  Immediate heapref(reinterpret_cast<uint64_t>(heap));
+  Immediate top(reinterpret_cast<uint64_t>(heap->new_space()->top()));
+  Immediate limit(reinterpret_cast<uint64_t>(heap->new_space()->limit()));
 
   Operand scratch_op(scratch, 0);
 
@@ -148,26 +149,26 @@ void AllocateStub::Generate() {
   __ mov(scratch, top);
   __ mov(scratch, scratch_op);
   __ mov(eax, scratch_op);
-  __ mov(edx, size);
-  __ Untag(edx);
+  __ mov(ebx, size);
+  __ Untag(ebx);
 
   // Add object size to the top
-  __ addl(edx, eax);
+  __ addl(ebx, eax);
   __ jmp(kCarry, &runtime_allocate);
 
   // Check if we exhausted buffer
   __ mov(scratch, limit);
   __ mov(scratch, scratch_op);
-  __ cmpl(edx, scratch_op);
+  __ cmpl(ebx, scratch_op);
   __ jmp(kGt, &runtime_allocate);
 
   // We should allocate only even amount of bytes
-  __ orlb(edx, Immediate(0x01));
+  __ orlb(ebx, Immediate(0x01));
 
   // Update top
   __ mov(scratch, top);
   __ mov(scratch, scratch_op);
-  __ mov(scratch_op, edx);
+  __ mov(scratch_op, ebx);
 
   __ jmp(&done);
 
@@ -176,25 +177,27 @@ void AllocateStub::Generate() {
 
   // Remove junk from registers
   __ xorl(eax, eax);
-  __ xorl(edx, edx);
+  __ xorl(ebx, ebx);
 
   RuntimeAllocateCallback allocate = &RuntimeAllocate;
 
-  __ Pushad();
+  {
+    Masm::Align a(masm());
+    __ Pushad();
 
-  // Two arguments: heap, size
-  __ mov(scratch, size);
-  __ push(scratch);
-  __ push(scratch);
-  __ push(scratch);
-  __ push(heapref);
+    __ mov(scratch, size);
+    __ push(scratch);
+    __ push(scratch);
 
-  __ mov(scratch, Immediate(*reinterpret_cast<uint32_t*>(&allocate)));
+    // Two arguments: heap, size
+    __ push(scratch);
+    __ push(heapref);
+    __ mov(scratch, Immediate(*reinterpret_cast<uint64_t*>(&allocate)));
+    __ addl(esp, 4 * 4);
 
-  __ Call(scratch);
-  __ addl(esp, Immediate(4 * 4));
-
-  __ Popad(eax);
+    __ Call(scratch);
+    __ Popad(eax);
+  }
 
   // Voila result and result_end are pointers
   __ bind(&done);
@@ -206,8 +209,8 @@ void AllocateStub::Generate() {
   __ mov(qtag, scratch);
 
   // eax will hold resulting pointer
-  __ pop(edx);
-  GenerateEpilogue(2);
+  __ pop(ebx);
+  GenerateEpilogue();
 }
 
 
@@ -238,7 +241,7 @@ void AllocateFunctionStub::Generate() {
   __ mov(qargc, scratch);
 
   __ CheckGC();
-  GenerateEpilogue(2);
+  GenerateEpilogue();
 }
 
 
@@ -257,7 +260,7 @@ void AllocateObjectStub::Generate() {
 
   __ FinalizeSpills();
 
-  GenerateEpilogue(2);
+  GenerateEpilogue();
 }
 
 
@@ -290,8 +293,13 @@ void CallBindingStub::Generate() {
 
   Operand code(scratch, HFunction::kCodeOffset);
 
+  __ push(esi); // align
+  __ push(esi); //
+  __ push(esi); // <- argv
+  __ push(edi); // <- argc
   __ mov(scratch, fn);
   __ Call(code);
+  __ addl(esp, Immediate(4 * 4));
 
   __ ExitFrameEpilogue();
 
@@ -299,7 +307,7 @@ void CallBindingStub::Generate() {
   __ Popad(eax);
 
   __ CheckGC();
-  GenerateEpilogue(2);
+  GenerateEpilogue();
 }
 
 
@@ -309,20 +317,28 @@ void CollectGarbageStub::Generate() {
   RuntimeCollectGarbageCallback gc = &RuntimeCollectGarbage;
   __ Pushad();
 
-  __ mov(scratch, Immediate(Heap::kTagNil));
+  {
+    Masm::Align a(masm());
 
-  // RuntimeCollectGarbage(heap, stack_top)
-  __ push(scratch);
-  __ push(scratch);
-  __ push(esp);
-  __ push(Immediate(reinterpret_cast<uint32_t>(masm()->heap())));
-  __ mov(eax, Immediate(*reinterpret_cast<uint32_t*>(&gc)));
-  __ Call(eax);
-  __ addl(esp, Immediate(4 * 4));
+    // RuntimeCollectGarbage(heap, stack_top)
+    __ mov(edi, Immediate(reinterpret_cast<uint64_t>(masm()->heap())));
+    __ mov(esi, esp);
+
+    __ push(esi);
+    __ push(esi);
+
+    __ push(esi);
+    __ push(edi);
+
+    __ mov(eax, Immediate(*reinterpret_cast<uint64_t*>(&gc)));
+    __ Call(eax);
+
+    __ addl(esp, Immediate(4 * 4));
+  }
 
   __ Popad(reg_nil);
 
-  GenerateEpilogue(0);
+  GenerateEpilogue();
 }
 
 
@@ -330,21 +346,20 @@ void TypeofStub::Generate() {
   GeneratePrologue();
 
   Label not_nil, not_unboxed, done;
+
   Operand type(eax, 0);
 
-  // Typeof 1 = 'number'
-  __ IsUnboxed(eax, &not_unboxed, NULL);
-  __ mov(eax, Immediate(HContext::GetIndexDisp(Heap::kRootNumberTypeIndex)));
-
-  __ jmp(&done);
-  __ bind(&not_unboxed);
-
-  // Typeof nil = 'nil'
   __ IsNil(eax, &not_nil, NULL);
 
   __ mov(eax, Immediate(HContext::GetIndexDisp(Heap::kRootNilTypeIndex)));
   __ jmp(&done);
   __ bind(&not_nil);
+
+  __ IsUnboxed(eax, &not_unboxed, NULL);
+  __ mov(eax, Immediate(HContext::GetIndexDisp(Heap::kRootNumberTypeIndex)));
+
+  __ jmp(&done);
+  __ bind(&not_unboxed);
 
   Operand btag(eax, HValue::kTagOffset);
   __ movzxb(eax, btag);
@@ -354,11 +369,12 @@ void TypeofStub::Generate() {
 
   __ bind(&done);
 
-  // eax contains offset in root
-  __ addl(eax, root_slot);
+  // eax contains offset in root_reg
+  __ mov(scratch, root_slot);
+  __ addl(eax, scratch);
   __ mov(eax, type);
 
-  GenerateEpilogue(0);
+  GenerateEpilogue();
 }
 
 
@@ -369,14 +385,16 @@ void SizeofStub::Generate() {
   __ Pushad();
 
   // RuntimeSizeof(heap, obj)
-  __ push(eax);
-  __ push(eax);
-  __ push(eax);
-  __ push(Immediate(reinterpret_cast<uint32_t>(masm()->heap())));
-  __ mov(eax, Immediate(*reinterpret_cast<uint32_t*>(&sizeofc)));
-  __ call(eax);
+  __ mov(edi, Immediate(reinterpret_cast<uint64_t>(masm()->heap())));
+  __ mov(esi, eax);
+  __ mov(eax, Immediate(*reinterpret_cast<uint64_t*>(&sizeofc)));
 
-  // Unwind stack
+  __ push(esi);
+  __ push(esi);
+
+  __ push(esi);
+  __ push(edi);
+  __ call(eax);
   __ addl(esp, Immediate(4 * 4));
 
   __ Popad(eax);
@@ -392,11 +410,15 @@ void KeysofStub::Generate() {
   __ Pushad();
 
   // RuntimeKeysof(heap, obj)
-  __ push(eax);
-  __ push(eax);
-  __ push(eax);
-  __ push(Immediate(reinterpret_cast<uint32_t>(masm()->heap())));
-  __ mov(eax, Immediate(*reinterpret_cast<uint32_t*>(&keysofc)));
+  __ mov(edi, Immediate(reinterpret_cast<uint64_t>(masm()->heap())));
+  __ mov(esi, eax);
+  __ mov(eax, Immediate(*reinterpret_cast<uint64_t*>(&keysofc)));
+
+  __ push(esi);
+  __ push(esi);
+
+  __ push(esi);
+  __ push(edi);
   __ call(eax);
   __ addl(esp, Immediate(4 * 4));
 
@@ -410,22 +432,15 @@ void LookupPropertyStub::Generate() {
   GeneratePrologue();
   __ AllocateSpills();
 
-  // Save registers and align
-  __ push(esi);
-  __ push(edi);
-  __ push(ebx);
-  __ push(ecx);
-
   Label is_object, is_array, cleanup, slow_case;
   Label non_object_error, done;
 
   // eax <- object
-  // edx <- property
+  // ebx <- property
   // ecx <- change flag
-
   Masm::Spill object_s(masm(), eax);
-  Masm::Spill key_s(masm(), edx);
   Masm::Spill change_s(masm(), ecx);
+  Masm::Spill esi_s(masm(), esi);
 
   // Return nil on non-object's property access
   __ IsUnboxed(eax, NULL, &non_object_error);
@@ -439,38 +454,36 @@ void LookupPropertyStub::Generate() {
 
   // Fast case: object and a string key
   {
-    __ IsUnboxed(edx, NULL, &slow_case);
-    __ IsNil(edx, NULL, &slow_case);
-    __ IsHeapObject(Heap::kTagString, edx, &slow_case, NULL);
+    __ IsUnboxed(ebx, NULL, &slow_case);
+    __ IsNil(ebx, NULL, &slow_case);
+    __ IsHeapObject(Heap::kTagString, ebx, &slow_case, NULL);
 
-    __ StringHash(edx, ebx);
+    __ StringHash(ebx, edx);
 
     Operand qmask(eax, HObject::kMaskOffset);
-    __ mov(eax, qmask);
+    __ mov(esi, qmask);
 
     // offset = hash & mask + kSpaceOffset
-    __ andl(ebx, eax);
-    __ addl(ebx, Immediate(HMap::kSpaceOffset));
-
-    object_s.Unspill(eax);
+    __ andl(edx, esi);
+    __ addl(edx, Immediate(HMap::kSpaceOffset));
 
     Operand qmap(eax, HObject::kMapOffset);
-    __ mov(esi, qmap);
-    __ addl(esi, ebx);
+    __ mov(scratch, qmap);
+    __ addl(scratch, edx);
 
     Label match;
 
-    // ebx now contains pointer to the key slot in map's space
+    // edx now contains pointer to the key slot in map's space
     // compare key's addresses
-    Operand slot(esi, 0);
-    __ mov(esi, slot);
+    Operand slot(scratch, 0);
+    __ mov(scratch, slot);
 
     // Slot should contain either key
-    __ cmpl(esi, edx);
+    __ cmpl(scratch, ebx);
     __ jmp(kEq, &match);
 
     // or nil
-    __ cmpl(esi, Immediate(Heap::kTagNil));
+    __ cmpl(scratch, Immediate(Heap::kTagNil));
     __ jmp(kNe, &cleanup);
 
     __ bind(&match);
@@ -482,23 +495,23 @@ void LookupPropertyStub::Generate() {
     __ jmp(kEq, &fast_case_end);
 
     // Restore map's interior pointer
-    __ mov(esi, qmap);
-    __ addl(esi, ebx);
+    __ mov(scratch, qmap);
+    __ addl(scratch, edx);
 
     // Put the key into slot
-    __ mov(slot, edx);
+    __ mov(slot, ebx);
 
     __ bind(&fast_case_end);
 
     // Compute value's address
     // eax = key_offset + mask + 4
-    object_s.Unspill(eax);
-    __ mov(eax, qmask);
-    __ addl(eax, ebx);
+    __ mov(eax, edx);
+    __ addl(eax, esi);
     __ addl(eax, Immediate(HValue::kPointerSize));
 
     // Cleanup
-    __ xorl(ebx, ebx);
+    __ xorl(edx, edx);
+    esi_s.Unspill();
 
     // Return value
     GenerateEpilogue(0);
@@ -507,50 +520,50 @@ void LookupPropertyStub::Generate() {
   __ bind(&is_array);
   // Fast case: dense array and a unboxed key
   {
-    __ IsUnboxed(edx, &slow_case, NULL);
-    __ IsNil(edx, NULL, &slow_case);
-    __ cmpl(edx, Immediate(-1));
+    __ IsUnboxed(ebx, &slow_case, NULL);
+    __ IsNil(ebx, NULL, &slow_case);
+    __ cmpl(ebx, Immediate(-1));
     __ jmp(kLe, &slow_case);
     __ IsDenseArray(eax, &slow_case, NULL);
 
     // Get mask
     Operand qmask(eax, HObject::kMaskOffset);
-    __ mov(ebx, qmask);
+    __ mov(edx, qmask);
 
     // Check if index is above the mask
-    // NOTE: edx is tagged so we need to shift it only 2 times
-    __ shl(edx, Immediate(2));
-    __ cmpl(edx, ebx);
+    // NOTE: ebx is tagged so we need to shift it only 1 time
+    __ mov(esi, ebx);
+    __ shl(esi, Immediate(1));
+    __ cmpl(esi, edx);
     __ jmp(kGt, &cleanup);
 
     // Apply mask
-    __ andl(edx, ebx);
-    Masm::Spill mask_s(masm(), edx);
-    key_s.Unspill(edx);
+    __ andl(esi, edx);
 
     // Check if length was increased
     Label length_set;
 
     Operand qlength(eax, HArray::kLengthOffset);
-    __ mov(ebx, qlength);
-    __ Untag(edx);
-    __ inc(edx);
-    __ cmpl(edx, ebx);
+    __ mov(edx, qlength);
+    __ Untag(ebx);
+    __ inc(ebx);
+    __ cmpl(ebx, edx);
     __ jmp(kLe, &length_set);
 
     // Update length
-    __ mov(qlength, edx);
+    __ mov(qlength, ebx);
 
     __ bind(&length_set);
-    // edx is untagged here - so nullify it
-    __ xorl(edx, edx);
+    // ebx is untagged here - so nullify it
+    __ xorl(ebx, ebx);
 
     // Get index
-    mask_s.Unspill(eax);
+    __ mov(eax, esi);
     __ addl(eax, Immediate(HMap::kSpaceOffset));
 
     // Cleanup
-    __ xorl(ebx, ebx);
+    __ xorl(edx, edx);
+    esi_s.Unspill();
 
     // Return value
     GenerateEpilogue(0);
@@ -558,10 +571,8 @@ void LookupPropertyStub::Generate() {
 
   __ bind(&cleanup);
 
-  __ xorl(ebx, ebx);
-
-  object_s.Unspill();
-  key_s.Unspill();
+  esi_s.Unspill();
+  __ xorl(edx, edx);
 
   __ bind(&slow_case);
 
@@ -571,12 +582,16 @@ void LookupPropertyStub::Generate() {
 
   // RuntimeLookupProperty(heap, obj, key, change)
   // (returns addr of slot)
+  __ mov(edi, Immediate(reinterpret_cast<uint64_t>(masm()->heap())));
+  __ mov(esi, eax);
+  __ mov(edx, ebx);
+  // ecx already contains change flag
+  __ mov(eax, Immediate(*reinterpret_cast<uint64_t*>(&lookup)));
+
   __ push(ecx);
   __ push(edx);
-  __ push(eax);
-  __ push(Immediate(reinterpret_cast<uint32_t>(masm()->heap())));
-  // ecx already contains change flag
-  __ mov(eax, Immediate(*reinterpret_cast<uint32_t*>(&lookup)));
+  __ push(esi);
+  __ push(edi);
   __ call(eax);
   __ addl(esp, Immediate(4 * 4));
 
@@ -591,12 +606,8 @@ void LookupPropertyStub::Generate() {
 
   __ bind(&done);
 
-  __ pop(ecx);
-  __ pop(edx);
-  __ pop(edi);
-  __ pop(esi);
   __ FinalizeSpills();
-  GenerateEpilogue(0);
+  GenerateEpilogue();
 }
 
 
@@ -635,13 +646,17 @@ void CoerceToBooleanStub::Generate() {
 
   RuntimeCoerceCallback to_boolean = &RuntimeToBoolean;
 
-  __ push(eax);
-  __ push(eax);
-  __ push(Immediate(reinterpret_cast<uint32_t>(masm()->heap())));
+  __ mov(edi, Immediate(reinterpret_cast<uint64_t>(masm()->heap())));
+  __ mov(esi, eax);
+  __ mov(eax, Immediate(*reinterpret_cast<uint64_t*>(&to_boolean)));
 
-  __ mov(eax, Immediate(*reinterpret_cast<uint32_t*>(&to_boolean)));
+  __ push(esi);
+  __ push(esi);
+
+  __ push(esi);
+  __ push(edi);
   __ call(eax);
-  __ pop(ebx);
+  __ addl(esp, Immediate(4 * 4));
 
   __ Popad(eax);
 
@@ -655,13 +670,8 @@ void CoerceToBooleanStub::Generate() {
 
 void CloneObjectStub::Generate() {
   GeneratePrologue();
-  __ AllocateSpills();
 
-  // Align and save
-  __ push(esi);
-  __ push(edi);
-  __ push(ebx);
-  __ push(ecx);
+  __ AllocateSpills();
 
   Label non_object, done;
 
@@ -701,8 +711,8 @@ void CloneObjectStub::Generate() {
   __ bind(&loop_start);
 
   Operand from(eax, 0), to(ebx, 0);
-  __ mov(esi, from);
-  __ mov(to, esi);
+  __ mov(scratch, from);
+  __ mov(to, scratch);
 
   // Move forward
   __ addl(eax, Immediate(4));
@@ -727,11 +737,7 @@ void CloneObjectStub::Generate() {
 
   __ FinalizeSpills();
 
-  __ pop(ecx);
-  __ pop(ebx);
-  __ pop(esi);
-  __ pop(edi);
-  GenerateEpilogue(0);
+  GenerateEpilogue();
 }
 
 
@@ -746,18 +752,25 @@ void DeletePropertyStub::Generate() {
   __ Pushad();
 
   // RuntimeDeleteProperty(heap, obj, property)
-  __ mov(edi, Immediate(reinterpret_cast<uint32_t>(masm()->heap())));
+  __ mov(edi, Immediate(reinterpret_cast<uint64_t>(masm()->heap())));
   __ mov(esi, eax);
   __ mov(edx, ebx);
-  __ mov(eax, Immediate(*reinterpret_cast<uint32_t*>(&delp)));
+  __ mov(eax, Immediate(*reinterpret_cast<uint64_t*>(&delp)));
+
+
+  __ push(esi);
+  __ push(esi);
+  __ push(esi);
+  __ push(edi);
   __ call(eax);
+  __ addl(esp, Immediate(4 * 4));
 
   __ Popad(reg_nil);
 
   // Delete property returns nil
   __ mov(eax, Immediate(Heap::kTagNil));
 
-  GenerateEpilogue(0);
+  GenerateEpilogue();
 }
 
 
@@ -771,15 +784,21 @@ void HashValueStub::Generate() {
   __ Pushad();
 
   // RuntimeStringHash(heap, str)
-  __ mov(edi, Immediate(reinterpret_cast<uint32_t>(masm()->heap())));
+  __ mov(edi, Immediate(reinterpret_cast<uint64_t>(masm()->heap())));
   __ mov(esi, str);
-  __ mov(eax, Immediate(*reinterpret_cast<uint32_t*>(&hash)));
+  __ mov(eax, Immediate(*reinterpret_cast<uint64_t*>(&hash)));
+
+  __ push(esi);
+  __ push(esi);
+  __ push(esi);
+  __ push(edi);
   __ call(eax);
+  __ addl(esp, Immediate(4 * 4));
 
   __ Popad(eax);
 
   // Caller will unwind stack
-  GenerateEpilogue(0);
+  GenerateEpilogue();
 }
 
 
@@ -797,16 +816,21 @@ void StackTraceStub::Generate() {
   __ Pushad();
 
   // RuntimeStackTrace(heap, frame, ip)
-  __ mov(edi, Immediate(reinterpret_cast<uint32_t>(masm()->heap())));
+  __ mov(edi, Immediate(reinterpret_cast<uint64_t>(masm()->heap())));
   __ mov(esi, ebx);
   __ mov(edx, eax);
 
-  __ mov(eax, Immediate(*reinterpret_cast<uint32_t*>(&strace)));
+  __ push(esi);
+  __ push(esi);
+  __ push(esi);
+  __ push(edi);
+  __ mov(eax, Immediate(*reinterpret_cast<uint64_t*>(&strace)));
   __ call(eax);
+  __ addl(esp, Immediate(4 * 4));
 
   __ Popad(eax);
 
-  GenerateEpilogue(0);
+  GenerateEpilogue();
 }
 
 
@@ -849,17 +873,17 @@ void BinOpStub::Generate() {
     // Try working with unboxed numbers
 
     __ IsUnboxed(eax, &not_unboxed, NULL);
-    __ IsUnboxed(ecx, &not_unboxed, NULL);
+    __ IsUnboxed(ebx, &not_unboxed, NULL);
 
     // Number (+) Number
     if (BinOp::is_math(type())) {
       Masm::Spill lvalue(masm(), eax);
-      Masm::Spill rvalue(masm(), ecx);
+      Masm::Spill rvalue(masm(), ebx);
 
       switch (type()) {
-       case BinOp::kAdd: __ addl(eax, ecx); break;
-       case BinOp::kSub: __ subl(eax, ecx); break;
-       case BinOp::kMul: __ Untag(ecx); __ imull(ecx); break;
+       case BinOp::kAdd: __ addl(eax, ebx); break;
+       case BinOp::kSub: __ subl(eax, ebx); break;
+       case BinOp::kMul: __ Untag(ebx); __ imull(ebx); break;
 
        default: __ emitb(0xcc); break;
       }
@@ -874,19 +898,19 @@ void BinOpStub::Generate() {
       __ jmp(&not_unboxed);
     } else if (BinOp::is_binary(type())) {
       switch (type()) {
-       case BinOp::kBAnd: __ andl(eax, ecx); break;
-       case BinOp::kBOr: __ orl(eax, ecx); break;
-       case BinOp::kBXor: __ xorl(eax, ecx); break;
+       case BinOp::kBAnd: __ andl(eax, ebx); break;
+       case BinOp::kBOr: __ orl(eax, ebx); break;
+       case BinOp::kBXor: __ xorl(eax, ebx); break;
        case BinOp::kMod:
         __ xorl(edx, edx);
-        __ idivl(ecx);
+        __ idivl(ebx);
         __ mov(eax, edx);
         break;
        case BinOp::kShl:
        case BinOp::kShr:
        case BinOp::kUShr:
-        __ mov(ebx, ecx);
-        __ shr(ebx, Immediate(1));
+        __ mov(ecx, ebx);
+        __ shr(ecx, Immediate(1));
 
         switch (type()) {
          case BinOp::kShl: __ sal(eax); break;
@@ -905,9 +929,9 @@ void BinOpStub::Generate() {
       }
     } else if (BinOp::is_logic(type())) {
       Condition cond = masm()->BinOpToCondition(type(), Masm::kIntegral);
-      // Note: eax and ecx are boxed here
+      // Note: eax and ebx are boxed here
       // Otherwise cmp won't work for negative numbers
-      __ cmpl(eax, ecx);
+      __ cmpl(eax, ebx);
 
       Label true_, cond_end;
 
@@ -938,7 +962,7 @@ void BinOpStub::Generate() {
   Label call_runtime, nil_result;
 
   __ IsNil(eax, NULL, &call_runtime);
-  __ IsNil(ecx, NULL, &call_runtime);
+  __ IsNil(ebx, NULL, &call_runtime);
 
   // Convert lhs to heap number if needed
   __ IsUnboxed(eax, &box_rhs, NULL);
@@ -953,15 +977,15 @@ void BinOpStub::Generate() {
   __ bind(&box_rhs);
 
   // Convert rhs to heap number if needed
-  __ IsUnboxed(ecx, &both_boxed, NULL);
+  __ IsUnboxed(ebx, &both_boxed, NULL);
 
-  __ Untag(ecx);
+  __ Untag(ebx);
 
   __ xorld(xmm1, xmm1);
-  __ cvtsi2sd(xmm1, ecx);
-  __ xorl(ecx, ecx);
+  __ cvtsi2sd(xmm1, ebx);
+  __ xorl(ebx, ebx);
 
-  __ AllocateNumber(xmm1, ecx);
+  __ AllocateNumber(xmm1, ebx);
 
   // Both lhs and rhs are heap values (not-unboxed)
   __ bind(&both_boxed);
@@ -972,17 +996,17 @@ void BinOpStub::Generate() {
   }
 
   __ IsNil(eax, NULL, &call_runtime);
-  __ IsNil(ecx, NULL, &call_runtime);
+  __ IsNil(ebx, NULL, &call_runtime);
 
   __ IsHeapObject(Heap::kTagNumber, eax, &call_runtime, NULL);
-  __ IsHeapObject(Heap::kTagNumber, ecx, &call_runtime, NULL);
+  __ IsHeapObject(Heap::kTagNumber, ebx, &call_runtime, NULL);
 
   // We're adding two heap numbers
   Operand lvalue(eax, HNumber::kValueOffset);
-  Operand rvalue(ecx, HNumber::kValueOffset);
+  Operand rvalue(ebx, HNumber::kValueOffset);
   __ movdqu(lvalue, xmm1);
   __ movdqu(rvalue, xmm2);
-  __ xorl(ecx, ecx);
+  __ xorl(ebx, ebx);
 
   if (BinOp::is_math(type())) {
     switch (type()) {
@@ -997,21 +1021,21 @@ void BinOpStub::Generate() {
   } else if (BinOp::is_binary(type())) {
     // Truncate lhs and rhs first
     __ cvttsd2si(eax, xmm1);
-    __ cvttsd2si(ecx, xmm2);
+    __ cvttsd2si(ebx, xmm2);
 
     switch (type()) {
-     case BinOp::kBAnd: __ andl(eax, ecx); break;
-     case BinOp::kBOr: __ orl(eax, ecx); break;
-     case BinOp::kBXor: __ xorl(eax, ecx); break;
+     case BinOp::kBAnd: __ andl(eax, ebx); break;
+     case BinOp::kBOr: __ orl(eax, ebx); break;
+     case BinOp::kBXor: __ xorl(eax, ebx); break;
      case BinOp::kMod:
       __ xorl(edx, edx);
-      __ idivl(ecx);
+      __ idivl(ebx);
       __ mov(eax, edx);
       break;
      case BinOp::kShl:
      case BinOp::kShr:
      case BinOp::kUShr:
-      __ mov(ebx, ecx);
+      __ mov(ecx, ebx);
 
       switch (type()) {
        case BinOp::kUShr:
@@ -1030,11 +1054,11 @@ void BinOpStub::Generate() {
     __ TagNumber(eax);
   } else if (BinOp::is_logic(type())) {
     Condition cond = masm()->BinOpToCondition(type(), Masm::kDouble);
+    __ mov(scratch, root_slot);
     __ ucomisd(xmm1, xmm2);
 
     Label true_, comp_end;
 
-    __ mov(scratch, root_slot);
     Operand truev(scratch, HContext::GetIndexDisp(Heap::kRootTrueIndex));
     Operand falsev(scratch, HContext::GetIndexDisp(Heap::kRootFalseIndex));
 
@@ -1070,15 +1094,18 @@ void BinOpStub::Generate() {
 
   __ Pushad();
 
-  Immediate heapref(reinterpret_cast<uint32_t>(masm()->heap()));
+  Immediate heapref(reinterpret_cast<uint64_t>(masm()->heap()));
 
   // binop(heap, lhs, rhs)
-  __ push(ecx);
-  __ push(ecx);
-  __ push(eax);
-  __ push(heapref);
+  __ mov(edi, heapref);
+  __ mov(esi, eax);
+  __ mov(edx, ebx);
 
-  __ mov(scratch, Immediate(*reinterpret_cast<uint32_t*>(&cb)));
+  __ push(edx);
+  __ push(edx);
+  __ push(esi);
+  __ push(edi);
+  __ mov(scratch, Immediate(*reinterpret_cast<uint64_t*>(&cb)));
   __ call(scratch);
   __ addl(esp, Immediate(4 * 4));
 
@@ -1087,14 +1114,15 @@ void BinOpStub::Generate() {
   __ bind(&done);
 
   // Cleanup
-  __ xorl(ebx, ebx);
+  __ xorl(edx, edx);
   __ xorl(ecx, ecx);
+  __ xorl(ebx, ebx);
 
   __ CheckGC();
 
   __ FinalizeSpills();
 
-  GenerateEpilogue(0);
+  GenerateEpilogue();
 }
 
 #undef BINARY_SUB_TYPES

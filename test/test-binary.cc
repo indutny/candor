@@ -1,6 +1,10 @@
 #include "test.h"
 
 TEST_START(binary)
+  FUN_TEST("return 1 + 2", {
+    assert(result->As<Number>()->Value() == 3);
+  })
+
   FUN_TEST("return 1 + 2 * 3 + 4 / 2 + (3 | 2) + (5 & 3) + (3 ^ 2)", {
     assert(result->As<Number>()->Value() == 14);
   })

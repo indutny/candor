@@ -70,7 +70,7 @@ class BaseStub {
   BaseStub(CodeSpace* space, StubType type);
 
   void GeneratePrologue();
-  void GenerateEpilogue(int args);
+  void GenerateEpilogue(int args = 0);
 
   virtual void Generate() = 0;
 

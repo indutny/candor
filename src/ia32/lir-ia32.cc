@@ -110,7 +110,7 @@ void LAllocateObject::Generate(Masm* masm) {
   __ push(Immediate(HNumber::Tag(16)));
   __ push(Immediate(HNumber::Tag(Heap::kTagObject)));
   __ Call(masm->stubs()->GetAllocateObjectStub());
-  __ addl(esp, Immediate(8));
+  __ addl(esp, Immediate(4 * 4));
 }
 
 
@@ -121,7 +121,7 @@ void LAllocateArray::Generate(Masm* masm) {
   __ push(Immediate(HNumber::Tag(16)));
   __ push(Immediate(HNumber::Tag(Heap::kTagArray)));
   __ Call(masm->stubs()->GetAllocateObjectStub());
-  __ addl(esp, Immediate(8));
+  __ addl(esp, Immediate(4 * 4));
 }
 
 
@@ -149,7 +149,7 @@ void LLoadProperty::Generate(Masm* masm) {
 
   // eax <- object
   // ebx <- property
-  __ mov(ebx, Immediate(0));
+  __ mov(ecx, Immediate(0));
   __ Call(masm->stubs()->GetLookupPropertyStub());
 
   Label done;
@@ -174,13 +174,12 @@ void LLoadProperty::Generate(Masm* masm) {
 void LStoreProperty::Generate(Masm* masm) {
   __ push(eax);
   __ push(eax);
-  __ push(eax);
-  __ push(ebx);
+  __ push(ecx);
+  __ push(ecx);
 
   // eax <- object
   // ebx <- property
-  // ebx <- value
-  __ mov(ebx, Immediate(1));
+  __ mov(ecx, Immediate(1));
 
   __ Call(masm->stubs()->GetLookupPropertyStub());
 
@@ -189,8 +188,8 @@ void LStoreProperty::Generate(Masm* masm) {
   __ CheckGC();
   __ inc(eax);
 
-  __ pop(ebx);
-  __ pop(ebx);
+  __ pop(ecx);
+  __ pop(ecx);
   __ pop(ebx);
   __ pop(ebx);
 
@@ -202,7 +201,7 @@ void LStoreProperty::Generate(Masm* masm) {
   __ addl(eax, ebx);
 
   Operand slot(eax, 0);
-  __ mov(slot, ebx);
+  __ mov(slot, ecx);
 
   __ bind(&done);
 }
@@ -272,7 +271,7 @@ void LFunction::Generate(Masm* masm) {
   __ push(Immediate(arg_count_));
   __ push(scratches[0]->ToRegister());
   __ Call(masm->stubs()->GetAllocateFunctionStub());
-  __ addl(esp, Immediate(8));
+  __ addl(esp, Immediate(4 * 4));
 }
 
 

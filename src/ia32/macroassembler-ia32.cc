@@ -145,7 +145,7 @@ void Masm::Allocate(Heap::HeapTag tag,
     push(eax);
     push(eax);
   } else {
-    subl(esp, Immediate(8));
+    subl(esp, Immediate(2 * 4));
   }
 
   // Add tag size
@@ -162,14 +162,14 @@ void Masm::Allocate(Heap::HeapTag tag,
   push(eax);
 
   Call(stubs()->GetAllocateStub());
-  // Stub will unwind stack
-  //
+  addl(esp, Immediate(4 * 2));
+
   if (!result.is(eax)) {
     mov(result, eax);
     pop(eax);
     pop(eax);
   } else {
-    addl(esp, Immediate(8));
+    addl(esp, Immediate(4 * 2));
   }
 }
 
@@ -251,6 +251,7 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
 
     bind(&allocate_map);
   }
+  Spill result_s(this, result);
 
   // Set mask
   mov(scratch, size);
@@ -276,7 +277,6 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
   mov(qmap, scratch);
 
   size_s.Unspill();
-  Spill result_s(this, result);
   mov(result, scratch);
 
   // Save map size for GC
@@ -326,17 +326,17 @@ void Masm::Fill(Register start, Register end, Immediate value) {
 
 void Masm::FillStackSlots() {
   push(scratch);
-  push(esi);
-  push(edi);
-  mov(esi, esp);
-  mov(edi, ebp);
-  // Skip esi/edi/scratch
-  addl(esi, Immediate(4 * 3));
+  push(eax);
+  push(ebx);
+  mov(eax, esp);
+  mov(ebx, ebp);
+  // Skip eax/ebx/scratch
+  addl(eax, Immediate(4 * 3));
   // Skip frame info
-  subl(edi, Immediate(4 * 1));
-  Fill(esi, edi, Immediate(Heap::kTagNil));
-  pop(edi);
-  pop(esi);
+  subl(ebx, Immediate(4 * 1));
+  Fill(eax, ebx, Immediate(Heap::kTagNil));
+  pop(ebx);
+  pop(eax);
   pop(scratch);
 }
 
@@ -500,7 +500,11 @@ void Masm::StringHash(Register str, Register result) {
   bind(&call_runtime);
 
   push(str);
+  push(str);
+  push(str);
+  push(str);
   Call(stubs()->GetHashValueStub());
+  addl(esp, Immediate(4 * 4));
   pop(str);
 
   mov(result, eax);

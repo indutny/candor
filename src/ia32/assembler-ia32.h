@@ -48,8 +48,8 @@ const Register ebp = { 5 };
 const Register esi = { 6 };
 const Register edi = { 7 };
 
-const Register scratch = esi;
-const Register fn_reg = edi;
+const Register fn_reg = esi;
+const Register scratch = edi;
 
 static inline Register RegisterByIndex(int index) {
   switch (index) {
