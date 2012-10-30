@@ -20,8 +20,6 @@ namespace internal {
     V(AllocateObject)\
     V(AllocateFunction)\
     V(CallBinding)\
-    V(VarArg)\
-    V(PutVarArg)\
     V(CollectGarbage)\
     V(Throw)\
     V(Typeof)\

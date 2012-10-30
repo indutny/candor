@@ -321,142 +321,6 @@ void CallBindingStub::Generate() {
 }
 
 
-void VarArgStub::Generate() {
-  GeneratePrologue();
-
-  __ AllocateSpills();
-
-  // rax <- interior pointer to arguments
-  // rdx <- arguments count (to put into array)
-  __ push(rbx);
-  __ push(rcx);
-
-  __ mov(r13, rax);
-  __ mov(r14, rdx);
-
-  // Allocate array
-  __ mov(rcx, Immediate(HNumber::Tag(PowerOfTwo(HArray::kVarArgLength))));
-  __ AllocateObjectLiteral(Heap::kTagArray, reg_nil, rcx, rax);
-
-  // Array index
-  __ xorq(rbx, rbx);
-
-  Label loop_start, loop_cond;
-  __ jmp(&loop_cond);
-  __ bind(&loop_start);
-
-  // Insert entry : rax[rbx] = *r13
-  __ push(rax);
-  __ push(rbx);
-
-  // Key insertion flag
-  __ mov(rcx, Immediate(1));
-  __ Call(masm()->stubs()->GetLookupPropertyStub());
-
-  // Calculate pointer
-  __ mov(rdx, rax);
-  __ pop(rbx);
-  __ pop(rax);
-
-  Operand qmap(rax, HObject::kMapOffset);
-  __ addq(rdx, qmap);
-
-  // Put value into the slot
-  Operand slot(rdx, 0);
-  Operand value(r13, 0);
-
-  __ mov(scratch, value);
-  __ mov(slot, scratch);
-
-  // Move forward
-  __ addq(r13, Immediate(8));
-  __ subq(r14, Immediate(8));
-  __ addq(rbx, Immediate(HNumber::Tag(1)));
-
-  __ bind(&loop_cond);
-
-  // r14 != 0
-  __ cmpq(r14, Immediate(0));
-  __ jmp(kNe, &loop_start);
-
-  __ pop(rcx);
-  __ pop(rbx);
-
-  // Cleanup
-  __ xorq(r13, r13);
-  __ xorq(r14, r13);
-
-  __ CheckGC();
-
-  __ FinalizeSpills();
-
-  GenerateEpilogue(0);
-}
-
-
-void PutVarArgStub::Generate() {
-  GeneratePrologue();
-
-  __ AllocateSpills();
-
-  // rax <- array
-  // rbx <- stack offset
-  Masm::Spill rax_s(masm(), rax), stack_s(masm(), rbx);
-
-  Operand qlength(rax, HArray::kLengthOffset);
-  __ mov(scratch, qlength);
-  __ TagNumber(scratch);
-
-  Masm::Spill scratch_s(masm(), scratch);
-
-  Label loop_start, loop_cond;
-
-  // rbx <- index
-  __ mov(rbx, Immediate(HNumber::Tag(0)));
-
-  __ jmp(&loop_cond);
-  __ bind(&loop_start);
-
-  {
-    Masm::Spill rbx_s(masm(), rbx);
-
-    rax_s.Unspill();
-    __ mov(rcx, Immediate(0));
-
-    // rax <- array
-    // rbx <- index
-    // rcx <- flag(0)
-    __ Call(masm()->stubs()->GetLookupPropertyStub());
-    rax_s.Unspill(scratch);
-    Operand qmap(scratch, HObject::kMapOffset);
-    Operand qself(rax, 0);
-    __ addq(rax, qmap);
-    __ mov(rax, qself);
-
-    stack_s.Unspill(rdx);
-    Operand slot(rdx, 0);
-    __ mov(slot, rax);
-    __ addq(rdx, Immediate(8));
-    stack_s.SpillReg(rdx);
-
-    rbx_s.Unspill();
-  }
-
-  __ addq(rbx, Immediate(HNumber::Tag(1)));
-
-  scratch_s.Unspill();
-  __ bind(&loop_cond);
-
-  // while (rbx < scratch)
-  __ cmpq(rbx, scratch);
-  __ jmp(kLt, &loop_start);
-
-  __ FinalizeSpills();
-
-  GenerateEpilogue(0);
-}
-
-
 void CollectGarbageStub::Generate() {
   GeneratePrologue();
 
@@ -562,6 +426,7 @@ void LookupPropertyStub::Generate() {
   // rcx <- change flag
   Masm::Spill object_s(masm(), rax);
   Masm::Spill change_s(masm(), rcx);
+  Masm::Spill rsi_s(masm(), rsi);
 
   // Return nil on non-object's property access
   __ IsUnboxed(rax, NULL, &non_object_error);
@@ -582,10 +447,10 @@ void LookupPropertyStub::Generate() {
     __ StringHash(rbx, rdx);
 
     Operand qmask(rax, HObject::kMaskOffset);
-    __ mov(r15, qmask);
+    __ mov(rsi, qmask);
 
     // offset = hash & mask + kSpaceOffset
-    __ andq(rdx, r15);
+    __ andq(rdx, rsi);
     __ addq(rdx, Immediate(HMap::kSpaceOffset));
 
     Operand qmap(rax, HObject::kMapOffset);
@@ -627,12 +492,12 @@ void LookupPropertyStub::Generate() {
     // Compute value's address
     // rax = key_offset + mask + 8
     __ mov(rax, rdx);
-    __ addq(rax, r15);
+    __ addq(rax, rsi);
     __ addq(rax, Immediate(HValue::kPointerSize));
 
     // Cleanup
-    __ xorq(r15, r15);
     __ xorq(rdx, rdx);
+    rsi_s.Unspill();
 
     // Return value
     GenerateEpilogue(0);
@@ -653,13 +518,13 @@ void LookupPropertyStub::Generate() {
 
     // Check if index is above the mask
     // NOTE: rbx is tagged so we need to shift it only 2 times
-    __ mov(r15, rbx);
-    __ shl(r15, Immediate(2));
-    __ cmpq(r15, rdx);
+    __ mov(rsi, rbx);
+    __ shl(rsi, Immediate(2));
+    __ cmpq(rsi, rdx);
     __ jmp(kGt, &cleanup);
 
     // Apply mask
-    __ andq(r15, rdx);
+    __ andq(rsi, rdx);
 
     // Check if length was increased
     Label length_set;
@@ -679,12 +544,12 @@ void LookupPropertyStub::Generate() {
     __ xorq(rbx, rbx);
 
     // Get index
-    __ mov(rax, r15);
+    __ mov(rax, rsi);
     __ addq(rax, Immediate(HMap::kSpaceOffset));
 
     // Cleanup
-    __ xorq(r15, r15);
     __ xorq(rdx, rdx);
+    rsi_s.Unspill();
 
     // Return value
     GenerateEpilogue(0);
@@ -692,7 +557,7 @@ void LookupPropertyStub::Generate() {
 
   __ bind(&cleanup);
 
-  __ xorq(r15, r15);
+  rsi_s.Unspill();
   __ xorq(rdx, rdx);
 
   __ bind(&slow_case);
