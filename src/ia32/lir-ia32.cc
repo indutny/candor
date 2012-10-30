@@ -279,14 +279,14 @@ void LCall::Generate(Masm* masm) {
   Label not_function, even_argc, done;
 
   // argc * 2
-  __ mov(scratch, eax);
+  __ mov(ecx, eax);
 
-  __ testb(scratch, Immediate(HNumber::Tag(1)));
+  __ testb(ecx, Immediate(HNumber::Tag(1)));
   __ jmp(kEq, &even_argc);
-  __ addl(scratch, Immediate(HNumber::Tag(1)));
+  __ addl(ecx, Immediate(HNumber::Tag(1)));
   __ bind(&even_argc);
-  __ shl(scratch, Immediate(2));
-  __ addl(scratch, esp);
+  __ shl(ecx, Immediate(2));
+  __ addl(ecx, esp);
   Masm::Spill esp_s(masm, scratch);
 
   // eax <- argc
