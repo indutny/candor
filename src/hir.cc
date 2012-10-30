@@ -145,9 +145,10 @@ HIRInstruction* HIRGen::VisitFunction(AstNode* stmt) {
           one->value("1");
           one->length(1);
 
+          HIRInstruction* hone = Visit(one);
           index = Add(new HIRBinOp(this, current_block(), BinOp::kAdd))
               ->AddArg(index)
-              ->AddArg(Visit(one));
+              ->AddArg(hone);
         }
       } else {
         HIRInstruction* length = Add(HIRInstruction::kSizeof)
@@ -208,7 +209,8 @@ HIRInstruction* HIRGen::VisitAssign(AstNode* stmt) {
 
 
 HIRInstruction* HIRGen::VisitReturn(AstNode* stmt) {
-  return Return(HIRInstruction::kReturn)->AddArg(Visit(stmt->lhs()));
+  HIRInstruction* lhs = Visit(stmt->lhs());
+  return Return(HIRInstruction::kReturn)->AddArg(lhs);
 }
 
 
@@ -360,7 +362,8 @@ HIRInstruction* HIRGen::VisitUnOp(AstNode* stmt) {
 
     return Visit(wrap);
   } else if (op->subtype() == UnOp::kNot) {
-    return Add(HIRInstruction::kNot)->AddArg(Visit(op->lhs()));
+    HIRInstruction* lhs = Visit(op->lhs());
+    return Add(HIRInstruction::kNot)->AddArg(lhs);
   } else {
     UNEXPECTED
   }
@@ -572,21 +575,25 @@ HIRInstruction* HIRGen::VisitCall(AstNode* stmt) {
 
 
 HIRInstruction* HIRGen::VisitTypeof(AstNode* stmt) {
-  return Add(HIRInstruction::kTypeof)->AddArg(Visit(stmt->lhs()));
+  HIRInstruction* lhs = Visit(stmt->lhs());
+  return Add(HIRInstruction::kTypeof)->AddArg(lhs);
 }
 
 
 HIRInstruction* HIRGen::VisitKeysof(AstNode* stmt) {
-  return Add(HIRInstruction::kKeysof)->AddArg(Visit(stmt->lhs()));
+  HIRInstruction* lhs = Visit(stmt->lhs());
+  return Add(HIRInstruction::kKeysof)->AddArg(lhs);
 }
 
 HIRInstruction* HIRGen::VisitSizeof(AstNode* stmt) {
-  return Add(HIRInstruction::kSizeof)->AddArg(Visit(stmt->lhs()));
+  HIRInstruction* lhs = Visit(stmt->lhs());
+  return Add(HIRInstruction::kSizeof)->AddArg(lhs);
 }
 
 
 HIRInstruction* HIRGen::VisitClone(AstNode* stmt) {
-  return Add(HIRInstruction::kClone)->AddArg(Visit(stmt->lhs()));
+  HIRInstruction* lhs = Visit(stmt->lhs());
+  return Add(HIRInstruction::kClone)->AddArg(lhs);
 }
 
 
