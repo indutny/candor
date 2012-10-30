@@ -97,16 +97,16 @@ void EntryStub::Generate() {
   __ CallFunction(scratch);
 
   // Unwind arguments
-  __ mov(scratch, argc);
-  __ Untag(scratch);
+  __ mov(ebx, argc);
+  __ Untag(ebx);
 
-  __ testb(scratch, Immediate(1));
+  __ testb(ebx, Immediate(1));
   __ jmp(kEq, &unwind_even);
-  __ inc(scratch);
+  __ inc(ebx);
   __ bind(&unwind_even);
 
-  __ shl(scratch, Immediate(2));
-  __ addl(esp, scratch);
+  __ shl(ebx, Immediate(2));
+  __ addl(esp, ebx);
 
   __ EnterFrameEpilogue();
 

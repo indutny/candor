@@ -1,5 +1,6 @@
 #include "assembler.h"
 #include "assembler-inl.h"
+#include <assert.h>
 
 namespace candor {
 namespace internal {
@@ -149,6 +150,7 @@ void Assembler::cmpb(Operand& dst, Immediate src) {
 
 
 void Assembler::testb(Register dst, Immediate src) {
+  assert(dst != esi && dst != edi);
   emitb(0xF6);
   emit_modrm(dst, 0);
   emitb(src.value());
@@ -156,6 +158,7 @@ void Assembler::testb(Register dst, Immediate src) {
 
 
 void Assembler::testl(Register dst, Immediate src) {
+  assert(dst != esi && dst != edi);
   emitb(0xF7);
   emit_modrm(dst, 0);
   emitl(src.value());
