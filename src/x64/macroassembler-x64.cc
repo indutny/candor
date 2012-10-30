@@ -365,17 +365,17 @@ void Masm::Fill(Register start, Register end, Immediate value) {
 
 void Masm::FillStackSlots() {
   push(scratch);
-  push(r8);
-  push(r9);
-  mov(r8, rsp);
-  mov(r9, rbp);
-  // Skip r8/r9/scratch
-  addq(r8, Immediate(8 * 3));
+  push(rsi);
+  push(rdi);
+  mov(rsi, rsp);
+  mov(rdi, rbp);
+  // Skip rsi/rdi/scratch
+  addq(rsi, Immediate(8 * 3));
   // Skip frame info
-  subq(r9, Immediate(8 * 1));
-  Fill(r8, r9, Immediate(Heap::kTagNil));
-  pop(r9);
-  pop(r8);
+  subq(rdi, Immediate(8 * 1));
+  Fill(rsi, rdi, Immediate(Heap::kTagNil));
+  pop(rdi);
+  pop(rsi);
   pop(scratch);
 }
 
