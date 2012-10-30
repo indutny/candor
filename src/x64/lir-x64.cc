@@ -66,10 +66,8 @@ void LMove::Generate(Masm* masm) {
 
 
 void LPhi::Generate(Masm* masm) {
-  // Phi is absolutely the same thing as Move
+  // Phi is absolutely the same thing as Nop
   // (it's here just for semantic meaning)
-  if (result->IsEqual(inputs[0])) return;
-  __ Move(result, inputs[0]);
 }
 
 

@@ -116,9 +116,11 @@ void LGen::VisitGoto(HIRInstruction* instr) {
 
     // Initialize LIR representation of phi
     if (phi->lir() == NULL) {
+      LInterval* iphi = CreateVirtual();
+
       lphi = new LPhi();
-      lphi->AddArg(CreateVirtual(), LUse::kAny)
-          ->SetResult(CreateVirtual(), LUse::kAny);
+      lphi->AddArg(iphi, LUse::kAny)
+          ->SetResult(iphi, LUse::kAny);
 
       phi->lir(lphi);
     } else {
@@ -130,16 +132,17 @@ void LGen::VisitGoto(HIRInstruction* instr) {
     // Inputs can be not generated yet
     if (input->Is(HIRInstruction::kPhi) && input->lir() == NULL) {
       assert(!input->IsRemoved());
+      LInterval* iphi = CreateVirtual();
 
       LPhi* pinput = new LPhi();
-      pinput->AddArg(CreateVirtual(), LUse::kAny)
-            ->SetResult(CreateVirtual(), LUse::kAny);
+      pinput->AddArg(iphi, LUse::kAny)
+            ->SetResult(iphi, LUse::kAny);
 
       input->lir(pinput);
     }
 
     Add(new LMove())
-        ->SetResult(lphi->inputs[0]->interval(), LUse::kAny)
+        ->SetResult(lphi->result->interval(), LUse::kAny)
         ->AddArg(input, LUse::kAny);
   }
 
@@ -283,7 +286,7 @@ void LGen::BuildIntervals() {
         // instruction itself
         if (res->ranges()->length() == 0) {
           res->AddRange(instr->id, instr->id + 1);
-        } else {
+        } else if (l->live_in.Get(NumberKey::New(res->id)) == NULL) {
           // Shorten first range
           res->ranges()->head()->value()->start(instr->id);
         }
