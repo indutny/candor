@@ -2,7 +2,7 @@ BUILDTYPE ?= Debug
 JOBS ?= 1
 ARCH ?=
 
-all: libcandor.a
+all: libcandor.a can
 
 build:
 	tools/gyp/gyp -Dosx_arch=$(ARCH) --generator-output=build --format=make \
