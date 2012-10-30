@@ -217,7 +217,7 @@ inline HIRInstruction* HIRGen::GetNumber(uint64_t i) {
   AstNode* index = new AstNode(AstNode::kNumber);
 
   // Fast-case
-  if (i >= 0 && i < 10) {
+  if (i < 10) {
     switch (i) {
      case 0: index->value("0"); break;
      case 1: index->value("1"); break;

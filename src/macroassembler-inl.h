@@ -78,7 +78,11 @@ inline Condition Masm::BinOpToCondition(BinOp::BinOpType type,
 
 
 inline void Masm::SpillSlot(uint32_t index, Operand& op) {
+#if CANDOR_ARCH_x64
   op.base(rbp);
+#elif CANDOR_ARCH_ia32
+  op.base(ebp);
+#endif
   op.disp(-spill_offset_ - 8 - HValue::kPointerSize * index);
 }
 

@@ -5,6 +5,8 @@
 #include <stdlib.h> // NULL
 #include <string.h> // memset
 
+#include "heap.h" // HFunction::slots
+#include "heap-inl.h" // HFunction::slots
 #include "zone.h" // ZoneObject
 #include "utils.h" // List
 
@@ -13,6 +15,7 @@ namespace internal {
 
 // Forward declaration
 class Assembler;
+class Label;
 
 struct Register {
   int high() {
@@ -45,7 +48,42 @@ const Register ebp = { 5 };
 const Register esi = { 6 };
 const Register edi = { 7 };
 
-const Register scratch = ebx;
+const Register scratch = esi;
+const Register fn_reg = edi;
+
+static inline Register RegisterByIndex(int index) {
+  switch (index) {
+   case 0: return eax;
+   case 1: return ebx;
+   case 2: return ecx;
+   case 3: return edx;
+   default: UNEXPECTED return reg_nil;
+  }
+}
+
+
+static inline const char* RegisterNameByIndex(int index) {
+  // rsi, rdi, r14, r15 are reserved
+  switch (index) {
+   case 0: return "eax";
+   case 1: return "ebx";
+   case 2: return "ecx";
+   case 3: return "edx";
+   default: UNEXPECTED return "enil";
+  }
+}
+
+
+static inline int IndexByRegister(Register reg) {
+  // rsi, rdi, r14, r15 are reserved
+  switch (reg.code()) {
+   case 0: return 0;
+   case 1: return 2;
+   case 2: return 3;
+   case 3: return 1;
+   default: UNEXPECTED return -1;
+  }
+}
 
 struct DoubleRegister {
   int high() {
@@ -123,6 +161,9 @@ class Operand : public ZoneObject {
 
   friend class Assembler;
 };
+
+static Operand context_slot(fn_reg, HFunction::kParentOffset);
+static Operand root_slot(fn_reg, HFunction::kRootOffset);
 
 class RelocationInfo : public ZoneObject {
  public:
@@ -223,11 +264,11 @@ class Assembler {
   void testb(Register dst, Immediate src);
   void testl(Register dst, Immediate src);
 
-  void movl(Register dst, Register src);
-  void movl(Register dst, Operand& src);
-  void movl(Operand& dst, Register src);
-  void movl(Register dst, Immediate src);
-  void movl(Operand& dst, Immediate src);
+  void mov(Register dst, Register src);
+  void mov(Register dst, Operand& src);
+  void mov(Operand& dst, Register src);
+  void mov(Register dst, Immediate src);
+  void mov(Operand& dst, Immediate src);
   void movb(Register dst, Immediate src);
   void movb(Operand& dst, Immediate src);
   void movb(Operand& dst, Register src);

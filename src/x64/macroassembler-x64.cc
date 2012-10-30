@@ -305,38 +305,6 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
 }
 
 
-void Masm::AllocateVarArgSlots(Spill* vararg, Register argc) {
-  Operand qlength(scratch, HArray::kLengthOffset);
-  vararg->Unspill(scratch);
-  mov(scratch, qlength);
-
-  // Increase argc
-  TagNumber(scratch);
-  addq(argc, scratch);
-
-  // Push RoundUp(scratch, 2) nils to stack
-  Label loop_start, loop_cond;
-
-  mov(rax, Immediate(Heap::kTagNil));
-
-  testb(scratch, Immediate(HNumber::Tag(1)));
-  jmp(kEq, &loop_cond);
-
-  // Additional push for alignment
-  push(rax);
-
-  jmp(&loop_cond);
-  bind(&loop_start);
-
-  push(rax);
-  subq(scratch, Immediate(HNumber::Tag(1)));
-
-  bind(&loop_cond);
-  cmpq(scratch, Immediate(HNumber::Tag(0)));
-  jmp(kNe, &loop_start);
-}
-
-
 void Masm::Fill(Register start, Register end, Immediate value) {
   Push(start);
   mov(scratch, value);

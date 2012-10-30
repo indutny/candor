@@ -254,6 +254,8 @@ HIRInstruction* HIRGen::VisitIf(AstNode* stmt) {
   }
 
   set_current_block(Join(t, f));
+
+  return NULL;
 }
 
 
@@ -295,18 +297,22 @@ HIRInstruction* HIRGen::VisitWhile(AstNode* stmt) {
 
   // Restore break continue info
   break_continue_info_ = old;
+
+  return NULL;
 }
 
 
 HIRInstruction* HIRGen::VisitBreak(AstNode* stmt) {
   assert(break_continue_info_ != NULL);
   Goto(HIRInstruction::kGoto, break_continue_info_->GetBreak());
+  return NULL;
 }
 
 
 HIRInstruction* HIRGen::VisitContinue(AstNode* stmt) {
   assert(break_continue_info_ != NULL);
   Goto(HIRInstruction::kGoto, break_continue_info_->GetContinue());
+  return NULL;
 }
 
 

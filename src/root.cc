@@ -1,9 +1,9 @@
-#include "root.h";
-#include "scope.h"; // ScopeSlot
-#include "ast.h"; // AstNode
-#include "heap.h"; // HContext
-#include "heap-inl.h";
-#include "utils.h"; // List
+#include "root.h"
+#include "scope.h" // ScopeSlot
+#include "ast.h" // AstNode
+#include "heap.h" // HContext
+#include "heap-inl.h"
+#include "utils.h" // List
 
 namespace candor {
 namespace internal {

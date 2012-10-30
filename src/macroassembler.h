@@ -84,9 +84,6 @@ class Masm : public Assembler {
                              Register size,
                              Register result);
 
-  // VarArg
-  void AllocateVarArgSlots(Spill* vararg, Register argc);
-
   // Fills memory segment with immediate value
   void Fill(Register start, Register end, Immediate value);
 

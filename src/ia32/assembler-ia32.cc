@@ -193,31 +193,31 @@ void Assembler::jmp(Condition cond, Label* label) {
 }
 
 
-void Assembler::movl(Register dst, Register src) {
+void Assembler::mov(Register dst, Register src) {
   emitb(0x8B);
   emit_modrm(dst, src);
 }
 
 
-void Assembler::movl(Register dst, Operand& src) {
+void Assembler::mov(Register dst, Operand& src) {
   emitb(0x8B);
   emit_modrm(dst, src);
 }
 
 
-void Assembler::movl(Operand& dst, Register src) {
+void Assembler::mov(Operand& dst, Register src) {
   emitb(0x89);
   emit_modrm(src, dst);
 }
 
 
-void Assembler::movl(Register dst, Immediate src) {
+void Assembler::mov(Register dst, Immediate src) {
   emitb(0xB8 | dst.low());
   emitl(src.value());
 }
 
 
-void Assembler::movl(Operand& dst, Immediate src) {
+void Assembler::mov(Operand& dst, Immediate src) {
   emitb(0xC7);
   emit_modrm(dst);
   emitl(src.value());
