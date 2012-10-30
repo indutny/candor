@@ -42,26 +42,24 @@ void EntryStub::Generate() {
   Operand argc(ebp, 3 * 4);
   Operand argv(ebp, 4 * 4);
 
-  __ emitb(0xcc);
-
   // Store registers
   __ push(ebx);
-  __ push(esi);
+  __ push(ecx);
   __ push(edi);
 
   __ mov(edi, fn);
-  __ mov(esi, argc);
+  __ mov(ecx, argc);
   __ mov(edx, argv);
 
   // edi <- function addr
-  // esi <- unboxed arguments count (tagged)
+  // ecx <- unboxed arguments count (tagged)
   // edx <- pointer to arguments array
 
   __ EnterFramePrologue();
 
   // Push all arguments to stack
   Label even, args, args_loop, unwind_even;
-  __ mov(eax, esi);
+  __ mov(eax, ecx);
   __ Untag(eax);
 
   // Odd arguments count check (for alignment)
@@ -102,23 +100,22 @@ void EntryStub::Generate() {
   __ CallFunction(scratch);
 
   // Unwind arguments
-  __ mov(esi, argc);
-  __ Untag(esi);
+  __ mov(ecx, argc);
+  __ Untag(ecx);
 
-  // XXX: testb(esi, ...) transforms to testb(edx, ...) WAT??!
-  __ testl(esi, Immediate(1));
+  __ testl(ecx, Immediate(1));
   __ jmp(kEq, &unwind_even);
-  __ inc(esi);
+  __ inc(ecx);
   __ bind(&unwind_even);
 
-  __ shl(esi, Immediate(2));
-  __ addl(esp, esi);
+  __ shl(ecx, Immediate(2));
+  __ addl(esp, ecx);
 
   __ EnterFrameEpilogue();
 
   // Restore registers
   __ pop(edi);
-  __ pop(esi);
+  __ pop(ecx);
   __ pop(ebx);
 
   GenerateEpilogue(0);
@@ -183,24 +180,21 @@ void AllocateStub::Generate() {
 
   RuntimeAllocateCallback allocate = &RuntimeAllocate;
 
-  {
-    __ ChangeAlign(2);
-    Masm::Align a(masm());
-    __ Pushad();
+  __ Pushad();
 
-    // Two arguments: heap, size
-    __ mov(scratch, size);
-    __ push(scratch);
-    __ push(heapref);
+  // Two arguments: heap, size
+  __ mov(scratch, size);
+  __ push(scratch);
+  __ push(scratch);
+  __ push(scratch);
+  __ push(heapref);
 
-    __ mov(scratch, Immediate(*reinterpret_cast<uint32_t*>(&allocate)));
+  __ mov(scratch, Immediate(*reinterpret_cast<uint32_t*>(&allocate)));
 
-    __ Call(scratch);
-    __ addl(esp, Immediate(2 * 4));
+  __ Call(scratch);
+  __ addl(esp, Immediate(4 * 4));
 
-    __ Popad(eax);
-    __ ChangeAlign(-2);
-  }
+  __ Popad(eax);
 
   // Voila result and result_end are pointers
   __ bind(&done);
@@ -315,19 +309,16 @@ void CollectGarbageStub::Generate() {
   RuntimeCollectGarbageCallback gc = &RuntimeCollectGarbage;
   __ Pushad();
 
-  {
-    __ ChangeAlign(2);
-    Masm::Align a(masm());
+  __ mov(scratch, Immediate(Heap::kTagNil));
 
-    // RuntimeCollectGarbage(heap, stack_top)
-    __ push(esp);
-    __ push(Immediate(reinterpret_cast<uint32_t>(masm()->heap())));
-    __ mov(eax, Immediate(*reinterpret_cast<uint32_t*>(&gc)));
-    __ Call(eax);
-    __ addl(esp, Immediate(2 * 4));
-
-    __ ChangeAlign(-2);
-  }
+  // RuntimeCollectGarbage(heap, stack_top)
+  __ push(scratch);
+  __ push(scratch);
+  __ push(esp);
+  __ push(Immediate(reinterpret_cast<uint32_t>(masm()->heap())));
+  __ mov(eax, Immediate(*reinterpret_cast<uint32_t*>(&gc)));
+  __ Call(eax);
+  __ addl(esp, Immediate(4 * 4));
 
   __ Popad(reg_nil);
 
@@ -378,18 +369,15 @@ void SizeofStub::Generate() {
   __ Pushad();
 
   // RuntimeSizeof(heap, obj)
-  {
-    __ ChangeAlign(2);
-    Masm::Align a(masm());
-    __ push(eax);
-    __ push(Immediate(reinterpret_cast<uint32_t>(masm()->heap())));
-    __ mov(eax, Immediate(*reinterpret_cast<uint32_t*>(&sizeofc)));
-    __ call(eax);
+  __ push(eax);
+  __ push(eax);
+  __ push(eax);
+  __ push(Immediate(reinterpret_cast<uint32_t>(masm()->heap())));
+  __ mov(eax, Immediate(*reinterpret_cast<uint32_t*>(&sizeofc)));
+  __ call(eax);
 
-    // Unwind stack
-    __ addl(esp, Immediate(2 * 4));
-    __ ChangeAlign(-2);
-  }
+  // Unwind stack
+  __ addl(esp, Immediate(4 * 4));
 
   __ Popad(eax);
 
@@ -404,18 +392,13 @@ void KeysofStub::Generate() {
   __ Pushad();
 
   // RuntimeKeysof(heap, obj)
-  {
-    __ ChangeAlign(2);
-    Masm::Align a(masm());
-
-    __ push(eax);
-    __ push(Immediate(reinterpret_cast<uint32_t>(masm()->heap())));
-    __ mov(eax, Immediate(*reinterpret_cast<uint32_t*>(&keysofc)));
-    __ call(eax);
-    __ addl(esp, Immediate(2 * 4));
-
-    __ ChangeAlign(-2);
-  }
+  __ push(eax);
+  __ push(eax);
+  __ push(eax);
+  __ push(Immediate(reinterpret_cast<uint32_t>(masm()->heap())));
+  __ mov(eax, Immediate(*reinterpret_cast<uint32_t*>(&keysofc)));
+  __ call(eax);
+  __ addl(esp, Immediate(4 * 4));
 
   __ Popad(eax);
 
@@ -586,23 +569,16 @@ void LookupPropertyStub::Generate() {
 
   RuntimeLookupPropertyCallback lookup = &RuntimeLookupProperty;
 
-  {
-    __ ChangeAlign(4);
-    Masm::Align a(masm());
-
-    // RuntimeLookupProperty(heap, obj, key, change)
-    // (returns addr of slot)
-    __ push(ecx);
-    __ push(edx);
-    __ push(eax);
-    __ push(Immediate(reinterpret_cast<uint32_t>(masm()->heap())));
-    // ecx already contains change flag
-    __ mov(eax, Immediate(*reinterpret_cast<uint32_t*>(&lookup)));
-    __ call(eax);
-    __ addl(esp, Immediate(4 * 4));
-
-    __ ChangeAlign(-4);
-  }
+  // RuntimeLookupProperty(heap, obj, key, change)
+  // (returns addr of slot)
+  __ push(ecx);
+  __ push(edx);
+  __ push(eax);
+  __ push(Immediate(reinterpret_cast<uint32_t>(masm()->heap())));
+  // ecx already contains change flag
+  __ mov(eax, Immediate(*reinterpret_cast<uint32_t*>(&lookup)));
+  __ call(eax);
+  __ addl(esp, Immediate(4 * 4));
 
   __ Popad(eax);
 
@@ -659,18 +635,13 @@ void CoerceToBooleanStub::Generate() {
 
   RuntimeCoerceCallback to_boolean = &RuntimeToBoolean;
 
-  {
-    __ ChangeAlign(2);
-    Masm::Align a(masm());
+  __ push(eax);
+  __ push(eax);
+  __ push(Immediate(reinterpret_cast<uint32_t>(masm()->heap())));
 
-    __ push(eax);
-    __ push(Immediate(reinterpret_cast<uint32_t>(masm()->heap())));
-
-    __ mov(eax, Immediate(*reinterpret_cast<uint32_t*>(&to_boolean)));
-    __ call(eax);
-
-    __ ChangeAlign(-2);
-  }
+  __ mov(eax, Immediate(*reinterpret_cast<uint32_t*>(&to_boolean)));
+  __ call(eax);
+  __ pop(ebx);
 
   __ Popad(eax);
 
@@ -1102,20 +1073,14 @@ void BinOpStub::Generate() {
   Immediate heapref(reinterpret_cast<uint32_t>(masm()->heap()));
 
   // binop(heap, lhs, rhs)
-  {
-    __ ChangeAlign(3);
-    Masm::Align a(masm());
+  __ push(ecx);
+  __ push(ecx);
+  __ push(eax);
+  __ push(heapref);
 
-    __ push(ecx);
-    __ push(eax);
-    __ push(heapref);
-
-    __ mov(scratch, Immediate(*reinterpret_cast<uint32_t*>(&cb)));
-    __ call(scratch);
-    __ addl(esp, Immediate(4 * 3));
-
-    __ ChangeAlign(-3);
-  }
+  __ mov(scratch, Immediate(*reinterpret_cast<uint32_t*>(&cb)));
+  __ call(scratch);
+  __ addl(esp, Immediate(4 * 4));
 
   __ Popad(eax);
 

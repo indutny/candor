@@ -105,17 +105,23 @@ void LLiteral::Generate(Masm* masm) {
 
 void LAllocateObject::Generate(Masm* masm) {
   // XXX Use correct size here
+  __ push(Immediate(Heap::kTagNil));
+  __ push(Immediate(Heap::kTagNil));
   __ push(Immediate(HNumber::Tag(16)));
   __ push(Immediate(HNumber::Tag(Heap::kTagObject)));
   __ Call(masm->stubs()->GetAllocateObjectStub());
+  __ addl(esp, Immediate(8));
 }
 
 
 void LAllocateArray::Generate(Masm* masm) {
   // XXX Use correct size here
+  __ push(Immediate(Heap::kTagNil));
+  __ push(Immediate(Heap::kTagNil));
   __ push(Immediate(HNumber::Tag(16)));
   __ push(Immediate(HNumber::Tag(Heap::kTagArray)));
   __ Call(masm->stubs()->GetAllocateObjectStub());
+  __ addl(esp, Immediate(8));
 }
 
 
@@ -138,6 +144,8 @@ void LBranch::Generate(Masm* masm) {
 void LLoadProperty::Generate(Masm* masm) {
   __ push(eax);
   __ push(eax);
+  __ push(eax);
+  __ push(eax);
 
   // eax <- object
   // ebx <- property
@@ -146,6 +154,8 @@ void LLoadProperty::Generate(Masm* masm) {
 
   Label done;
 
+  __ pop(ebx);
+  __ pop(ebx);
   __ pop(ebx);
   __ pop(ebx);
 
@@ -163,12 +173,15 @@ void LLoadProperty::Generate(Masm* masm) {
 
 void LStoreProperty::Generate(Masm* masm) {
   __ push(eax);
+  __ push(eax);
+  __ push(eax);
   __ push(ebx);
 
   // eax <- object
   // ebx <- property
   // ebx <- value
   __ mov(ebx, Immediate(1));
+
   __ Call(masm->stubs()->GetLookupPropertyStub());
 
   // Make eax look like unboxed number to GC
@@ -176,6 +189,8 @@ void LStoreProperty::Generate(Masm* masm) {
   __ CheckGC();
   __ inc(eax);
 
+  __ pop(ebx);
+  __ pop(ebx);
   __ pop(ebx);
   __ pop(ebx);
 
@@ -252,9 +267,12 @@ void LFunction::Generate(Masm* masm) {
   block_->label()->label.AddUse(masm, addr);
 
   // Call stub
+  __ push(Immediate(Heap::kTagNil));
+  __ push(Immediate(Heap::kTagNil));
   __ push(Immediate(arg_count_));
   __ push(scratches[0]->ToRegister());
   __ Call(masm->stubs()->GetAllocateFunctionStub());
+  __ addl(esp, Immediate(8));
 }
 
 

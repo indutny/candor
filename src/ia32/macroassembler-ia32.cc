@@ -133,7 +133,7 @@ void Masm::AllocateSpills() {
 void Masm::FinalizeSpills() {
   if (spill_reloc_ == NULL) return;
 
-  spill_reloc_->target(RoundUp((spill_offset_ + spills_ + 1) << 2, 16));
+  spill_reloc_->target(RoundUp((spill_offset_ + spills_ + 1) << 2, 16) + 8);
 }
 
 
@@ -144,6 +144,8 @@ void Masm::Allocate(Heap::HeapTag tag,
   if (!result.is(eax)) {
     push(eax);
     push(eax);
+  } else {
+    subl(esp, Immediate(8));
   }
 
   // Add tag size
@@ -166,6 +168,8 @@ void Masm::Allocate(Heap::HeapTag tag,
     mov(result, eax);
     pop(eax);
     pop(eax);
+  } else {
+    addl(esp, Immediate(8));
   }
 }
 
