@@ -7,7 +7,7 @@
 namespace candor {
 namespace internal {
 
-const int kLIRRegisterCount = 4;
+const int kLIRRegisterCount = 10;
 
 } // namespace internal
 } // namespace candor
