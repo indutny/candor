@@ -46,9 +46,6 @@ void EntryStub::Generate() {
   Operand argc(ebp, 3 * 4);
   Operand argv(ebp, 4 * 4);
 
-  // Store address of root context
-  __ mov(fn_reg, fn);
-
   __ EnterFramePrologue();
 
   // Push all arguments to stack
@@ -93,8 +90,8 @@ void EntryStub::Generate() {
   __ mov(eax, argc);
 
   // Call code
-  __ mov(scratch, fn_reg);
-  __ CallFunction(scratch);
+  __ mov(ebx, fn);
+  __ CallFunction(ebx);
 
   // Unwind arguments
   __ mov(ebx, argc);
@@ -226,10 +223,13 @@ void AllocateFunctionStub::Generate() {
   Operand qaddr(eax, HFunction::kCodeOffset);
   Operand qroot(eax, HFunction::kRootOffset);
   Operand qargc(eax, HFunction::kArgcOffset);
+  Heap* heap = masm()->heap();
+  Immediate root(reinterpret_cast<intptr_t>(heap->new_space()->root()));
+  Operand scratch_op(scratch, 0);
 
-  __ mov(scratch, context_slot);
-  __ mov(qparent, scratch);
-  __ mov(scratch, root_slot);
+  __ mov(qparent, context_reg);
+  __ mov(scratch, root);
+  __ mov(scratch, scratch_op);
   __ mov(qroot, scratch);
 
   // Put addr of code and argc
@@ -338,6 +338,9 @@ void CollectGarbageStub::Generate() {
 
 void TypeofStub::Generate() {
   GeneratePrologue();
+  Heap* heap = masm()->heap();
+  Immediate root(reinterpret_cast<intptr_t>(heap->new_space()->root()));
+  Operand scratch_op(scratch, 0);
 
   Label not_nil, not_unboxed, done;
 
@@ -364,7 +367,8 @@ void TypeofStub::Generate() {
   __ bind(&done);
 
   // eax contains offset in root_reg
-  __ mov(scratch, root_slot);
+  __ mov(scratch, root);
+  __ mov(scratch, scratch_op);
   __ addl(eax, scratch);
   __ mov(eax, type);
 
@@ -606,6 +610,9 @@ void LookupPropertyStub::Generate() {
 
 void CoerceToBooleanStub::Generate() {
   GeneratePrologue();
+  Heap* heap = masm()->heap();
+  Immediate root(reinterpret_cast<intptr_t>(heap->new_space()->root()));
+  Operand scratch_op(scratch, 0);
 
   Label unboxed, truel, not_bool, coerced_type;
 
@@ -618,7 +625,8 @@ void CoerceToBooleanStub::Generate() {
 
   __ bind(&unboxed);
 
-  __ mov(scratch, root_slot);
+  __ mov(scratch, root);
+  __ mov(scratch, scratch_op);
   Operand truev(scratch, HContext::GetIndexDisp(Heap::kRootTrueIndex));
   Operand falsev(scratch, HContext::GetIndexDisp(Heap::kRootFalseIndex));
 
@@ -848,6 +856,9 @@ void StackTraceStub::Generate() {
 
 void BinOpStub::Generate() {
   GeneratePrologue();
+  Heap* heap = masm()->heap();
+  Immediate root(reinterpret_cast<intptr_t>(heap->new_space()->root()));
+  Operand scratch_op(scratch, 0);
 
   // eax <- lhs
   // ebx <- rhs
@@ -921,7 +932,8 @@ void BinOpStub::Generate() {
 
       Label true_, cond_end;
 
-      __ mov(scratch, root_slot);
+      __ mov(scratch, root);
+      __ mov(scratch, scratch_op);
       Operand truev(scratch, HContext::GetIndexDisp(Heap::kRootTrueIndex));
       Operand falsev(scratch, HContext::GetIndexDisp(Heap::kRootFalseIndex));
 
@@ -1040,7 +1052,8 @@ void BinOpStub::Generate() {
     __ TagNumber(eax);
   } else if (BinOp::is_logic(type())) {
     Condition cond = masm()->BinOpToCondition(type(), Masm::kDouble);
-    __ mov(scratch, root_slot);
+    __ mov(scratch, root);
+    __ mov(scratch, scratch_op);
     __ ucomisd(xmm1, xmm2);
 
     Label true_, comp_end;

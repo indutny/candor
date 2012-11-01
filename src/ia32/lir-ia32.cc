@@ -90,13 +90,18 @@ void LNil::Generate(Masm* masm) {
 
 
 void LLiteral::Generate(Masm* masm) {
+  Heap* heap = masm->heap();
+  Immediate root(reinterpret_cast<intptr_t>(heap->new_space()->root()));
+  Operand scratch_op(scratch, 0);
+
   if (root_slot_->is_immediate()) {
     __ Move(result,
             Immediate(reinterpret_cast<intptr_t>(root_slot_->value())));
   } else {
     assert(root_slot_->is_context());
     assert(root_slot_->depth() == -2);
-    __ mov(scratch, root_slot);
+    __ mov(scratch, root);
+    __ mov(scratch, scratch_op);
     Operand slot(scratch, HContext::GetIndexDisp(root_slot_->index()));
     __ Move(result, slot);
   }
@@ -277,6 +282,9 @@ void LFunction::Generate(Masm* masm) {
 
 void LCall::Generate(Masm* masm) {
   Label not_function, even_argc, done;
+  Heap* heap = masm->heap();
+  Immediate root(reinterpret_cast<intptr_t>(heap->new_space()->root()));
+  Operand scratch_op(scratch, 0);
 
   // argc * 2
   __ mov(ecx, eax);
@@ -297,22 +305,27 @@ void LCall::Generate(Masm* masm) {
   __ IsNil(ebx, NULL, &not_function);
   __ IsHeapObject(Heap::kTagFunction, ebx, &not_function, NULL);
 
-  Masm::Spill fn_reg_s(masm, fn_reg);
-  Masm::Spill fn_s(masm, ebx);
+  Masm::Spill context_s(masm, context_reg);
+  Masm::Spill root_s(masm);
+
+  __ mov(scratch, root);
+  __ mov(scratch, scratch_op);
+  root_s.SpillReg(scratch);
 
   // eax <- argc
   // scratch <- fn
-  __ mov(scratch, ebx);
-  __ CallFunction(scratch);
+  __ CallFunction(ebx);
+
+  // Restore context and root
+  context_s.Unspill();
+  root_s.Unspill(ebx);
+  __ mov(scratch, root);
+  __ mov(scratch_op, ebx);
 
   // Reset all registers to nil
   __ mov(scratch, Immediate(Heap::kTagNil));
-  __ mov(ebx, scratch);
   __ mov(ecx, scratch);
   __ mov(edx, scratch);
-
-  fn_s.Unspill();
-  fn_reg_s.Unspill();
 
   __ jmp(&done);
   __ bind(&not_function);
@@ -561,17 +574,21 @@ void LAlignStack::Generate(Masm* masm) {
 
 
 void LLoadContext::Generate(Masm* masm) {
+  Heap* heap = masm->heap();
+  Immediate root(reinterpret_cast<intptr_t>(heap->new_space()->root()));
+  Operand scratch_op(scratch, 0);
   int depth = slot()->depth();
 
   if (depth == -1) {
     // Global object lookup
     Operand global(scratch, HContext::GetIndexDisp(Heap::kRootGlobalIndex));
-    __ mov(scratch, root_slot);
+    __ mov(scratch, root);
+    __ mov(scratch, scratch_op);
     __ mov(result->ToRegister(), global);
     return;
   }
 
-  __ mov(result->ToRegister(), context_slot);
+  __ mov(result->ToRegister(), context_reg);
 
   // Lookup context
   while (--depth >= 0) {
@@ -591,7 +608,7 @@ void LStoreContext::Generate(Masm* masm) {
   // Global can't be replaced
   if (depth == -1) return;
 
-  __ mov(scratches[0]->ToRegister(), context_slot);
+  __ mov(scratches[0]->ToRegister(), context_reg);
 
   // Lookup context
   while (--depth >= 0) {
@@ -613,7 +630,11 @@ void LNot::Generate(Masm* masm) {
 
   Label on_false, done;
 
-  __ mov(scratch, root_slot);
+  Heap* heap = masm->heap();
+  Immediate root(reinterpret_cast<intptr_t>(heap->new_space()->root()));
+  Operand scratch_op(scratch, 0);
+  __ mov(scratch, root);
+  __ mov(scratch, scratch_op);
 
   // Jmp to `right` block if value is `false`
   Operand bvalue(eax, HBoolean::kValueOffset);

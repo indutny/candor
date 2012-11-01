@@ -69,6 +69,9 @@ class Space {
   inline char*** top() { return &top_; }
   inline char*** limit() { return &limit_; }
 
+  // IA32 only
+  inline char** root() { return &root_; }
+
   inline uint32_t page_size() { return page_size_; }
 
   inline uint32_t size() { return size_; }
@@ -82,6 +85,8 @@ class Space {
 
   char** top_;
   char** limit_;
+
+  char* root_;
 
   inline void select(Page* page);
 

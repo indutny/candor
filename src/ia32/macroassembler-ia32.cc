@@ -182,8 +182,7 @@ void Masm::AllocateContext(uint32_t slots) {
 
   // Move address of current context to first slot
   Operand qparent(eax, HContext::kParentOffset);
-  mov(scratch, context_slot);
-  mov(qparent, scratch);
+  mov(qparent, context_reg);
 
   // Save number of slots
   Operand qslots(eax, HContext::kSlotsOffset);
@@ -197,7 +196,7 @@ void Masm::AllocateContext(uint32_t slots) {
 
   // Replace current context
   // (It'll be restored by caller)
-  mov(context_slot, eax);
+  mov(context_reg, eax);
   eax_s.Unspill();
 
   CheckGC();
@@ -606,12 +605,22 @@ void Masm::Call(char* stub) {
 
 
 void Masm::CallFunction(Register fn) {
-  Operand context_slot(fn_reg, HFunction::kParentOffset);
-  Operand code_slot(fn_reg, HFunction::kCodeOffset);
+  Immediate root(reinterpret_cast<intptr_t>(heap()->new_space()->root()));
+  Operand scratch_op(scratch, 0);
+
+  Operand context_slot(fn, HFunction::kParentOffset);
+  Operand code_slot(fn, HFunction::kCodeOffset);
+  Operand root_slot(fn, HFunction::kRootOffset);
+
+  // Set new root (context_reg is unused here)
+  mov(context_reg, root_slot);
+  mov(scratch, root);
+  mov(scratch_op, context_reg);
+
+  // Set new context
+  mov(context_reg, context_slot);
 
   Label binding, done;
-  mov(fn_reg, fn);
-
   cmpl(context_slot, Immediate(Heap::kBindingContextTag));
   jmp(kEq, &binding);
 
@@ -624,7 +633,7 @@ void Masm::CallFunction(Register fn) {
   push(eax);
   push(eax);
   push(eax);
-  push(fn_reg);
+  push(fn);
   Call(stubs()->GetCallBindingStub());
   addl(esp, Immediate(16));
 

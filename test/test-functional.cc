@@ -217,7 +217,7 @@ TEST_START(functional)
     assert(result->As<Number>()->Value() == 13589);
   })
 
-  FUN_TEST("a() { a\nb = 1234 }\nb = 13589\na()\nreturn b", {
+  FUN_TEST("a() { b = 1234 }\nb = 13589\na()\nreturn b", {
     assert(result->As<Number>()->Value() == 1234);
   })
 

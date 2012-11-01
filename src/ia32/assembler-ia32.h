@@ -56,7 +56,7 @@ const Register ebp = { 5 };
 const Register esi = { 6 };
 const Register edi = { 7 };
 
-const Register fn_reg = esi;
+const Register context_reg = esi;
 const Register scratch = edi;
 
 static inline Register RegisterByIndex(int index) {
@@ -177,9 +177,6 @@ class Operand : public ZoneObject {
 
   friend class Assembler;
 };
-
-static Operand context_slot(fn_reg, HFunction::kParentOffset);
-static Operand root_slot(fn_reg, HFunction::kRootOffset);
 
 class RelocationInfo : public ZoneObject {
  public:
