@@ -404,7 +404,7 @@ void LLoadVarArg::Generate(Masm* masm) {
 
   // Get stack offset
   offset_s.Unspill();
-  __ addq(offset, Immediate(4));
+  __ addq(offset, Immediate(HNumber::Tag(2)));
   __ addq(offset, rbx);
   __ shl(offset, 2);
   __ addq(offset, rbp);
