@@ -606,12 +606,13 @@ void Masm::Call(char* stub) {
 
 
 void Masm::CallFunction(Register fn) {
+  Operand context_slot(fn_reg, HFunction::kParentOffset);
   Operand code_slot(fn_reg, HFunction::kCodeOffset);
 
   Label binding, done;
   mov(fn_reg, fn);
 
-  cmpl(fn_reg, Immediate(Heap::kBindingContextTag));
+  cmpl(context_slot, Immediate(Heap::kBindingContextTag));
   jmp(kEq, &binding);
 
   Call(code_slot);
@@ -619,9 +620,13 @@ void Masm::CallFunction(Register fn) {
   jmp(&done);
   bind(&binding);
 
+  // CallBinding(fn, argc)
+  push(eax);
+  push(eax);
   push(eax);
   push(fn_reg);
   Call(stubs()->GetCallBindingStub());
+  addl(esp, Immediate(16));
 
   bind(&done);
 }

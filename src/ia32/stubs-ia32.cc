@@ -19,10 +19,12 @@ BaseStub::BaseStub(CodeSpace* space, StubType type) : space_(space),
 void BaseStub::GeneratePrologue() {
   __ push(ebp);
   __ mov(ebp, esp);
+  __ AllocateSpills();
 }
 
 
 void BaseStub::GenerateEpilogue(int args) {
+  __ FinalizeSpills();
   __ mov(esp, ebp);
   __ pop(ebp);
 
@@ -33,8 +35,6 @@ void BaseStub::GenerateEpilogue(int args) {
 
 void EntryStub::Generate() {
   GeneratePrologue();
-
-  __ AllocateSpills();
 
   // Store callee-save registers
   __ push(ebx);
@@ -115,8 +115,6 @@ void EntryStub::Generate() {
   __ pop(edi);
   __ pop(esi);
   __ pop(ebx);
-
-  __ FinalizeSpills();
 
   GenerateEpilogue();
 }
@@ -248,8 +246,6 @@ void AllocateFunctionStub::Generate() {
 void AllocateObjectStub::Generate() {
   GeneratePrologue();
 
-  __ AllocateSpills();
-
   // Arguments
   Operand size(ebp, 3 * 4);
   Operand tag(ebp, 2 * 4);
@@ -257,8 +253,6 @@ void AllocateObjectStub::Generate() {
   __ mov(ecx, tag);
   __ mov(ebx, size);
   __ AllocateObjectLiteral(Heap::kTagNil, ecx, ebx, eax);
-
-  __ FinalizeSpills();
 
   GenerateEpilogue();
 }
@@ -405,6 +399,7 @@ void SizeofStub::Generate() {
 
 void KeysofStub::Generate() {
   GeneratePrologue();
+
   RuntimeKeysofCallback keysofc = &RuntimeKeysof;
 
   __ Pushad();
@@ -430,7 +425,6 @@ void KeysofStub::Generate() {
 
 void LookupPropertyStub::Generate() {
   GeneratePrologue();
-  __ AllocateSpills();
 
   Label is_object, is_array, cleanup, slow_case;
   Label non_object_error, done;
@@ -606,7 +600,6 @@ void LookupPropertyStub::Generate() {
 
   __ bind(&done);
 
-  __ FinalizeSpills();
   GenerateEpilogue();
 }
 
@@ -671,8 +664,6 @@ void CoerceToBooleanStub::Generate() {
 void CloneObjectStub::Generate() {
   GeneratePrologue();
 
-  __ AllocateSpills();
-
   Label non_object, done;
 
   // eax <- object
@@ -734,8 +725,6 @@ void CloneObjectStub::Generate() {
   __ mov(eax, Immediate(Heap::kTagNil));
 
   __ bind(&done);
-
-  __ FinalizeSpills();
 
   GenerateEpilogue();
 }
@@ -862,9 +851,6 @@ void BinOpStub::Generate() {
 
   // eax <- lhs
   // ebx <- rhs
-
-  // Allocate space for spill slots
-  __ AllocateSpills();
 
   Label not_unboxed, done;
   Label lhs_to_heap, rhs_to_heap;
@@ -1119,8 +1105,6 @@ void BinOpStub::Generate() {
   __ xorl(ebx, ebx);
 
   __ CheckGC();
-
-  __ FinalizeSpills();
 
   GenerateEpilogue();
 }

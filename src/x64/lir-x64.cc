@@ -327,7 +327,7 @@ void LLoadArg::Generate(Masm* masm) {
   __ cmpq(scratch, argc);
   __ jmp(kGe, &oob);
 
-  __ addq(scratch, Immediate(4));
+  __ addq(scratch, Immediate(HNumber::Tag(2)));
   __ shl(scratch, 2);
   __ addq(scratch, rbp);
   __ Move(result, slot);

@@ -287,7 +287,7 @@ void LCall::Generate(Masm* masm) {
   __ bind(&even_argc);
   __ shl(ecx, Immediate(2));
   __ addl(ecx, esp);
-  Masm::Spill esp_s(masm, scratch);
+  Masm::Spill esp_s(masm, ecx);
 
   // eax <- argc
   // ebx <- fn
@@ -338,8 +338,8 @@ void LLoadArg::Generate(Masm* masm) {
   __ cmpl(scratch, argc);
   __ jmp(kGe, &oob);
 
-  __ addl(scratch, Immediate(4));
-  __ shl(scratch, 2);
+  __ addl(scratch, Immediate(HNumber::Tag(2)));
+  __ shl(scratch, 1);
   __ addl(scratch, ebp);
   __ Move(result, slot);
 

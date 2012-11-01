@@ -13,7 +13,7 @@ void RelocationInfo::Relocate(char* buffer) {
   } else if (type_ == kValue) {
     addr = target_;
   } else {
-    addr = target_ - offset_;
+    addr = target_ - offset_ - 4;
   }
 
   switch (size_) {
