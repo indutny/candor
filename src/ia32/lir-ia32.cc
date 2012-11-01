@@ -273,7 +273,7 @@ void LFunction::Generate(Masm* masm) {
   // Call stub
   __ push(Immediate(Heap::kTagNil));
   __ push(Immediate(Heap::kTagNil));
-  __ push(Immediate(arg_count_));
+  __ push(Immediate(HNumber::Tag(arg_count_)));
   __ push(scratches[0]->ToRegister());
   __ Call(masm->stubs()->GetAllocateFunctionStub());
   __ addl(esp, Immediate(4 * 4));

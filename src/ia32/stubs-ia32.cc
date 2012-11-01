@@ -85,6 +85,7 @@ void EntryStub::Generate() {
   __ xorl(ebx, ebx);
   __ xorl(ecx, ecx);
   __ xorl(edx, edx);
+  __ xorl(scratch, scratch);
 
   // Put argc
   __ mov(eax, argc);

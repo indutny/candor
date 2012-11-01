@@ -141,12 +141,8 @@ void Masm::Allocate(Heap::HeapTag tag,
                     Register size_reg,
                     uint32_t size,
                     Register result) {
-  if (!result.is(eax)) {
-    push(eax);
-    push(eax);
-  } else {
-    subl(esp, Immediate(2 * 4));
-  }
+  push(eax);
+  push(eax);
 
   // Add tag size
   if (size_reg.is(reg_nil)) {

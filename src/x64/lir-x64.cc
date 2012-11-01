@@ -251,7 +251,7 @@ void LFunction::Generate(Masm* masm) {
   block_->label()->label.AddUse(masm, addr);
 
   // Call stub
-  __ push(Immediate(arg_count_));
+  __ push(Immediate(HNumber::Tag(arg_count_)));
   __ push(scratches[0]->ToRegister());
   __ Call(masm->stubs()->GetAllocateFunctionStub());
 }

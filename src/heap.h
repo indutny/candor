@@ -560,7 +560,7 @@ class HFunction : public HValue {
     return *reinterpret_cast<char**>(addr + kParentOffset);
   }
   static inline uint32_t Argc(char* addr) {
-    return *reinterpret_cast<uint32_t*>(addr + kArgcOffset);
+    return HNumber::Untag(*reinterpret_cast<uint32_t*>(addr + kArgcOffset));
   }
 
   static inline char* GetContext(char* addr);
