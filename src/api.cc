@@ -321,7 +321,7 @@ void Function::SetContext(Object* context) {
 
 
 uint32_t Function::Argc() {
-  return HFunction::Argc(addr());
+  return HNumber::Untag(HFunction::Argc(addr()));
 }
 
 
