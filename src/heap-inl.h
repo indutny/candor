@@ -112,7 +112,7 @@ inline char* HNumber::ToPointer(int64_t value) {
 
 inline int64_t HNumber::IntegralValue(char* addr) {
   if (IsUnboxed(addr)) {
-    return Untag(reinterpret_cast<int64_t>(addr));
+    return Untag(reinterpret_cast<intptr_t>(addr));
   } else {
     return *reinterpret_cast<double*>(addr + kValueOffset);
   }
@@ -121,7 +121,7 @@ inline int64_t HNumber::IntegralValue(char* addr) {
 
 inline double HNumber::DoubleValue(char* addr) {
   if (IsUnboxed(addr)) {
-    return Untag(reinterpret_cast<int64_t>(addr));
+    return Untag(reinterpret_cast<intptr_t>(addr));
   } else {
     return *reinterpret_cast<double*>(addr + kValueOffset);
   }
@@ -134,7 +134,7 @@ inline bool HNumber::IsIntegral(char* addr) {
 
 
 inline void HArray::SetLength(char* obj, int64_t length) {
-  *reinterpret_cast<int64_t*>(obj + kLengthOffset) = length;
+  *reinterpret_cast<intptr_t*>(obj + kLengthOffset) = length;
 }
 
 

@@ -464,7 +464,7 @@ int64_t HArray::Length(char* obj, bool shrink) {
     } while (*slot == HNil::New());
 
     // If array was shrinked - change length
-    if (result != (shrinked - 1)) {
+    if (result != (shrinked + 1)) {
       result = shrinked + 1;
       SetLength(obj, result);
     }
