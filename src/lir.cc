@@ -382,6 +382,9 @@ void LGen::WalkIntervals() {
 
     ShuffleIntervals(&active_, &inactive_, NULL, pos);
 
+    // Skip spilled intervals
+    if (!current->is_virtual()) continue;
+
     // Find free register for current interval
     TryAllocateFreeReg(current);
 
@@ -455,6 +458,13 @@ void LGen::TryAllocateFreeReg(LInterval* current) {
 
 
 void LGen::AllocateBlockedReg(LInterval* current) {
+  LUse* first_use = current->UseAfter(0, LUse::kRegister);
+  if (first_use == NULL) {
+    // No register use is needed - just spill interval
+    Spill(current);
+    return;
+  }
+
   int use_pos[kLIRRegisterCount];
   int block_pos[kLIRRegisterCount];
 
@@ -515,16 +525,13 @@ void LGen::AllocateBlockedReg(LInterval* current) {
   }
   assert(use_max >= 0);
 
-  LUse* first_use = current->UseAfter(current->start());
   if (first_use == NULL ||
       use_max < first_use->instr()->id ||
-      block_pos[use_reg] - 1 <= current->start()) {
+      block_pos[use_reg] <= current->start()) {
     Spill(current);
 
-    // Split before first use with required register
-    LUse* reg_use = current->UseAfter(current->start(), LUse::kRegister);
-    if (reg_use != NULL && reg_use->instr()->id > current->start()) {
-      Split(current, reg_use->instr()->id - 1);
+    if (first_use != NULL && first_use->instr()->id - 1 > current->start()) {
+      Split(current, first_use->instr()->id - 1);
     }
   } else {
     // Intervals using register will be spilled
@@ -537,34 +544,47 @@ void LGen::AllocateBlockedReg(LInterval* current) {
     }
 
     // Split and spill all intersecting intervals
-    LIntervalList* lists[2] = { &active_, &inactive_ };
-    for (int i = 0; i < 2; i++) {
-      head = lists[i]->head();
-      for (; head != NULL; head = head->next()) {
-        LInterval* interval = head->value();
+    int split_pos = current->start();
+    if (split_pos % 2 == 0) split_pos--;
 
-        // Fixed intervals can't be split
-        if (interval->IsFixed() || !interval->IsEqual(current)) continue;
+    // Active intervals
+    head = active_.head();
+    for (; head != NULL; head = head->next()) {
+      LInterval* interval = head->value();
+      if (!interval->IsEqual(current)) continue;
 
-        int pos = current->FindIntersection(interval);
-        if (pos == -1) continue;
-        pos = pos % 2 == 0 ? (pos - 1) : (pos - 2);
+      // Split before current interval, and let allocator process it later
+      Split(interval, split_pos);
+    }
 
-        LUse* reg_use = interval->UseAfter(0, LUse::kRegister);
-        // If interval is used as register before current one - just split it,
-        // it'll be spilled later
-        if (reg_use != NULL && reg_use->instr()->id <= current->start()) {
-          Split(interval, current->start() % 2 == 0 ?
-              (current->start() - 1) : current->start());
-          continue;
+    // Inactive intervals
+    head = active_.head();
+    for (; head != NULL; head = head->next()) {
+      LInterval* interval = head->value();
+      if (interval->IsFixed() || !interval->IsEqual(current)) continue;
+
+      int intersection = current->FindIntersection(interval);
+      if (intersection == -1) continue;
+
+      LUse* next_use = interval->UseAfter(current->start(), LUse::kRegister);
+
+      if (next_use == NULL) {
+        // Split before current interval
+        Split(interval, split_pos);
+      } else {
+        int next_pos = next_use->instr()->id;
+
+        if (intersection >= next_pos) {
+          // Interval is used before intersection - it would be ok to split it
+          // at this position
+          Split(interval, intersection);
+        } else {
+          // Split interval right before next use
+          Split(interval, next_pos - 1);
         }
-        if (pos > interval->start()) Split(interval, pos);
-
-        Spill(interval);
-
-        // Remove interval from active/inactive list
-        lists[i]->Remove(head);
       }
+
+      inactive_.Remove(head);
     }
   }
 }
@@ -603,7 +623,7 @@ void LGen::ResolveDataFlow() {
             }
           }
 
-          gap->Add(left, right);
+          gap->Add(left->Use(LUse::kAny, gap), right->Use(LUse::kAny, gap));
         }
       }
 
@@ -886,7 +906,8 @@ LInterval* LGen::Split(LInterval* i, int pos) {
 
   // Insert move right before split position, because
   // left side is definitely live here and right side haven't been used yet
-  GetGap(pos)->Add(i, child);
+  LGap* gap = GetGap(pos);
+  gap->Add(i->Use(LUse::kAny, gap), child->Use(LUse::kAny, gap));
 
   return child;
 }
@@ -999,12 +1020,6 @@ LUse* LInterval::UseAfter(int pos, LUse::Type use_type) {
         (use_type == LUse::kAny || use->type() == use_type)) {
       return use;
     }
-  }
-
-  LIntervalList::Item* ihead = split_children_.head();
-  for (; ihead != NULL; ihead = ihead->next()) {
-    LUse* result = ihead->value()->UseAfter(pos, use_type);
-    if (result != NULL) return result;
   }
 
   return NULL;

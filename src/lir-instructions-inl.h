@@ -98,7 +98,7 @@ inline const char* LInstruction::TypeToStr(LInstruction::Type type) {
 
 #undef LIR_INSTRUCTION_TYPE_STR
 
-inline void LGap::Add(LInterval* src, LInterval* dst) {
+inline void LGap::Add(LUse* src, LUse* dst) {
   unhandled_pairs_.Push(new Pair(src, dst));
 }
 

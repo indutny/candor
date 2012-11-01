@@ -174,14 +174,14 @@ class LGap : public LInstruction {
 
   class Pair : public ZoneObject {
    public:
-    Pair(LInterval* src, LInterval* dst) : status(kToMove),
-                                           src_(src),
-                                           dst_(dst) {
+    Pair(LUse* src, LUse* dst) : status(kToMove),
+                                 src_(src),
+                                 dst_(dst) {
     }
 
    private:
-    LInterval* src_;
-    LInterval* dst_;
+    LUse* src_;
+    LUse* dst_;
     PairStatus status;
 
     friend class LGap;
@@ -189,11 +189,11 @@ class LGap : public LInstruction {
 
   typedef ZoneList<Pair*> PairList;
 
-  LGap(LInterval* tmp) : LInstruction(kGap), tmp_(tmp) {}
+  LGap(LInterval* tmp) : LInstruction(kGap), tmp_(tmp->Use(LUse::kAny, this)) {}
 
   INSTRUCTION_METHODS(Gap)
 
-  inline void Add(LInterval* src, LInterval* dst);
+  inline void Add(LUse* src, LUse* dst);
 
   void Resolve();
   void Print(PrintBuffer* p);
@@ -201,7 +201,7 @@ class LGap : public LInstruction {
  private:
   void MovePair(Pair* pair);
 
-  LInterval* tmp_;
+  LUse* tmp_;
   PairList unhandled_pairs_;
   PairList pairs_;
 };

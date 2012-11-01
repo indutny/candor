@@ -23,8 +23,9 @@ void LGen::VisitEntry(HIRInstruction* instr) {
 
 
 void LGen::VisitReturn(HIRInstruction* instr) {
+  LInterval* lhs = ToFixed(instr->left(), rax);
   Bind(new LReturn())
-      ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister);
+      ->AddArg(lhs, LUse::kRegister);
 }
 
 
@@ -64,55 +65,62 @@ void LGen::VisitFunction(HIRInstruction* instr) {
 
 
 void LGen::VisitNot(HIRInstruction* instr) {
+  LInterval* lhs = ToFixed(instr->left(), rax);
   LInstruction* op = Bind(new LNot())
       ->MarkHasCall()
-      ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister);
+      ->AddArg(lhs, LUse::kRegister);
 
   ResultFromFixed(op, rax);
 }
 
 
 void LGen::VisitBinOp(HIRInstruction* instr) {
+  LInterval* lhs = ToFixed(instr->left(), rax);
+  LInterval* rhs = ToFixed(instr->right(), rbx);
   LInstruction* op = Bind(new LBinOp())
       ->MarkHasCall()
-      ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister)
-      ->AddArg(ToFixed(instr->right(), rbx), LUse::kRegister);
+      ->AddArg(lhs, LUse::kRegister)
+      ->AddArg(rhs, LUse::kRegister);
 
   ResultFromFixed(op, rax);
 }
 
 
 void LGen::VisitSizeof(HIRInstruction* instr) {
+  LInterval* lhs = ToFixed(instr->left(), rax);
   LInstruction* op = Bind(new LSizeof())
       ->MarkHasCall()
-      ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister);
+      ->AddArg(lhs, LUse::kRegister);
 
   ResultFromFixed(op, rax);
 }
 
 
 void LGen::VisitTypeof(HIRInstruction* instr) {
+  LInterval* lhs = ToFixed(instr->left(), rax);
   LInstruction* op = Bind(new LTypeof())
       ->MarkHasCall()
-      ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister);
+      ->AddArg(lhs, LUse::kRegister);
 
   ResultFromFixed(op, rax);
 }
 
 
 void LGen::VisitKeysof(HIRInstruction* instr) {
+  LInterval* lhs = ToFixed(instr->left(), rax);
   LInstruction* op = Bind(new LKeysof())
       ->MarkHasCall()
-      ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister);
+      ->AddArg(lhs, LUse::kRegister);
 
   ResultFromFixed(op, rax);
 }
 
 
 void LGen::VisitClone(HIRInstruction* instr) {
+  LInterval* lhs = ToFixed(instr->left(), rax);
   LInstruction* op = Bind(new LClone())
       ->MarkHasCall()
-      ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister);
+      ->AddArg(lhs, LUse::kRegister);
 
   ResultFromFixed(op, rax);
 }
@@ -134,30 +142,37 @@ void LGen::VisitStoreContext(HIRInstruction* instr) {
 
 
 void LGen::VisitLoadProperty(HIRInstruction* instr) {
+  LInterval* lhs = ToFixed(instr->left(), rax);
+  LInterval* rhs = ToFixed(instr->right(), rbx);
   LInstruction* load = Bind(new LLoadProperty())
       ->MarkHasCall()
-      ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister)
-      ->AddArg(ToFixed(instr->right(), rbx), LUse::kRegister);
+      ->AddArg(lhs, LUse::kRegister)
+      ->AddArg(rhs, LUse::kRegister);
 
   ResultFromFixed(load, rax);
 }
 
 
 void LGen::VisitStoreProperty(HIRInstruction* instr) {
+  LInterval* lhs = ToFixed(instr->left(), rax);
+  LInterval* rhs = ToFixed(instr->right(), rbx);
+  LInterval* third = ToFixed(instr->third(), rcx);
   LInstruction* load = Bind(new LStoreProperty())
       ->MarkHasCall()
       ->AddScratch(CreateVirtual())
-      ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister)
-      ->AddArg(ToFixed(instr->right(), rbx), LUse::kRegister)
-      ->SetResult(ToFixed(instr->third(), rcx), LUse::kRegister);
+      ->AddArg(lhs, LUse::kRegister)
+      ->AddArg(rhs, LUse::kRegister)
+      ->SetResult(third, LUse::kRegister);
 }
 
 
 void LGen::VisitDeleteProperty(HIRInstruction* instr) {
+  LInterval* lhs = ToFixed(instr->left(), rax);
+  LInterval* rhs = ToFixed(instr->right(), rbx);
   Bind(new LDeleteProperty())
       ->MarkHasCall()
-      ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister)
-      ->AddArg(ToFixed(instr->right(), rbx), LUse::kRegister);
+      ->AddArg(lhs, LUse::kRegister)
+      ->AddArg(rhs, LUse::kRegister);
 }
 
 
@@ -183,11 +198,14 @@ void LGen::VisitLoadArg(HIRInstruction* instr) {
 
 
 void LGen::VisitLoadVarArg(HIRInstruction* instr) {
+  LInterval* lhs = ToFixed(instr->left(), rax);
+  LInterval* rhs = ToFixed(instr->right(), rbx);
+  LInterval* third = ToFixed(instr->third(), rcx);
   Bind(new LLoadVarArg())
       ->MarkHasCall()
-      ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister)
-      ->AddArg(ToFixed(instr->right(), rbx), LUse::kRegister)
-      ->SetResult(ToFixed(instr->third(), rcx), LUse::kAny);
+      ->AddArg(lhs, LUse::kRegister)
+      ->AddArg(rhs, LUse::kRegister)
+      ->SetResult(third, LUse::kAny);
 }
 
 
@@ -204,28 +222,32 @@ void LGen::VisitAlignStack(HIRInstruction* instr) {
 
 
 void LGen::VisitStoreVarArg(HIRInstruction* instr) {
+  LInterval* lhs = ToFixed(instr->left(), rax);
   Bind(new LStoreVarArg())
       ->MarkHasCall()
       ->AddScratch(CreateVirtual())
-      ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister);
+      ->AddArg(lhs, LUse::kRegister);
 }
 
 
 void LGen::VisitCall(HIRInstruction* instr) {
+  LInterval* lhs = ToFixed(instr->left(), rbx);
+  LInterval* rhs = ToFixed(instr->right(), rax);
   LInstruction* op = Bind(new LCall())
       ->MarkHasCall()
-      ->AddArg(ToFixed(instr->left(), rbx), LUse::kRegister)
-      ->AddArg(ToFixed(instr->right(), rax), LUse::kRegister);
+      ->AddArg(lhs, LUse::kRegister)
+      ->AddArg(rhs, LUse::kRegister);
 
   ResultFromFixed(op, rax);
 }
 
 
 void LGen::VisitIf(HIRInstruction* instr) {
+  LInterval* lhs = ToFixed(instr->left(), rax);
   assert(instr->block()->succ_count() == 2);
   Bind(new LBranch())
       ->MarkHasCall()
-      ->AddArg(ToFixed(instr->left(), rax), LUse::kRegister);
+      ->AddArg(lhs, LUse::kRegister);
 }
 
 
