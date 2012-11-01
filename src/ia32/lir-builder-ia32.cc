@@ -199,6 +199,7 @@ void LGen::VisitStoreArg(HIRInstruction* instr) {
 
 void LGen::VisitAlignStack(HIRInstruction* instr) {
   Bind(new LAlignStack())
+      ->AddScratch(CreateVirtual())
       ->AddArg(instr->left(), LUse::kRegister);
 }
 

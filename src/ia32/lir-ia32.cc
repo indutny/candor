@@ -281,9 +281,9 @@ void LCall::Generate(Masm* masm) {
   // argc * 2
   __ mov(ecx, eax);
 
-  __ testb(ecx, Immediate(HNumber::Tag(1)));
+  __ testb(ecx, Immediate(HNumber::Tag(3)));
   __ jmp(kEq, &even_argc);
-  __ addl(ecx, Immediate(HNumber::Tag(1)));
+  __ orlb(ecx, Immediate(HNumber::Tag(3)));
   __ bind(&even_argc);
   __ shl(ecx, Immediate(2));
   __ addl(ecx, esp);
@@ -547,10 +547,14 @@ void LStoreVarArg::Generate(Masm* masm) {
 
 
 void LAlignStack::Generate(Masm* masm) {
-  Label even;
-  __ testb(inputs[0]->ToRegister(), Immediate(HNumber::Tag(1)));
+  Label even, loop;
+  __ mov(scratches[0]->ToRegister(), inputs[0]->ToRegister());
+  __ bind(&loop);
+  __ testb(scratches[0]->ToRegister(), Immediate(HNumber::Tag(3)));
   __ jmp(kEq, &even);
   __ push(Immediate(Heap::kTagNil));
+  __ inc(scratches[0]->ToRegister());
+  __ jmp(&loop);
   __ bind(&even);
 }
 

@@ -268,29 +268,29 @@ void CallBindingStub::Generate() {
   __ Pushad();
 
   // binding(argc, argv)
-  __ mov(edi, argc);
-  __ Untag(edi);
-  __ mov(esi, ebp);
+  __ mov(eax, argc);
+  __ Untag(eax);
+  __ mov(ebx, ebp);
 
   // old ebp + return address + two arguments + two words alignment
-  __ addl(esi, Immediate(6 * 4));
-  __ mov(scratch, edi);
+  __ addl(ebx, Immediate(6 * 4));
+  __ mov(scratch, eax);
   __ shl(scratch, Immediate(2));
-  __ subl(esi, scratch);
+  __ subl(ebx, scratch);
 
   // argv should point to the end of arguments array
-  __ mov(scratch, edi);
+  __ mov(scratch, eax);
   __ shl(scratch, Immediate(2));
-  __ addl(esi, scratch);
+  __ addl(ebx, scratch);
 
   __ ExitFramePrologue();
 
   Operand code(scratch, HFunction::kCodeOffset);
 
-  __ push(esi); // align
-  __ push(esi); //
-  __ push(esi); // <- argv
-  __ push(edi); // <- argc
+  __ push(ebx); // align
+  __ push(ebx); //
+  __ push(ebx); // <- argv
+  __ push(eax); // <- argc
   __ mov(scratch, fn);
   __ Call(code);
   __ addl(esp, Immediate(4 * 4));
