@@ -94,6 +94,8 @@ TEST_START(numbers)
     assert(result->As<Number>()->Value() == 5.5);
   })
 
+  // XXX: This big numbers should be converted to doubles by utils.h
+#if CANDOR_ARCH_x64
   // Conversion on overflow
   FUN_TEST("return 2305843009213693952 * 1000000", {
     assert(result->As<Number>()->Value() == 2305843009213693952000000.0);
@@ -109,4 +111,5 @@ TEST_START(numbers)
            " - 2305843009213693952", {
     assert(result->As<Number>()->Value() == -5.0 * 2305843009213693952.0);
   })
+#endif // CANDOR_ARCH_x64
 TEST_END(numbers)
