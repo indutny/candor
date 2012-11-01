@@ -123,6 +123,8 @@ void AllocateStub::Generate() {
 
   // Align stack
   __ push(Immediate(0));
+  __ push(Immediate(0));
+  __ push(Immediate(0));
   __ push(ebx);
 
   // Arguments
@@ -189,9 +191,9 @@ void AllocateStub::Generate() {
     __ push(scratch);
     __ push(heapref);
     __ mov(scratch, Immediate(*reinterpret_cast<intptr_t*>(&allocate)));
-    __ addl(esp, 4 * 4);
 
     __ Call(scratch);
+    __ addl(esp, 4 * 4);
     __ Popad(eax);
   }
 
