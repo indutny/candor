@@ -445,7 +445,7 @@ char* HArray::NewEmpty(Heap* heap) {
 
 
 int64_t HArray::Length(char* obj, bool shrink) {
-  int64_t result = *reinterpret_cast<int64_t*>(obj + kLengthOffset);
+  int64_t result = *reinterpret_cast<intptr_t*>(obj + kLengthOffset);
 
   if (shrink) {
     // Lookup property at [length - 1]
