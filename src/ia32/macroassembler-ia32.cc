@@ -411,16 +411,16 @@ void Masm::StringHash(Register str, Register result) {
 
   Label call_runtime, done;
 
-  push(eax);
-
   // Check if hash was already calculated
-  mov(eax, hash_field);
-  cmpl(eax, Immediate(0));
+  mov(result, hash_field);
+  cmpl(result, Immediate(0));
   jmp(kNe, &done);
 
   // Check if string is a cons string
-  movzxb(eax, repr_field);
-  cmpl(eax, Immediate(HString::kNormal));
+  push(str);
+  movzxb(str, repr_field);
+  cmpb(str, Immediate(HString::kNormal));
+  pop(str);
   jmp(kNe, &call_runtime);
 
   // Compute new hash
@@ -428,6 +428,8 @@ void Masm::StringHash(Register str, Register result) {
   if (!result.is(ecx)) push(ecx);
   push(str);
   push(esi);
+
+  Register scratch = esi;
 
   // hash = 0
   xorl(result, result);
@@ -448,18 +450,18 @@ void Masm::StringHash(Register str, Register result) {
   Operand ch(str, 0);
 
   // result += str[0]
-  movzxb(eax, ch);
-  addl(result, eax);
+  movzxb(scratch, ch);
+  addl(result, scratch);
 
   // result += result << 10
-  mov(eax, result);
+  mov(scratch, result);
   shl(result, Immediate(10));
-  addl(result, eax);
+  addl(result, scratch);
 
   // result ^= result >> 6
-  mov(eax, result);
+  mov(scratch, result);
   shr(result, Immediate(6));
-  xorl(result, eax);
+  xorl(result, scratch);
 
   // ecx--; str++
   dec(ecx);
@@ -475,19 +477,19 @@ void Masm::StringHash(Register str, Register result) {
 
   // Mixup
   // result += (result << 3);
-  mov(eax, result);
+  mov(scratch, result);
   shl(result, Immediate(3));
-  addl(result, eax);
+  addl(result, scratch);
 
   // result ^= (result >> 11);
-  mov(eax, result);
+  mov(scratch, result);
   shr(result, Immediate(11));
-  xorl(result, eax);
+  xorl(result, scratch);
 
   // result += (result << 15);
-  mov(eax, result);
+  mov(scratch, result);
   shl(result, Immediate(15));
-  addl(result, eax);
+  addl(result, scratch);
 
   pop(esi);
   pop(str);
@@ -499,18 +501,22 @@ void Masm::StringHash(Register str, Register result) {
   jmp(&done);
   bind(&call_runtime);
 
-  push(str);
-  push(str);
-  push(str);
+  push(eax);
+  push(eax);
+  push(eax);
   push(str);
   Call(stubs()->GetHashValueStub());
-  addl(esp, Immediate(4 * 4));
   pop(str);
 
-  mov(result, eax);
+  if (result.is(eax)) {
+    addl(esp, Immediate(4 * 3));
+  } else {
+    mov(result, eax);
+    pop(eax);
+    addl(esp, Immediate(4 * 2));
+  }
 
   bind(&done);
-  pop(eax);
 }
 
 

@@ -101,9 +101,9 @@ intptr_t RuntimeGetHash(Heap* heap, char* value) {
 
 
 intptr_t RuntimeLookupProperty(Heap* heap,
-                            char* obj,
-                            char* key,
-                            intptr_t insert) {
+                               char* obj,
+                               char* key,
+                               intptr_t insert) {
   assert(!HValue::Cast(obj)->IsGCMarked());
   assert(!HValue::Cast(obj)->IsSoftGCMarked());
 

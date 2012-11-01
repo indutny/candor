@@ -307,7 +307,7 @@ void LCall::Generate(Masm* masm) {
   // Reset all registers to nil
   __ mov(scratch, Immediate(Heap::kTagNil));
   __ mov(ebx, scratch);
-  __ mov(ebx, scratch);
+  __ mov(ecx, scratch);
   __ mov(edx, scratch);
 
   fn_s.Unspill();
@@ -357,7 +357,7 @@ void LLoadVarArg::Generate(Masm* masm) {
   // offset and rest are unboxed
   Register offset = eax;
   Register rest = ebx;
-  Register arr = ebx;
+  Register arr = ecx;
   Operand argc(ebp, -HValue::kPointerSize * 2);
   Operand qmap(arr, HObject::kMapOffset);
   Operand slot(scratch, 0);
@@ -396,7 +396,7 @@ void LLoadVarArg::Generate(Masm* masm) {
 
   // eax <- object
   // ebx <- property
-  __ mov(ebx, Immediate(1));
+  __ mov(ecx, Immediate(1));
   __ Call(masm->stubs()->GetLookupPropertyStub());
 
   arr_s.Unspill();
@@ -442,7 +442,7 @@ void LLoadVarArg::Generate(Masm* masm) {
   __ xorl(eax, eax);
   __ xorl(ebx, ebx);
   __ xorl(edx, edx);
-  // ebx <- holds result
+  // ecx <- holds result
 }
 
 
@@ -454,7 +454,7 @@ void LStoreArg::Generate(Masm* masm) {
 void LStoreVarArg::Generate(Masm* masm) {
   Register varg = eax;
   Register index = ebx;
-  Register map = ebx;
+  Register map = ecx;
 
   // eax <- varg
   Label loop, not_array, odd_end, r1_nil, r2_nil;
@@ -490,7 +490,7 @@ void LStoreVarArg::Generate(Masm* masm) {
 
   // odd case: array[index]
   __ mov(ebx, index);
-  __ mov(ebx, Immediate(0));
+  __ mov(ecx, Immediate(0));
   __ Call(masm->stubs()->GetLookupPropertyStub());
 
   __ IsNil(eax, NULL, &r1_nil);
@@ -515,7 +515,7 @@ void LStoreVarArg::Generate(Masm* masm) {
 
   // even case: array[index]
   __ mov(ebx, index);
-  __ mov(ebx, Immediate(0));
+  __ mov(ecx, Immediate(0));
   __ Call(masm->stubs()->GetLookupPropertyStub());
 
   __ IsNil(eax, NULL, &r2_nil);

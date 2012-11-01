@@ -136,7 +136,7 @@ void Assembler::cmpb(Register dst, Operand& src) {
 
 
 void Assembler::cmpb(Register dst, Immediate src) {
-  emitb(0x3A);
+  emitb(0x80);
   emit_modrm(dst, 7);
   emitb(src.value());
 }
