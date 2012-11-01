@@ -820,7 +820,7 @@ void StackTraceStub::Generate() {
   __ mov(edx, eax);
 
   __ push(esi);
-  __ push(esi);
+  __ push(edx);
   __ push(esi);
   __ push(edi);
   __ mov(eax, Immediate(*reinterpret_cast<intptr_t*>(&strace)));
