@@ -576,7 +576,7 @@ void Masm::IsDenseArray(Register reference, Label* non_dense, Label* dense) {
 
 
 void Masm::Call(Register addr) {
-  while ((offset() & 0x1) != 0x1) {
+  while ((offset() & 0x1) != 0x0) {
     nop();
   }
   call(addr);
@@ -585,7 +585,7 @@ void Masm::Call(Register addr) {
 
 
 void Masm::Call(Operand& addr) {
-  while ((offset() & 0x1) != 0x1) {
+  while ((offset() & 0x1) != 0x0) {
     nop();
   }
   call(addr);
