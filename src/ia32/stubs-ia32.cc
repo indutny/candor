@@ -272,8 +272,8 @@ void CallBindingStub::Generate() {
   __ Untag(edi);
   __ mov(esi, ebp);
 
-  // old ebp + return address + two arguments
-  __ addl(esi, Immediate(4 * 4));
+  // old ebp + return address + two arguments + two words alignment
+  __ addl(esi, Immediate(6 * 4));
   __ mov(scratch, edi);
   __ shl(scratch, Immediate(2));
   __ subl(esi, scratch);

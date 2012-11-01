@@ -293,8 +293,8 @@ void CallBindingStub::Generate() {
   __ Untag(rdi);
   __ mov(rsi, rbp);
 
-  // old rbp + return address + two arguments + two words alignment
-  __ addq(rsi, Immediate(6 * 4));
+  // old rbp + return address + two arguments
+  __ addq(rsi, Immediate(4 * 8));
   __ mov(scratch, rdi);
   __ shl(scratch, Immediate(3));
   __ subq(rsi, scratch);
