@@ -349,8 +349,8 @@ void Masm::FillStackSlots() {
 
 
 void Masm::EnterFramePrologue() {
-  Immediate last_stack(reinterpret_cast<uint64_t>(heap()->last_stack()));
-  Immediate last_frame(reinterpret_cast<uint64_t>(heap()->last_frame()));
+  Immediate last_stack(reinterpret_cast<intptr_t>(heap()->last_stack()));
+  Immediate last_frame(reinterpret_cast<intptr_t>(heap()->last_frame()));
   Operand scratch_op(scratch, 0);
 
   push(Immediate(Heap::kTagNil));
@@ -368,8 +368,8 @@ void Masm::EnterFrameEpilogue() {
 
 
 void Masm::ExitFramePrologue() {
-  Immediate last_stack(reinterpret_cast<uint64_t>(heap()->last_stack()));
-  Immediate last_frame(reinterpret_cast<uint64_t>(heap()->last_frame()));
+  Immediate last_stack(reinterpret_cast<intptr_t>(heap()->last_stack()));
+  Immediate last_frame(reinterpret_cast<intptr_t>(heap()->last_frame()));
   Operand scratch_op(scratch, 0);
 
   mov(scratch, last_frame);
@@ -384,8 +384,8 @@ void Masm::ExitFramePrologue() {
 
 
 void Masm::ExitFrameEpilogue() {
-  Immediate last_stack(reinterpret_cast<uint64_t>(heap()->last_stack()));
-  Immediate last_frame(reinterpret_cast<uint64_t>(heap()->last_frame()));
+  Immediate last_stack(reinterpret_cast<intptr_t>(heap()->last_stack()));
+  Immediate last_frame(reinterpret_cast<intptr_t>(heap()->last_frame()));
   Operand scratch_op(scratch, 0);
 
   pop(scratch);
@@ -516,7 +516,7 @@ void Masm::StringHash(Register str, Register result) {
 
 
 void Masm::CheckGC() {
-  Immediate gc_flag(reinterpret_cast<uint64_t>(heap()->needs_gc_addr()));
+  Immediate gc_flag(reinterpret_cast<intptr_t>(heap()->needs_gc_addr()));
   Operand scratch_op(scratch, 0);
 
   Label done;
@@ -594,7 +594,7 @@ void Masm::Call(Operand& addr) {
 
 
 void Masm::Call(char* stub) {
-  mov(scratch, reinterpret_cast<uint64_t>(stub));
+  mov(scratch, reinterpret_cast<intptr_t>(stub));
 
   Call(scratch);
 }

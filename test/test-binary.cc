@@ -19,8 +19,7 @@ TEST_START(binary)
   })
 
   FUN_TEST("a() { x = 1\nreturn b() { x = x + 1\nreturn x} }\n"
-           "c = a()\nreturn c() + c() + c() + c()", {
-    fprintf(stdout, "%f\n", result->As<Number>()->Value());
+           "c = a()\nreturn c() + c() + c()", {
     assert(result->As<Number>()->Value() == 9);
   });
 

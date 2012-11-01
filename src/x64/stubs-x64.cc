@@ -157,9 +157,9 @@ void AllocateStub::Generate() {
   Label runtime_allocate, done;
 
   Heap* heap = masm()->heap();
-  Immediate heapref(reinterpret_cast<uint64_t>(heap));
-  Immediate top(reinterpret_cast<uint64_t>(heap->new_space()->top()));
-  Immediate limit(reinterpret_cast<uint64_t>(heap->new_space()->limit()));
+  Immediate heapref(reinterpret_cast<intptr_t>(heap));
+  Immediate top(reinterpret_cast<intptr_t>(heap->new_space()->top()));
+  Immediate limit(reinterpret_cast<intptr_t>(heap->new_space()->limit()));
 
   Operand scratch_op(scratch, 0);
 
@@ -210,7 +210,7 @@ void AllocateStub::Generate() {
     __ mov(rdi, heapref);
     __ mov(rsi, size);
 
-    __ mov(scratch, Immediate(*reinterpret_cast<uint64_t*>(&allocate)));
+    __ mov(scratch, Immediate(*reinterpret_cast<intptr_t*>(&allocate)));
 
     __ Call(scratch);
     __ Popad(rax);
@@ -331,9 +331,9 @@ void CollectGarbageStub::Generate() {
     Masm::Align a(masm());
 
     // RuntimeCollectGarbage(heap, stack_top)
-    __ mov(rdi, Immediate(reinterpret_cast<uint64_t>(masm()->heap())));
+    __ mov(rdi, Immediate(reinterpret_cast<intptr_t>(masm()->heap())));
     __ mov(rsi, rsp);
-    __ mov(rax, Immediate(*reinterpret_cast<uint64_t*>(&gc)));
+    __ mov(rax, Immediate(*reinterpret_cast<intptr_t*>(&gc)));
     __ Call(rax);
   }
 
@@ -385,9 +385,9 @@ void SizeofStub::Generate() {
   __ Pushad();
 
   // RuntimeSizeof(heap, obj)
-  __ mov(rdi, Immediate(reinterpret_cast<uint64_t>(masm()->heap())));
+  __ mov(rdi, Immediate(reinterpret_cast<intptr_t>(masm()->heap())));
   __ mov(rsi, rax);
-  __ mov(rax, Immediate(*reinterpret_cast<uint64_t*>(&sizeofc)));
+  __ mov(rax, Immediate(*reinterpret_cast<intptr_t*>(&sizeofc)));
   __ callq(rax);
 
   __ Popad(rax);
@@ -403,9 +403,9 @@ void KeysofStub::Generate() {
   __ Pushad();
 
   // RuntimeKeysof(heap, obj)
-  __ mov(rdi, Immediate(reinterpret_cast<uint64_t>(masm()->heap())));
+  __ mov(rdi, Immediate(reinterpret_cast<intptr_t>(masm()->heap())));
   __ mov(rsi, rax);
-  __ mov(rax, Immediate(*reinterpret_cast<uint64_t*>(&keysofc)));
+  __ mov(rax, Immediate(*reinterpret_cast<intptr_t*>(&keysofc)));
   __ callq(rax);
 
   __ Popad(rax);
@@ -568,11 +568,11 @@ void LookupPropertyStub::Generate() {
 
   // RuntimeLookupProperty(heap, obj, key, change)
   // (returns addr of slot)
-  __ mov(rdi, Immediate(reinterpret_cast<uint64_t>(masm()->heap())));
+  __ mov(rdi, Immediate(reinterpret_cast<intptr_t>(masm()->heap())));
   __ mov(rsi, rax);
   __ mov(rdx, rbx);
   // rcx already contains change flag
-  __ mov(rax, Immediate(*reinterpret_cast<uint64_t*>(&lookup)));
+  __ mov(rax, Immediate(*reinterpret_cast<intptr_t*>(&lookup)));
   __ callq(rax);
 
   __ Popad(rax);
@@ -625,9 +625,9 @@ void CoerceToBooleanStub::Generate() {
 
   RuntimeCoerceCallback to_boolean = &RuntimeToBoolean;
 
-  __ mov(rdi, Immediate(reinterpret_cast<uint64_t>(masm()->heap())));
+  __ mov(rdi, Immediate(reinterpret_cast<intptr_t>(masm()->heap())));
   __ mov(rsi, rax);
-  __ mov(rax, Immediate(*reinterpret_cast<uint64_t*>(&to_boolean)));
+  __ mov(rax, Immediate(*reinterpret_cast<intptr_t*>(&to_boolean)));
   __ callq(rax);
 
   __ Popad(rax);
@@ -724,10 +724,10 @@ void DeletePropertyStub::Generate() {
   __ Pushad();
 
   // RuntimeDeleteProperty(heap, obj, property)
-  __ mov(rdi, Immediate(reinterpret_cast<uint64_t>(masm()->heap())));
+  __ mov(rdi, Immediate(reinterpret_cast<intptr_t>(masm()->heap())));
   __ mov(rsi, rax);
   __ mov(rdx, rbx);
-  __ mov(rax, Immediate(*reinterpret_cast<uint64_t*>(&delp)));
+  __ mov(rax, Immediate(*reinterpret_cast<intptr_t*>(&delp)));
   __ callq(rax);
 
   __ Popad(reg_nil);
@@ -749,9 +749,9 @@ void HashValueStub::Generate() {
   __ Pushad();
 
   // RuntimeStringHash(heap, str)
-  __ mov(rdi, Immediate(reinterpret_cast<uint64_t>(masm()->heap())));
+  __ mov(rdi, Immediate(reinterpret_cast<intptr_t>(masm()->heap())));
   __ mov(rsi, str);
-  __ mov(rax, Immediate(*reinterpret_cast<uint64_t*>(&hash)));
+  __ mov(rax, Immediate(*reinterpret_cast<intptr_t*>(&hash)));
   __ callq(rax);
 
   __ Popad(rax);
@@ -775,11 +775,11 @@ void StackTraceStub::Generate() {
   __ Pushad();
 
   // RuntimeStackTrace(heap, frame, ip)
-  __ mov(rdi, Immediate(reinterpret_cast<uint64_t>(masm()->heap())));
+  __ mov(rdi, Immediate(reinterpret_cast<intptr_t>(masm()->heap())));
   __ mov(rsi, rbx);
   __ mov(rdx, rax);
 
-  __ mov(rax, Immediate(*reinterpret_cast<uint64_t*>(&strace)));
+  __ mov(rax, Immediate(*reinterpret_cast<intptr_t*>(&strace)));
   __ callq(rax);
 
   __ Popad(rax);
@@ -1048,14 +1048,14 @@ void BinOpStub::Generate() {
 
   __ Pushad();
 
-  Immediate heapref(reinterpret_cast<uint64_t>(masm()->heap()));
+  Immediate heapref(reinterpret_cast<intptr_t>(masm()->heap()));
 
   // binop(heap, lhs, rhs)
   __ mov(rdi, heapref);
   __ mov(rsi, rax);
   __ mov(rdx, rbx);
 
-  __ mov(scratch, Immediate(*reinterpret_cast<uint64_t*>(&cb)));
+  __ mov(scratch, Immediate(*reinterpret_cast<intptr_t*>(&cb)));
   __ callq(scratch);
 
   __ Popad(rax);
