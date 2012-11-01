@@ -256,10 +256,10 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
   // Set mask
   mov(scratch, size);
 
-  // mask (= (size - 1) << 3)
+  // mask (= (size - 1) << 2)
   Untag(scratch);
   dec(scratch);
-  shl(scratch, Immediate(3));
+  shl(scratch, Immediate(2));
   mov(qmask, scratch);
   xorl(scratch, scratch);
 
@@ -268,7 +268,7 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
 
   Untag(size);
   // keys + values
-  shl(size, Immediate(4));
+  shl(size, Immediate(3));
   // + size
   addl(size, Immediate(HValue::kPointerSize));
   TagNumber(size);
@@ -285,7 +285,7 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
   mov(qmapsize, size);
 
   // Fill map with nil
-  shl(size, Immediate(4));
+  shl(size, Immediate(3));
   addl(result, Immediate(HMap::kSpaceOffset));
   addl(size, result);
   subl(size, Immediate(HValue::kPointerSize));
