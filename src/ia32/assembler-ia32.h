@@ -110,6 +110,14 @@ struct DoubleRegister {
     return code_ == reg.code();
   }
 
+  inline bool operator == (DoubleRegister a) const {
+    return a.code_ == code_;
+  }
+
+  inline bool operator != (DoubleRegister a) const {
+    return a.code_ != code_;
+  }
+
   int code_;
 };
 
@@ -312,8 +320,9 @@ class Assembler {
   void call(Operand& dst);
 
   // Floating point instructions
-  void movdqu(Operand& dst, DoubleRegister src);
-  void movdqu(DoubleRegister dst, Operand &src);
+  void movq(DoubleRegister dst, DoubleRegister src);
+  void movq(Operand& dst, DoubleRegister src);
+  void movq(DoubleRegister dst, Operand &src);
   void addld(DoubleRegister dst, DoubleRegister src);
   void subld(DoubleRegister dst, DoubleRegister src);
   void mulld(DoubleRegister dst, DoubleRegister src);

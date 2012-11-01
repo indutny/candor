@@ -407,20 +407,27 @@ void Assembler::call(Operand& dst) {
 
 // Floating point instructions
 
-
-void Assembler::movdqu(Operand& dst, DoubleRegister src) {
+void Assembler::movq(DoubleRegister dst, DoubleRegister src) {
   emitb(0xF3);
   emitb(0x0F);
-  emitb(0x7F);
+  emitb(0x7E);
   emit_modrm(src, dst);
 }
 
 
-void Assembler::movdqu(DoubleRegister dst, Operand& src) {
+void Assembler::movq(Operand& dst, DoubleRegister src) {
+  emitb(0x66);
+  emitb(0x0F);
+  emitb(0xD6);
+  emit_modrm(src, dst);
+}
+
+
+void Assembler::movq(DoubleRegister dst, Operand& src) {
   emitb(0xF3);
   emitb(0x0F);
-  emitb(0x6F);
-  emit_modrm(src, dst);
+  emitb(0x7E);
+  emit_modrm(dst, src);
 }
 
 
