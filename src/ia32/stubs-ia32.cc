@@ -757,9 +757,8 @@ void DeletePropertyStub::Generate() {
   __ mov(edx, ebx);
   __ mov(eax, Immediate(*reinterpret_cast<intptr_t*>(&delp)));
 
-
   __ push(esi);
-  __ push(esi);
+  __ push(edx);
   __ push(esi);
   __ push(edi);
   __ call(eax);
