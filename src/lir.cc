@@ -555,7 +555,7 @@ void LGen::AllocateBlockedReg(LInterval* current) {
         // it'll be spilled later
         if (reg_use != NULL && reg_use->instr()->id <= current->start()) {
           Split(interval, current->start() % 2 == 0 ?
-              (current->start() - 1) : (current->start() - 2));
+              (current->start() - 1) : current->start());
           continue;
         }
         if (pos > interval->start()) Split(interval, pos);

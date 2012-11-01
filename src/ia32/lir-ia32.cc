@@ -284,8 +284,9 @@ void LCall::Generate(Masm* masm) {
   __ testb(ecx, Immediate(HNumber::Tag(3)));
   __ jmp(kEq, &even_argc);
   __ orlb(ecx, Immediate(HNumber::Tag(3)));
+  __ addl(ecx, Immediate(HNumber::Tag(1)));
   __ bind(&even_argc);
-  __ shl(ecx, Immediate(2));
+  __ shl(ecx, Immediate(1));
   __ addl(ecx, esp);
   Masm::Spill esp_s(masm, ecx);
 
@@ -553,7 +554,7 @@ void LAlignStack::Generate(Masm* masm) {
   __ testb(scratches[0]->ToRegister(), Immediate(HNumber::Tag(3)));
   __ jmp(kEq, &even);
   __ push(Immediate(Heap::kTagNil));
-  __ inc(scratches[0]->ToRegister());
+  __ addl(scratches[0]->ToRegister(), Immediate(HNumber::Tag(1)));
   __ jmp(&loop);
   __ bind(&even);
 }
