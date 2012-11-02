@@ -497,7 +497,7 @@ AstNode* Parser::ParseMember() {
       }
 
       if (result == NULL) {
-        SetError("Unexpected '.' or '['");
+        SetError("Expected expression or statement");
         break;
       }
 
