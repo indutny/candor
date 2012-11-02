@@ -65,19 +65,21 @@ char* CodeSpace::Compile(const char* filename,
                          char** root,
                          Error** error) {
   Zone zone;
-  Parser p(source, length);
+
+  // Store copy of filename and source within codespace.
+  // This way we can always be sure that it will be alive as far as
+  // code space itself is alive.
+  CodeInfo* info = new CodeInfo(filename, source, length);
+  infos_.Push(info);
+
+  Parser p(info->source(), info->source_len());
 
   AstNode* ast = p.Execute();
 
-  // Set default filename, if no was given
-  if (filename == NULL) {
-    filename = "???";
-  }
-
   if (p.has_error()) {
     *error = CreateError(filename,
-                         source,
-                         length,
+                         info->source(),
+                         info->source_len(),
                          p.error_msg(),
                          p.error_pos());
     return NULL;
@@ -110,7 +112,10 @@ char* CodeSpace::Compile(const char* filename,
   char* addr = Put(&masm);
 
   // Relocate source map
-  heap()->source_map()->Commit(filename, source, length, addr);
+  heap()->source_map()->Commit(info->filename(),
+                               info->source(),
+                               info->source_len(),
+                               addr);
 
   return addr;
 }
@@ -192,6 +197,24 @@ bool CodePage::Has(uint32_t size) {
 char* CodePage::Allocate(uint32_t size) {
   offset_ += size;
   return page_ + offset_ - size;
+}
+
+
+CodeInfo::CodeInfo(const char* filename, const char* source, uint32_t length)
+    : source_len_(length) {
+  int filename_len = strlen(filename) + 1;
+
+  filename_ = new char[filename_len];
+  source_ = new char[source_len_];
+
+  memcpy(filename_, filename, filename_len);
+  memcpy(source_, source, source_len_);
+}
+
+
+CodeInfo::~CodeInfo() {
+  delete[] filename_;
+  delete[] source_;
 }
 
 } // namespace internal

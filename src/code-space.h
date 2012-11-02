@@ -16,6 +16,7 @@ class Heap;
 class Masm;
 class Stubs;
 class CodePage;
+class CodeInfo;
 
 class CodeSpace {
  public:
@@ -48,6 +49,22 @@ class CodeSpace {
   Stubs* stubs_;
   char* entry_;
   List<CodePage*, EmptyClass> pages_;
+  List<CodeInfo*, EmptyClass> infos_;
+};
+
+class CodeInfo {
+ public:
+  CodeInfo(const char* filename, const char* source, uint32_t length);
+  ~CodeInfo();
+
+  inline const char* filename() { return filename_; }
+  inline const char* source() { return source_; }
+  inline uint32_t source_len() { return source_len_; }
+
+ private:
+  char* filename_;
+  char* source_;
+  uint32_t source_len_;
 };
 
 class CodePage {
