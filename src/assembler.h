@@ -9,10 +9,12 @@
 #include "ia32/assembler-ia32-inl.h"
 #endif
 
+#include "zone.h"
+
 namespace candor {
 namespace internal {
 
-class Label {
+class Label : public ZoneObject {
  public:
   Label() : pos_(0) {
   }
@@ -24,7 +26,7 @@ class Label {
   inline void use(Assembler* a, uint32_t offset);
 
   uint32_t pos_;
-  List<RelocationInfo*, EmptyClass> uses_;
+  ZoneList<RelocationInfo*> uses_;
 
   friend class Assembler;
 };

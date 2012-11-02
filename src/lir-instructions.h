@@ -157,11 +157,14 @@ class LEntry : public LInstruction {
 
 class LLabel : public LInstruction {
  public:
-  LLabel() : LInstruction(kLabel) {}
+  LLabel() : LInstruction(kLabel) {
+    // Allocate label in zone
+    label = new Label();
+  }
 
   INSTRUCTION_METHODS(Label)
 
-  Label label;
+  Label* label;
 };
 
 class LGap : public LInstruction {

@@ -18,7 +18,7 @@ inline void Label::relocate(uint32_t offset) {
   pos_ = offset;
 
   // Iterate through all label's uses and insert correct relocation info
-  List<RelocationInfo*, EmptyClass>::Item* item = uses_.head();
+  ZoneList<RelocationInfo*>::Item* item = uses_.head();
   while (item != NULL) {
     item->value()->target(pos_);
     item = item->next();

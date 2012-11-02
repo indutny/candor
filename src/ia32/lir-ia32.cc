@@ -27,7 +27,7 @@ Operand* LUse::ToOperand() {
 #define __ masm->
 
 void LLabel::Generate(Masm* masm) {
-  __ bind(&this->label);
+  __ bind(this->label);
 }
 
 void LEntry::Generate(Masm* masm) {
@@ -130,7 +130,7 @@ void LAllocateArray::Generate(Masm* masm) {
 
 
 void LGoto::Generate(Masm* masm) {
-  __ jmp(&TargetAt(0)->label);
+  __ jmp(TargetAt(0)->label);
 }
 
 
@@ -141,7 +141,7 @@ void LBranch::Generate(Masm* masm) {
   // Jmp to `right` block if value is `false`
   Operand bvalue(eax, HBoolean::kValueOffset);
   __ cmpb(bvalue, Immediate(0));
-  __ jmp(kEq, &TargetAt(1)->label);
+  __ jmp(kEq, TargetAt(1)->label);
 }
 
 
@@ -267,7 +267,7 @@ void LFunction::Generate(Masm* masm) {
   RelocationInfo* addr = new RelocationInfo(RelocationInfo::kAbsolute,
                                             RelocationInfo::kLong,
                                             masm->offset() - 4);
-  block_->label()->label.AddUse(masm, addr);
+  block_->label()->label->AddUse(masm, addr);
 
   // Call stub
   __ push(Immediate(Heap::kTagNil));
