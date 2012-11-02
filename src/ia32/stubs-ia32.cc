@@ -901,9 +901,15 @@ void BinOpStub::Generate() {
        case BinOp::kBOr: __ orl(eax, ebx); break;
        case BinOp::kBXor: __ xorl(eax, ebx); break;
        case BinOp::kMod:
-        __ xorl(edx, edx);
-        __ idivl(ebx);
-        __ mov(eax, edx);
+        {
+          Label zero;
+          __ xorl(edx, edx);
+          __ cmpl(ebx, Immediate(HNumber::Tag(0)));
+          __ jmp(kEq, &zero);
+          __ idivl(ebx);
+          __ bind(&zero);
+          __ mov(eax, edx);
+        }
         break;
        case BinOp::kShl:
        case BinOp::kShr:
@@ -1028,9 +1034,15 @@ void BinOpStub::Generate() {
      case BinOp::kBOr: __ orl(eax, ebx); break;
      case BinOp::kBXor: __ xorl(eax, ebx); break;
      case BinOp::kMod:
-      __ xorl(edx, edx);
-      __ idivl(ebx);
-      __ mov(eax, edx);
+      {
+        Label zero;
+        __ xorl(edx, edx);
+        __ cmpl(ebx, Immediate(HNumber::Tag(0)));
+        __ jmp(kEq, &zero);
+        __ idivl(ebx);
+        __ bind(&zero);
+        __ mov(eax, edx);
+      }
       break;
      case BinOp::kShl:
      case BinOp::kShr:

@@ -143,4 +143,13 @@ TEST_START(binary)
   FUN_TEST("return '5' & 3", {
     assert(result->As<Number>()->Value() == 1);
   })
+
+  // Regression
+  FUN_TEST("return 1 % 0", {
+    assert(result->As<Number>()->Value() == 0);
+  })
+
+  FUN_TEST("return 1.0 % 0.0", {
+    assert(result->As<Number>()->Value() == 0);
+  })
 TEST_END(binary)
