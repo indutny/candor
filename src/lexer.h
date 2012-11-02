@@ -8,6 +8,64 @@
 namespace candor {
 namespace internal {
 
+#define LEX_TOKEN_TYPES(V) \
+    V(Cr) \
+    V(Dot) \
+    V(Ellipsis) \
+    V(Comma) \
+    V(Colon) \
+    V(Assign) \
+    V(Comment) \
+    V(ArrayOpen) \
+    V(ArrayClose) \
+    V(ParenOpen) \
+    V(ParenClose) \
+    V(BraceOpen) \
+    V(BraceClose) \
+    V(Inc) \
+    V(Dec) \
+    V(Add) \
+    V(Sub) \
+    V(Div) \
+    V(Mul) \
+    V(Mod) \
+    V(BAnd) \
+    V(BOr) \
+    V(BXor) \
+    V(Shl) \
+    V(Shr) \
+    V(UShr) \
+    V(Eq) \
+    V(StrictEq) \
+    V(Ne) \
+    V(StrictNe) \
+    V(Lt) \
+    V(Gt) \
+    V(Le) \
+    V(Ge) \
+    V(LOr) \
+    V(LAnd) \
+    V(Not) \
+    V(Number) \
+    V(String) \
+    V(False) \
+    V(True) \
+    V(Nan) \
+    V(Nil) \
+    V(Name) \
+    V(If) \
+    V(Else) \
+    V(While) \
+    V(Break) \
+    V(Continue) \
+    V(Return) \
+    V(Clone) \
+    V(Delete) \
+    V(Typeof) \
+    V(Sizeof) \
+    V(Keysof) \
+    V(End)
+
 // Splits source code into lexems and emits them
 class Lexer {
  public:
@@ -16,75 +74,15 @@ class Lexer {
                                                length_(length) {
   }
 
+#define LEX_TOKEN_ENUM(V) \
+    k##V,
+
   enum TokenType {
-    // Punctuation
-    kCr,
-    kDot,
-    kEllipsis,
-    kComma,
-    kColon,
-    kAssign,
-    kComment,
-    kArrayOpen,
-    kArrayClose,
-    kParenOpen,
-    kParenClose,
-    kBraceOpen,
-    kBraceClose,
-
-    // Math
-    kInc,
-    kDec,
-    kAdd,
-    kSub,
-    kDiv,
-    kMul,
-    kMod,
-    kBAnd,
-    kBOr,
-    kBXor,
-    kShl,
-    kShr,
-    kUShr,
-
-    // Logic
-    kEq,
-    kStrictEq,
-    kNe,
-    kStrictNe,
-    kLt,
-    kGt,
-    kLe,
-    kGe,
-    kLOr,
-    kLAnd,
-    kNot,
-
-    // Literals
-    kNumber,
-    kString,
-    kFalse,
-    kTrue,
-    kNan,
-    kNil,
-
-    // Various
-    kName,
-
-    // Keywords
-    kIf,
-    kElse,
-    kWhile,
-    kBreak,
-    kContinue,
-    kReturn,
-    kClone,
-    kDelete,
-    kTypeof,
-    kSizeof,
-    kKeysof,
-    kEnd
+    LEX_TOKEN_TYPES(LEX_TOKEN_ENUM)
+    kNone
   };
+
+#undef LEX_TOKEN_ENUM
 
   class Token : public ZoneObject {
    public:
@@ -106,6 +104,21 @@ class Lexer {
     }
 
     inline bool is(TokenType type) { return type_ == type; }
+
+#define LEX_TOKEN_CASE(V) \
+    case k##V: r = #V; break;\
+
+    inline const char* ToString() {
+      const char* r = NULL;
+      switch (type_) {
+       LEX_TOKEN_TYPES(LEX_TOKEN_CASE)
+       default: UNEXPECTED
+      }
+
+      return r;
+    }
+
+#undef LEX_TOKEN_CASE
 
     inline const char* value() { return value_; }
     inline uint32_t length() { return length_; }
