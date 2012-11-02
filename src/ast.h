@@ -548,6 +548,7 @@ class AstValue : public AstNode {
   }
 
   static inline AstValue* Cast(AstNode* node) {
+    assert(node->is(kValue));
     return reinterpret_cast<AstValue*>(node);
   }
 

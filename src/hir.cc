@@ -323,9 +323,12 @@ HIRInstruction* HIRGen::VisitUnOp(AstNode* stmt) {
   BinOp::BinOpType type;
 
   if (op->is_changing()) {
+    HIRInstruction* load = NULL;
+    HIRInstruction* res = NULL;
+    HIRInstruction* value = NULL;
+
     // ++i, i++
     AstNode* one = new AstNode(AstNode::kNumber, stmt);
-    ScopeSlot* slot = AstValue::Cast(op->lhs())->slot();
 
     one->value("1");
     one->length(1);
@@ -336,19 +339,45 @@ HIRInstruction* HIRGen::VisitUnOp(AstNode* stmt) {
     AstNode* wrap = new BinOp(type, op->lhs(), one);
 
     if (op->subtype() == UnOp::kPreInc || op->subtype() == UnOp::kPreDec) {
-      return Assign(slot, Visit(wrap));
+      res = Visit(wrap);
+      load = res->args()->head()->value();
+      value = res;
     } else {
       HIRInstruction* ione = Visit(one);
-      HIRInstruction* res = Visit(op->lhs());
+      res = Visit(op->lhs());
+      load = res;
+
       HIRInstruction* bin = Add(new HIRBinOp(this, current_block(), type))
           ->AddArg(res)
           ->AddArg(ione);
 
       bin->ast(wrap);
-      Assign(slot, bin);
-
-      return res;
+      value = bin;
     }
+
+    // Assign new value to variable
+    if (op->lhs()->is(AstNode::kValue)) {
+      ScopeSlot* slot = AstValue::Cast(op->lhs())->slot();
+
+      if (slot->is_stack()) {
+        // No instruction is needed
+        Assign(slot, value);
+      } else {
+        Add(new HIRStoreContext(this, current_block(), slot))->AddArg(value);
+      }
+    } else if (op->lhs()->is(AstNode::kMember)) {
+      HIRInstruction* receiver = load->args()->head()->value();
+      HIRInstruction* property = load->args()->tail()->value();
+
+      Add(HIRInstruction::kStoreProperty)
+          ->AddArg(receiver)
+          ->AddArg(property)
+          ->AddArg(value);
+    } else {
+      UNEXPECTED
+    }
+
+    return res;
   } else if (op->subtype() == UnOp::kPlus || op->subtype() == UnOp::kMinus) {
     // +i = 0 + i,
     // -i = 0 - i

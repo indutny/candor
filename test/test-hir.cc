@@ -381,6 +381,19 @@ TEST_START(hir)
            "# Block 10\n"
            "i40 = Return(i6)\n")
 
+  // Regression
+  HIR_TEST("global.x++",
+           "# Block 0\n"
+           "i0 = Entry[0]\n"
+           "i2 = Literal[1]\n"
+           "i4 = Literal[x]\n"
+           "i6 = LoadContext\n"
+           "i8 = LoadProperty(i6, i4)\n"
+           "i10 = BinOp(i8, i2)\n"
+           "i12 = StoreProperty(i6, i4, i10)\n"
+           "i14 = Nil\n"
+           "i16 = Return(i14)\n")
+
   // Phi loop
   HIR_TEST("i = 10\n"
            "k = 0\n"

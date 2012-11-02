@@ -1,3 +1,5 @@
-i = 100000000.0
+print = global.print
+i = 1000000.0
 while (--i) {
+print(i)
 }
