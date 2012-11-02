@@ -83,7 +83,7 @@ candor::Value* APIAssert(uint32_t argc, candor::Value* argv[]) {
 candor::Value* APIPrint(uint32_t argc, candor::Value* argv[]) {
   if (argc < 1) return candor::Nil::New();
 
-  for (int i = 0; i < argc; i++) {
+  for (uint32_t i = 0; i < argc; i++) {
     const char* value = StringToChar(argv[i]->ToString());
 
     fprintf(stdout, i != (argc - 1) ? "%s " : "%s\n", value);

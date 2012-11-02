@@ -66,8 +66,8 @@ class LInstruction : public ZoneObject {
     kNone
   };
 
-  LInstruction(Type type) : type_(type),
-                            id(-1),
+  LInstruction(Type type) : id(-1),
+                            type_(type),
                             input_count_(0),
                             scratch_count_(0),
                             has_call_(NULL),
@@ -174,9 +174,9 @@ class LGap : public LInstruction {
 
   class Pair : public ZoneObject {
    public:
-    Pair(LUse* src, LUse* dst) : status(kToMove),
-                                 src_(src),
-                                 dst_(dst) {
+    Pair(LUse* src, LUse* dst) : src_(src),
+                                 dst_(dst),
+                                 status(kToMove) {
     }
 
    private:

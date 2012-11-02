@@ -14,10 +14,10 @@ namespace internal {
 
 Masm::Masm(CodeSpace* space) : space_(space),
                                align_(0),
-                               spills_(0),
+                               spill_reloc_(NULL),
                                spill_offset_(4),
                                spill_index_(0),
-                               spill_reloc_(NULL),
+                               spills_(0),
                                spill_operand_(ebp, 0) {
 }
 

@@ -788,7 +788,7 @@ class ErrorHandler {
 
   inline bool has_error() { return error_msg_ != NULL; }
   inline const char* error_msg() { return error_msg_; }
-  inline uint32_t error_pos() { return error_pos_; }
+  inline int32_t error_pos() { return error_pos_; }
 
   inline void SetError(const char* msg, int offset) {
     if (msg == NULL) {
@@ -803,7 +803,7 @@ class ErrorHandler {
   }
 
  protected:
-  uint32_t error_pos_;
+  int32_t error_pos_;
   const char* error_msg_;
 };
 

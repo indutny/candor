@@ -277,7 +277,6 @@ void LGen::BuildIntervals() {
           registers_[i]->Use(LUse::kRegister, instr);
         }
       }
-      LIntervalList::Item* head = intervals_.head();
 
       if (instr->result) {
         LInterval* res = instr->result->interval();

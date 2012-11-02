@@ -157,7 +157,7 @@ void LGen::VisitStoreProperty(HIRInstruction* instr) {
   LInterval* lhs = ToFixed(instr->left(), eax);
   LInterval* rhs = ToFixed(instr->right(), ebx);
   LInterval* third = ToFixed(instr->third(), ecx);
-  LInstruction* load = Bind(new LStoreProperty())
+  Bind(new LStoreProperty())
       ->MarkHasCall()
       ->AddScratch(CreateVirtual())
       ->AddArg(lhs, LUse::kRegister)

@@ -14,9 +14,9 @@ namespace internal {
 Heap* Heap::current_ = NULL;
 
 Space::Space(Heap* heap, uint32_t page_size) : heap_(heap),
+                                               root_(NULL),
                                                page_size_(page_size),
-                                               size_(0),
-                                               root_(NULL) {
+                                               size_(0) {
   // Create the first page
   pages_.Push(new Page(page_size));
 

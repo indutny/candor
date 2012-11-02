@@ -17,6 +17,7 @@
   'target_defaults': {
     'default_configuration': 'Debug',
     'defines': [ 'CANDOR_ARCH_<(target_arch)' ],
+    'cflags': [ '-Wall', '-pthread', ],
     'conditions': [
       ['OS == "mac"', {
         'defines': [ 'CANDOR_PLATFORM_DARWIN' ],
@@ -25,7 +26,13 @@
           'GCC_WARN_ABOUT_MISSING_NEWLINE': 'YES',  # -Wnewline-eof
           'PREBINDING': 'NO',                       # No -Wl,-prebind
           'MACOSX_DEPLOYMENT_TARGET': '10.5',       # -mmacosx-version-min=10.5
-          'USE_HEADERMAP': 'NO'
+          'USE_HEADERMAP': 'NO',
+          'WARNING_CFLAGS': [
+            '-Wall',
+            '-Wendif-labels',
+            '-W',
+            '-Wno-unused-parameter',
+          ],
         }
       }, {
         'defines': [ 'CANDOR_PLATFORM_LINUX' ]
