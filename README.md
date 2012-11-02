@@ -17,8 +17,6 @@ to discuss language features.
 **Danger! This whole project is not stable at all, many things are broken and
 may/will change in future**
 
-Note: only x64 is supported now.
-
 ## Example
 
 ```candor
