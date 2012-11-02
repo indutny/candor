@@ -339,9 +339,7 @@ char* RuntimeToBoolean(Heap* heap, char* value) {
 }
 
 
-intptr_t __attribute__((noinline)) RuntimeStrictCompare(Heap* heap,
-                                                        char* lhs,
-                                                        char* rhs) {
+intptr_t RuntimeStrictCompare(Heap* heap, char* lhs, char* rhs) {
   // Fast case - pointers are equal
   if (lhs == rhs) return 0;
 

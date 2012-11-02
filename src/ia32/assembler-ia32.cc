@@ -310,6 +310,13 @@ void Assembler::andl(Register dst, Register src) {
 }
 
 
+void Assembler::andb(Register dst, Immediate src) {
+  emitb(0x80);
+  emit_modrm(dst, 4);
+  emitb(src.value());
+}
+
+
 void Assembler::orl(Register dst, Register src) {
   emitb(0x0B);
   emit_modrm(dst, src);

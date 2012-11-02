@@ -298,6 +298,7 @@ class Assembler {
   void idivl(Register src);
 
   void andl(Register dst, Register src);
+  void andb(Register dst, Immediate src);
   void orl(Register dst, Register src);
   void orlb(Register dst, Immediate src);
   void xorl(Register dst, Register src);

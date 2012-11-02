@@ -49,14 +49,31 @@ void EntryStub::Generate() {
   __ EnterFramePrologue();
 
   // Push all arguments to stack
-  Label even, args, args_loop, unwind_even;
+  Label even, align1, align2, align3, args, args_loop, unwind_even;
   __ mov(eax, argc);
   __ Untag(eax);
 
   // Odd arguments count check (for alignment)
-  __ testb(eax, Immediate(1));
+  // NOTE: On ia32 we're trying to make argc % 4 == 0
+  __ mov(ebx, eax);
+  __ andb(ebx, Immediate(3));
+
+  __ cmpb(ebx, Immediate(0));
   __ jmp(kEq, &even);
+  __ cmpb(ebx, Immediate(1));
+  __ jmp(kEq, &align1);
+  __ cmpb(ebx, Immediate(2));
+  __ jmp(kEq, &align2);
+  __ cmpb(ebx, Immediate(3));
+  __ jmp(kEq, &align3);
+
+  __ bind(&align1);
   __ push(Immediate(0));
+  __ bind(&align2);
+  __ push(Immediate(0));
+  __ bind(&align3);
+  __ push(Immediate(0));
+
   __ bind(&even);
 
   // Get pointer to the end of arguments array
@@ -98,8 +115,9 @@ void EntryStub::Generate() {
   __ mov(ebx, argc);
   __ Untag(ebx);
 
-  __ testb(ebx, Immediate(1));
+  __ testb(ebx, Immediate(3));
   __ jmp(kEq, &unwind_even);
+  __ orlb(ebx, Immediate(3));
   __ inc(ebx);
   __ bind(&unwind_even);
 
