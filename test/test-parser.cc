@@ -131,6 +131,8 @@ TEST_START(parser)
   // Array literal
   PARSER_TEST("a = [ 1, 2, 3, 4]",
               "[kAssign [a] [kArrayLiteral [1] [2] [3] [4]]]")
+  PARSER_TEST("[0][0]",
+              "[kMember [kArrayLiteral [0]] [0]]")
 
   // Nested scopes
   PARSER_TEST("{{{{}}}}", "[kBlock [kBlock [kBlock [kBlock [kNop ]]]]]")

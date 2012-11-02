@@ -219,12 +219,6 @@ AstNode* Parser::ParseExpression(int priority) {
    case kSub:
     member = ParsePrefixUnOp(Peek()->type());
     break;
-   case kBraceOpen:
-    member = ParseObjectLiteral();
-    break;
-   case kArrayOpen:
-    member = ParseArrayLiteral();
-    break;
    case kTypeof:
    case kSizeof:
    case kKeysof:
@@ -494,6 +488,14 @@ AstNode* Parser::ParseMember() {
       fn->end(Peek()->offset());
       result = fn;
     } else {
+      if (result == NULL) {
+        if (Peek()->is(kBraceOpen)) {
+          result = ParseObjectLiteral();
+        } else if (Peek()->is(kArrayOpen)) {
+          result = ParseArrayLiteral();
+        }
+      }
+
       if (result == NULL) {
         SetError("Unexpected '.' or '['");
         break;
