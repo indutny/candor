@@ -3,4 +3,5 @@
 *.dSYM
 /can
 /build
+/out
 /test-runner

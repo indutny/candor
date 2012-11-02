@@ -302,7 +302,6 @@ class MsvsSettings(object):
     cl('RuntimeLibrary',
         map={'0': 'T', '1': 'Td', '2': 'D', '3': 'Dd'}, prefix='/M')
     cl('ExceptionHandling', map={'1': 'sc','2': 'a'}, prefix='/EH')
-    cl('EnablePREfast', map={'true': '/analyze'})
     cl('AdditionalOptions', prefix='')
     # ninja handles parallelism by itself, don't have the compiler do it too.
     cflags = filter(lambda x: not x.startswith('/MP'), cflags)
@@ -402,7 +401,6 @@ class MsvsSettings(object):
     ld('IgnoreDefaultLibraryNames', prefix='/NODEFAULTLIB:')
     ld('ResourceOnlyDLL', map={'true': '/NOENTRY'})
     ld('EntryPointSymbol', prefix='/ENTRY:')
-    ld('Profile', map={ 'true': '/PROFILE'})
     # TODO(scottmg): This should sort of be somewhere else (not really a flag).
     ld('AdditionalDependencies', prefix='')
     # TODO(scottmg): These too.
@@ -691,19 +689,3 @@ def GenerateEnvironmentFiles(toplevel_build_dir, generator_flags, open_out):
     f = open_out(os.path.join(toplevel_build_dir, 'environment.' + arch), 'wb')
     f.write(env_block)
     f.close()
-
-def VerifyMissingSources(sources, build_dir, generator_flags, gyp_to_ninja):
-  """Emulate behavior of msvs_error_on_missing_sources present in the msvs
-  generator: Check that all regular source files, i.e. not created at run time,
-  exist on disk. Missing files cause needless recompilation when building via
-  VS, and we want this check to match for people/bots that build using ninja,
-  so they're not surprised when the VS build fails."""
-  if int(generator_flags.get('msvs_error_on_missing_sources', 0)):
-    no_specials = filter(lambda x: '$' not in x, sources)
-    relative = [os.path.join(build_dir, gyp_to_ninja(s)) for s in no_specials]
-    missing = filter(lambda x: not os.path.exists(x), relative)
-    if missing:
-      # They'll look like out\Release\..\..\stuff\things.cc, so normalize the
-      # path for a slightly less crazy looking output.
-      cleaned_up = [os.path.normpath(x) for x in missing]
-      raise Exception('Missing input files:\n%s' % '\n'.join(cleaned_up))

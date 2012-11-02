@@ -1,6 +1,4 @@
 {
-  'includes': [ '../common.gyp' ],
-
   'variables': {
     'variables': {
       'host_arch%':

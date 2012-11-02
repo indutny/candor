@@ -1,24 +1,23 @@
 BUILDTYPE ?= Debug
 JOBS ?= 1
-ARCH ?=
+ARCH ?= x64
 
 all: libcandor.a can
 
 build:
-	tools/gyp/gyp -Dosx_arch=$(ARCH) --generator-output=build --format=make \
-		--depth=. candor.gyp test/test.gyp
+	./candor_gyp -f make -Dosx_arch=$(ARCH)
 
 libcandor.a: build
-	$(MAKE) -j $(JOBS) -C build candor
-	ln -sf build/out/$(BUILDTYPE)/libcandor.a libcandor.a
+	$(MAKE) -j $(JOBS) -C out candor
+	ln -sf out/$(BUILDTYPE)/libcandor.a libcandor.a
 
 can: build
-	$(MAKE) -j $(JOBS) -C build can
-	ln -sf build/out/$(BUILDTYPE)/can can
+	$(MAKE) -j $(JOBS) -C out can
+	ln -sf out/$(BUILDTYPE)/can can
 
 test-runner: build
-	$(MAKE) -j $(JOBS) -C build test
-	ln -sf build/out/$(BUILDTYPE)/test test-runner
+	$(MAKE) -j $(JOBS) -C out test
+	ln -sf out/$(BUILDTYPE)/test test-runner
 
 test: test-runner can
 	@./test-runner parser
@@ -44,7 +43,7 @@ test: test-runner can
 	@./can test/functional/regressions/regr-3.can
 
 clean:
-	-rm -rf build
+	-rm -rf out
 	-rm libcandor.a can test-runner
 
 .PHONY: clean all build test libcandor.a can test-runner

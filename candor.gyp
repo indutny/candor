@@ -1,6 +1,4 @@
 {
-  'includes': [ 'common.gyp' ],
-
   'targets': [{
     'target_name': 'candor',
     'type': 'static_library',
@@ -8,9 +6,6 @@
       'include',
       'src'
     ],
-    'cflags': ['-Wall', '-Wextra', '-Wno-unused-parameter',
-               '-fPIC', '-fno-strict-aliasing', '-fno-exceptions',
-               '-pedantic'],
     'sources': [
       'src/zone.cc',
       'src/api.cc',
@@ -61,9 +56,6 @@
       'include',
       'src'
     ],
-    'cflags': ['-Wall', '-Wextra', '-Wno-unused-parameter',
-               '-fPIC', '-fno-strict-aliasing', '-fno-exceptions',
-               '-pedantic'],
     'sources': [
       'src/can.cc'
     ]
