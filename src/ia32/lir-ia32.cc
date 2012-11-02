@@ -90,7 +90,7 @@ void LNil::Generate(Masm* masm) {
 
 void LLiteral::Generate(Masm* masm) {
   Heap* heap = masm->heap();
-  Immediate root(reinterpret_cast<intptr_t>(heap->new_space()->root()));
+  Immediate root(reinterpret_cast<intptr_t>(heap->old_space()->root()));
   Operand scratch_op(scratch, 0);
 
   if (root_slot_->is_immediate()) {
@@ -282,7 +282,7 @@ void LFunction::Generate(Masm* masm) {
 void LCall::Generate(Masm* masm) {
   Label not_function, even_argc, done;
   Heap* heap = masm->heap();
-  Immediate root(reinterpret_cast<intptr_t>(heap->new_space()->root()));
+  Immediate root(reinterpret_cast<intptr_t>(heap->old_space()->root()));
   Operand scratch_op(scratch, 0);
 
   // argc * 2
@@ -574,7 +574,7 @@ void LAlignStack::Generate(Masm* masm) {
 
 void LLoadContext::Generate(Masm* masm) {
   Heap* heap = masm->heap();
-  Immediate root(reinterpret_cast<intptr_t>(heap->new_space()->root()));
+  Immediate root(reinterpret_cast<intptr_t>(heap->old_space()->root()));
   Operand scratch_op(scratch, 0);
   int depth = slot()->depth();
 
@@ -630,7 +630,7 @@ void LNot::Generate(Masm* masm) {
   Label on_false, done;
 
   Heap* heap = masm->heap();
-  Immediate root(reinterpret_cast<intptr_t>(heap->new_space()->root()));
+  Immediate root(reinterpret_cast<intptr_t>(heap->old_space()->root()));
   Operand scratch_op(scratch, 0);
   __ mov(scratch, root);
   __ mov(scratch, scratch_op);

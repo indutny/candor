@@ -15,7 +15,8 @@ Heap* Heap::current_ = NULL;
 
 Space::Space(Heap* heap, uint32_t page_size) : heap_(heap),
                                                page_size_(page_size),
-                                               size_(0) {
+                                               size_(0),
+                                               root_(NULL) {
   // Create the first page
   pages_.Push(new Page(page_size));
 

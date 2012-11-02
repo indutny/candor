@@ -23,6 +23,9 @@ Masm::Masm(CodeSpace* space) : space_(space),
 
 
 void Masm::Pushad() {
+  Immediate root(reinterpret_cast<intptr_t>(heap()->old_space()->root()));
+  Operand scratch_op(scratch, 0);
+
   // 8 registers to save (4 * 8 = 16 * 2, so stack should be aligned)
   push(eax);
   push(ebx);
@@ -30,14 +33,26 @@ void Masm::Pushad() {
   push(edx);
 
   push(esi);
+  push(esi);
   push(edi);
-  push(edi);
-  push(edi);
+
+  // Save root pointer
+  mov(scratch, root);
+  mov(scratch, scratch_op);
+  push(scratch);
 }
 
 
 void Masm::Popad(Register preserve) {
-  addl(esp, Immediate(4 * 2));
+  Immediate root(reinterpret_cast<intptr_t>(heap()->old_space()->root()));
+  Operand scratch_op(scratch, 0);
+
+  // Restore root pointer
+  pop(esi);
+  mov(scratch, root);
+  mov(scratch_op, esi);
+
+  PreservePop(edi, preserve);
   PreservePop(edi, preserve);
   PreservePop(esi, preserve);
 
@@ -601,7 +616,7 @@ void Masm::Call(char* stub) {
 
 
 void Masm::CallFunction(Register fn) {
-  Immediate root(reinterpret_cast<intptr_t>(heap()->new_space()->root()));
+  Immediate root(reinterpret_cast<intptr_t>(heap()->old_space()->root()));
   Operand scratch_op(scratch, 0);
 
   Operand context_slot(fn, HFunction::kParentOffset);

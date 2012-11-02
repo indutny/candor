@@ -227,7 +227,7 @@ void AllocateFunctionStub::Generate() {
   Operand qroot(eax, HFunction::kRootOffset);
   Operand qargc(eax, HFunction::kArgcOffset);
   Heap* heap = masm()->heap();
-  Immediate root(reinterpret_cast<intptr_t>(heap->new_space()->root()));
+  Immediate root(reinterpret_cast<intptr_t>(heap->old_space()->root()));
   Operand scratch_op(scratch, 0);
 
   __ mov(qparent, context_reg);
@@ -342,7 +342,7 @@ void CollectGarbageStub::Generate() {
 void TypeofStub::Generate() {
   GeneratePrologue();
   Heap* heap = masm()->heap();
-  Immediate root(reinterpret_cast<intptr_t>(heap->new_space()->root()));
+  Immediate root(reinterpret_cast<intptr_t>(heap->old_space()->root()));
   Operand scratch_op(scratch, 0);
 
   Label not_nil, not_unboxed, done;
@@ -614,7 +614,7 @@ void LookupPropertyStub::Generate() {
 void CoerceToBooleanStub::Generate() {
   GeneratePrologue();
   Heap* heap = masm()->heap();
-  Immediate root(reinterpret_cast<intptr_t>(heap->new_space()->root()));
+  Immediate root(reinterpret_cast<intptr_t>(heap->old_space()->root()));
   Operand scratch_op(scratch, 0);
 
   Label unboxed, truel, not_bool, coerced_type;
@@ -859,7 +859,7 @@ void StackTraceStub::Generate() {
 void BinOpStub::Generate() {
   GeneratePrologue();
   Heap* heap = masm()->heap();
-  Immediate root(reinterpret_cast<intptr_t>(heap->new_space()->root()));
+  Immediate root(reinterpret_cast<intptr_t>(heap->old_space()->root()));
   Operand scratch_op(scratch, 0);
 
   // eax <- lhs
