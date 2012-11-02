@@ -179,6 +179,8 @@ HValue* HValue::CopyTo(Space* old_space, Space* new_space) {
     size += 4 * kPointerSize;
     break;
    case Heap::kTagNumber:
+    size += sizeof(double);
+    break;
    case Heap::kTagBoolean:
     size += kPointerSize;
     break;
