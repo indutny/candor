@@ -117,8 +117,7 @@ using namespace internal;
         i.PrintError();\
         abort();\
       }\
-      Value* argv[0];\
-      Value* result = f->Call(0, argv);\
+      Value* result = f->Call(0, NULL);\
       block\
     }
 

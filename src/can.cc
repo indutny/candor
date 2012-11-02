@@ -189,8 +189,7 @@ void StartRepl() {
     // Call compiled function
     cmdfn->SetContext(global);
 
-    candor::Value* args[0];
-    candor::Value* result = cmdfn->Call(0, args);
+    candor::Value* result = cmdfn->Call(0, NULL);
 
     // Print result
     if (!result->Is<candor::Nil>()) {
@@ -223,8 +222,8 @@ int main(int argc, char** argv) {
 
     code->SetContext(CreateGlobal());
 
-    candor::Value* args[0];
-    int ret = code->Call(0, args)->ToNumber()->IntegralValue();
+    candor::Value* args;
+    int ret = code->Call(0, NULL)->ToNumber()->IntegralValue();
     fflush(stdout);
     return ret;
   }
