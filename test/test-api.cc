@@ -1,7 +1,7 @@
 #include "test.h"
 
 static Value* Callback(uint32_t argc, Value* argv[]) {
-  assert(argc == 3);
+  ASSERT(argc == 3);
 
   Handle<Number> lhs(argv[0]->As<Number>());
   Handle<Number> rhs(argv[1]->As<Number>());
@@ -27,25 +27,25 @@ static Value* ArrayCallback(uint32_t argc, Value* argv[]) {
   Array* arr = Array::New();
   arr->Set(3, Number::NewIntegral(4));
 
-  assert(arr->Length() == 4);
+  ASSERT(arr->Length() == 4);
 
   return arr;
 }
 
 static Value* FnThreeCallback(uint32_t argc, Value* argv[]) {
-  assert(argc == 3);
+  ASSERT(argc == 3);
 
   return Nil::New();
 }
 
 static Value* FnTwoCallback(uint32_t argc, Value* argv[]) {
-  assert(argc == 2);
+  ASSERT(argc == 2);
 
   return Nil::New();
 }
 
 static Value* PrintCallback(uint32_t argc, Value* argv[]) {
-  assert(argc == 1);
+  ASSERT(argc == 1);
 
   return Nil::New();
 }
@@ -53,8 +53,8 @@ static Value* PrintCallback(uint32_t argc, Value* argv[]) {
 static int weak_called = 0;
 
 static void WeakCallback(Value* obj) {
-  assert(obj->Is<Object>());
-  assert(obj->As<Object>()->Get(String::New("key", 3))->
+  ASSERT(obj->Is<Object>());
+  ASSERT(obj->As<Object>()->Get(String::New("key", 3))->
       As<Boolean>()->IsTrue());
 
   weak_called++;
@@ -67,7 +67,7 @@ static void WeakHandleCallback(Value* obj) {
 }
 
 static Value* GetWeak(uint32_t argc, Value* argv[]) {
-  assert(argc == 0);
+  ASSERT(argc == 0);
 
   Handle<Object> obj(Object::New());
 
@@ -76,9 +76,9 @@ static Value* GetWeak(uint32_t argc, Value* argv[]) {
   obj->SetWeakCallback(WeakCallback);
 
   Array* arr = Isolate::GetCurrent()->StackTrace();
-  assert(arr->Length() == 2);
-  assert(arr->Get(0)->As<Object>()->Get("line")->As<Number>()->Value() == 3);
-  assert(arr->Get(1)->As<Object>()->Get("line")->As<Number>()->Value() == 1);
+  ASSERT(arr->Length() == 2);
+  ASSERT(arr->Get(0)->As<Object>()->Get("line")->As<Number>()->Value() == 3);
+  ASSERT(arr->Get(1)->As<Object>()->Get("line")->As<Number>()->Value() == 1);
 
   return *obj;
 }
@@ -89,13 +89,13 @@ struct CDataStruct {
 };
 
 static Value* UseCDataCallback(uint32_t argc, Value* argv[]) {
-  assert(argc == 1);
+  ASSERT(argc == 1);
 
   CDataStruct* s = reinterpret_cast<CDataStruct*>(
       argv[0]->As<CData>()->GetContents());
 
-  assert(s->x == 1);
-  assert(s->y == 2);
+  ASSERT(s->x == 1);
+  ASSERT(s->y == 2);
 
   return Nil::New();
 }
@@ -127,7 +127,7 @@ class SubWrapTest : public WrapTest {
 };
 
 static Value* GetWrapper(uint32_t argc, Value* argv[]) {
-  assert(argc == 0);
+  ASSERT(argc == 0);
 
   SubWrapTest* w = new SubWrapTest();
 
@@ -138,24 +138,24 @@ static Value* GetWrapper(uint32_t argc, Value* argv[]) {
 
 
 static Value* Unref(uint32_t argc, Value* argv[]) {
-  assert(argc == 1);
+  ASSERT(argc == 1);
 
   WrapTest* w = CWrapper::Unwrap<WrapTest>(argv[0]);
 
   w->Unref();
 
-  assert(w->x == 0);
+  ASSERT(w->x == 0);
 
   return w->Wrap();
 }
 
 
 static Value* Unwrap(uint32_t argc, Value* argv[]) {
-  assert(argc == 1);
+  ASSERT(argc == 1);
 
   WrapTest* w = CWrapper::Unwrap<WrapTest>(argv[0]);
 
-  assert(w->j == 3);
+  ASSERT(w->j == 3);
 
   return w->Wrap();
 }
@@ -170,7 +170,7 @@ TEST_START(api)
     argv[2] = Function::New(Callback);
 
     Value* num = result->As<Function>()->Call(3, argv);
-    assert(num->As<Number>()->Value() == 19);
+    ASSERT(num->As<Number>()->Value() == 19);
   })
 
   FUN_TEST("return { a: 1, callback: function(obj) { return obj.a } }", {
@@ -179,13 +179,13 @@ TEST_START(api)
 
     Value* val = obj->Get(*key);
 
-    assert(val->As<Number>()->Value() == 1);
+    ASSERT(val->As<Number>()->Value() == 1);
 
     obj->Set(*key, Number::NewIntegral(3));
 
     val = obj->Get(*key);
 
-    assert(val->As<Number>()->Value() == 3);
+    ASSERT(val->As<Number>()->Value() == 3);
 
     Handle<String> callback_key(String::New("callback", 8));
     Handle<Function> callback(obj->Get(*callback_key)->As<Function>());
@@ -195,20 +195,20 @@ TEST_START(api)
     Value* argv[1] = { *data };
 
     Value* result = callback->Call(1, argv);
-    assert(result->As<Number>()->Value() == 1234);
+    ASSERT(result->As<Number>()->Value() == 1234);
   })
 
   FUN_TEST("return { a: 1, b: 2 }", {
     Array* keys = result->As<Object>()->Keys();
 
-    assert(keys->Length() == 2);
+    ASSERT(keys->Length() == 2);
   })
 
   FUN_TEST("return { a: 1, b: 2 }", {
     Object* clone = result->As<Object>()->Clone();
 
-    assert(clone->Get("a")->As<Number>()->Value() == 1);
-    assert(clone->Get("b")->As<Number>()->Value() == 2);
+    ASSERT(clone->Get("a")->As<Number>()->Value() == 1);
+    ASSERT(clone->Get("b")->As<Number>()->Value() == 2);
   })
 
   FUN_TEST("return () { return global.g }", {
@@ -221,7 +221,7 @@ TEST_START(api)
     fn->SetContext(*global);
 
     Value* ret = fn->Call(0, argv);
-    assert(ret->As<Number>()->Value() == 1234);
+    ASSERT(ret->As<Number>()->Value() == 1234);
   })
 
   FUN_TEST("x = { p: 1234 }\nreturn () { __$gc()\nreturn x.p }", {
@@ -230,26 +230,26 @@ TEST_START(api)
 
     Value* argv[0];
     Value* ret = fn->Call(0, argv);
-    assert(ret->As<Number>()->Value() == 1234);
+    ASSERT(ret->As<Number>()->Value() == 1234);
   })
 
   FUN_TEST("return 1", {
     String* str = result->ToString();
 
-    assert(str->Length() == 1);
-    assert(strncmp(str->Value(), "1", 1) == 0);
+    ASSERT(str->Length() == 1);
+    ASSERT(strncmp(str->Value(), "1", 1) == 0);
   })
 
   FUN_TEST("return (x) { return x().y }", {
     Value* argv[1] = { Function::New(ObjectCallback) };
     Value* ret = result->As<Function>()->Call(1, argv);
-    assert(ret->As<Number>()->Value() == 1234);
+    ASSERT(ret->As<Number>()->Value() == 1234);
   })
 
   FUN_TEST("return (x) { return x()[3] }", {
     Value* argv[1] = { Function::New(ArrayCallback) };
     Value* ret = result->As<Function>()->Call(1, argv);
-    assert(ret->As<Number>()->Value() == 4);
+    ASSERT(ret->As<Number>()->Value() == 4);
   })
 
   FUN_TEST("return (fn1, fn2) { return fn1(fn2(1, 2), 1, 2) }", {
@@ -257,7 +257,7 @@ TEST_START(api)
     argv[0] = Function::New(FnThreeCallback);
     argv[1] = Function::New(FnTwoCallback);
     Value* ret = result->As<Function>()->Call(2, argv);
-    assert(ret->Is<Nil>());
+    ASSERT(ret->Is<Nil>());
   })
 
   {
@@ -277,8 +277,8 @@ TEST_START(api)
 
     Value* argv[0];
     Value* ret = f->Call(0, argv);
-    assert(ret->Is<Nil>());
-    assert(weak_called == 1);
+    ASSERT(ret->Is<Nil>());
+    ASSERT(weak_called == 1);
   }
 
   {
@@ -297,7 +297,7 @@ TEST_START(api)
     // Call gc
     ret->As<Function>()->Call(0, argv);
 
-    assert(weak_handle_called == 1);
+    ASSERT(weak_handle_called == 1);
   }
 
   // CData
@@ -322,7 +322,7 @@ TEST_START(api)
 
     Value* argv[0];
     Value* ret = f->Call(0, argv);
-    assert(ret->Is<Nil>());
+    ASSERT(ret->Is<Nil>());
   }
 
   // CWrapper
@@ -350,8 +350,8 @@ TEST_START(api)
 
     Value* argv[0];
     Value* ret = f->Call(0, argv);
-    assert(ret->Is<Nil>());
-    assert(wrapper_destroyed == 1);
+    ASSERT(ret->Is<Nil>());
+    ASSERT(wrapper_destroyed == 1);
   }
 
   // Regressions
@@ -373,6 +373,6 @@ TEST_START(api)
 
     Value* argv[0];
     Value* ret = f->Call(0, argv);
-    assert(ret->Is<Function>());
+    ASSERT(ret->Is<Function>());
   }
 TEST_END(api)

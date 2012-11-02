@@ -20,6 +20,18 @@
 using namespace candor;
 using namespace internal;
 
+#define ASSERT(expr) \
+    do { \
+     if (!(expr)) { \
+       fprintf(stderr, \
+               "Assertion failed in %s on line %d: %s\n", \
+               __FILE__, \
+               __LINE__, \
+               #expr); \
+       abort(); \
+     } \
+    } while (0);
+
 #define TEST_START(name)\
     void __test_runner_##name() {\
 
@@ -34,10 +46,10 @@ using namespace internal;
       AstNode* ast = p.Execute();\
       if (p.has_error()) {\
         fprintf(stdout, "%d:%s\n", p.error_pos(), p.error_msg());\
-        assert(!p.has_error());\
+        ASSERT(!p.has_error());\
       }\
       p.Print(out, 1000);\
-      assert(ast != NULL);\
+      ASSERT(ast != NULL);\
       if (strcmp(expected, out) != 0) {\
         fprintf(stderr, "PARSER test failed, got:\n%s\n expected:\n%s\n",\
                 out,\
@@ -53,10 +65,10 @@ using namespace internal;
       char out[1024];\
       Parser p(code, strlen(code));\
       AstNode* ast = p.Execute();\
-      assert(!p.has_error());\
+      ASSERT(!p.has_error());\
       Scope::Analyze(ast);\
       p.Print(out, sizeof(out));\
-      assert(ast != NULL);\
+      ASSERT(ast != NULL);\
       if (strcmp(expected, out) != 0) {\
         fprintf(stderr, "SCOPE test failed, got:\n%s\n expected:\n%s\n",\
                 out,\
@@ -73,9 +85,9 @@ using namespace internal;
       Heap heap(2 * 1024 * 1024);\
       Parser p(code, strlen(code));\
       AstNode* ast = p.Execute();\
-      assert(!p.has_error());\
+      ASSERT(!p.has_error());\
       Scope::Analyze(ast);\
-      assert(ast != NULL);\
+      ASSERT(ast != NULL);\
       HIRGen gen(&heap, ast);\
       gen.Print(out, sizeof(out));\
       if (strcmp(expected, out) != 0) {\
@@ -94,9 +106,9 @@ using namespace internal;
       Heap heap(2 * 1024 * 1024);\
       Parser p(code, strlen(code));\
       AstNode* ast = p.Execute();\
-      assert(!p.has_error());\
+      ASSERT(!p.has_error());\
       Scope::Analyze(ast);\
-      assert(ast != NULL);\
+      ASSERT(ast != NULL);\
       HIRGen hgen(&heap, ast);\
       LGen lgen(&hgen, hgen.roots()->head()->value());\
       lgen.Print(out, sizeof(out));\

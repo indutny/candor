@@ -222,7 +222,6 @@ int main(int argc, char** argv) {
 
     code->SetContext(CreateGlobal());
 
-    candor::Value* args;
     int ret = code->Call(0, NULL)->ToNumber()->IntegralValue();
     fflush(stdout);
     return ret;
