@@ -1,7 +1,7 @@
 language: node_js
 
 script:
-  - "make test"
+  - "BUILDTYPE=Debug make test && BUILDTYPE=Release make test"
 
 notifications:
   email: false
