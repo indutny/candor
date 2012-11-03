@@ -505,7 +505,7 @@ void* CData::GetContents() {
 }
 
 
-CWrapper::CWrapper(int class_id) : isolate(ISOLATE), class_id_(class_id) {
+CWrapper::CWrapper(const int* magic) : isolate(ISOLATE), magic_(magic) {
   CData* data = CData::New(sizeof(void*));
 
   // Save pointer of class

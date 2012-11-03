@@ -256,15 +256,15 @@ class Handle {
 
 class CWrapper {
  public:
-  CWrapper(int class_id);
+  CWrapper(const int* magic);
   virtual ~CWrapper();
 
   inline CData* Wrap() { return ref->As<CData>(); }
 
-  static inline bool HasClass(Value* value, int class_id) {
+  static inline bool HasClass(Value* value, const int* magic) {
     CWrapper* w = *reinterpret_cast<CWrapper**>(
         value->As<CData>()->GetContents());
-    return w->class_id_ == class_id;
+    return w->magic_ == magic;
   }
 
   template <class T>
@@ -279,8 +279,8 @@ class CWrapper {
   static void WeakCallback(Value* data);
 
   Isolate* isolate;
+  const int* magic_;
 
-  int class_id_;
   Handle<CData> ref;
 };
 
