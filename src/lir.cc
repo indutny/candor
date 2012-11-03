@@ -6,7 +6,7 @@
 #include "lir-instructions-inl.h"
 #include "source-map.h" // SourceMap
 #define __STDC_LIMIT_MACROS
-#include <stdint.h> // INT_MAX
+#include <limits.h> // INT_MAX
 #include <string.h> // memset
 
 namespace candor {
