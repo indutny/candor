@@ -10,8 +10,7 @@ static Value* Callback(uint32_t argc, Value* argv[]) {
   int64_t lhs_value = lhs->IntegralValue();
   int64_t rhs_value = rhs->IntegralValue();
 
-  Value* fargv[0];
-  int64_t fn_ret = fn->Call(0, fargv)->As<Number>()->IntegralValue();
+  int64_t fn_ret = fn->Call(0, NULL)->As<Number>()->IntegralValue();
 
   return Number::NewIntegral(lhs_value + 2 * rhs_value + 3 * fn_ret);
 }
@@ -218,15 +217,13 @@ TEST_START(api)
   })
 
   FUN_TEST("return () { return global.g }", {
-    Value* argv[0];
-
     Handle<Object> global(Object::New());
     global->Set(String::New("g", 1), Number::NewIntegral(1234));
 
     Function* fn = result->As<Function>();
     fn->SetContext(*global);
 
-    Value* ret = fn->Call(0, argv);
+    Value* ret = fn->Call(0, NULL);
     ASSERT(ret->As<Number>()->Value() == 1234);
   })
 
@@ -234,8 +231,7 @@ TEST_START(api)
 
     Function* fn = result->As<Function>();
 
-    Value* argv[0];
-    Value* ret = fn->Call(0, argv);
+    Value* ret = fn->Call(0, NULL);
     ASSERT(ret->As<Number>()->Value() == 1234);
   })
 
@@ -281,8 +277,7 @@ TEST_START(api)
 
     f->SetContext(global);
 
-    Value* argv[0];
-    Value* ret = f->Call(0, argv);
+    Value* ret = f->Call(0, NULL);
     ASSERT(ret->Is<Nil>());
     ASSERT(weak_called == 1);
   }
@@ -297,11 +292,10 @@ TEST_START(api)
     weak.Unref();
     weak->SetWeakCallback(WeakHandleCallback);
 
-    Value* argv[0];
-    Value* ret = f->Call(0, argv);
+    Value* ret = f->Call(0, NULL);
 
     // Call gc
-    ret->As<Function>()->Call(0, argv);
+    ret->As<Function>()->Call(0, NULL);
 
     ASSERT(weak_handle_called == 1);
   }
@@ -326,8 +320,7 @@ TEST_START(api)
 
     f->SetContext(global);
 
-    Value* argv[0];
-    Value* ret = f->Call(0, argv);
+    Value* ret = f->Call(0, NULL);
     ASSERT(ret->Is<Nil>());
   }
 
@@ -354,8 +347,7 @@ TEST_START(api)
 
     f->SetContext(global);
 
-    Value* argv[0];
-    Value* ret = f->Call(0, argv);
+    Value* ret = f->Call(0, NULL);
     ASSERT(ret->Is<Nil>());
     ASSERT(wrapper_destroyed == 1);
   }
@@ -377,8 +369,7 @@ TEST_START(api)
 
     f->SetContext(global);
 
-    Value* argv[0];
-    Value* ret = f->Call(0, argv);
+    Value* ret = f->Call(0, NULL);
     ASSERT(ret->Is<Function>());
   }
 TEST_END(api)
