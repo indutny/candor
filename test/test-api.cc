@@ -1,5 +1,7 @@
 #include "test.h"
 
+const int kDefaultClass = 1234;
+
 static Value* Callback(uint32_t argc, Value* argv[]) {
   ASSERT(argc == 3);
 
@@ -104,7 +106,7 @@ static int wrapper_destroyed = 0;
 
 class WrapTest : public CWrapper {
  public:
-  WrapTest() {
+  WrapTest() : CWrapper(kDefaultClass) {
     x = 0;
     y = 1;
     z = 2;
@@ -140,6 +142,7 @@ static Value* GetWrapper(uint32_t argc, Value* argv[]) {
 static Value* Unref(uint32_t argc, Value* argv[]) {
   ASSERT(argc == 1);
 
+  ASSERT(CWrapper::HasClass(argv[0], kDefaultClass));
   WrapTest* w = CWrapper::Unwrap<WrapTest>(argv[0]);
 
   w->Unref();
@@ -153,6 +156,7 @@ static Value* Unref(uint32_t argc, Value* argv[]) {
 static Value* Unwrap(uint32_t argc, Value* argv[]) {
   ASSERT(argc == 1);
 
+  ASSERT(CWrapper::HasClass(argv[0], kDefaultClass));
   WrapTest* w = CWrapper::Unwrap<WrapTest>(argv[0]);
 
   ASSERT(w->j == 3);

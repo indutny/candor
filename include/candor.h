@@ -256,10 +256,16 @@ class Handle {
 
 class CWrapper {
  public:
-  CWrapper();
+  CWrapper(int class_id);
   virtual ~CWrapper();
 
   inline CData* Wrap() { return ref->As<CData>(); }
+
+  static inline bool HasClass(Value* value, int class_id) {
+    CWrapper* w = *reinterpret_cast<CWrapper**>(
+        value->As<CData>()->GetContents());
+    return w->class_id_ == class_id;
+  }
 
   template <class T>
   static inline T* Unwrap(Value* value) {
@@ -274,6 +280,7 @@ class CWrapper {
 
   Isolate* isolate;
 
+  int class_id_;
   Handle<CData> ref;
 };
 
