@@ -1,4 +1,14 @@
 {
+  'target_defaults': {
+    'defines': [ 'CANDOR_ARCH_<(target_arch)' ],
+    'conditions': [
+      ['OS == "mac"', {
+        'defines': [ 'CANDOR_PLATFORM_DARWIN' ],
+      }, {
+        'defines': [ 'CANDOR_PLATFORM_LINUX' ]
+      }]
+    ]
+  },
   'targets': [{
     'target_name': 'candor',
     'type': 'static_library',
@@ -44,7 +54,7 @@
           'src/ia32/lir-builder-ia32.cc',
           'src/ia32/lir-ia32.cc',
         ]
-      }]
+      }],
     ]
   }, {
     'target_name': 'can',

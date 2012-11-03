@@ -16,11 +16,10 @@
   },
   'target_defaults': {
     'default_configuration': 'Debug',
-    'defines': [ 'CANDOR_ARCH_<(target_arch)' ],
     'cflags': [ '-Wall', '-pthread', ],
+    'defines': [ 'CANDOR_ARCH_<(target_arch)' ],
     'conditions': [
       ['OS == "mac"', {
-        'defines': [ 'CANDOR_PLATFORM_DARWIN' ],
         'xcode_settings': {
           'GCC_VERSION': '4.1',
           'GCC_WARN_ABOUT_MISSING_NEWLINE': 'YES',  # -Wnewline-eof
@@ -34,13 +33,16 @@
             '-Wno-unused-parameter',
           ],
         }
-      }, {
-        'defines': [ 'CANDOR_PLATFORM_LINUX' ]
       }],
       ['OS == "mac" and target_arch == "x64"', {
         'xcode_settings': {
           'ARCHS': [ 'x86_64' ]
         },
+      }],
+      ['OS == "mac"', {
+        'defines': [ 'CANDOR_PLATFORM_DARWIN' ],
+      }, {
+        'defines': [ 'CANDOR_PLATFORM_LINUX' ]
       }]
     ],
     'configurations': {
