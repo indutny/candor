@@ -5,6 +5,7 @@
 #include "lir-instructions.h"
 #include "lir-instructions-inl.h"
 #include "source-map.h" // SourceMap
+#define __STDC_LIMIT_MACROS
 #include <limits.h> // INT_MAX
 #include <string.h> // memset
 
