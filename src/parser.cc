@@ -458,10 +458,13 @@ AstNode* Parser::ParseMember() {
         colon_call = false;
       }
 
+      SkipCr();
       while (!Peek()->is(kParenClose) && !Peek()->is(kEnd)) {
         AstNode* expr = ParseExpression();
         if (expr == NULL) break;
         fn->args()->Push(expr);
+
+        SkipCr();
 
         // Skip commas
         if (!Peek()->is(kComma)) {

@@ -139,4 +139,7 @@ TEST_START(parser)
 
   // Complex names
   PARSER_TEST("__$gc()", "[kCall [__$gc] @[] ]")
+
+  // Wrapping
+  PARSER_TEST("return a(\n1,\n2\n)", "[return [kCall [a] @[[1] [2]] ]]")
 TEST_END(parser)
