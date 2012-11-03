@@ -262,6 +262,8 @@ class CWrapper {
   inline CData* Wrap() { return ref->As<CData>(); }
 
   static inline bool HasClass(Value* value, const int* magic) {
+    if (!value->Is<CData>()) return false;
+
     CWrapper* w = *reinterpret_cast<CWrapper**>(
         value->As<CData>()->GetContents());
     return w->magic_ == magic;
