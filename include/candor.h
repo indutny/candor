@@ -259,7 +259,7 @@ class CWrapper {
   CWrapper();
   virtual ~CWrapper();
 
-  inline CData* Wrap() { return data; }
+  inline CData* Wrap() { return ref->As<CData>(); }
 
   template <class T>
   static inline T* Unwrap(Value* value) {
@@ -273,10 +273,8 @@ class CWrapper {
   static void WeakCallback(Value* data);
 
   Isolate* isolate;
-  CData* data;
 
-  int ref_count;
-  Handle<CData>* ref;
+  Handle<CData> ref;
 };
 
 } // namespace candor

@@ -505,45 +505,31 @@ void* CData::GetContents() {
 }
 
 
-CWrapper::CWrapper() : isolate(ISOLATE),
-                       data(CData::New(sizeof(void*))),
-                       ref_count(0),
-                       ref(NULL) {
+CWrapper::CWrapper() : isolate(ISOLATE) {
+  CData* data = CData::New(sizeof(void*));
+
   // Save pointer of class
   *reinterpret_cast<CWrapper**>(data->GetContents()) = this;
 
   // Mark data as weak
   data->SetWeakCallback(CWrapper::WeakCallback);
-
-  // Data field should be changed on reallocation
-  isolate->heap->Reference(Heap::kRefWeak,
-                           reinterpret_cast<HValue**>(&data),
-                           reinterpret_cast<HValue*>(data));
+  ref.Wrap(data);
+  ref.Unref();
 }
 
 
 CWrapper::~CWrapper() {
-  isolate->heap->Dereference(reinterpret_cast<HValue**>(&data),
-                             reinterpret_cast<HValue*>(data));
+  ref.Unwrap();
 }
 
 
 void CWrapper::Ref() {
-  if (ref == NULL) {
-    ref = new Handle<CData>(Wrap());
-  }
-  ref_count++;
+  ref.Ref();
 }
 
 
 void CWrapper::Unref() {
-  ref_count--;
-  assert(ref_count >= 0);
-
-  if (ref_count == 0) {
-    delete ref;
-    ref = NULL;
-  }
+  ref.Unref();
 }
 
 
