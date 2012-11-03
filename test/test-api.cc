@@ -1,7 +1,5 @@
 #include "test.h"
 
-const int kDefaultClass = 1234;
-
 static Value* Callback(uint32_t argc, Value* argv[]) {
   ASSERT(argc == 3);
 
