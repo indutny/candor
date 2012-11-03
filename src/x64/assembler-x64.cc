@@ -1,7 +1,8 @@
-#include "assembler.h"
-#include "assembler-inl.h"
 #define __STDC_LIMIT_MACROS
 #include <stdint.h> // UINT32_MAX
+
+#include "assembler.h"
+#include "assembler-inl.h"
 
 namespace candor {
 namespace internal {
