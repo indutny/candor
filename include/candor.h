@@ -269,9 +269,9 @@ class CWrapper {
   void Ref();
   void Unref();
 
+ protected:
   static void WeakCallback(Value* data);
 
- protected:
   Isolate* isolate;
   CData* data;
 
