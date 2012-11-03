@@ -439,7 +439,7 @@ class MyBox : public candor::CWrapper {
   int width;
   int height;
  public:
-  MyObject(int w, int h) {
+  MyObject(int w, int h) : candor::CWrapper(&magic) {
     width = w;
     height = h;
   }
@@ -452,7 +452,12 @@ class MyBox : public candor::CWrapper {
     // This is called when the CData is about to be garbage collected.
   }
   
-}
+  // Used to get magic interior pointer
+  static const int magic;
+};
+
+// Just to generate symbol
+const int MyBox::magic = 0;
 ```
 
 To create a new instance of it and get the cdata we do:
@@ -469,6 +474,7 @@ Then later when the cdata is passed to us in a function, we unwrap it.
 Value* box_area(uint32_t argc, Value* argv[]) {
   assert(argc == 1);
   CData* cdata = argv[0]->As<CData>();
+  assert(CWrapper::HasClass(cdata, &MyBox::magic));
   MyBox* box = CWrapper::Unwrap<MyBox>(cdata);
   int area = box->Area();
   return Number::NewIntegral(area);
