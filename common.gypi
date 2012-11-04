@@ -16,7 +16,7 @@
   },
   'target_defaults': {
     'default_configuration': 'Debug',
-    'cflags': [ '-Wall', '-pthread', ],
+    'cflags': [ '-Wall', '-pthread', '-fno-strict-aliasing' ],
     'defines': [ 'CANDOR_ARCH_<(target_arch)' ],
     'conditions': [
       ['OS == "mac"', {
