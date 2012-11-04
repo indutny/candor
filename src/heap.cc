@@ -157,7 +157,9 @@ void Heap::AddWeak(HValue* value, WeakCallback callback) {
 
 void Heap::RemoveWeak(HValue* value) {
   HValueWeakRefList::Item* tail = weak_references()->tail();
-  while (tail != NULL) {
+  HValueWeakRefList::Item* prev;
+  for (; tail != NULL; tail = prev) {
+    prev = tail->prev();
     if (tail->value()->value() == value) {
       weak_references()->Remove(tail);
     }

@@ -77,23 +77,24 @@ void GC::CollectGarbage(char* stack_top) {
 
 void GC::ColourPersistentHandles() {
   HValueRefList::Item* item = heap()->references()->head();
-  while (item != NULL) {
+  for (; item != NULL; item = item->next()) {
     HValueReference* ref = item->value();
     if (ref->is_persistent()) {
       push_grey(ref->value(), reinterpret_cast<char**>(ref->reference()));
       push_grey(ref->value(), reinterpret_cast<char**>(ref->valueptr()));
       ProcessGrey();
     }
-
-    item = item->next();
   }
 }
 
 
 void GC::RelocateWeakHandles() {
   HValueRefList::Item* item = heap()->references()->head();
-  while (item != NULL) {
+  HValueRefList::Item* next;
+  for (; item != NULL; item = next) {
     HValueReference* ref = item->value();
+    next = item->next();
+
     if (ref->is_weak()) {
       GCValue* v;
       if (ref->value()->IsGCMarked()) {
@@ -108,8 +109,6 @@ void GC::RelocateWeakHandles() {
         heap()->references()->Remove(item);
       }
     }
-
-    item = item->next();
   }
 }
 
@@ -140,24 +139,23 @@ void GC::ColourFrames(char* stack_top) {
 
 void GC::HandleWeakReferences() {
   HValueWeakRefList::Item* item = heap()->weak_references()->head();
-  while (item != NULL) {
+  HValueWeakRefList::Item* next;
+  for (; item != NULL; item = next) {
     HValueWeakRef* ref = item->value();
+    next = item->next();
+
     if (!ref->value()->IsGCMarked()) {
       if (IsInCurrentSpace(ref->value())) {
         // Value is in GC space and wasn't marked
         // call callback as it was GCed
         ref->callback()(ref->value());
         HValueWeakRefList::Item* current = item;
-        item = item->next();
         heap()->weak_references()->Remove(current);
-        continue;
       }
     } else {
       // Value wasn't GCed, but was moved
       ref->value(reinterpret_cast<HValue*>(ref->value()->GetGCMark()));
     }
-
-    item = item->next();
   }
 }
 

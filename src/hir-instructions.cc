@@ -35,8 +35,11 @@ HIRInstruction::HIRInstruction(HIRGen* g,
 
 void HIRInstruction::ReplaceArg(HIRInstruction* o, HIRInstruction* n) {
   HIRInstructionList::Item* head = args()->head();
-  for (; head != NULL; head = head->next()) {
+  HIRInstructionList::Item* next;
+  for (; head != NULL; head = next) {
     HIRInstruction* arg = head->value();
+    next = head->next();
+
     if (arg == o) {
       args()->InsertBefore(head, n);
       args()->Remove(head);
@@ -52,8 +55,11 @@ void HIRInstruction::ReplaceArg(HIRInstruction* o, HIRInstruction* n) {
 
 void HIRInstruction::RemoveUse(HIRInstruction* i) {
   HIRInstructionList::Item* head = uses()->head();
-  for (; head != NULL; head = head->next()) {
+  HIRInstructionList::Item* next;
+  for (; head != NULL; head = next) {
     HIRInstruction* use = head->value();
+    next = head->next();
+
     if (use == i) {
       uses()->Remove(head);
       break;

@@ -47,8 +47,10 @@ void HIRGen::PrunePhis() {
 
   // Filter out phis that have zero or one inputs
   HIRPhiList::Item* phead = queue_.head();
-  for (; phead != NULL; phead = phead->next()) {
+  HIRPhiList::Item* next;
+  for (; phead != NULL; phead = next) {
     HIRPhi* phi = phead->value();
+    next = phead->next();
 
     if (phi->input_count() == 2) continue;
     queue_.Remove(phead);
@@ -782,8 +784,10 @@ void HIRGen::Replace(HIRInstruction* o, HIRInstruction* n) {
 
 void HIRBlock::Remove(HIRInstruction* instr) {
   HIRInstructionList::Item* head = instructions_.head();
-  for (; head != NULL; head = head->next()) {
+  HIRInstructionList::Item* next;
+  for (; head != NULL; head = next) {
     HIRInstruction* i = head->value();
+    next = head->next();
 
     if (i == instr) {
       instructions_.Remove(head);

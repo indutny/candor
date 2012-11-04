@@ -317,8 +317,10 @@ void LGen::ShuffleIntervals(LIntervalList* active,
                             int pos) {
   // Check for intervals in active that are expired or inactive
   LIntervalList::Item* head = active->head();
-  for (; head != NULL; head = head->next()) {
+  LIntervalList::Item* next;
+  for (; head != NULL; head = next) {
     LInterval* interval = head->value();
+    next = head->next();
 
     if (interval->end() < pos) {
       // Interval has ended before current position
@@ -333,8 +335,9 @@ void LGen::ShuffleIntervals(LIntervalList* active,
 
   // Check for intervals in inactive that are expired or active
   head = inactive->head();
-  for (; head != NULL; head = head->next()) {
+  for (; head != NULL; head = next) {
     LInterval* interval = head->value();
+    next = head->next();
 
     if (interval->end() < pos) {
       // Interval has ended before current position
@@ -559,8 +562,10 @@ void LGen::AllocateBlockedReg(LInterval* current) {
 
     // Inactive intervals
     head = active_.head();
-    for (; head != NULL; head = head->next()) {
+    LIntervalList::Item* next;
+    for (; head != NULL; head = next) {
       LInterval* interval = head->value();
+      next = head->next();
       if (interval->IsFixed() || !interval->IsEqual(current)) continue;
 
       int intersection = current->FindIntersection(interval);
@@ -862,8 +867,10 @@ LInterval* LGen::Split(LInterval* i, int pos) {
 
   // Move uses from parent to child
   LUseList::Item* utail = i->uses()->tail();
-  for (; utail != NULL; utail = utail->prev()) {
+  LUseList::Item* uprev;
+  for (; utail != NULL; utail = uprev) {
     LUse* use = utail->value();
+    uprev = utail->prev();
 
     // Uses are sorted - so break early
     if (use->instr()->id < pos) break;
@@ -875,8 +882,10 @@ LInterval* LGen::Split(LInterval* i, int pos) {
 
   // Move ranges from parent to child
   LRangeList::Item* rtail = i->ranges()->tail();
-  for (; rtail != NULL; rtail = rtail->prev()) {
+  LRangeList::Item* rprev;
+  for (; rtail != NULL; rtail = rprev) {
     LRange* range = rtail->value();
+    rprev = rtail->prev();
 
     // Ranges are sorted too
     if (range->end() <= pos)  break;
