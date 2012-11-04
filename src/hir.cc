@@ -166,7 +166,7 @@ HIRInstruction* HIRGen::VisitFunction(AstNode* stmt) {
           index = Add(new HIRBinOp(BinOp::kAdd))->AddArg(index)->AddArg(hone);
         }
       } else {
-        HIRInstruction* length = Add(HIRInstruction::kSizeof)
+        HIRInstruction* length = Add(new HIRSizeof())
             ->AddArg(load_arg);
 
         // By length of vararg
@@ -210,7 +210,7 @@ HIRInstruction* HIRGen::VisitAssign(AstNode* stmt) {
     HIRInstruction* property = Visit(stmt->lhs()->rhs());
     HIRInstruction* receiver = Visit(stmt->lhs()->lhs());
 
-    return Add(HIRInstruction::kStoreProperty)
+    return Add(new HIRStoreProperty())
         ->AddArg(receiver)
         ->AddArg(property)
         ->AddArg(rhs);
@@ -379,7 +379,7 @@ HIRInstruction* HIRGen::VisitUnOp(AstNode* stmt) {
       HIRInstruction* receiver = load->args()->head()->value();
       HIRInstruction* property = load->args()->tail()->value();
 
-      Add(HIRInstruction::kStoreProperty)
+      Add(new HIRStoreProperty())
           ->AddArg(receiver)
           ->AddArg(property)
           ->AddArg(value);
@@ -459,7 +459,7 @@ HIRInstruction* HIRGen::VisitBinOp(AstNode* stmt) {
 
 
 HIRInstruction* HIRGen::VisitObjectLiteral(AstNode* stmt) {
-  HIRInstruction* res = Add(HIRInstruction::kAllocateObject);
+  HIRInstruction* res = Add(new HIRAllocateObject());
   ObjectLiteral* obj = ObjectLiteral::Cast(stmt);
 
   AstList::Item* khead = obj->keys()->head();
@@ -468,7 +468,7 @@ HIRInstruction* HIRGen::VisitObjectLiteral(AstNode* stmt) {
     HIRInstruction* value = Visit(vhead->value());
     HIRInstruction* key = Visit(khead->value());
 
-    Add(HIRInstruction::kStoreProperty)
+    Add(new HIRStoreProperty())
         ->AddArg(res)
         ->AddArg(key)
         ->AddArg(value);
@@ -479,14 +479,14 @@ HIRInstruction* HIRGen::VisitObjectLiteral(AstNode* stmt) {
 
 
 HIRInstruction* HIRGen::VisitArrayLiteral(AstNode* stmt) {
-  HIRInstruction* res = Add(HIRInstruction::kAllocateArray);
+  HIRInstruction* res = Add(new HIRAllocateArray());
 
   AstList::Item* head = stmt->children()->head();
   for (uint64_t i = 0; head != NULL; head = head->next(), i++) {
     HIRInstruction* key = GetNumber(i);
     HIRInstruction* value = Visit(head->value());
 
-    Add(HIRInstruction::kStoreProperty)
+    Add(new HIRStoreProperty())
         ->AddArg(res)
         ->AddArg(key)
         ->AddArg(value);
@@ -563,7 +563,7 @@ HIRInstruction* HIRGen::VisitCall(AstNode* stmt) {
 
   // If call has vararg - increase argc by ...
   if (vararg != NULL) {
-    HIRInstruction* length = Add(HIRInstruction::kSizeof)
+    HIRInstruction* length = Add(new HIRSizeof())
         ->AddArg(vararg);
 
     // ... by the length of vararg
@@ -611,24 +611,24 @@ HIRInstruction* HIRGen::VisitCall(AstNode* stmt) {
 
 HIRInstruction* HIRGen::VisitTypeof(AstNode* stmt) {
   HIRInstruction* lhs = Visit(stmt->lhs());
-  return Add(HIRInstruction::kTypeof)->AddArg(lhs);
+  return Add(new HIRTypeof())->AddArg(lhs);
 }
 
 
 HIRInstruction* HIRGen::VisitKeysof(AstNode* stmt) {
   HIRInstruction* lhs = Visit(stmt->lhs());
-  return Add(HIRInstruction::kKeysof)->AddArg(lhs);
+  return Add(new HIRKeysof())->AddArg(lhs);
 }
 
 HIRInstruction* HIRGen::VisitSizeof(AstNode* stmt) {
   HIRInstruction* lhs = Visit(stmt->lhs());
-  return Add(HIRInstruction::kSizeof)->AddArg(lhs);
+  return Add(new HIRSizeof())->AddArg(lhs);
 }
 
 
 HIRInstruction* HIRGen::VisitClone(AstNode* stmt) {
   HIRInstruction* lhs = Visit(stmt->lhs());
-  return Add(HIRInstruction::kClone)->AddArg(lhs);
+  return Add(new HIRClone())->AddArg(lhs);
 }
 
 

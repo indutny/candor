@@ -233,12 +233,90 @@ class HIRStoreContext : public HIRInstruction {
  public:
   HIRStoreContext(ScopeSlot* slot);
 
+  void CalculateRepresentation();
   inline ScopeSlot* context_slot();
 
   HIR_DEFAULT_METHODS(StoreContext)
 
  private:
   ScopeSlot* context_slot_;
+};
+
+class HIRStoreProperty : public HIRInstruction {
+ public:
+  HIRStoreProperty();
+
+  void CalculateRepresentation();
+
+  HIR_DEFAULT_METHODS(StoreProperty)
+
+ private:
+};
+
+class HIRAllocateObject : public HIRInstruction {
+ public:
+  HIRAllocateObject();
+
+  void CalculateRepresentation();
+
+  HIR_DEFAULT_METHODS(AllocateObject)
+
+ private:
+};
+
+class HIRAllocateArray : public HIRInstruction {
+ public:
+  HIRAllocateArray();
+
+  void CalculateRepresentation();
+
+  HIR_DEFAULT_METHODS(AllocateArray)
+
+ private:
+};
+
+class HIRKeysof : public HIRInstruction {
+ public:
+  HIRKeysof();
+
+  void CalculateRepresentation();
+
+  HIR_DEFAULT_METHODS(Keysof)
+
+ private:
+};
+
+class HIRSizeof : public HIRInstruction {
+ public:
+  HIRSizeof();
+
+  void CalculateRepresentation();
+
+  HIR_DEFAULT_METHODS(Sizeof)
+
+ private:
+};
+
+class HIRTypeof : public HIRInstruction {
+ public:
+  HIRTypeof();
+
+  void CalculateRepresentation();
+
+  HIR_DEFAULT_METHODS(Typeof)
+
+ private:
+};
+
+class HIRClone : public HIRInstruction {
+ public:
+  HIRClone();
+
+  void CalculateRepresentation();
+
+  HIR_DEFAULT_METHODS(Clone)
+
+ private:
 };
 
 #undef HIR_DEFAULT_METHODS

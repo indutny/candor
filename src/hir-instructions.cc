@@ -233,5 +233,77 @@ HIRStoreContext::HIRStoreContext(ScopeSlot* slot) :
     context_slot_(slot) {
 }
 
+
+void HIRStoreContext::CalculateRepresentation() {
+  // Basically store property returns it's first argument
+  assert(args()->length() == 1);
+  representation_ = args()->tail()->value()->representation();
+}
+
+
+HIRStoreProperty::HIRStoreProperty() : HIRInstruction(kStoreProperty) {
+}
+
+
+void HIRStoreProperty::CalculateRepresentation() {
+  // Basically store property returns it's third argument
+  assert(args()->length() == 3);
+  representation_ = args()->tail()->value()->representation();
+}
+
+
+HIRAllocateObject::HIRAllocateObject() : HIRInstruction(kAllocateObject) {
+}
+
+
+void HIRAllocateObject::CalculateRepresentation() {
+  representation_ = kObjectRepresentation;
+}
+
+
+HIRAllocateArray::HIRAllocateArray() : HIRInstruction(kAllocateArray) {
+}
+
+
+void HIRAllocateArray::CalculateRepresentation() {
+  representation_ = kArrayRepresentation;
+}
+
+
+HIRKeysof::HIRKeysof() : HIRInstruction(kKeysof) {
+}
+
+
+void HIRKeysof::CalculateRepresentation() {
+  representation_ = kArrayRepresentation;
+}
+
+
+HIRSizeof::HIRSizeof() : HIRInstruction(kSizeof) {
+}
+
+
+void HIRSizeof::CalculateRepresentation() {
+  representation_ = kSmiRepresentation;
+}
+
+
+HIRTypeof::HIRTypeof() : HIRInstruction(kTypeof) {
+}
+
+
+void HIRTypeof::CalculateRepresentation() {
+  representation_ = kStringRepresentation;
+}
+
+
+HIRClone::HIRClone() : HIRInstruction(kClone) {
+}
+
+
+void HIRClone::CalculateRepresentation() {
+  representation_ = kObjectRepresentation;
+}
+
 } // namespace internal
 } // namespace candor

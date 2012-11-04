@@ -702,8 +702,10 @@ void CloneObjectStub::Generate() {
   __ jmp(&done);
   __ bind(&non_object);
 
-  // Non-object cloning - nil result
-  __ mov(rax, Immediate(Heap::kTagNil));
+  __ mov(rcx, Immediate(HNumber::Tag(16)));
+
+  // Allocate new object
+  __ AllocateObjectLiteral(Heap::kTagObject, reg_nil, rcx, rax);
 
   __ bind(&done);
 
