@@ -362,6 +362,7 @@ class Assembler {
 
   // Floating point instructions
   void movd(DoubleRegister dst, Register src);
+  void movd(DoubleRegister dst, Operand& src);
   void movd(Register dst, DoubleRegister src);
   void movd(Operand& dst, DoubleRegister src);
   void addqd(DoubleRegister dst, DoubleRegister src);
@@ -374,6 +375,7 @@ class Assembler {
   void cvttsd2si(Register dst, DoubleRegister src);
   void roundsd(DoubleRegister dst, DoubleRegister src, RoundMode mode);
   void ucomisd(DoubleRegister dst, DoubleRegister src);
+  void cmpd(DoubleRegister dst, Immediate src);
 
   // Routines
   inline void emit_rex_if_high(Register src);

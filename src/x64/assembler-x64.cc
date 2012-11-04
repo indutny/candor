@@ -517,6 +517,15 @@ void Assembler::movd(DoubleRegister dst, Register src) {
 }
 
 
+void Assembler::movd(DoubleRegister dst, Operand& src) {
+  emitb(0x66);
+  emit_rexw(dst, src);
+  emitb(0x0F);
+  emitb(0x7E);
+  emit_modrm(dst, src);
+}
+
+
 void Assembler::movd(Register dst, DoubleRegister src) {
   emitb(0x66);
   emit_rexw(src, dst);

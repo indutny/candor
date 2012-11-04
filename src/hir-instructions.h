@@ -98,7 +98,11 @@ class HIRInstruction : public ZoneObject {
   inline bool IsRemoved();
   virtual void Print(PrintBuffer* p);
   inline const char* TypeToStr(Type type);
+
   inline Representation representation();
+  inline bool IsNumber();
+  inline bool IsString();
+  inline bool IsBoolean();
 
   inline HIRBlock* block();
   inline ScopeSlot* slot();

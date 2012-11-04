@@ -218,7 +218,7 @@ void Masm::AllocateNumber(DoubleRegister value, Register result) {
   Allocate(Heap::kTagNumber, reg_nil, sizeof(double), result);
 
   Operand qvalue(result, HNumber::kValueOffset);
-  movq(qvalue, value);
+  movd(qvalue, value);
 }
 
 

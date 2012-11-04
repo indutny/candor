@@ -74,6 +74,21 @@ inline HIRInstruction::Representation HIRInstruction::representation() {
 }
 
 
+inline bool HIRInstruction::IsNumber() {
+  return representation() & kNumberRepresentation;
+}
+
+
+inline bool HIRInstruction::IsString() {
+  return representation() & kStringRepresentation;
+}
+
+
+inline bool HIRInstruction::IsBoolean() {
+  return representation() & kBooleanRepresentation;
+}
+
+
 inline HIRBlock* HIRInstruction::block() {
   return block_;
 }

@@ -53,6 +53,7 @@ typedef ZoneList<LInstruction*> LInstructionList;
     V(Function) \
     V(Literal) \
     V(Branch) \
+    V(NumBranch) \
     V(Goto) \
     LIR_INSTRUCTION_SIMPLE_TYPES(V)
 
@@ -244,6 +245,14 @@ class LBranch : public LControlInstruction {
   }
 
   INSTRUCTION_METHODS(Branch)
+};
+
+class LNumBranch : public LControlInstruction {
+ public:
+  LNumBranch() : LControlInstruction(kNumBranch) {
+  }
+
+  INSTRUCTION_METHODS(NumBranch)
 };
 
 class LFunction : public LInstruction {

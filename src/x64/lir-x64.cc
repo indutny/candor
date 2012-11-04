@@ -133,6 +133,27 @@ void LBranch::Generate(Masm* masm) {
 }
 
 
+void LNumBranch::Generate(Masm* masm) {
+  Register reg = inputs[0]->ToRegister();
+  Label heap_number, done;
+
+  __ IsUnboxed(reg, &heap_number, NULL);
+
+  __ cmpq(reg, Immediate(HNumber::Tag(0)));
+  __ jmp(kEq, TargetAt(1)->label);
+  __ jmp(TargetAt(0)->label);
+
+  __ bind(&heap_number);
+  Operand value(reg, HNumber::kValueOffset);
+  __ movd(xmm1, value);
+  __ xorqd(xmm2, xmm2);
+  __ ucomisd(xmm1, xmm2);
+  __ jmp(kEq, TargetAt(1)->label);
+
+  __ bind(&done);
+}
+
+
 void LLoadProperty::Generate(Masm* masm) {
   __ push(rax);
   __ push(rax);

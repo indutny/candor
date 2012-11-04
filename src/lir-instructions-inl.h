@@ -117,7 +117,8 @@ inline LLabel* LControlInstruction::TargetAt(int i) {
 
 inline LControlInstruction* LControlInstruction::Cast(LInstruction* instr) {
   assert(instr->type() == kGoto ||
-         instr->type() == kBranch);
+         instr->type() == kBranch ||
+         instr->type() == kNumBranch);
   return reinterpret_cast<LControlInstruction*>(instr);
 }
 

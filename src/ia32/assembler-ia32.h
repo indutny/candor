@@ -318,9 +318,9 @@ class Assembler {
   void call(Operand& dst);
 
   // Floating point instructions
-  void movq(DoubleRegister dst, DoubleRegister src);
-  void movq(Operand& dst, DoubleRegister src);
-  void movq(DoubleRegister dst, Operand &src);
+  void movd(DoubleRegister dst, DoubleRegister src);
+  void movd(Operand& dst, DoubleRegister src);
+  void movd(DoubleRegister dst, Operand &src);
   void addld(DoubleRegister dst, DoubleRegister src);
   void subld(DoubleRegister dst, DoubleRegister src);
   void mulld(DoubleRegister dst, DoubleRegister src);

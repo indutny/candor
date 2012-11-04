@@ -244,6 +244,12 @@ void LGen::VisitCall(HIRInstruction* instr) {
 
 
 void LGen::VisitIf(HIRInstruction* instr) {
+  if (instr->left()->IsNumber()) {
+    Bind(new LNumBranch())
+        ->AddArg(instr->left(), LUse::kRegister);
+    return;
+  }
+
   LInterval* lhs = ToFixed(instr->left(), eax);
   assert(instr->block()->succ_count() == 2);
   Bind(new LBranch())
