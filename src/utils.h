@@ -450,8 +450,8 @@ class HashMap {
         }
         if (i->prev() != NULL) i->prev()->next_ = i->next();
         if (i->next() != NULL) i->next()->prev_ = i->prev();
-        if (i == head_) head_ = i->next();
-        if (i == current_) current_ = i->prev();
+        if (i == head_) head_ = i->next_scalar();
+        if (i == current_) current_ = i->prev_scalar();
 
         // Replace item in map if it was the first with such index
         if (i->prev() == NULL) {
