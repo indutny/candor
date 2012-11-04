@@ -7,7 +7,7 @@ namespace candor {
 namespace internal {
 
 inline HIRInstruction* HIRInstruction::AddArg(Type type) {
-  HIRInstruction* instr = new HIRInstruction(g_, block_, type);
+  HIRInstruction* instr = new HIRInstruction(type);
   return AddArg(instr);
 }
 

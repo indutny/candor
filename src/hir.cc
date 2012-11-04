@@ -12,7 +12,9 @@ HIRGen::HIRGen(Heap* heap, AstNode* root) : Visitor<HIRInstruction>(kPreorder),
                                             root_(heap),
                                             block_id_(0),
                                             instr_id_(-2) {
-  work_queue_.Push(new HIRFunction(this, NULL, root));
+  HIRInstruction* hroot = new HIRFunction(root);
+  hroot->Init(this, NULL);
+  work_queue_.Push(hroot);
 
   while (work_queue_.length() != 0) {
     HIRFunction* current = HIRFunction::Cast(work_queue_.Shift());
@@ -93,7 +95,7 @@ HIRInstruction* HIRGen::VisitFunction(AstNode* stmt) {
 
   if (current_root() == current_block() &&
       current_block()->IsEmpty()) {
-    Add(new HIREntry(this, current_block(), stmt->context_slots()));
+    Add(new HIREntry(stmt->context_slots()));
     HIRInstruction* index = NULL;
     int flat_index = 0;
     bool seen_varg = false;
@@ -141,8 +143,7 @@ HIRInstruction* HIRGen::VisitFunction(AstNode* stmt) {
         // No instruction is needed
         Assign(value->slot(), load_arg);
       } else {
-        Add(new HIRStoreContext(this, current_block(), value->slot()))
-            ->AddArg(load_arg);
+        Add(new HIRStoreContext(value->slot()))->AddArg(load_arg);
       }
 
       // Do not generate index if args has ended
@@ -162,18 +163,14 @@ HIRInstruction* HIRGen::VisitFunction(AstNode* stmt) {
           one->length(1);
 
           HIRInstruction* hone = Visit(one);
-          index = Add(new HIRBinOp(this, current_block(), BinOp::kAdd))
-              ->AddArg(index)
-              ->AddArg(hone);
+          index = Add(new HIRBinOp(BinOp::kAdd))->AddArg(index)->AddArg(hone);
         }
       } else {
         HIRInstruction* length = Add(HIRInstruction::kSizeof)
             ->AddArg(load_arg);
 
         // By length of vararg
-        index = Add(new HIRBinOp(this, current_block(), BinOp::kAdd))
-            ->AddArg(index)
-            ->AddArg(length);
+        index = Add(new HIRBinOp(BinOp::kAdd))->AddArg(index)->AddArg(length);
       }
     }
 
@@ -187,7 +184,7 @@ HIRInstruction* HIRGen::VisitFunction(AstNode* stmt) {
 
     return NULL;
   } else {
-    HIRFunction* f = new HIRFunction(this, current_block(), stmt);
+    HIRFunction* f = new HIRFunction(stmt);
     f->arg_count = fn->args()->length();
 
     work_queue_.Push(f);
@@ -206,8 +203,7 @@ HIRInstruction* HIRGen::VisitAssign(AstNode* stmt) {
       // No instruction is needed
       Assign(value->slot(), rhs);
     } else {
-      Add(new HIRStoreContext(this, current_block(), value->slot()))
-          ->AddArg(rhs);
+      Add(new HIRStoreContext(value->slot()))->AddArg(rhs);
     }
     return rhs;
   } else if (stmt->lhs()->is(AstNode::kMember)) {
@@ -247,7 +243,7 @@ HIRInstruction* HIRGen::VisitValue(AstNode* stmt) {
       return Add(Assign(slot, phi));
     }
   } else {
-    return Add(new HIRLoadContext(this, current_block(), slot));
+    return Add(new HIRLoadContext(slot));
   }
 }
 
@@ -363,9 +359,7 @@ HIRInstruction* HIRGen::VisitUnOp(AstNode* stmt) {
       res = Visit(op->lhs());
       load = res;
 
-      HIRInstruction* bin = Add(new HIRBinOp(this, current_block(), type))
-          ->AddArg(res)
-          ->AddArg(ione);
+      HIRInstruction* bin = Add(new HIRBinOp(type))->AddArg(res)->AddArg(ione);
 
       bin->ast(wrap);
       value = bin;
@@ -379,7 +373,7 @@ HIRInstruction* HIRGen::VisitUnOp(AstNode* stmt) {
         // No instruction is needed
         Assign(slot, value);
       } else {
-        Add(new HIRStoreContext(this, current_block(), slot))->AddArg(value);
+        Add(new HIRStoreContext(slot))->AddArg(value);
       }
     } else if (op->lhs()->is(AstNode::kMember)) {
       HIRInstruction* receiver = load->args()->head()->value();
@@ -422,9 +416,7 @@ HIRInstruction* HIRGen::VisitBinOp(AstNode* stmt) {
   if (!BinOp::is_bool_logic(op->subtype())) {
     HIRInstruction* lhs = Visit(op->lhs());
     HIRInstruction* rhs = Visit(op->rhs());
-    res = Add(new HIRBinOp(this, current_block(), op->subtype()))
-        ->AddArg(lhs)
-        ->AddArg(rhs);
+    res = Add(new HIRBinOp(op->subtype()))->AddArg(lhs)->AddArg(rhs);
   } else {
     HIRInstruction* lhs = Visit(op->lhs());
     HIRBlock* branch = CreateBlock();
@@ -575,9 +567,7 @@ HIRInstruction* HIRGen::VisitCall(AstNode* stmt) {
         ->AddArg(vararg);
 
     // ... by the length of vararg
-    hargc = Add(new HIRBinOp(this, current_block(), BinOp::kAdd))
-        ->AddArg(hargc)
-        ->AddArg(length);
+    hargc = Add(new HIRBinOp(BinOp::kAdd))->AddArg(hargc)->AddArg(length);
   }
 
   // Process self argument
@@ -646,8 +636,7 @@ HIRInstruction* HIRGen::VisitClone(AstNode* stmt) {
 
 
 HIRInstruction* HIRGen::VisitLiteral(AstNode* stmt) {
-  HIRInstruction* i = Add(
-      new HIRLiteral(this, current_block(), stmt->type(), root_.Put(stmt)));
+  HIRInstruction* i = Add(new HIRLiteral(stmt->type(), root_.Put(stmt)));
 
   i->ast(stmt);
 

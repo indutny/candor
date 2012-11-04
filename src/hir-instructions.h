@@ -79,8 +79,10 @@ class HIRInstruction : public ZoneObject {
     kHoleRepresentation       = 0x300 // 10000000000
   };
 
-  HIRInstruction(HIRGen* g, HIRBlock* block, Type type);
-  HIRInstruction(HIRGen* g, HIRBlock* block, Type type, ScopeSlot* slot);
+  HIRInstruction(Type type);
+  HIRInstruction(Type type, ScopeSlot* slot);
+
+  virtual void Init(HIRGen* g, HIRBlock* block);
 
   int id;
 
@@ -114,12 +116,11 @@ class HIRInstruction : public ZoneObject {
   inline void lir(LInstruction* lir);
 
  protected:
-  HIRGen* g_;
-  HIRBlock* block_;
   Type type_;
   ScopeSlot* slot_;
   AstNode* ast_;
   LInstruction* lir_;
+  HIRBlock* block_;
 
   bool removed_;
 
@@ -141,7 +142,9 @@ class HIRInstruction : public ZoneObject {
 
 class HIRPhi : public HIRInstruction {
  public:
-  HIRPhi(HIRGen* g, HIRBlock* block, ScopeSlot* slot);
+  HIRPhi(ScopeSlot* slot);
+
+  void Init(HIRGen* g, HIRBlock* b);
 
   void ReplaceArg(HIRInstruction* o, HIRInstruction* n);
   void CalculateRepresentation();
@@ -162,7 +165,7 @@ class HIRPhi : public HIRInstruction {
 
 class HIRLiteral : public HIRInstruction {
  public:
-  HIRLiteral(HIRGen* g, HIRBlock* block, AstNode::Type type, ScopeSlot* slot);
+  HIRLiteral(AstNode::Type type, ScopeSlot* slot);
 
   inline ScopeSlot* root_slot();
 
@@ -177,7 +180,7 @@ class HIRLiteral : public HIRInstruction {
 
 class HIRFunction : public HIRInstruction {
  public:
-  HIRFunction(HIRGen* g, HIRBlock* block, AstNode* ast);
+  HIRFunction(AstNode* ast);
 
   HIRBlock* body;
   int arg_count;
@@ -190,7 +193,7 @@ class HIRFunction : public HIRInstruction {
 
 class HIREntry : public HIRInstruction {
   public:
-  HIREntry(HIRGen* g, HIRBlock* block, int context_slots);
+  HIREntry(int context_slots);
 
   void Print(PrintBuffer* p);
   inline int context_slots();
@@ -203,7 +206,7 @@ class HIREntry : public HIRInstruction {
 
 class HIRBinOp : public HIRInstruction {
   public:
-  HIRBinOp(HIRGen* g, HIRBlock* block, BinOp::BinOpType type);
+  HIRBinOp(BinOp::BinOpType type);
 
   void CalculateRepresentation();
   inline BinOp::BinOpType binop_type();
@@ -216,7 +219,7 @@ class HIRBinOp : public HIRInstruction {
 
 class HIRLoadContext : public HIRInstruction {
  public:
-  HIRLoadContext(HIRGen* g, HIRBlock* block, ScopeSlot* slot);
+  HIRLoadContext(ScopeSlot* slot);
 
   inline ScopeSlot* context_slot();
 
@@ -228,7 +231,7 @@ class HIRLoadContext : public HIRInstruction {
 
 class HIRStoreContext : public HIRInstruction {
  public:
-  HIRStoreContext(HIRGen* g, HIRBlock* block, ScopeSlot* slot);
+  HIRStoreContext(ScopeSlot* slot);
 
   inline ScopeSlot* context_slot();
 

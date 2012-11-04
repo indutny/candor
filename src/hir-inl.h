@@ -57,7 +57,7 @@ inline HIRBlock* HIRGen::CreateBlock() {
 
 
 inline HIRInstruction* HIRGen::CreateInstruction(HIRInstruction::Type type) {
-  return new HIRInstruction(this, current_block(), type);
+  return new HIRInstruction(type);
 }
 
 
@@ -143,20 +143,21 @@ inline HIRBlock* HIRBlock::AddSuccessor(HIRBlock* b) {
 
 
 inline HIRInstruction* HIRBlock::Add(HIRInstruction::Type type) {
-  HIRInstruction* instr = new HIRInstruction(g_, this, type);
+  HIRInstruction* instr = new HIRInstruction(type);
   return Add(instr);
 }
 
 
 inline HIRInstruction* HIRBlock::Add(HIRInstruction::Type type,
                                      ScopeSlot* slot) {
-  HIRInstruction* instr = new HIRInstruction(g_, this, type, slot);
+  HIRInstruction* instr = new HIRInstruction(type, slot);
   return Add(instr);
 }
 
 
 inline HIRInstruction* HIRBlock::Add(HIRInstruction* instr) {
   instr->ast(g_->current_node());
+  instr->Init(g_, this);
   if (!ended_) instructions_.Push(instr);
 
   return instr;
@@ -263,7 +264,7 @@ inline bool HIRBlock::IsLoop() {
 
 
 inline HIRPhi* HIRBlock::CreatePhi(ScopeSlot* slot) {
-  HIRPhi* phi =  new HIRPhi(g_, this, slot);
+  HIRPhi* phi =  new HIRPhi(slot);
 
   phis_.Push(phi);
 
