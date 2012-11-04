@@ -337,21 +337,27 @@ class HashMap {
    public:
     Item(Key* key, Value* value) : key_(key),
                                    value_(value),
+                                   prev_(NULL),
                                    next_(NULL),
+                                   prev_scalar_(NULL),
                                    next_scalar_(NULL) {
     }
 
     inline Key* key() { return key_; }
     inline Value* value() { return value_; }
     inline void value(Value* value) { value_ = value; }
+    inline Item* prev() { return prev_; }
     inline Item* next() { return next_; }
+    inline Item* prev_scalar() { return prev_scalar_; }
     inline Item* next_scalar() { return next_scalar_; }
 
    protected:
     Key* key_;
     Value* value_;
 
+    Item* prev_;
     Item* next_;
+    Item* prev_scalar_;
     Item* next_scalar_;
 
     friend class HashMap;
@@ -396,6 +402,7 @@ class HashMap {
 
         assert(i->next_ == NULL);
         i->next_ = next;
+        next->prev_ = i;
       }
     }
 
@@ -428,6 +435,41 @@ class HashMap {
   }
 
 
+  void RemoveOne(Key* key) {
+    uint32_t index = Key::Hash(key) & mask_;
+    Item* i = map_[index];
+
+    while (i != NULL) {
+      if (Key::Compare(i->key_, key) == 0) {
+        // Remove item from linked lists
+        if (i->prev_scalar() != NULL) {
+          i->prev_scalar()->next_scalar_ = i->next_scalar();
+        }
+        if (i->next_scalar() != NULL) {
+          i->next_scalar()->prev_scalar_ = i->prev_scalar();
+        }
+        if (i->prev() != NULL) i->prev()->next_ = i->next();
+        if (i->next() != NULL) i->next()->prev_ = i->prev();
+        if (i == head_) head_ = i->next();
+        if (i == current_) current_ = i->prev();
+
+        // Replace item in map if it was the first with such index
+        if (i->prev() == NULL) {
+          assert(map_[index] == i);
+          map_[index] = i->next();
+        }
+
+        // Remove any allocated data
+        if (allocated) delete i->value();
+        delete i;
+
+        return;
+      }
+      i = i->next();
+    }
+  }
+
+
   void Enumerate(EnumerateCallback cb) {
     Item* i = head_;
 
@@ -456,7 +498,7 @@ class NumberKey {
     return reinterpret_cast<NumberKey*>(value);
   }
 
-  static NumberKey* New(char* value) {
+  static NumberKey* New(void* value) {
     return reinterpret_cast<NumberKey*>(value);
   }
 

@@ -76,8 +76,8 @@ void GC::CollectGarbage(char* stack_top) {
 
 
 void GC::ColourPersistentHandles() {
-  HValueRefList::Item* item = heap()->references()->head();
-  for (; item != NULL; item = item->next()) {
+  HValueRefMap::Item* item = heap()->references()->head();
+  for (; item != NULL; item = item->next_scalar()) {
     HValueReference* ref = item->value();
     if (ref->is_persistent()) {
       push_grey(ref->value(), reinterpret_cast<char**>(ref->reference()));
@@ -89,11 +89,11 @@ void GC::ColourPersistentHandles() {
 
 
 void GC::RelocateWeakHandles() {
-  HValueRefList::Item* item = heap()->references()->head();
-  HValueRefList::Item* next;
+  HValueRefMap::Item* item = heap()->references()->head();
+  HValueRefMap::Item* next;
   for (; item != NULL; item = next) {
     HValueReference* ref = item->value();
-    next = item->next();
+    next = item->next_scalar();
 
     if (ref->is_weak()) {
       GCValue* v;
@@ -106,7 +106,7 @@ void GC::RelocateWeakHandles() {
         v->Relocate(v->value()->GetGCMark());
       } else {
         // Value was garbage collected - remove reference from the list
-        heap()->references()->Remove(item);
+        heap()->references()->RemoveOne(item->key());
       }
     }
   }

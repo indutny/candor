@@ -97,7 +97,7 @@ class Space {
   uint32_t size_limit_;
 };
 
-typedef List<HValueReference*, EmptyClass> HValueRefList;
+typedef HashMap<NumberKey, HValueReference, EmptyClass> HValueRefMap;
 typedef List<HValueWeakRef*, EmptyClass> HValueWeakRefList;
 
 class Heap {
@@ -170,6 +170,7 @@ class Heap {
                              needs_gc_(kGCNone),
                              gc_(this) {
     current_ = this;
+    references_.allocated = true;
   }
 
   // TODO: Use thread id
@@ -211,8 +212,7 @@ class Heap {
   }
   inline GCType needs_gc() { return static_cast<GCType>(needs_gc_); }
   inline void needs_gc(GCType value) { needs_gc_ = value; }
-  inline HValueRefList* references() { return &references_; }
-  inline HValueRefList* reloc_references() { return &reloc_references_; }
+  inline HValueRefMap* references() { return &references_; }
   inline HValueWeakRefList* weak_references() { return &weak_references_; }
 
   inline GC* gc() { return &gc_; }
@@ -230,8 +230,7 @@ class Heap {
 
   intptr_t needs_gc_;
 
-  HValueRefList references_;
-  HValueRefList reloc_references_;
+  HValueRefMap references_;
   HValueWeakRefList weak_references_;
 
   GC gc_;

@@ -131,22 +131,14 @@ HValueReference* Heap::Reference(ReferenceType type,
                                  HValue** reference,
                                  HValue* value) {
   HValueReference* ref = new HValueReference(type, reference, value);
-  references()->Push(ref);
+  references()->Set(NumberKey::New(reference), ref);
 
   return ref;
 }
 
 
 void Heap::Dereference(HValue** reference, HValue* value) {
-  HValueRefList::Item* tail = references()->tail();
-  while (tail != NULL) {
-    if (tail->value()->reference() == reference &&
-        tail->value()->value() == value) {
-      references()->Remove(tail);
-      break;
-    }
-    tail = tail->prev();
-  }
+  references()->RemoveOne(NumberKey::New(reference));
 }
 
 
