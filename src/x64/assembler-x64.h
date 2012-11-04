@@ -399,6 +399,7 @@ class Assembler {
   inline void emit_modrm(Register dst, DoubleRegister src);
   inline void emit_modrm(DoubleRegister dst, DoubleRegister src);
   inline void emit_modrm(DoubleRegister dst, Operand& src);
+  inline void emit_modrm(Operand& dst, DoubleRegister src);
 
   inline void emitb(uint8_t v);
   inline void emitw(uint16_t v);

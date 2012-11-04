@@ -965,10 +965,8 @@ void BinOpStub::Generate() {
   // We're adding two heap numbers
   Operand lvalue(rax, HNumber::kValueOffset);
   Operand rvalue(rbx, HNumber::kValueOffset);
-  __ mov(rax, lvalue);
-  __ mov(rbx, rvalue);
-  __ movd(xmm1, rax);
-  __ movd(xmm2, rbx);
+  __ movd(xmm1, lvalue);
+  __ movd(xmm2, rvalue);
   __ xorq(rbx, rbx);
 
   if (BinOp::is_math(type())) {

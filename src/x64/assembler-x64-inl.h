@@ -121,6 +121,12 @@ inline void Assembler::emit_modrm(DoubleRegister dst, Operand& src) {
 }
 
 
+inline void Assembler::emit_modrm(Operand& dst, DoubleRegister src) {
+  emitb(0x80 | dst.base().low() | src.low() << 3);
+  emitl(dst.disp());
+}
+
+
 inline void Assembler::emitb(uint8_t v) {
   *reinterpret_cast<uint8_t*>(pos()) = v;
   offset_ += 1;
