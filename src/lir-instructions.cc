@@ -86,8 +86,8 @@ void LGap::Resolve() {
 
   // Remove all pairs
   while (unhandled_pairs_.length() > 0) {
-    Pair* pair = unhandled_pairs_.Pop();
-    assert(pair->status == kMoved);
+    assert(unhandled_pairs_.tail()->value()->status == kMoved);
+    unhandled_pairs_.Pop();
   }
 }
 
