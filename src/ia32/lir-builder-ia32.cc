@@ -138,7 +138,6 @@ void LGen::VisitStoreContext(HIRInstruction* instr) {
       ->SetSlot(HIRStoreContext::Cast(instr)->context_slot())
       ->AddScratch(CreateVirtual())
       ->AddArg(instr->left(), LUse::kRegister);
-  ResultFromFixed(trace, rcx);
 }
 
 
