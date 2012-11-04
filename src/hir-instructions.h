@@ -61,12 +61,31 @@ class HIRInstruction : public ZoneObject {
     kNone
   };
 
+  enum Representation {
+    kUnknownRepresentation    = 0x00,  // 0000000000
+    kNilRepresentation        = 0x01,  // 0000000001
+    kNumberRepresentation     = 0x02,  // 0000000010
+    kSmiRepresentation        = 0x06,  // 0000000110
+    kHeapNumberRepresentation = 0x0A,  // 0000001010
+    kStringRepresentation     = 0x10,  // 0000010000
+    kBooleanRepresentation    = 0x20,  // 0000100000
+    kNumMapRepresentation     = 0x40,  // 0001000000
+    kObjectRepresentation     = 0xC0,  // 0011000000
+    kArrayRepresentation      = 0x140, // 0101000000
+    kFunctionRepresentation   = 0x200, // 1000000000
+    kAnyRepresentation        = 0x2FF, // 1111111111
+
+    // no value, not for real use
+    kHoleRepresentation       = 0x300 // 10000000000
+  };
+
   HIRInstruction(HIRGen* g, HIRBlock* block, Type type);
   HIRInstruction(HIRGen* g, HIRBlock* block, Type type, ScopeSlot* slot);
 
   int id;
 
   virtual void ReplaceArg(HIRInstruction* o, HIRInstruction* n);
+  virtual void CalculateRepresentation();
   void RemoveUse(HIRInstruction* i);
 
   inline HIRInstruction* AddArg(Type type);
@@ -77,6 +96,7 @@ class HIRInstruction : public ZoneObject {
   inline bool IsRemoved();
   virtual void Print(PrintBuffer* p);
   inline const char* TypeToStr(Type type);
+  inline Representation representation();
 
   inline HIRBlock* block();
   inline ScopeSlot* slot();
@@ -103,6 +123,9 @@ class HIRInstruction : public ZoneObject {
 
   bool removed_;
 
+  // Cached representation
+  Representation representation_;
+
   HIRInstructionList args_;
   HIRInstructionList uses_;
 };
@@ -121,12 +144,14 @@ class HIRPhi : public HIRInstruction {
   HIRPhi(HIRGen* g, HIRBlock* block, ScopeSlot* slot);
 
   void ReplaceArg(HIRInstruction* o, HIRInstruction* n);
+  void CalculateRepresentation();
 
   inline void AddInput(HIRInstruction* instr);
   inline HIRInstruction* InputAt(int i);
   inline void Nilify();
 
   inline int input_count();
+  inline void input_count(int input_count);
 
   HIR_DEFAULT_METHODS(Phi)
 
@@ -137,13 +162,16 @@ class HIRPhi : public HIRInstruction {
 
 class HIRLiteral : public HIRInstruction {
  public:
-  HIRLiteral(HIRGen* g, HIRBlock* block, ScopeSlot* slot);
+  HIRLiteral(HIRGen* g, HIRBlock* block, AstNode::Type type, ScopeSlot* slot);
 
   inline ScopeSlot* root_slot();
+
+  void CalculateRepresentation();
 
   HIR_DEFAULT_METHODS(Literal)
 
  private:
+  AstNode::Type type_;
   ScopeSlot* root_slot_;
 };
 
@@ -154,6 +182,7 @@ class HIRFunction : public HIRInstruction {
   HIRBlock* body;
   int arg_count;
 
+  void CalculateRepresentation();
   void Print(PrintBuffer* p);
 
   HIR_DEFAULT_METHODS(Function)
@@ -176,6 +205,7 @@ class HIRBinOp : public HIRInstruction {
   public:
   HIRBinOp(HIRGen* g, HIRBlock* block, BinOp::BinOpType type);
 
+  void CalculateRepresentation();
   inline BinOp::BinOpType binop_type();
 
   HIR_DEFAULT_METHODS(BinOp)

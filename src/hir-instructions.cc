@@ -14,7 +14,8 @@ HIRInstruction::HIRInstruction(HIRGen* g, HIRBlock* block, Type type) :
     slot_(NULL),
     ast_(NULL),
     lir_(NULL),
-    removed_(false) {
+    removed_(false),
+    representation_(kHoleRepresentation) {
 }
 
 
@@ -29,7 +30,13 @@ HIRInstruction::HIRInstruction(HIRGen* g,
     slot_(slot),
     ast_(NULL),
     lir_(NULL),
-    removed_(false) {
+    removed_(false),
+    representation_(kHoleRepresentation) {
+}
+
+
+inline void HIRInstruction::CalculateRepresentation() {
+  representation_ = kUnknownRepresentation;
 }
 
 
@@ -106,6 +113,17 @@ HIRPhi::HIRPhi(HIRGen* g, HIRBlock* block, ScopeSlot* slot) :
 }
 
 
+void HIRPhi::CalculateRepresentation() {
+  int result = kAnyRepresentation;
+
+  for (int i = 0; i < input_count_; i++) {
+    result = result & inputs_[i]->representation();
+  }
+
+  representation_ = static_cast<Representation>(result);
+}
+
+
 void HIRPhi::ReplaceArg(HIRInstruction* o, HIRInstruction* n) {
   HIRInstruction::ReplaceArg(o, n);
 
@@ -115,9 +133,32 @@ void HIRPhi::ReplaceArg(HIRInstruction* o, HIRInstruction* n) {
 }
 
 
-HIRLiteral::HIRLiteral(HIRGen* g, HIRBlock* block, ScopeSlot* slot) :
+HIRLiteral::HIRLiteral(HIRGen* g,
+                       HIRBlock* block,
+                       AstNode::Type type,
+                       ScopeSlot* slot) :
     HIRInstruction(g, block, kLiteral),
+    type_(type),
     root_slot_(slot) {
+}
+
+
+void HIRLiteral::CalculateRepresentation() {
+  switch (type_) {
+   case AstNode::kNumber:
+    representation_ = kNumberRepresentation;
+    break;
+   case AstNode::kString:
+   case AstNode::kProperty:
+    representation_ = kStringRepresentation;
+    break;
+   case AstNode::kTrue:
+   case AstNode::kFalse:
+    representation_ = kBooleanRepresentation;
+    break;
+   default:
+    representation_ = kUnknownRepresentation;
+  }
 }
 
 
@@ -126,6 +167,11 @@ HIRFunction::HIRFunction(HIRGen* g, HIRBlock* block, AstNode* ast) :
     body(NULL),
     arg_count(0) {
   ast_ = ast;
+}
+
+
+void HIRFunction::CalculateRepresentation() {
+  representation_ = kFunctionRepresentation;
 }
 
 
@@ -148,6 +194,35 @@ void HIREntry::Print(PrintBuffer* p) {
 HIRBinOp::HIRBinOp(HIRGen* g, HIRBlock* block, BinOp::BinOpType type) :
     HIRInstruction(g, block, kBinOp),
     binop_type_(type) {
+}
+
+
+void HIRBinOp::CalculateRepresentation() {
+  int left = args()->head()->value()->representation();
+  int right = args()->tail()->value()->representation();
+  int res;
+
+  if (BinOp::is_binary(binop_type_)) {
+    res = kSmiRepresentation;
+  } else if (BinOp::is_logic(binop_type_)) {
+    res = kBooleanRepresentation;
+  } else if (BinOp::is_math(binop_type_)) {
+    if (binop_type_ != BinOp::kAdd) {
+      res = kNumberRepresentation;
+    } else if ((left | right) & kStringRepresentation) {
+      // "123" + any, or any + "123"
+      res = kStringRepresentation;
+    } else {
+      int mask = kSmiRepresentation |
+                 kHeapNumberRepresentation |
+                 kNilRepresentation;
+      res = left & right & mask;
+    }
+  } else {
+    res = kUnknownRepresentation;
+  }
+
+  representation_ = static_cast<Representation>(res);
 }
 
 

@@ -61,6 +61,19 @@ inline const char* HIRInstruction::TypeToStr(Type type) {
 
 #undef HIR_INSTRUCTION_STR
 
+inline HIRInstruction::Representation HIRInstruction::representation() {
+  if (representation_ == kHoleRepresentation) {
+    // Prevent loops
+    representation_ = kUnknownRepresentation;
+
+    // Cache miss
+    CalculateRepresentation();
+  }
+
+  return representation_;
+}
+
+
 inline HIRBlock* HIRInstruction::block() {
   return block_;
 }
@@ -149,6 +162,11 @@ inline void HIRPhi::Nilify() {
 
 inline int HIRPhi::input_count() {
   return input_count_;
+}
+
+
+inline void HIRPhi::input_count(int input_count) {
+  input_count_ = input_count;
 }
 
 

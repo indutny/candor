@@ -52,12 +52,26 @@ void HIRGen::PrunePhis() {
     HIRPhi* phi = phead->value();
     next = phead->next();
 
-    if (phi->input_count() == 2) continue;
+    if (phi->input_count() == 2) {
+      if (phi->InputAt(1) != phi) continue;
+      phi->input_count(1);
+    }
     queue_.Remove(phead);
 
     if (phi->input_count() == 0) {
       phi->Nilify();
     } else if (phi->input_count() == 1) {
+      // Enqueue all phi uses
+      HIRInstructionList::Item* head = phi->uses()->head();
+      for (; head != NULL; head = head->next()) {
+        if (!head->value()->IsRemoved() &&
+            head->value()->Is(HIRInstruction::kPhi)) {
+          HIRPhi* use = HIRPhi::Cast(head->value());
+          queue_.Push(use);
+          if (next == NULL) next = queue_.tail();
+        }
+      }
+
       Replace(phi, phi->InputAt(0));
       phi->block()->Remove(phi);
     }
@@ -68,7 +82,7 @@ void HIRGen::PrunePhis() {
   for (; phead != NULL; phead = phead->next()) {
     HIRPhi* phi = phead->value();
 
-    assert(!phi->IsRemoved());
+    if (phi->IsRemoved()) continue;
     phi->block()->phis()->Push(phi);
   }
 }
@@ -633,7 +647,7 @@ HIRInstruction* HIRGen::VisitClone(AstNode* stmt) {
 
 HIRInstruction* HIRGen::VisitLiteral(AstNode* stmt) {
   HIRInstruction* i = Add(
-      new HIRLiteral(this, current_block(), root_.Put(stmt)));
+      new HIRLiteral(this, current_block(), stmt->type(), root_.Put(stmt)));
 
   i->ast(stmt);
 
