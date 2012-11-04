@@ -571,7 +571,7 @@ HIRInstruction* HIRGen::VisitCall(AstNode* stmt) {
     receiver = Visit(fn->variable()->lhs());
     HIRInstruction* store = CreateInstruction(HIRInstruction::kStoreArg);
     store->AddArg(receiver);
-    stores_.Unshift(store);
+    stores_.Push(store);
   }
 
   HIRInstruction* var;

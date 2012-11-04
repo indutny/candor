@@ -44,6 +44,15 @@ a(1, [2, 3]...)
 a(1, 2, [3]...)
 a(1, 2, 3, []...)
 
+// Colon call
+b = {
+  a: (self, b) {
+    assert(typeof self == "object", "self is object")
+    assert(b == 1, "first argument is second")
+  }
+}
+b:a(1)
+
 // Unused vararg
 a(args..., b, c) {
   return b

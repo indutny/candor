@@ -59,9 +59,9 @@ TEST_START(hir)
            "i16 = Literal[b]\n"
            "i18 = LoadProperty(i2, i16)\n"
            "i20 = AlignStack(i12)\n"
-           "i14 = StoreArg(i2)\n"
            "i10 = StoreArg(i8)\n"
            "i6 = StoreArg(i4)\n"
+           "i14 = StoreArg(i2)\n"
            "i22 = Call(i18, i12)\n"
            "i24 = Return(i22)\n")
 
