@@ -138,19 +138,18 @@ void GC::ColourFrames(char* stack_top) {
 
 
 void GC::HandleWeakReferences() {
-  HValueWeakRefList::Item* item = heap()->weak_references()->head();
-  HValueWeakRefList::Item* next;
+  HValueWeakRefMap::Item* item = heap()->weak_references()->head();
+  HValueWeakRefMap::Item* next;
   for (; item != NULL; item = next) {
     HValueWeakRef* ref = item->value();
-    next = item->next();
+    next = item->next_scalar();
 
     if (!ref->value()->IsGCMarked()) {
       if (IsInCurrentSpace(ref->value())) {
         // Value is in GC space and wasn't marked
         // call callback as it was GCed
         ref->callback()(ref->value());
-        HValueWeakRefList::Item* current = item;
-        heap()->weak_references()->Remove(current);
+        heap()->weak_references()->RemoveOne(item->key());
       }
     } else {
       // Value wasn't GCed, but was moved

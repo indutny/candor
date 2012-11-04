@@ -143,19 +143,13 @@ void Heap::Dereference(HValue** reference, HValue* value) {
 
 
 void Heap::AddWeak(HValue* value, WeakCallback callback) {
-  weak_references()->Push(new HValueWeakRef(value, callback));
+  weak_references()->Set(NumberKey::New(value),
+                         new HValueWeakRef(value, callback));
 }
 
 
 void Heap::RemoveWeak(HValue* value) {
-  HValueWeakRefList::Item* tail = weak_references()->tail();
-  HValueWeakRefList::Item* prev;
-  for (; tail != NULL; tail = prev) {
-    prev = tail->prev();
-    if (tail->value()->value() == value) {
-      weak_references()->Remove(tail);
-    }
-  }
+  weak_references()->RemoveOne(NumberKey::New(value));
 }
 
 

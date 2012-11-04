@@ -98,7 +98,7 @@ class Space {
 };
 
 typedef HashMap<NumberKey, HValueReference, EmptyClass> HValueRefMap;
-typedef List<HValueWeakRef*, EmptyClass> HValueWeakRefList;
+typedef HashMap<NumberKey, HValueWeakRef, EmptyClass> HValueWeakRefMap;
 
 class Heap {
  public:
@@ -213,7 +213,7 @@ class Heap {
   inline GCType needs_gc() { return static_cast<GCType>(needs_gc_); }
   inline void needs_gc(GCType value) { needs_gc_ = value; }
   inline HValueRefMap* references() { return &references_; }
-  inline HValueWeakRefList* weak_references() { return &weak_references_; }
+  inline HValueWeakRefMap* weak_references() { return &weak_references_; }
 
   inline GC* gc() { return &gc_; }
   inline SourceMap* source_map() { return &source_map_; }
@@ -231,7 +231,7 @@ class Heap {
   intptr_t needs_gc_;
 
   HValueRefMap references_;
-  HValueWeakRefList weak_references_;
+  HValueWeakRefMap weak_references_;
 
   GC gc_;
   SourceMap source_map_;
