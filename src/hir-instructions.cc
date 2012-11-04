@@ -146,7 +146,8 @@ HIRLiteral::HIRLiteral(AstNode::Type type, ScopeSlot* slot) :
 void HIRLiteral::CalculateRepresentation() {
   switch (type_) {
    case AstNode::kNumber:
-    representation_ = kNumberRepresentation;
+    representation_ = root_slot_->is_immediate() ?
+        kSmiRepresentation : kHeapNumberRepresentation;
     break;
    case AstNode::kString:
    case AstNode::kProperty:

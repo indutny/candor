@@ -101,6 +101,8 @@ class HIRInstruction : public ZoneObject {
 
   inline Representation representation();
   inline bool IsNumber();
+  inline bool IsSmi();
+  inline bool IsHeapNumber();
   inline bool IsString();
   inline bool IsBoolean();
 

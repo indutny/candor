@@ -279,6 +279,58 @@ void LBinOp::Generate(Masm* masm) {
   // result -> eax
 }
 
+
+void LNumMath::Generate(Masm* masm) {
+  BinOp::BinOpType type = HIRBinOp::Cast(hir())->binop_type();
+
+  Register left = eax;
+  Register right = ebx;
+  Register scratch = scratches[0]->ToRegister();
+  Label stub_call, done;
+
+  __ IsUnboxed(left, &stub_call, NULL);
+  __ IsUnboxed(right, &stub_call, NULL);
+
+  // Save left side in case of overflow
+  __ mov(scratch, left);
+
+  switch (type) {
+   case BinOp::kAdd:
+    __ addl(left, right);
+    break;
+   case BinOp::kSub:
+    __ subl(left, right);
+    break;
+   case BinOp::kMul:
+    __ Untag(left);
+    __ imull(right);
+    break;
+   default:
+    UNEXPECTED
+  }
+
+  __ jmp(kNoOverflow, &done);
+
+  // Restore left side
+  __ mov(left, scratch);
+
+  __ bind(&stub_call);
+
+  char* stub = NULL;
+  switch (type) {
+   BINARY_SUB_TYPES(BINARY_SUB_ENUM)
+   default: UNEXPECTED
+  }
+  assert(stub != NULL);
+
+  // eax <- lhs
+  // ebx <- rhs
+  __ Call(stub);
+  // result -> eax
+
+  __ bind(&done);
+}
+
 #undef BINARY_SUB_ENUM
 #undef BINARY_SUB_TYPES
 

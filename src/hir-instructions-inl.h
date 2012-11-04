@@ -79,6 +79,16 @@ inline bool HIRInstruction::IsNumber() {
 }
 
 
+inline bool HIRInstruction::IsSmi() {
+  return representation() & kSmiRepresentation;
+}
+
+
+inline bool HIRInstruction::IsHeapNumber() {
+  return representation() & kHeapNumberRepresentation;
+}
+
+
 inline bool HIRInstruction::IsString() {
   return representation() & kStringRepresentation;
 }

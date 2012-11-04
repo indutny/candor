@@ -35,6 +35,7 @@ typedef ZoneList<LInstruction*> LInstructionList;
     V(AlignStack) \
     V(Not) \
     V(BinOp) \
+    V(NumMath) \
     V(Typeof) \
     V(Sizeof) \
     V(Keysof) \

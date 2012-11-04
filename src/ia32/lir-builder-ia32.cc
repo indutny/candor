@@ -75,12 +75,24 @@ void LGen::VisitNot(HIRInstruction* instr) {
 
 
 void LGen::VisitBinOp(HIRInstruction* instr) {
+  LInstruction* op;
   LInterval* lhs = ToFixed(instr->left(), eax);
   LInterval* rhs = ToFixed(instr->right(), ebx);
-  LInstruction* op = Bind(new LBinOp())
-      ->MarkHasCall()
-      ->AddArg(lhs, LUse::kRegister)
-      ->AddArg(rhs, LUse::kRegister);
+  HIRBinOp* hir = HIRBinOp::Cast(instr);
+
+  if (instr->right()->IsNumber() && instr->left()->IsNumber() &&
+      BinOp::is_math(hir->binop_type()) && hir->binop_type() != BinOp::kDiv) {
+    op = Bind(new LNumMath())
+        ->MarkHasCall()
+        ->AddScratch(CreateVirtual())
+        ->AddArg(lhs, LUse::kRegister)
+        ->AddArg(rhs, LUse::kRegister);
+  } else {
+    op = Bind(new LBinOp())
+        ->MarkHasCall()
+        ->AddArg(lhs, LUse::kRegister)
+        ->AddArg(rhs, LUse::kRegister);
+  }
 
   ResultFromFixed(op, eax);
 }
