@@ -26,3 +26,8 @@ a = {
 }
 
 a:x()
+
+((obj3) {
+  assert(obj2 === obj3, "Object should be visible")
+})(obj2 = {})
+

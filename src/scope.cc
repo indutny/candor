@@ -169,6 +169,19 @@ ScopeAnalyze::ScopeAnalyze(AstNode* ast) : Visitor<AstNode>(kBreadthFirst),
 AstNode* ScopeAnalyze::VisitFunction(AstNode* node) {
   FunctionLiteral* fn = FunctionLiteral::Cast(node);
 
+  // Call takes variables from outer scope
+  if (fn->children()->length() == 0) {
+    AstList::Item* item = fn->args()->head();
+    for (; item != NULL; item = item->next()) {
+      if (item->value()->is(AstNode::kFunction)) {
+        queue_->Push(item);
+      } else {
+        AstNode* next = Visit(item->value());
+        if (next != NULL) item->value(next);
+      }
+    }
+  }
+
   // Put variable into outer scope
   if (fn->variable() != NULL) {
     if (fn->children()->length() != 0) {
@@ -182,19 +195,6 @@ AstNode* ScopeAnalyze::VisitFunction(AstNode* node) {
     } else {
       AstNode* next = Visit(fn->variable());
       if (next != NULL) fn->variable(next);
-    }
-  }
-
-  // Call takes variables from outer scope
-  if (fn->children()->length() == 0) {
-    AstList::Item* item = fn->args()->head();
-    for (; item != NULL; item = item->next()) {
-      if (item->value()->is(AstNode::kFunction)) {
-        queue_->Push(item);
-      } else {
-        AstNode* next = Visit(item->value());
-        if (next != NULL) item->value(next);
-      }
     }
   }
 
