@@ -248,15 +248,18 @@ AstNode* ScopeAnalyze::VisitName(AstNode* node) {
 
 void ScopeAnalyze::VisitChildren(AstNode* node) {
   ZoneList<AstList::Item*> blocks_queue;
-  ZoneList<AstList::Item*>* old = queue_;
-  queue_ = &blocks_queue;
+  ZoneList<AstList::Item*>* old = NULL;
+  if (node->is(AstNode::kFunction)) {
+    old = queue_;
+    queue_ = &blocks_queue;
+  }
 
   AstList::Item* child = node->children()->head();
   for (; child != NULL; child = child->next()) {
     // In breadth-first visiting
     // do not increase depth until all same-level nodes will be visited
     if (child->value()->is(AstNode::kFunction)) {
-      blocks_queue.Push(child);
+      queue_->Push(child);
     } else {
       AstNode* next = Visit(child->value());
 
@@ -272,7 +275,7 @@ void ScopeAnalyze::VisitChildren(AstNode* node) {
     if (next != NULL) child->value(next);
   }
 
-  queue_ = old;
+  if (node->is(AstNode::kFunction)) queue_ = old;
 }
 
 } // namespace internal

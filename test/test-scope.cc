@@ -18,6 +18,9 @@ TEST_START(scope)
   SCOPE_TEST("(b) { a }(a = 1)",
              "[kCall [kFunction (anonymous) @[[b @stack:0]] [a @context[1]:0]] "
              "@[[kAssign [a @context[0]:0] [1]]] ]")
+  SCOPE_TEST("x = () { a }\na = 1",
+             "[kAssign [x @stack:0] [kFunction (anonymous) @[] "
+             "[a @context[1]:0]]] [kAssign [a @context[0]:0] [1]]")
   SCOPE_TEST("a\n(a, b) { a\nb }",
              "[a @stack:0] "
              "[kFunction (anonymous) @[[a @stack:0] [b @stack:1]] "
