@@ -138,6 +138,7 @@ void LGen::VisitStoreContext(HIRInstruction* instr) {
       ->SetSlot(HIRStoreContext::Cast(instr)->context_slot())
       ->AddScratch(CreateVirtual())
       ->AddArg(instr->left(), LUse::kRegister);
+  ResultFromFixed(trace, rcx);
 }
 
 
@@ -156,13 +157,13 @@ void LGen::VisitLoadProperty(HIRInstruction* instr) {
 void LGen::VisitStoreProperty(HIRInstruction* instr) {
   LInterval* lhs = ToFixed(instr->left(), eax);
   LInterval* rhs = ToFixed(instr->right(), ebx);
-  LInterval* third = ToFixed(instr->third(), ecx);
-  Bind(new LStoreProperty())
+  ToFixed(instr->third(), ecx);
+  LInstruction* store = Bind(new LStoreProperty())
       ->MarkHasCall()
       ->AddScratch(CreateVirtual())
       ->AddArg(lhs, LUse::kRegister)
-      ->AddArg(rhs, LUse::kRegister)
-      ->SetResult(third, LUse::kRegister);
+      ->AddArg(rhs, LUse::kRegister);
+  ResultFromFixed(store, ecx);
 }
 
 
