@@ -447,6 +447,15 @@ void LGen::TryAllocateFreeReg(LInterval* current) {
   }
   assert(max >= 0);
 
+  // Prefer register hint if possible
+  if (current->register_hint != NULL && current->register_hint->is_register()) {
+    int reg = current->register_hint->interval()->index();
+    if (free_pos[reg] - 2 > current->start()) {
+      max = free_pos[reg];
+      max_reg = reg;
+    }
+  }
+
   // All registers are occupied - failure
   if (max - 2 <= current->start()) return;
 
@@ -837,9 +846,12 @@ LInterval* LGen::CreateInterval(LInterval::Type type, int index) {
 LInterval* LGen::ToFixed(HIRInstruction* instr, Register reg) {
   LInterval* res = registers_[IndexByRegister(reg)];
 
-  Add(new LMove())
+  LInstruction* move = Add(new LMove())
       ->SetResult(res, LUse::kRegister)
       ->AddArg(instr, LUse::kAny);
+  assert(instr->lir()->result != NULL);
+
+  instr->lir()->result->interval()->register_hint = move->result;
 
   return res;
 }
@@ -849,9 +861,10 @@ void LGen::ResultFromFixed(LInstruction* instr, Register reg) {
   LInterval* ireg = registers_[IndexByRegister(reg)];
   LInterval* res = CreateVirtual();
 
-  Add(new LMove())
+  LInstruction* move = Add(new LMove())
       ->SetResult(res, LUse::kAny)
       ->AddArg(ireg, LUse::kRegister);
+  res->register_hint = move->inputs[0];
 
   instr->SetResult(ireg, LUse::kRegister);
   instr->Propagate(res->uses()->head()->value());

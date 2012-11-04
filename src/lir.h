@@ -104,6 +104,7 @@ class LInterval : public ZoneObject {
   };
 
   LInterval(Type type, int index) : id(-1),
+                                    register_hint(NULL),
                                     type_(type),
                                     index_(index),
                                     fixed_(false),
@@ -142,6 +143,7 @@ class LInterval : public ZoneObject {
   inline void Print(PrintBuffer* p);
 
   int id;
+  LUse* register_hint;
 
  private:
   Type type_;

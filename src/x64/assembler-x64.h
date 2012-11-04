@@ -32,6 +32,14 @@ struct Register {
     return code_ == reg.code();
   }
 
+  inline bool operator == (Register a) const {
+    return a.code_ == code_;
+  }
+
+  inline bool operator != (Register a) const {
+    return a.code_ != code_;
+  }
+
   int code_;
 };
 
@@ -128,6 +136,14 @@ struct DoubleRegister {
 
   inline bool is(DoubleRegister reg) {
     return code_ == reg.code();
+  }
+
+  inline bool operator == (DoubleRegister a) const {
+    return a.code_ == code_;
+  }
+
+  inline bool operator != (DoubleRegister a) const {
+    return a.code_ != code_;
   }
 
   int code_;
