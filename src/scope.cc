@@ -189,15 +189,19 @@ AstNode* ScopeAnalyze::VisitFunction(AstNode* node) {
   if (fn->children()->length() == 0) {
     AstList::Item* item = fn->args()->head();
     for (; item != NULL; item = item->next()) {
-      AstNode* next = Visit(item->value());
-      if (next != NULL) item->value(next);
+      if (item->value()->is(AstNode::kFunction)) {
+        queue_->Push(item);
+      } else {
+        AstNode* next = Visit(item->value());
+        if (next != NULL) item->value(next);
+      }
     }
   }
 
-  Scope scope(this, node->is_root() ? Scope::kBlock : Scope::kFunction);
-
   // Put variables in functions scope
   if (fn->children()->length() != 0) {
+    Scope scope(this, node->is_root() ? Scope::kBlock : Scope::kFunction);
+
     AstList::Item* item = fn->args()->head();
     for (; item != NULL; item = item->next()) {
       AstNode* arg = item->value();
@@ -221,11 +225,11 @@ AstNode* ScopeAnalyze::VisitFunction(AstNode* node) {
         item->value(value);
       }
     }
+
+    VisitChildren(node);
+
+    node->SetScope(&scope);
   }
-
-  VisitChildren(node);
-
-  node->SetScope(&scope);
 
   return node;
 }
@@ -244,6 +248,8 @@ AstNode* ScopeAnalyze::VisitName(AstNode* node) {
 
 void ScopeAnalyze::VisitChildren(AstNode* node) {
   ZoneList<AstList::Item*> blocks_queue;
+  ZoneList<AstList::Item*>* old = queue_;
+  queue_ = &blocks_queue;
 
   AstList::Item* child = node->children()->head();
   for (; child != NULL; child = child->next()) {
@@ -265,6 +271,8 @@ void ScopeAnalyze::VisitChildren(AstNode* node) {
     // Update child
     if (next != NULL) child->value(next);
   }
+
+  queue_ = old;
 }
 
 } // namespace internal

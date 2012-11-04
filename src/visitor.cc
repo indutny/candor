@@ -45,6 +45,8 @@ T* Visitor<T>::Visit(AstNode* node) {
 template <class T>
 void Visitor<T>::VisitChildren(AstNode* node) {
   ZoneList<AstList::Item*> blocks_queue;
+  ZoneList<AstList::Item*>* old = queue_;
+  queue_ = &blocks_queue;
 
   AstList::Item* child = node->children()->head();
   for (; child != NULL; child = child->next()) {
@@ -61,6 +63,8 @@ void Visitor<T>::VisitChildren(AstNode* node) {
   while ((child = blocks_queue.Shift()) != NULL) {
     Visit(child->value());
   }
+
+  queue_ = old;
 }
 
 VISITOR_MAPPING_BLOCK(VISITOR_BLOCK_STUB, 0)

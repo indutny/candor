@@ -2,6 +2,7 @@
 #define _SRC_VISITOR_H_
 
 #include "utils.h"
+#include "zone.h" // ZoneList
 
 namespace candor {
 namespace internal {
@@ -59,7 +60,7 @@ class Visitor {
     kBreadthFirst
   };
 
-  Visitor(Type type) : type_(type) {
+  Visitor(Type type) : type_(type), queue_(NULL) {
   }
 
   virtual T* Visit(AstNode* node);
@@ -102,6 +103,7 @@ class Visitor {
   Type type_;
 
   AstNode* current_node_;
+  ZoneList<ZoneList<AstNode*>::Item*>* queue_;
 };
 
 } // namespace internal

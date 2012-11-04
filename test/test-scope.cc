@@ -22,6 +22,16 @@ TEST_START(scope)
   SCOPE_TEST("() { a\n() { a } }",
              "[kFunction (anonymous) @[] [a @context[0]:0] "
              "[kFunction (anonymous) @[] [a @context[1]:0]]]")
+  SCOPE_TEST("a() { }\nb(() { a })",
+             "[kAssign [a @context[0]:0] [kFunction (anonymous) @[] [kNop ]]] "
+             "[kCall [b @stack:0] "
+             "@[[kFunction (anonymous) @[] [a @context[1]:0]]]"
+             " ]")
+  SCOPE_TEST("a() { b = 1234 }\nb = 13589\na()\nreturn b",
+             "[kAssign [a @stack:0] "
+             "[kFunction (anonymous) @[] [kAssign [b @context[1]:0] [1234]]]] "
+             "[kAssign [b @context[0]:0] [13589]] "
+             "[kCall [a @stack:0] @[] ] [return [b @context[0]:0]]")
 
   // While
   SCOPE_TEST("() {while (a) { a ++ } }",
