@@ -415,6 +415,7 @@ class HashMap {
       head_ = next;
     } else {
       current_->next_scalar_ = next;
+      next->prev_scalar_ = current;
     }
     current_ = next;
   }
