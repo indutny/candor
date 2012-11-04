@@ -107,18 +107,18 @@ HIRInstruction* HIRGen::VisitFunction(AstNode* stmt) {
     AstList::Item* args_head = fn->args()->head();
     for (int i = 0; args_head != NULL; args_head = args_head->next(), i++) {
       AstNode* arg = args_head->value();
-      HIRInstruction::Type type;
       bool varg = false;
 
+      HIRInstruction* instr;
       if (arg->is(AstNode::kVarArg)) {
         assert(arg->lhs()->is(AstNode::kValue));
         arg = arg->lhs();
 
         varg = true;
         seen_varg = true;
-        type = HIRInstruction::kLoadVarArg;
+        instr = new HIRLoadVarArg();
       } else {
-        type = HIRInstruction::kLoadArg;
+        instr = new HIRInstruction(HIRInstruction::kLoadArg);
       }
 
       AstValue* value = AstValue::Cast(arg);
@@ -132,7 +132,7 @@ HIRInstruction* HIRGen::VisitFunction(AstNode* stmt) {
         // Add number of arguments that are following varg
         varg_rest = GetNumber(fn->args()->length() - i - 1);
       }
-      HIRInstruction* load_arg = Add(type)->AddArg(index);
+      HIRInstruction* load_arg = Add(instr)->AddArg(index);
 
       if (varg) {
         load_arg->AddArg(varg_rest)->AddArg(varg_arr);

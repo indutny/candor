@@ -275,6 +275,17 @@ class HIRAllocateArray : public HIRInstruction {
  private:
 };
 
+class HIRLoadVarArg : public HIRInstruction {
+ public:
+  HIRLoadVarArg();
+
+  void CalculateRepresentation();
+
+  HIR_DEFAULT_METHODS(LoadVarArg)
+
+ private:
+};
+
 class HIRKeysof : public HIRInstruction {
  public:
   HIRKeysof();

@@ -270,6 +270,15 @@ void HIRAllocateArray::CalculateRepresentation() {
 }
 
 
+HIRLoadVarArg::HIRLoadVarArg() : HIRInstruction(kLoadVarArg) {
+}
+
+
+void HIRLoadVarArg::CalculateRepresentation() {
+  representation_ = kArrayRepresentation;
+}
+
+
 HIRKeysof::HIRKeysof() : HIRInstruction(kKeysof) {
 }
 
