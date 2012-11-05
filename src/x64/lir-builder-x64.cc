@@ -82,7 +82,7 @@ void LGen::VisitBinOp(HIRInstruction* instr) {
 
   if (instr->right()->IsNumber() && instr->left()->IsNumber() &&
       BinOp::is_math(hir->binop_type()) && hir->binop_type() != BinOp::kDiv) {
-    op = Bind(new LNumMath())
+    op = Bind(new LBinOpNumber())
         ->MarkHasCall()
         ->AddScratch(CreateVirtual())
         ->AddArg(lhs, LUse::kRegister)
@@ -256,7 +256,7 @@ void LGen::VisitCall(HIRInstruction* instr) {
 
 void LGen::VisitIf(HIRInstruction* instr) {
   if (instr->left()->IsNumber()) {
-    Bind(new LNumBranch())
+    Bind(new LBranchNumber())
         ->AddArg(instr->left(), LUse::kRegister);
     return;
   }

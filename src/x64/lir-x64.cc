@@ -133,7 +133,7 @@ void LBranch::Generate(Masm* masm) {
 }
 
 
-void LNumBranch::Generate(Masm* masm) {
+void LBranchNumber::Generate(Masm* masm) {
   Register reg = inputs[0]->ToRegister();
   Label heap_number, done;
 
@@ -260,7 +260,7 @@ void LBinOp::Generate(Masm* masm) {
 }
 
 
-void LNumMath::Generate(Masm* masm) {
+void LBinOpNumber::Generate(Masm* masm) {
   BinOp::BinOpType type = HIRBinOp::Cast(hir())->binop_type();
 
   Register left = rax;

@@ -645,7 +645,7 @@ void LGen::ResolveDataFlow() {
       LInstruction* control = b->instructions()->tail()->value();
       assert(control->type() == LInstruction::kGoto ||
              control->type() == LInstruction::kBranch ||
-             control->type() == LInstruction::kNumBranch);
+             control->type() == LInstruction::kBranchNumber);
 
       if (control->type() == LInstruction::kGoto &&
           bhead->next()->value()->lir() == succ) {

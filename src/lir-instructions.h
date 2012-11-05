@@ -35,7 +35,7 @@ typedef ZoneList<LInstruction*> LInstructionList;
     V(AlignStack) \
     V(Not) \
     V(BinOp) \
-    V(NumMath) \
+    V(BinOpNumber) \
     V(Typeof) \
     V(Sizeof) \
     V(Keysof) \
@@ -54,7 +54,7 @@ typedef ZoneList<LInstruction*> LInstructionList;
     V(Function) \
     V(Literal) \
     V(Branch) \
-    V(NumBranch) \
+    V(BranchNumber) \
     V(Goto) \
     LIR_INSTRUCTION_SIMPLE_TYPES(V)
 
@@ -248,12 +248,12 @@ class LBranch : public LControlInstruction {
   INSTRUCTION_METHODS(Branch)
 };
 
-class LNumBranch : public LControlInstruction {
+class LBranchNumber : public LControlInstruction {
  public:
-  LNumBranch() : LControlInstruction(kNumBranch) {
+  LBranchNumber() : LControlInstruction(kBranchNumber) {
   }
 
-  INSTRUCTION_METHODS(NumBranch)
+  INSTRUCTION_METHODS(BranchNumber)
 };
 
 class LFunction : public LInstruction {
