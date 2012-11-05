@@ -11,7 +11,8 @@ HIRGen::HIRGen(Heap* heap, AstNode* root) : Visitor<HIRInstruction>(kPreorder),
                                             break_continue_info_(NULL),
                                             root_(heap),
                                             block_id_(0),
-                                            instr_id_(-2) {
+                                            instr_id_(-2),
+                                            dfs_id_(0) {
   HIRInstruction* hroot = new HIRFunction(root);
   hroot->Init(this, NULL);
   work_queue_.Push(hroot);
@@ -30,6 +31,7 @@ HIRGen::HIRGen(Heap* heap, AstNode* root) : Visitor<HIRInstruction>(kPreorder),
   }
 
   PrunePhis();
+  DeriveDominators();
 }
 
 
@@ -86,6 +88,85 @@ void HIRGen::PrunePhis() {
 
     if (phi->IsRemoved()) continue;
     phi->block()->phis()->Push(phi);
+  }
+}
+
+
+// Implementation of:
+//   A fast algorithm for finding dominators in a flowgraph,
+//   by T Lengauer, RE Tarjan
+void HIRGen::DeriveDominators() {
+  // Perform actions for each subtree
+  HIRBlockList::Item* rhead = roots_.head();
+  for (; rhead != NULL; rhead = rhead->next()) {
+    HIRBlockList dfs_blocks_;
+    HIRBlock* root = rhead->value();
+
+    // Visit and enumarate blocks in DFS order
+    EnumerateDFS(root, &dfs_blocks_);
+
+    // Visit all blocks except root in reverse order
+    HIRBlockList::Item* dhead = dfs_blocks_.tail();
+    for (; dhead != dfs_blocks_.head(); dhead = dhead->prev()) {
+      HIRBlock* w = dhead->value();
+      HIRBlock* parent = w->parent();
+
+      // Propagate dominators from predecessors
+      for (int i = 0; i < w->pred_count(); i++) {
+        HIRBlock* u = w->PredAt(i)->Evaluate();
+        if (u->semi()->dfs_id < w->semi()->dfs_id) w->semi(u->semi());
+      }
+      w->semi()->dominates()->Push(w);
+      w->ancestor(parent);
+
+      // Empty parent's bucket and set semidominators
+      while (parent->dominates()->length() > 0) {
+        HIRBlock* v = parent->dominates()->Shift();
+        HIRBlock* u = v->Evaluate();
+
+        if (u->semi()->dfs_id < v->semi()->dfs_id) {
+          v->dominator(u);
+        } else {
+          v->dominator(parent);
+        }
+      }
+    }
+
+    // Ignore one block graphs
+    if (dhead == NULL) continue;
+
+    // Skip root block
+    dhead = dhead->next();
+
+    // Last step, calculate real dominators
+    // (Back sweep)
+    for (; dhead != NULL; dhead = dhead->next()) {
+      HIRBlock* w = dhead->value();
+      if (w->dominator() != w->semi()) {
+        w->dominator(w->dominator()->dominator());
+      }
+
+      HIRBlock* dom = w->dominator();
+
+      // NOTE: We're using this list for two purpose:
+      //  * Bucket for algorithm
+      //  * And array of dominator tree children
+      while (dom->dominates()->length() != 0) dom->dominates()->Shift();
+      dom->dominates()->Push(w);
+    }
+  }
+}
+
+
+void HIRGen::EnumerateDFS(HIRBlock* b, HIRBlockList* blocks) {
+  b->dfs_id = dfs_id();
+  blocks->Push(b);
+
+  for (int i = 0; i < b->succ_count(); i++) {
+    HIRBlock* succ = b->SuccAt(i);
+    if (succ->dfs_id != -1) continue;
+    succ->parent(b);
+    EnumerateDFS(succ, blocks);
   }
 }
 
@@ -675,12 +756,18 @@ HIRInstruction* HIRGen::VisitProperty(AstNode* stmt) {
 
 
 HIRBlock::HIRBlock(HIRGen* g) : id(g->block_id()),
+                                dfs_id(-1),
                                 g_(g),
                                 loop_(false),
                                 ended_(false),
                                 env_(NULL),
                                 pred_count_(0),
                                 succ_count_(0),
+                                parent_(NULL),
+                                ancestor_(NULL),
+                                label_(this),
+                                semi_(this),
+                                dominator_(NULL),
                                 lir_(NULL),
                                 start_id_(-1),
                                 end_id_(-1) {

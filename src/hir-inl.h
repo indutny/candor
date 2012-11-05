@@ -132,6 +132,11 @@ inline int HIRGen::instr_id() {
 }
 
 
+inline int HIRGen::dfs_id() {
+  return dfs_id_++;
+}
+
+
 inline HIRBlock* HIRBlock::AddSuccessor(HIRBlock* b) {
   assert(succ_count_ < 2);
   succ_[succ_count_++] = b;
@@ -318,6 +323,62 @@ inline int HIRBlock::succ_count() {
 }
 
 
+inline HIRBlock* HIRBlock::parent() {
+  return parent_;
+}
+
+
+inline void HIRBlock::parent(HIRBlock* parent) {
+  parent_ = parent;
+}
+
+
+inline HIRBlock* HIRBlock::ancestor() {
+  return ancestor_;
+}
+
+
+inline void HIRBlock::ancestor(HIRBlock* ancestor) {
+  ancestor_ = ancestor;
+}
+
+
+inline HIRBlock* HIRBlock::label() {
+  return label_;
+}
+
+
+inline void HIRBlock::label(HIRBlock* label) {
+  label_ = label;
+}
+
+
+inline HIRBlock* HIRBlock::semi() {
+  return semi_;
+}
+
+
+inline void HIRBlock::semi(HIRBlock* semi) {
+  assert(semi != NULL);
+  semi_ = semi;
+}
+
+
+inline HIRBlock* HIRBlock::dominator() {
+  return dominator_;
+}
+
+
+inline void HIRBlock::dominator(HIRBlock* dominator) {
+  dominator_ = dominator;
+}
+
+
+inline HIRBlockList* HIRBlock::dominates() {
+  return &dominates_;
+}
+
+
 inline LBlock* HIRBlock::lir() {
   return lir_;
 }
@@ -329,8 +390,31 @@ inline void HIRBlock::lir(LBlock* lir) {
 }
 
 
+inline void HIRBlock::Compress() {
+  // Nothing to compress
+  if (ancestor()->ancestor() == NULL) return;
+
+  ancestor()->Compress();
+  if (ancestor()->label()->semi()->dfs_id < label()->semi()->dfs_id) {
+    label(ancestor()->label());
+  }
+  ancestor(ancestor()->ancestor());
+}
+
+
+inline HIRBlock* HIRBlock::Evaluate() {
+  if (ancestor() == NULL) return this;
+
+  Compress();
+  return label();
+}
+
+
 inline void HIRBlock::Print(PrintBuffer* p) {
   p->Print(IsLoop() ? "# Block %d (loop)\n" : "# Block %d\n", id);
+  if (dominator() != NULL) {
+    p->Print("# dom: %d\n", dominator()->id);
+  }
 
   HIRInstructionList::Item* head = instructions_.head();
   for (; head != NULL; head = head->next()) {

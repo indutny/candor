@@ -53,6 +53,7 @@ class HIRBlock : public ZoneObject {
   HIRBlock(HIRGen* g);
 
   int id;
+  int dfs_id;
 
   HIRInstruction* Assign(ScopeSlot* slot, HIRInstruction* value);
   void Remove(HIRInstruction* instr);
@@ -81,6 +82,19 @@ class HIRBlock : public ZoneObject {
   inline HIRBlock* PredAt(int i);
   inline int pred_count();
   inline int succ_count();
+
+  inline HIRBlock* parent();
+  inline void parent(HIRBlock* parent);
+  inline HIRBlock* ancestor();
+  inline void ancestor(HIRBlock* ancestor);
+  inline HIRBlock* label();
+  inline void label(HIRBlock* label);
+  inline HIRBlock* semi();
+  inline void semi(HIRBlock* semi);
+  inline HIRBlock* dominator();
+  inline void dominator(HIRBlock* dom);
+  inline HIRBlockList* dominates();
+
   inline LBlock* lir();
   inline void lir(LBlock* lir);
 
@@ -88,6 +102,8 @@ class HIRBlock : public ZoneObject {
 
  protected:
   void AddPredecessor(HIRBlock* b);
+  inline void Compress();
+  inline HIRBlock* Evaluate();
 
   HIRGen* g_;
 
@@ -103,10 +119,21 @@ class HIRBlock : public ZoneObject {
   HIRBlock* pred_[2];
   HIRBlock* succ_[2];
 
+  // Dominators algorithm augmentation
+  HIRBlock* parent_;
+  HIRBlock* ancestor_;
+  HIRBlock* label_;
+  HIRBlock* semi_;
+  HIRBlock* dominator_;
+  HIRBlockList dominates_;
+
   // Allocator augmentation
   LBlock* lir_;
   int start_id_;
   int end_id_;
+
+  // Only HIRGen should be able to call Evaluate()
+  friend class HIRGen;
 };
 
 class BreakContinueInfo : public ZoneObject {
@@ -129,6 +156,8 @@ class HIRGen : public Visitor<HIRInstruction> {
   HIRGen(Heap* heap, AstNode* root);
 
   void PrunePhis();
+  void DeriveDominators();
+  void EnumerateDFS(HIRBlock* b, HIRBlockList* blocks);
   void Replace(HIRInstruction* o, HIRInstruction* n);
 
   HIRInstruction* VisitFunction(AstNode* stmt);
@@ -194,6 +223,7 @@ class HIRGen : public Visitor<HIRInstruction> {
 
   inline int block_id();
   inline int instr_id();
+  inline int dfs_id();
 
  private:
   HIRInstructionList work_queue_;
@@ -208,6 +238,7 @@ class HIRGen : public Visitor<HIRInstruction> {
 
   int block_id_;
   int instr_id_;
+  int dfs_id_;
 };
 
 } // namespace internal
