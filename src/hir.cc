@@ -90,8 +90,10 @@ void HIRGen::PrunePhis() {
   for (; phead != NULL; phead = phead->next()) {
     HIRPhi* phi = phead->value();
 
-    // Do not add removed and unused phis
+    // Do not add removed and niled
     if (!phi->Is(HIRInstruction::kPhi) ||phi->IsRemoved()) continue;
+
+    // Remove unused phis
     if (phi->uses()->length() == 0) {
       phi->block()->Remove(phi);
       continue;
@@ -403,7 +405,7 @@ HIRInstruction* HIRGen::VisitFunction(AstNode* stmt) {
       HIRInstruction* varg_arr = NULL;
       if (varg) {
         // Result vararg array
-        varg_arr = Add(HIRInstruction::kAllocateArray);
+        varg_arr = Add(new HIRAllocateArray());
 
         // Add number of arguments that are following varg
         varg_rest = GetNumber(fn->args()->length() - i - 1);
@@ -757,7 +759,7 @@ HIRInstruction* HIRGen::VisitBinOp(AstNode* stmt) {
 
 
 HIRInstruction* HIRGen::VisitObjectLiteral(AstNode* stmt) {
-  HIRInstruction* res = Add(new HIRAllocateObject())->Unpin();
+  HIRInstruction* res = Add(new HIRAllocateObject());
   ObjectLiteral* obj = ObjectLiteral::Cast(stmt);
 
   AstList::Item* khead = obj->keys()->head();
@@ -778,7 +780,7 @@ HIRInstruction* HIRGen::VisitObjectLiteral(AstNode* stmt) {
 
 
 HIRInstruction* HIRGen::VisitArrayLiteral(AstNode* stmt) {
-  HIRInstruction* res = Add(new HIRAllocateArray())->Unpin();
+  HIRInstruction* res = Add(new HIRAllocateArray());
 
   AstList::Item* head = stmt->children()->head();
   for (uint64_t i = 0; head != NULL; head = head->next(), i++) {
