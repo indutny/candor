@@ -54,6 +54,7 @@ class HIRBlock : public ZoneObject {
 
   int id;
   int dfs_id;
+  int loop_depth;
 
   HIRInstruction* Assign(ScopeSlot* slot, HIRInstruction* value);
   void Remove(HIRInstruction* instr);
@@ -62,11 +63,11 @@ class HIRBlock : public ZoneObject {
   inline HIRInstruction* Add(HIRInstruction::Type type);
   inline HIRInstruction* Add(HIRInstruction::Type type, ScopeSlot* slot);
   inline HIRInstruction* Add(HIRInstruction* instr);
-  inline HIRInstruction* Goto(HIRInstruction::Type type, HIRBlock* target);
-  inline HIRInstruction* Branch(HIRInstruction::Type type,
+  inline HIRInstruction* Goto(HIRBlock* target);
+  inline HIRInstruction* Branch(HIRInstruction* instr,
                                 HIRBlock* t,
                                 HIRBlock* f);
-  inline HIRInstruction* Return(HIRInstruction::Type type);
+  inline HIRInstruction* Return(HIRInstruction* instr);
   inline bool IsEnded();
   inline bool IsEmpty();
   void MarkPreLoop();
@@ -158,6 +159,8 @@ class HIRGen : public Visitor<HIRInstruction> {
   void PrunePhis();
   void DeriveDominators();
   void EnumerateDFS(HIRBlock* b, HIRBlockList* blocks);
+  void GlobalCodeMotion();
+
   void Replace(HIRInstruction* o, HIRInstruction* n);
 
   HIRInstruction* VisitFunction(AstNode* stmt);
@@ -201,11 +204,11 @@ class HIRGen : public Visitor<HIRInstruction> {
   inline HIRInstruction* Add(HIRInstruction::Type type);
   inline HIRInstruction* Add(HIRInstruction::Type type, ScopeSlot* slot);
   inline HIRInstruction* Add(HIRInstruction* instr);
-  inline HIRInstruction* Goto(HIRInstruction::Type type, HIRBlock* target);
-  inline HIRInstruction* Branch(HIRInstruction::Type type,
+  inline HIRInstruction* Goto(HIRBlock* target);
+  inline HIRInstruction* Branch(HIRInstruction* instr,
                                 HIRBlock* t,
                                 HIRBlock* f);
-  inline HIRInstruction* Return(HIRInstruction::Type type);
+  inline HIRInstruction* Return(HIRInstruction* instr);
   inline HIRBlock* Join(HIRBlock* b1, HIRBlock* b2);
   inline HIRInstruction* Assign(ScopeSlot* slot, HIRInstruction* value);
   inline HIRInstruction* GetNumber(uint64_t i);
@@ -235,6 +238,7 @@ class HIRGen : public Visitor<HIRInstruction> {
   HIRBlockList roots_;
   HIRBlockList blocks_;
   Root root_;
+  int loop_depth_;
 
   int block_id_;
   int instr_id_;

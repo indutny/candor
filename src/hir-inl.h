@@ -42,6 +42,7 @@ inline HIRBlockList* HIRGen::roots() {
 
 inline HIRBlock* HIRGen::CreateBlock(int stack_slots) {
   HIRBlock* b = new HIRBlock(this);
+  b->loop_depth = loop_depth_;
   b->env(new HIREnvironment(stack_slots));
 
   blocks_.Push(b);
@@ -81,21 +82,20 @@ inline HIRInstruction* HIRGen::Add(HIRInstruction* instr) {
 }
 
 
-inline HIRInstruction* HIRGen::Goto(HIRInstruction::Type type,
-                                    HIRBlock* target) {
-  return current_block()->Goto(type, target);
+inline HIRInstruction* HIRGen::Goto(HIRBlock* target) {
+  return current_block()->Goto(target);
 }
 
 
-inline HIRInstruction* HIRGen::Branch(HIRInstruction::Type type,
+inline HIRInstruction* HIRGen::Branch(HIRInstruction* instr,
                                       HIRBlock* t,
                                       HIRBlock* f) {
-  return current_block()->Branch(type, t, f);
+  return current_block()->Branch(instr, t, f);
 }
 
 
-inline HIRInstruction* HIRGen::Return(HIRInstruction::Type type) {
-  return current_block()->Return(type);
+inline HIRInstruction* HIRGen::Return(HIRInstruction* instr) {
+  return current_block()->Return(instr);
 }
 
 
@@ -169,9 +169,8 @@ inline HIRInstruction* HIRBlock::Add(HIRInstruction* instr) {
 }
 
 
-inline HIRInstruction* HIRBlock::Goto(HIRInstruction::Type type,
-                                      HIRBlock* target) {
-  HIRInstruction* res = Add(type);
+inline HIRInstruction* HIRBlock::Goto(HIRBlock* target) {
+  HIRInstruction* res = Add(new HIRGoto());
 
   if (!ended_) {
     AddSuccessor(target);
@@ -182,10 +181,10 @@ inline HIRInstruction* HIRBlock::Goto(HIRInstruction::Type type,
 }
 
 
-inline HIRInstruction* HIRBlock::Branch(HIRInstruction::Type type,
+inline HIRInstruction* HIRBlock::Branch(HIRInstruction* instr,
                                         HIRBlock* t,
                                         HIRBlock* f) {
-  HIRInstruction* res = Add(type);
+  HIRInstruction* res = Add(instr);
 
   if (!ended_) {
     AddSuccessor(t);
@@ -197,8 +196,8 @@ inline HIRInstruction* HIRBlock::Branch(HIRInstruction::Type type,
 }
 
 
-inline HIRInstruction* HIRBlock::Return(HIRInstruction::Type type) {
-  HIRInstruction* res = Add(type);
+inline HIRInstruction* HIRBlock::Return(HIRInstruction* instr) {
+  HIRInstruction* res = Add(instr);
   if (!ended_) ended_ = true;
   return res;
 }
@@ -207,8 +206,8 @@ inline HIRInstruction* HIRBlock::Return(HIRInstruction::Type type) {
 inline HIRBlock* HIRGen::Join(HIRBlock* b1, HIRBlock* b2) {
   HIRBlock* join = CreateBlock();
 
-  b1->Goto(HIRInstruction::kGoto, join);
-  b2->Goto(HIRInstruction::kGoto, join);
+  b1->Goto(join);
+  b2->Goto(join);
 
   return join;
 }

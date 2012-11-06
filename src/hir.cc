@@ -10,6 +10,7 @@ HIRGen::HIRGen(Heap* heap, AstNode* root) : Visitor<HIRInstruction>(kPreorder),
                                             current_root_(NULL),
                                             break_continue_info_(NULL),
                                             root_(heap),
+                                            loop_depth_(0),
                                             block_id_(0),
                                             instr_id_(-2),
                                             dfs_id_(0) {
@@ -32,6 +33,7 @@ HIRGen::HIRGen(Heap* heap, AstNode* root) : Visitor<HIRInstruction>(kPreorder),
 
   PrunePhis();
   DeriveDominators();
+  GlobalCodeMotion();
 }
 
 
@@ -171,6 +173,12 @@ void HIRGen::EnumerateDFS(HIRBlock* b, HIRBlockList* blocks) {
 }
 
 
+// Implementation of Globel Code Motion algorithm from
+// Cliff Click's paper.
+void HIRGen::GlobalCodeMotion() {
+}
+
+
 HIRInstruction* HIRGen::VisitFunction(AstNode* stmt) {
   FunctionLiteral* fn = FunctionLiteral::Cast(stmt);
 
@@ -199,7 +207,7 @@ HIRInstruction* HIRGen::VisitFunction(AstNode* stmt) {
         seen_varg = true;
         instr = new HIRLoadVarArg();
       } else {
-        instr = new HIRInstruction(HIRInstruction::kLoadArg);
+        instr = new HIRLoadArg();
       }
 
       AstValue* value = AstValue::Cast(arg);
@@ -259,7 +267,7 @@ HIRInstruction* HIRGen::VisitFunction(AstNode* stmt) {
 
     if (!current_block()->IsEnded()) {
       HIRInstruction* val = Add(HIRInstruction::kNil);
-      HIRInstruction* end = Return(HIRInstruction::kReturn);
+      HIRInstruction* end = Return(new HIRReturn());
       end->AddArg(val);
     }
 
@@ -303,7 +311,7 @@ HIRInstruction* HIRGen::VisitAssign(AstNode* stmt) {
 
 HIRInstruction* HIRGen::VisitReturn(AstNode* stmt) {
   HIRInstruction* lhs = Visit(stmt->lhs());
-  return Return(HIRInstruction::kReturn)->AddArg(lhs);
+  return Return(new HIRReturn())->AddArg(lhs);
 }
 
 
@@ -334,7 +342,7 @@ HIRInstruction* HIRGen::VisitIf(AstNode* stmt) {
   HIRBlock* f = CreateBlock();
   HIRInstruction* cond = Visit(stmt->lhs());
 
-  Branch(HIRInstruction::kIf, t, f)->AddArg(cond);
+  Branch(new HIRIf(), t, f)->AddArg(cond);
 
   set_current_block(t);
   Visit(stmt->rhs());
@@ -355,16 +363,18 @@ HIRInstruction* HIRGen::VisitIf(AstNode* stmt) {
 
 
 HIRInstruction* HIRGen::VisitWhile(AstNode* stmt) {
+  loop_depth_++;
+
   BreakContinueInfo* old = break_continue_info_;
   HIRBlock* start = CreateBlock();
 
   current_block()->MarkPreLoop();
-  Goto(HIRInstruction::kGoto, start);
+  Goto(start);
 
   // HIRBlock can't be join and branch at the same time
   set_current_block(CreateBlock());
   start->MarkLoop();
-  start->Goto(HIRInstruction::kGoto, current_block());
+  start->Goto(current_block());
 
   HIRInstruction* cond = Visit(stmt->lhs());
 
@@ -372,7 +382,7 @@ HIRInstruction* HIRGen::VisitWhile(AstNode* stmt) {
   HIRBlock* loop = CreateBlock();
   HIRBlock* end = CreateBlock();
 
-  Branch(HIRInstruction::kIf, body, end)->AddArg(cond);
+  Branch(new HIRIf(), body, end)->AddArg(cond);
 
   set_current_block(body);
   break_continue_info_ = new BreakContinueInfo(this, end);
@@ -381,17 +391,18 @@ HIRInstruction* HIRGen::VisitWhile(AstNode* stmt) {
 
   while (break_continue_info_->continue_blocks()->length() > 0) {
     HIRBlock* next = break_continue_info_->continue_blocks()->Shift();
-    Goto(HIRInstruction::kGoto, next);
+    Goto(next);
     set_current_block(next);
   }
-  Goto(HIRInstruction::kGoto, loop);
-  loop->Goto(HIRInstruction::kGoto, start);
+  Goto(loop);
+  loop->Goto(start);
 
   // Next current block should not be a join
   set_current_block(break_continue_info_->GetBreak());
 
   // Restore break continue info
   break_continue_info_ = old;
+  loop_depth_--;
 
   return NULL;
 }
@@ -399,14 +410,14 @@ HIRInstruction* HIRGen::VisitWhile(AstNode* stmt) {
 
 HIRInstruction* HIRGen::VisitBreak(AstNode* stmt) {
   assert(break_continue_info_ != NULL);
-  Goto(HIRInstruction::kGoto, break_continue_info_->GetBreak());
+  Goto(break_continue_info_->GetBreak());
   return NULL;
 }
 
 
 HIRInstruction* HIRGen::VisitContinue(AstNode* stmt) {
   assert(break_continue_info_ != NULL);
-  Goto(HIRInstruction::kGoto, break_continue_info_->GetContinue());
+  Goto(break_continue_info_->GetContinue());
   return NULL;
 }
 
@@ -503,13 +514,13 @@ HIRInstruction* HIRGen::VisitBinOp(AstNode* stmt) {
     HIRBlock* branch = CreateBlock();
     ScopeSlot* slot = current_block()->env()->logic_slot();
 
-    Goto(HIRInstruction::kGoto, branch);
+    Goto(branch);
     set_current_block(branch);
 
     HIRBlock* t = CreateBlock();
     HIRBlock* f = CreateBlock();
 
-    Branch(HIRInstruction::kIf, t, f)->AddArg(lhs);
+    Branch(new HIRIf(), t, f)->AddArg(lhs);
 
     set_current_block(t);
     if (op->subtype() == BinOp::kLAnd) {
@@ -601,11 +612,11 @@ HIRInstruction* HIRGen::VisitCall(AstNode* stmt) {
   if (fn->variable()->is(AstNode::kValue)) {
     AstNode* name = AstValue::Cast(fn->variable())->name();
     if (name->length() == 5 && strncmp(name->value(), "__$gc", 5) == 0) {
-      Add(HIRInstruction::kCollectGarbage);
+      Add(new HIRCollectGarbage());
       return Add(HIRInstruction::kNil);
     } else if (name->length() == 8 &&
                strncmp(name->value(), "__$trace", 8) == 0) {
-      return Add(HIRInstruction::kGetStackTrace);
+      return Add(new HIRGetStackTrace());
     }
   }
 
@@ -615,22 +626,21 @@ HIRInstruction* HIRGen::VisitCall(AstNode* stmt) {
   AstList::Item* item = fn->args()->head();
   for (; item != NULL; item = item->next()) {
     AstNode* arg = item->value();
-    HIRInstruction::Type type;
+    HIRInstruction* current;
     HIRInstruction* rhs;
 
     if (arg->is(AstNode::kSelf)) {
       // Process self argument later
       continue;
     } else if (arg->is(AstNode::kVarArg)) {
-      type = HIRInstruction::kStoreVarArg;
+      current = new HIRStoreVarArg();
       rhs = Visit(arg->lhs());
       vararg = rhs;
     } else {
-      type = HIRInstruction::kStoreArg;
+      current = new HIRStoreArg();
       rhs = Visit(arg);
     }
 
-    HIRInstruction* current = CreateInstruction(type);
     current->AddArg(rhs);
 
     stores_.Unshift(current);
@@ -656,7 +666,7 @@ HIRInstruction* HIRGen::VisitCall(AstNode* stmt) {
   if (fn->args()->length() > 0 &&
       fn->args()->head()->value()->is(AstNode::kSelf)) {
     receiver = Visit(fn->variable()->lhs());
-    HIRInstruction* store = CreateInstruction(HIRInstruction::kStoreArg);
+    HIRInstruction* store = new HIRStoreArg();
     store->AddArg(receiver);
     stores_.Push(store);
   }
@@ -675,7 +685,7 @@ HIRInstruction* HIRGen::VisitCall(AstNode* stmt) {
   }
 
   // Add stack alignment instruction
-  Add(HIRInstruction::kAlignStack)->AddArg(hargc);
+  Add(new HIRAlignStack())->AddArg(hargc);
 
   // Now add stores to hir
   HIRInstructionList::Item* hhead = stores_.head();
@@ -683,10 +693,7 @@ HIRInstruction* HIRGen::VisitCall(AstNode* stmt) {
     Add(hhead->value());
   }
 
-  HIRInstruction* call = CreateInstruction(HIRInstruction::kCall)
-      ->AddArg(var)->AddArg(hargc);
-
-  return Add(call);
+  return Add(new HIRCall())->AddArg(var)->AddArg(hargc);
 }
 
 
@@ -757,6 +764,7 @@ HIRInstruction* HIRGen::VisitProperty(AstNode* stmt) {
 
 HIRBlock::HIRBlock(HIRGen* g) : id(g->block_id()),
                                 dfs_id(-1),
+                                loop_depth(-1),
                                 g_(g),
                                 loop_(false),
                                 ended_(false),
@@ -931,7 +939,7 @@ HIRBlock* BreakContinueInfo::GetContinue() {
 
 HIRBlock* BreakContinueInfo::GetBreak() {
   HIRBlock* b = g_->CreateBlock();
-  brk_->Goto(HIRInstruction::kGoto, b);
+  brk_->Goto(b);
   brk_ = b;
 
   return b;

@@ -87,6 +87,7 @@ class HIRInstruction : public ZoneObject {
   int id;
 
   virtual void ReplaceArg(HIRInstruction* o, HIRInstruction* n);
+  virtual bool IsPinned();
   virtual void CalculateRepresentation();
   void RemoveUse(HIRInstruction* i);
 
@@ -145,8 +146,15 @@ class HIRInstruction : public ZoneObject {
     return reinterpret_cast<HIR##V*>(instr); \
   }
 
+class HIRPinnedInstruction : public HIRInstruction {
+ public:
+  HIRPinnedInstruction(Type type);
+  HIRPinnedInstruction(Type type, ScopeSlot* slot);
 
-class HIRPhi : public HIRInstruction {
+  bool IsPinned();
+};
+
+class HIRPhi : public HIRPinnedInstruction {
  public:
   HIRPhi(ScopeSlot* slot);
 
@@ -197,7 +205,7 @@ class HIRFunction : public HIRInstruction {
   HIR_DEFAULT_METHODS(Function)
 };
 
-class HIREntry : public HIRInstruction {
+class HIREntry : public HIRPinnedInstruction {
   public:
   HIREntry(int context_slots);
 
@@ -208,6 +216,51 @@ class HIREntry : public HIRInstruction {
 
  private:
   int context_slots_;
+};
+
+class HIRReturn : public HIRPinnedInstruction {
+  public:
+  HIRReturn();
+
+  HIR_DEFAULT_METHODS(Return)
+
+ private:
+};
+
+class HIRIf : public HIRPinnedInstruction {
+  public:
+  HIRIf();
+
+  HIR_DEFAULT_METHODS(If)
+
+ private:
+};
+
+class HIRGoto : public HIRPinnedInstruction {
+  public:
+  HIRGoto();
+
+  HIR_DEFAULT_METHODS(Goto)
+
+ private:
+};
+
+class HIRCollectGarbage : public HIRPinnedInstruction {
+  public:
+  HIRCollectGarbage();
+
+  HIR_DEFAULT_METHODS(CollectGarbage)
+
+ private:
+};
+
+class HIRGetStackTrace : public HIRPinnedInstruction {
+  public:
+  HIRGetStackTrace();
+
+  HIR_DEFAULT_METHODS(GetStackTrace)
+
+ private:
 };
 
 class HIRBinOp : public HIRInstruction {
@@ -281,13 +334,58 @@ class HIRAllocateArray : public HIRInstruction {
  private:
 };
 
-class HIRLoadVarArg : public HIRInstruction {
+class HIRLoadArg : public HIRPinnedInstruction {
+ public:
+  HIRLoadArg();
+
+  HIR_DEFAULT_METHODS(LoadArg)
+
+ private:
+};
+
+class HIRLoadVarArg : public HIRPinnedInstruction {
  public:
   HIRLoadVarArg();
 
   void CalculateRepresentation();
 
   HIR_DEFAULT_METHODS(LoadVarArg)
+
+ private:
+};
+
+class HIRStoreArg : public HIRPinnedInstruction {
+ public:
+  HIRStoreArg();
+
+  HIR_DEFAULT_METHODS(StoreArg)
+
+ private:
+};
+
+class HIRStoreVarArg : public HIRPinnedInstruction {
+ public:
+  HIRStoreVarArg();
+
+  HIR_DEFAULT_METHODS(StoreVarArg)
+
+ private:
+};
+
+class HIRAlignStack : public HIRPinnedInstruction {
+ public:
+  HIRAlignStack();
+
+  HIR_DEFAULT_METHODS(AlignStack)
+
+ private:
+};
+
+class HIRCall : public HIRPinnedInstruction {
+ public:
+  HIRCall();
+
+  HIR_DEFAULT_METHODS(Call)
 
  private:
 };

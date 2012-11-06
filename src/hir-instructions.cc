@@ -101,7 +101,26 @@ void HIRInstruction::Print(PrintBuffer* p) {
 }
 
 
-HIRPhi::HIRPhi(ScopeSlot* slot) : HIRInstruction(kPhi, slot),
+bool HIRInstruction::IsPinned() {
+  return false;
+}
+
+
+HIRPinnedInstruction::HIRPinnedInstruction(Type type) : HIRInstruction(type) {
+}
+
+
+HIRPinnedInstruction::HIRPinnedInstruction(Type type, ScopeSlot* slot)
+    : HIRInstruction(type, slot) {
+}
+
+
+bool HIRPinnedInstruction::IsPinned() {
+  return true;
+}
+
+
+HIRPhi::HIRPhi(ScopeSlot* slot) : HIRPinnedInstruction(kPhi, slot),
                                   input_count_(0) {
   inputs_[0] = NULL;
   inputs_[1] = NULL;
@@ -180,13 +199,33 @@ void HIRFunction::Print(PrintBuffer* p) {
 }
 
 
-HIREntry::HIREntry(int context_slots_) : HIRInstruction(kEntry),
+HIREntry::HIREntry(int context_slots_) : HIRPinnedInstruction(kEntry),
                                          context_slots_(context_slots_) {
 }
 
 
 void HIREntry::Print(PrintBuffer* p) {
   p->Print("i%d = Entry[%d]\n", id, context_slots_);
+}
+
+
+HIRReturn::HIRReturn() : HIRPinnedInstruction(kReturn) {
+}
+
+
+HIRIf::HIRIf() : HIRPinnedInstruction(kIf) {
+}
+
+
+HIRGoto::HIRGoto() : HIRPinnedInstruction(kGoto) {
+}
+
+
+HIRCollectGarbage::HIRCollectGarbage() : HIRPinnedInstruction(kCollectGarbage) {
+}
+
+
+HIRGetStackTrace::HIRGetStackTrace() : HIRPinnedInstruction(kGetStackTrace) {
 }
 
 
@@ -271,12 +310,32 @@ void HIRAllocateArray::CalculateRepresentation() {
 }
 
 
-HIRLoadVarArg::HIRLoadVarArg() : HIRInstruction(kLoadVarArg) {
+HIRLoadArg::HIRLoadArg() : HIRPinnedInstruction(kLoadArg) {
+}
+
+
+HIRLoadVarArg::HIRLoadVarArg() : HIRPinnedInstruction(kLoadVarArg) {
 }
 
 
 void HIRLoadVarArg::CalculateRepresentation() {
   representation_ = kArrayRepresentation;
+}
+
+
+HIRStoreArg::HIRStoreArg() : HIRPinnedInstruction(kStoreArg) {
+}
+
+
+HIRStoreVarArg::HIRStoreVarArg() : HIRPinnedInstruction(kStoreVarArg) {
+}
+
+
+HIRAlignStack::HIRAlignStack() : HIRPinnedInstruction(kAlignStack) {
+}
+
+
+HIRCall::HIRCall() : HIRPinnedInstruction(kCall) {
 }
 
 
