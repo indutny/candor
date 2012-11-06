@@ -228,6 +228,9 @@ class HIRGen : public Visitor<HIRInstruction> {
   inline HIRInstruction* CreateInstruction(HIRInstruction::Type type);
   inline HIRPhi* CreatePhi(ScopeSlot* slot);
 
+  static void EnableLogging();
+  static void DisableLogging();
+
   inline void Print(PrintBuffer* p);
   inline void Print(char* out, int32_t size);
 
@@ -252,6 +255,8 @@ class HIRGen : public Visitor<HIRInstruction> {
   int block_id_;
   int instr_id_;
   int dfs_id_;
+
+  static bool log_;
 };
 
 } // namespace internal

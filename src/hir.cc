@@ -5,6 +5,8 @@
 namespace candor {
 namespace internal {
 
+bool HIRGen::log_ = false;
+
 HIRGen::HIRGen(Heap* heap, AstNode* root) : Visitor<HIRInstruction>(kPreorder),
                                             current_block_(NULL),
                                             current_root_(NULL),
@@ -36,6 +38,23 @@ HIRGen::HIRGen(Heap* heap, AstNode* root) : Visitor<HIRInstruction>(kPreorder),
   PrunePhis();
   DeriveDominators();
   GlobalCodeMotion();
+
+  if (log_) {
+    PrintBuffer p(stdout);
+    p.Print("## HIR Start ##\n");
+    Print(&p);
+    p.Print("## HIR End ##\n");
+  }
+}
+
+
+void HIRGen::EnableLogging() {
+  log_ = true;
+}
+
+
+void HIRGen::DisableLogging() {
+  log_ = false;
 }
 
 

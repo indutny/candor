@@ -229,6 +229,9 @@ class LGen : public ZoneObject {
   inline int interval_id();
   inline int virtual_index();
 
+  static void EnableLogging();
+  static void DisableLogging();
+
   void Print(PrintBuffer* p, bool extended = false);
   void PrintIntervals(PrintBuffer* p);
   inline void Print(char* out, int32_t size, bool extended = false);
@@ -257,6 +260,8 @@ class LGen : public ZoneObject {
   LIntervalList active_spills_;
   LIntervalList inactive_spills_;
   LIntervalList free_spills_;
+
+  static bool log_;
 };
 
 #undef LGEN_VISITOR

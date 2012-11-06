@@ -40,6 +40,11 @@ class Isolate {
 
   Array* StackTrace();
 
+  void EnableHIRLogging();
+  void DisableHIRLogging();
+  void EnableLIRLogging();
+  void DisableLIRLogging();
+
  protected:
 
   void SetError(Error* err);

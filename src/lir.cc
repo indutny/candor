@@ -12,6 +12,8 @@
 namespace candor {
 namespace internal {
 
+bool LGen::log_ = false;
+
 LGen::LGen(HIRGen* hir, HIRBlock* root) : hir_(hir),
                                           instr_id_(0),
                                           interval_id_(0),
@@ -33,6 +35,23 @@ LGen::LGen(HIRGen* hir, HIRBlock* root) : hir_(hir),
   WalkIntervals();
   ResolveDataFlow();
   AllocateSpills();
+
+  if (log_) {
+    PrintBuffer p(stdout);
+    p.Print("## LIR Start ##\n");
+    Print(&p);
+    p.Print("## LIR End ##\n");
+  }
+}
+
+
+void LGen::EnableLogging() {
+  log_ = true;
+}
+
+
+void LGen::DisableLogging() {
+  log_ = false;
 }
 
 

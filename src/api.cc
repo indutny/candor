@@ -2,6 +2,10 @@
 #include "heap.h"
 #include "heap-inl.h"
 #include "code-space.h"
+#include "hir.h"
+#include "hir-inl.h"
+#include "lir.h"
+#include "lir-inl.h"
 #include "runtime.h"
 #include "utils.h"
 
@@ -101,6 +105,26 @@ void Isolate::SetError(Error* err) {
 Array* Isolate::StackTrace() {
   char** frame = reinterpret_cast<char**>(*heap->last_frame());
   return Value::Cast<Array>(RuntimeStackTrace(heap, frame, NULL));
+}
+
+
+void Isolate::EnableHIRLogging() {
+  HIRGen::EnableLogging();
+}
+
+
+void Isolate::DisableHIRLogging() {
+  HIRGen::DisableLogging();
+}
+
+
+void Isolate::EnableLIRLogging() {
+  LGen::EnableLogging();
+}
+
+
+void Isolate::DisableLIRLogging() {
+  LGen::DisableLogging();
 }
 
 

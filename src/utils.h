@@ -4,7 +4,7 @@
 #include <stdlib.h> // NULL
 #include <stdarg.h> // va_list
 #include <stdint.h> // uint32_t
-#include <stdio.h> // vsnprintf
+#include <stdio.h> // fprintf, vsnprintf
 #include <string.h> // strncmp, memset
 #include <unistd.h> // sysconf or getpagesize, intptr_t
 #include <assert.h> // assert
@@ -785,13 +785,24 @@ class FreeList {
 // For debug printing AST and other things
 class PrintBuffer {
  public:
-  PrintBuffer(char* buffer, int32_t size) : buffer_(buffer),
+  PrintBuffer(char* buffer, int32_t size) : out_(NULL),
+                                            buffer_(buffer),
                                             left_(size),
                                             total_(0) {
   }
 
+  PrintBuffer(FILE* out) : out_(out) {
+  }
+
   bool Print(const char* format, ...) {
     va_list arguments;
+    if (out_ != NULL) {
+      va_start(arguments, format);
+      vfprintf(out_, format, arguments);
+      va_end(arguments);
+      return true;
+    }
+
     va_start(arguments, format);
     int32_t written = vsnprintf(buffer_, left_, format, arguments);
     va_end(arguments);
@@ -799,6 +810,11 @@ class PrintBuffer {
   }
 
   bool PrintValue(const char* value, int32_t size) {
+    if (out_ != NULL) {
+      fprintf(out_, "%.*s", size, value);
+      return true;
+    }
+
     Consume(size);
     if (ended()) return false;
     memcpy(buffer_ - size, value, size);
@@ -807,6 +823,8 @@ class PrintBuffer {
   }
 
   bool Consume(int32_t bytes) {
+    if (out_ != NULL) return true;
+
     buffer_ += bytes;
     total_ += bytes;
     left_ -= bytes;
@@ -815,6 +833,7 @@ class PrintBuffer {
   }
 
   void Finalize() {
+    if (out_ != NULL) return;
     if (ended()) return;
     buffer_[total_] = 0;
   }
@@ -823,6 +842,7 @@ class PrintBuffer {
   inline int32_t total() { return total_ <= 0; }
 
  private:
+  FILE* out_;
   char* buffer_;
   int32_t left_;
   int32_t total_;
