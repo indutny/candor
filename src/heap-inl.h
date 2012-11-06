@@ -139,7 +139,8 @@ inline void HArray::SetLength(char* obj, int64_t length) {
 
 
 inline bool HArray::IsDense(char* obj) {
-  return Length(obj, false) <= kDenseLengthMax;
+  int size = HValue::As<HMap>(Map(obj))->size();
+  return size <= kDenseLengthMax;
 }
 
 

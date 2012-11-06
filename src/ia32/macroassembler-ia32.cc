@@ -581,8 +581,10 @@ void Masm::IsTrue(Register reference, Label* is_false, Label* is_true) {
 
 
 void Masm::IsDenseArray(Register reference, Label* non_dense, Label* dense) {
-  Operand qlength(reference, HArray::kLengthOffset);
-  cmpl(qlength, Immediate(HArray::kDenseLengthMax));
+  Operand qmap(reference, HObject::kMapOffset);
+  Operand qmapsize(scratch, HMap::kSizeOffset);
+  mov(scratch, qmap);
+  cmpl(qmapsize, Immediate(HArray::kDenseLengthMax));
   if (non_dense != NULL) jmp(kGt, non_dense);
   if (dense != NULL) jmp(kLe, dense);
 }
