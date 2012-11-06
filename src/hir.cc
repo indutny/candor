@@ -7,15 +7,16 @@ namespace internal {
 
 bool HIRGen::log_ = false;
 
-HIRGen::HIRGen(Heap* heap, AstNode* root) : Visitor<HIRInstruction>(kPreorder),
-                                            current_block_(NULL),
-                                            current_root_(NULL),
-                                            break_continue_info_(NULL),
-                                            root_(heap),
-                                            loop_depth_(0),
-                                            block_id_(0),
-                                            instr_id_(-2),
-                                            dfs_id_(0) {
+HIRGen::HIRGen(Heap* heap, const char* filename, AstNode* root)
+    : Visitor<HIRInstruction>(kPreorder),
+      current_block_(NULL),
+      current_root_(NULL),
+      break_continue_info_(NULL),
+      root_(heap),
+      loop_depth_(0),
+      block_id_(0),
+      instr_id_(-2),
+      dfs_id_(0) {
   HIRInstruction* hroot = new HIRFunction(root);
   hroot->Init(this, NULL);
   work_queue_.Push(hroot);
@@ -41,7 +42,7 @@ HIRGen::HIRGen(Heap* heap, AstNode* root) : Visitor<HIRInstruction>(kPreorder),
 
   if (log_) {
     PrintBuffer p(stdout);
-    p.Print("## HIR Start ##\n");
+    p.Print("## HIR %s Start ##\n", filename == NULL ? "unknown" : filename);
     Print(&p);
     p.Print("## HIR End ##\n");
   }

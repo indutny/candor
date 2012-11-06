@@ -14,13 +14,14 @@ namespace internal {
 
 bool LGen::log_ = false;
 
-LGen::LGen(HIRGen* hir, HIRBlock* root) : hir_(hir),
-                                          instr_id_(0),
-                                          interval_id_(0),
-                                          virtual_index_(40),
-                                          current_block_(NULL),
-                                          current_instruction_(NULL),
-                                          spill_index_(0) {
+LGen::LGen(HIRGen* hir, const char* filename, HIRBlock* root)
+    : hir_(hir),
+      instr_id_(0),
+      interval_id_(0),
+      virtual_index_(40),
+      current_block_(NULL),
+      current_instruction_(NULL),
+      spill_index_(0) {
   // Initialize fixed intervals
   for (int i = 0; i < kLIRRegisterCount; i++) {
     registers_[i] = CreateRegister(RegisterByIndex(i));
@@ -38,7 +39,7 @@ LGen::LGen(HIRGen* hir, HIRBlock* root) : hir_(hir),
 
   if (log_) {
     PrintBuffer p(stdout);
-    p.Print("## LIR Start ##\n");
+    p.Print("## LIR %s Start ##\n", filename == NULL ? "unknown" : filename);
     Print(&p);
     p.Print("## LIR End ##\n");
   }

@@ -88,7 +88,7 @@ using namespace internal;
       ASSERT(!p.has_error());\
       Scope::Analyze(ast);\
       ASSERT(ast != NULL);\
-      HIRGen gen(&heap, ast);\
+      HIRGen gen(&heap, NULL, ast);\
       gen.Print(out, sizeof(out));\
       if (strcmp(expected, out) != 0) {\
         fprintf(stderr, "HIR test failed, got:\n%s\n expected:\n%s\n",\
@@ -109,8 +109,8 @@ using namespace internal;
       ASSERT(!p.has_error());\
       Scope::Analyze(ast);\
       ASSERT(ast != NULL);\
-      HIRGen hgen(&heap, ast);\
-      LGen lgen(&hgen, hgen.roots()->head()->value());\
+      HIRGen hgen(&heap, NULL, ast);\
+      LGen lgen(&hgen, NULL, hgen.roots()->head()->value());\
       lgen.Print(out, sizeof(out));\
       if (strcmp(expected, out) != 0) {\
         fprintf(stderr, "LIR test failed, got:\n%s\n expected:\n%s\n",\

@@ -159,7 +159,7 @@ class BreakContinueInfo : public ZoneObject {
 
 class HIRGen : public Visitor<HIRInstruction> {
  public:
-  HIRGen(Heap* heap, AstNode* root);
+  HIRGen(Heap* heap, const char* filename, AstNode* root);
 
   void PrunePhis();
   void DeriveDominators();

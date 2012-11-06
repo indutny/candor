@@ -189,7 +189,7 @@ class LBlock : public ZoneObject {
 
 class LGen : public ZoneObject {
  public:
-  LGen(HIRGen* hir, HIRBlock* root);
+  LGen(HIRGen* hir, const char* filename, HIRBlock* root);
 
   void Generate(Masm* masm, SourceMap* map);
 

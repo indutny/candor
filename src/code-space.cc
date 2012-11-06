@@ -89,7 +89,7 @@ char* CodeSpace::Compile(const char* filename,
   Scope::Analyze(ast);
 
   // Generate CFG with SSA
-  HIRGen hir(heap(), ast);
+  HIRGen hir(heap(), filename, ast);
 
   // Store root
   *root = hir.root()->Allocate()->addr();
@@ -102,7 +102,7 @@ char* CodeSpace::Compile(const char* filename,
   HIRBlockList::Item* head = hir.roots()->head();
   for (; head != NULL; head = head->next()) {
     // Generate LIR
-    LGen lir(&hir, head->value());
+    LGen lir(&hir, filename, head->value());
 
     // Generate Masm code
     lir.Generate(&masm, heap()->source_map());
