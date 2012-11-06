@@ -40,10 +40,10 @@ class Isolate {
 
   Array* StackTrace();
 
-  void EnableHIRLogging();
-  void DisableHIRLogging();
-  void EnableLIRLogging();
-  void DisableLIRLogging();
+  static void EnableHIRLogging();
+  static void DisableHIRLogging();
+  static void EnableLIRLogging();
+  static void DisableLIRLogging();
 
  protected:
 
