@@ -43,6 +43,7 @@ inline HIRBlockList* HIRGen::roots() {
 inline HIRBlock* HIRGen::CreateBlock(int stack_slots) {
   HIRBlock* b = new HIRBlock(this);
   b->loop_depth = loop_depth_;
+  b->root(current_root() == NULL ? b : current_root());
   b->env(new HIREnvironment(stack_slots));
 
   blocks_.Push(b);
@@ -245,7 +246,7 @@ inline HIRInstruction* HIRGen::GetNumber(uint64_t i) {
   index->value(keystr);
   index->length(snprintf(keystr, sizeof(keystr), "%" PRIu64, i));
 
-  HIRInstruction* r = Visit(index);
+  HIRInstruction* r = Visit(index)->Unpin();
   r->ast(NULL);
 
   return r;
@@ -273,6 +274,16 @@ inline HIRPhi* HIRBlock::CreatePhi(ScopeSlot* slot) {
   phis_.Push(phi);
 
   return phi;
+}
+
+
+inline HIRBlock* HIRBlock::root() {
+  return root_;
+}
+
+
+inline void HIRBlock::root(HIRBlock* root) {
+  root_ = root;
 }
 
 
@@ -370,6 +381,21 @@ inline HIRBlock* HIRBlock::dominator() {
 
 inline void HIRBlock::dominator(HIRBlock* dominator) {
   dominator_ = dominator;
+}
+
+
+inline int HIRBlock::dominator_depth() {
+  // Cache miss
+  if (dominator_depth_ == -1) {
+    int r = 0;
+    if (dominator() != NULL) {
+      r = dominator()->dominator_depth() + 1;
+    }
+    dominator_depth_ = r;
+  }
+
+  // Cache hit
+  return dominator_depth_;
 }
 
 

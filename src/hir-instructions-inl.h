@@ -32,11 +32,6 @@ inline HIRInstruction::Type HIRInstruction::type() {
 }
 
 
-inline void HIRInstruction::Remove() {
-  removed_ = true;
-}
-
-
 inline bool HIRInstruction::IsRemoved() {
   return removed_;
 }
@@ -101,6 +96,12 @@ inline bool HIRInstruction::IsBoolean() {
 
 inline HIRBlock* HIRInstruction::block() {
   return block_;
+}
+
+
+inline void HIRInstruction::block(HIRBlock* block) {
+  assert(block != NULL);
+  block_ = block;
 }
 
 

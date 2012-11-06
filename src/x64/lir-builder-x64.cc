@@ -174,17 +174,18 @@ void LGen::VisitStoreProperty(HIRInstruction* instr) {
       ->AddScratch(CreateVirtual())
       ->AddArg(lhs, LUse::kRegister)
       ->AddArg(rhs, LUse::kRegister);
-  ResultFromFixed(store, rcx);
+  ResultFromFixed(store, rbx);
 }
 
 
 void LGen::VisitDeleteProperty(HIRInstruction* instr) {
   LInterval* lhs = ToFixed(instr->left(), rax);
   LInterval* rhs = ToFixed(instr->right(), rbx);
-  Bind(new LDeleteProperty())
+  LInstruction* del = Bind(new LDeleteProperty())
       ->MarkHasCall()
       ->AddArg(lhs, LUse::kRegister)
       ->AddArg(rhs, LUse::kRegister);
+  ResultFromFixed(del, rax);
 }
 
 

@@ -85,17 +85,20 @@ class HIRInstruction : public ZoneObject {
   virtual void Init(HIRGen* g, HIRBlock* block);
 
   int id;
+  int gcm_visited;
 
   virtual void ReplaceArg(HIRInstruction* o, HIRInstruction* n);
-  virtual bool IsPinned();
+  bool IsPinned();
+  HIRInstruction* Unpin();
+  HIRInstruction* Pin();
   virtual void CalculateRepresentation();
+  void Remove();
   void RemoveUse(HIRInstruction* i);
 
   inline HIRInstruction* AddArg(Type type);
   inline HIRInstruction* AddArg(HIRInstruction* instr);
   inline bool Is(Type type);
   inline Type type();
-  inline void Remove();
   inline bool IsRemoved();
   virtual void Print(PrintBuffer* p);
   inline const char* TypeToStr(Type type);
@@ -108,6 +111,7 @@ class HIRInstruction : public ZoneObject {
   inline bool IsBoolean();
 
   inline HIRBlock* block();
+  inline void block(HIRBlock* block);
   inline ScopeSlot* slot();
   inline void slot(ScopeSlot* slot);
   inline AstNode* ast();
@@ -130,6 +134,7 @@ class HIRInstruction : public ZoneObject {
   HIRBlock* block_;
 
   bool removed_;
+  bool pinned_;
 
   // Cached representation
   Representation representation_;
@@ -146,15 +151,7 @@ class HIRInstruction : public ZoneObject {
     return reinterpret_cast<HIR##V*>(instr); \
   }
 
-class HIRPinnedInstruction : public HIRInstruction {
- public:
-  HIRPinnedInstruction(Type type);
-  HIRPinnedInstruction(Type type, ScopeSlot* slot);
-
-  bool IsPinned();
-};
-
-class HIRPhi : public HIRPinnedInstruction {
+class HIRPhi : public HIRInstruction {
  public:
   HIRPhi(ScopeSlot* slot);
 
@@ -205,8 +202,15 @@ class HIRFunction : public HIRInstruction {
   HIR_DEFAULT_METHODS(Function)
 };
 
-class HIREntry : public HIRPinnedInstruction {
-  public:
+class HIRNil : public HIRInstruction {
+ public:
+  HIRNil();
+
+  HIR_DEFAULT_METHODS(Nil)
+};
+
+class HIREntry : public HIRInstruction {
+ public:
   HIREntry(int context_slots);
 
   void Print(PrintBuffer* p);
@@ -218,7 +222,7 @@ class HIREntry : public HIRPinnedInstruction {
   int context_slots_;
 };
 
-class HIRReturn : public HIRPinnedInstruction {
+class HIRReturn : public HIRInstruction {
   public:
   HIRReturn();
 
@@ -227,7 +231,7 @@ class HIRReturn : public HIRPinnedInstruction {
  private:
 };
 
-class HIRIf : public HIRPinnedInstruction {
+class HIRIf : public HIRInstruction {
   public:
   HIRIf();
 
@@ -236,7 +240,7 @@ class HIRIf : public HIRPinnedInstruction {
  private:
 };
 
-class HIRGoto : public HIRPinnedInstruction {
+class HIRGoto : public HIRInstruction {
   public:
   HIRGoto();
 
@@ -245,7 +249,7 @@ class HIRGoto : public HIRPinnedInstruction {
  private:
 };
 
-class HIRCollectGarbage : public HIRPinnedInstruction {
+class HIRCollectGarbage : public HIRInstruction {
   public:
   HIRCollectGarbage();
 
@@ -254,7 +258,7 @@ class HIRCollectGarbage : public HIRPinnedInstruction {
  private:
 };
 
-class HIRGetStackTrace : public HIRPinnedInstruction {
+class HIRGetStackTrace : public HIRInstruction {
   public:
   HIRGetStackTrace();
 
@@ -301,6 +305,15 @@ class HIRStoreContext : public HIRInstruction {
   ScopeSlot* context_slot_;
 };
 
+class HIRLoadProperty : public HIRInstruction {
+ public:
+  HIRLoadProperty();
+
+  HIR_DEFAULT_METHODS(LoadProperty)
+
+ private:
+};
+
 class HIRStoreProperty : public HIRInstruction {
  public:
   HIRStoreProperty();
@@ -308,6 +321,15 @@ class HIRStoreProperty : public HIRInstruction {
   void CalculateRepresentation();
 
   HIR_DEFAULT_METHODS(StoreProperty)
+
+ private:
+};
+
+class HIRDeleteProperty : public HIRInstruction {
+ public:
+  HIRDeleteProperty();
+
+  HIR_DEFAULT_METHODS(DeleteProperty)
 
  private:
 };
@@ -334,7 +356,7 @@ class HIRAllocateArray : public HIRInstruction {
  private:
 };
 
-class HIRLoadArg : public HIRPinnedInstruction {
+class HIRLoadArg : public HIRInstruction {
  public:
   HIRLoadArg();
 
@@ -343,7 +365,7 @@ class HIRLoadArg : public HIRPinnedInstruction {
  private:
 };
 
-class HIRLoadVarArg : public HIRPinnedInstruction {
+class HIRLoadVarArg : public HIRInstruction {
  public:
   HIRLoadVarArg();
 
@@ -354,7 +376,7 @@ class HIRLoadVarArg : public HIRPinnedInstruction {
  private:
 };
 
-class HIRStoreArg : public HIRPinnedInstruction {
+class HIRStoreArg : public HIRInstruction {
  public:
   HIRStoreArg();
 
@@ -363,7 +385,7 @@ class HIRStoreArg : public HIRPinnedInstruction {
  private:
 };
 
-class HIRStoreVarArg : public HIRPinnedInstruction {
+class HIRStoreVarArg : public HIRInstruction {
  public:
   HIRStoreVarArg();
 
@@ -372,7 +394,7 @@ class HIRStoreVarArg : public HIRPinnedInstruction {
  private:
 };
 
-class HIRAlignStack : public HIRPinnedInstruction {
+class HIRAlignStack : public HIRInstruction {
  public:
   HIRAlignStack();
 
@@ -381,7 +403,7 @@ class HIRAlignStack : public HIRPinnedInstruction {
  private:
 };
 
-class HIRCall : public HIRPinnedInstruction {
+class HIRCall : public HIRInstruction {
  public:
   HIRCall();
 

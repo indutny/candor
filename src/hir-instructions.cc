@@ -8,22 +8,26 @@ namespace internal {
 
 HIRInstruction::HIRInstruction(Type type) :
     id(-1),
+    gcm_visited(0),
     type_(type),
     slot_(NULL),
     ast_(NULL),
     lir_(NULL),
     removed_(false),
+    pinned_(true),
     representation_(kHoleRepresentation) {
 }
 
 
 HIRInstruction::HIRInstruction(Type type, ScopeSlot* slot) :
     id(-1),
+    gcm_visited(0),
     type_(type),
     slot_(slot),
     ast_(NULL),
     lir_(NULL),
     removed_(false),
+    pinned_(true),
     representation_(kHoleRepresentation) {
 }
 
@@ -55,6 +59,16 @@ void HIRInstruction::ReplaceArg(HIRInstruction* o, HIRInstruction* n) {
 
       break;
     }
+  }
+}
+
+
+void HIRInstruction::Remove() {
+  removed_ = true;
+
+  HIRInstructionList::Item* head = args()->head();
+  for (; head != NULL; head = head->next()) {
+    head->value()->RemoveUse(this);
   }
 }
 
@@ -102,25 +116,23 @@ void HIRInstruction::Print(PrintBuffer* p) {
 
 
 bool HIRInstruction::IsPinned() {
-  return false;
+  return pinned_;
 }
 
 
-HIRPinnedInstruction::HIRPinnedInstruction(Type type) : HIRInstruction(type) {
+HIRInstruction* HIRInstruction::Unpin() {
+  pinned_ = false;
+  return this;
 }
 
 
-HIRPinnedInstruction::HIRPinnedInstruction(Type type, ScopeSlot* slot)
-    : HIRInstruction(type, slot) {
+HIRInstruction* HIRInstruction::Pin() {
+  pinned_ = true;
+  return this;
 }
 
 
-bool HIRPinnedInstruction::IsPinned() {
-  return true;
-}
-
-
-HIRPhi::HIRPhi(ScopeSlot* slot) : HIRPinnedInstruction(kPhi, slot),
+HIRPhi::HIRPhi(ScopeSlot* slot) : HIRInstruction(kPhi, slot),
                                   input_count_(0) {
   inputs_[0] = NULL;
   inputs_[1] = NULL;
@@ -199,7 +211,11 @@ void HIRFunction::Print(PrintBuffer* p) {
 }
 
 
-HIREntry::HIREntry(int context_slots_) : HIRPinnedInstruction(kEntry),
+HIRNil::HIRNil() : HIRInstruction(kNil) {
+}
+
+
+HIREntry::HIREntry(int context_slots_) : HIRInstruction(kEntry),
                                          context_slots_(context_slots_) {
 }
 
@@ -209,23 +225,23 @@ void HIREntry::Print(PrintBuffer* p) {
 }
 
 
-HIRReturn::HIRReturn() : HIRPinnedInstruction(kReturn) {
+HIRReturn::HIRReturn() : HIRInstruction(kReturn) {
 }
 
 
-HIRIf::HIRIf() : HIRPinnedInstruction(kIf) {
+HIRIf::HIRIf() : HIRInstruction(kIf) {
 }
 
 
-HIRGoto::HIRGoto() : HIRPinnedInstruction(kGoto) {
+HIRGoto::HIRGoto() : HIRInstruction(kGoto) {
 }
 
 
-HIRCollectGarbage::HIRCollectGarbage() : HIRPinnedInstruction(kCollectGarbage) {
+HIRCollectGarbage::HIRCollectGarbage() : HIRInstruction(kCollectGarbage) {
 }
 
 
-HIRGetStackTrace::HIRGetStackTrace() : HIRPinnedInstruction(kGetStackTrace) {
+HIRGetStackTrace::HIRGetStackTrace() : HIRInstruction(kGetStackTrace) {
 }
 
 
@@ -263,8 +279,9 @@ void HIRBinOp::CalculateRepresentation() {
 }
 
 
-HIRLoadContext::HIRLoadContext(ScopeSlot* slot) : HIRInstruction(kLoadContext),
-                                                  context_slot_(slot) {
+HIRLoadContext::HIRLoadContext(ScopeSlot* slot)
+    : HIRInstruction(kLoadContext),
+      context_slot_(slot) {
 }
 
 
@@ -281,14 +298,22 @@ void HIRStoreContext::CalculateRepresentation() {
 }
 
 
+HIRLoadProperty::HIRLoadProperty() : HIRInstruction(kLoadProperty) {
+}
+
+
 HIRStoreProperty::HIRStoreProperty() : HIRInstruction(kStoreProperty) {
 }
 
 
 void HIRStoreProperty::CalculateRepresentation() {
-  // Basically store property returns it's third argument
+  // Basically store property returns it's first argument
   assert(args()->length() == 3);
-  representation_ = args()->tail()->value()->representation();
+  representation_ = args()->head()->value()->representation();
+}
+
+
+HIRDeleteProperty::HIRDeleteProperty() : HIRInstruction(kDeleteProperty) {
 }
 
 
@@ -310,11 +335,11 @@ void HIRAllocateArray::CalculateRepresentation() {
 }
 
 
-HIRLoadArg::HIRLoadArg() : HIRPinnedInstruction(kLoadArg) {
+HIRLoadArg::HIRLoadArg() : HIRInstruction(kLoadArg) {
 }
 
 
-HIRLoadVarArg::HIRLoadVarArg() : HIRPinnedInstruction(kLoadVarArg) {
+HIRLoadVarArg::HIRLoadVarArg() : HIRInstruction(kLoadVarArg) {
 }
 
 
@@ -323,19 +348,19 @@ void HIRLoadVarArg::CalculateRepresentation() {
 }
 
 
-HIRStoreArg::HIRStoreArg() : HIRPinnedInstruction(kStoreArg) {
+HIRStoreArg::HIRStoreArg() : HIRInstruction(kStoreArg) {
 }
 
 
-HIRStoreVarArg::HIRStoreVarArg() : HIRPinnedInstruction(kStoreVarArg) {
+HIRStoreVarArg::HIRStoreVarArg() : HIRInstruction(kStoreVarArg) {
 }
 
 
-HIRAlignStack::HIRAlignStack() : HIRPinnedInstruction(kAlignStack) {
+HIRAlignStack::HIRAlignStack() : HIRInstruction(kAlignStack) {
 }
 
 
-HIRCall::HIRCall() : HIRPinnedInstruction(kCall) {
+HIRCall::HIRCall() : HIRInstruction(kCall) {
 }
 
 

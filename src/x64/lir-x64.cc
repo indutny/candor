@@ -202,8 +202,10 @@ void LStoreProperty::Generate(Masm* masm) {
   __ IsNil(rax, NULL, &done);
 
   Operand qmap(rbx, HObject::kMapOffset);
+  __ push(rbx);
   __ mov(rbx, qmap);
   __ addq(rax, rbx);
+  __ pop(rbx);
 
   Operand slot(rax, 0);
   __ mov(slot, rcx);

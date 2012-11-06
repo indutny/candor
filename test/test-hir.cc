@@ -27,7 +27,7 @@ TEST_START(hir)
            "i4 = Literal[1]\n"
            "i6 = Literal[a]\n"
            "i8 = StoreProperty(i2, i6, i4)\n"
-           "i10 = Return(i2)\n")
+           "i10 = Return(i8)\n")
   HIR_TEST("return ['a']",
            "# Block 0\n"
            "i0 = Entry[0]\n"
@@ -35,7 +35,7 @@ TEST_START(hir)
            "i4 = Literal[0]\n"
            "i6 = Literal[a]\n"
            "i8 = StoreProperty(i2, i4, i6)\n"
-           "i10 = Return(i2)\n")
+           "i10 = Return(i8)\n")
   HIR_TEST("a = {}\na.b = 1\ndelete a.b\nreturn a.b",
            "# Block 0\n"
            "i0 = Entry[0]\n"
@@ -44,10 +44,10 @@ TEST_START(hir)
            "i6 = Literal[b]\n"
            "i8 = StoreProperty(i2, i6, i4)\n"
            "i10 = Literal[b]\n"
-           "i12 = DeleteProperty(i2, i10)\n"
+           "i12 = DeleteProperty(i8, i10)\n"
            "i14 = Nil\n"
            "i16 = Literal[b]\n"
-           "i18 = LoadProperty(i2, i16)\n"
+           "i18 = LoadProperty(i12, i16)\n"
            "i20 = Return(i18)\n")
   HIR_TEST("a = global\nreturn a:b(1,2)",
            "# Block 0\n"
@@ -79,12 +79,12 @@ TEST_START(hir)
            "i14 = StoreProperty(i8, i10, i12)\n"
            "i16 = Literal[1]\n"
            "i18 = Literal[4]\n"
-           "i20 = StoreProperty(i8, i16, i18)\n"
+           "i20 = StoreProperty(i14, i16, i18)\n"
            "i22 = Literal[2]\n"
-           "i24 = Sizeof(i8)\n"
+           "i24 = Sizeof(i20)\n"
            "i26 = BinOp(i22, i24)\n"
            "i28 = AlignStack(i26)\n"
-           "i30 = StoreVarArg(i8)\n"
+           "i30 = StoreVarArg(i20)\n"
            "i32 = StoreArg(i6)\n"
            "i34 = StoreArg(i4)\n"
            "i36 = Call(i2, i26)\n"
@@ -142,12 +142,12 @@ TEST_START(hir)
   HIR_TEST("i = 0\nreturn i && 1",
            "# Block 0\n"
            "i0 = Entry[0]\n"
-           "i2 = Literal[0]\n"
            "i4 = Goto\n"
            "# succ: 1\n"
            "--------\n"
            "# Block 1\n"
            "# dom: 0\n"
+           "i2 = Literal[0]\n"
            "i6 = If(i2)\n"
            "# succ: 2 3\n"
            "--------\n"
@@ -169,12 +169,12 @@ TEST_START(hir)
   HIR_TEST("i = 0\nreturn i || 1",
            "# Block 0\n"
            "i0 = Entry[0]\n"
-           "i2 = Literal[0]\n"
            "i4 = Goto\n"
            "# succ: 1\n"
            "--------\n"
            "# Block 1\n"
            "# dom: 0\n"
+           "i2 = Literal[0]\n"
            "i6 = If(i2)\n"
            "# succ: 2 3\n"
            "--------\n"
@@ -379,7 +379,6 @@ TEST_START(hir)
            "--------\n"
            "# Block 3\n"
            "# dom: 2\n"
-           "i14 = Literal[2]\n"
            "i16 = Literal[true]\n"
            "i18 = If(i16)\n"
            "# succ: 6 7\n"
@@ -396,6 +395,7 @@ TEST_START(hir)
            "--------\n"
            "# Block 6\n"
            "# dom: 3\n"
+           "i14 = Literal[2]\n"
            "i20 = Goto\n"
            "# succ: 8\n"
            "--------\n"
@@ -455,7 +455,6 @@ TEST_START(hir)
            "# dom: 0\n"
            "i10 = Phi(i2, i22)\n"
            "i12 = Phi(i4, i32)\n"
-           "i14 = Phi(i6, i42)\n"
            "i16 = Goto\n"
            "# succ: 2\n"
            "--------\n"

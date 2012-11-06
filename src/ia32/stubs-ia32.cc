@@ -786,9 +786,6 @@ void DeletePropertyStub::Generate() {
 
   __ Popad(reg_nil);
 
-  // Delete property returns nil
-  __ mov(eax, Immediate(Heap::kTagNil));
-
   GenerateEpilogue();
 }
 

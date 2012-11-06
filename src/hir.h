@@ -59,6 +59,8 @@ class HIRBlock : public ZoneObject {
   HIRInstruction* Assign(ScopeSlot* slot, HIRInstruction* value);
   void Remove(HIRInstruction* instr);
 
+  inline HIRBlock* root();
+  inline void root(HIRBlock* root);
   inline HIRBlock* AddSuccessor(HIRBlock* b);
   inline HIRInstruction* Add(HIRInstruction::Type type);
   inline HIRInstruction* Add(HIRInstruction::Type type, ScopeSlot* slot);
@@ -94,6 +96,7 @@ class HIRBlock : public ZoneObject {
   inline void semi(HIRBlock* semi);
   inline HIRBlock* dominator();
   inline void dominator(HIRBlock* dom);
+  inline int dominator_depth();
   inline HIRBlockList* dominates();
 
   inline LBlock* lir();
@@ -117,6 +120,7 @@ class HIRBlock : public ZoneObject {
 
   int pred_count_;
   int succ_count_;
+  HIRBlock* root_;
   HIRBlock* pred_[2];
   HIRBlock* succ_[2];
 
@@ -126,6 +130,7 @@ class HIRBlock : public ZoneObject {
   HIRBlock* label_;
   HIRBlock* semi_;
   HIRBlock* dominator_;
+  int dominator_depth_;
   HIRBlockList dominates_;
 
   // Allocator augmentation
@@ -160,9 +165,13 @@ class HIRGen : public Visitor<HIRInstruction> {
   void DeriveDominators();
   void EnumerateDFS(HIRBlock* b, HIRBlockList* blocks);
   void GlobalCodeMotion();
+  void ScheduleEarly(HIRInstruction* instr, HIRBlock* root);
+  void ScheduleLate(HIRInstruction* instr);
+  HIRBlock* FindLCA(HIRBlock* a, HIRBlock* b);
 
   void Replace(HIRInstruction* o, HIRInstruction* n);
 
+  HIRInstruction* Visit(AstNode* stmt);
   HIRInstruction* VisitFunction(AstNode* stmt);
   HIRInstruction* VisitAssign(AstNode* stmt);
   HIRInstruction* VisitReturn(AstNode* stmt);

@@ -29,6 +29,8 @@ HIRGen::HIRGen(Heap* heap, AstNode* root) : Visitor<HIRInstruction>(kPreorder),
 
     current->body = b;
     Visit(current->ast());
+
+    set_current_root(NULL);
   }
 
   PrunePhis();
@@ -39,6 +41,7 @@ HIRGen::HIRGen(Heap* heap, AstNode* root) : Visitor<HIRInstruction>(kPreorder),
 
 void HIRGen::PrunePhis() {
   HIRPhiList queue_;
+  HIRPhiList phis_;
 
   // First - get list of all phis in all blocks
   // (and remove them from those blocks for now).
@@ -47,25 +50,25 @@ void HIRGen::PrunePhis() {
     HIRBlock* block = bhead->value();
 
     while (block->phis()->length() > 0) {
-      queue_.Push(block->phis()->Shift());
+      HIRPhi* phi = block->phis()->Shift();
+      queue_.Push(phi);
+      phis_.Push(phi);
     }
   }
 
   // Filter out phis that have zero or one inputs
   HIRPhiList::Item* phead = queue_.head();
-  HIRPhiList::Item* next;
-  for (; phead != NULL; phead = next) {
+  for (; phead != NULL; phead = phead->next()) {
     HIRPhi* phi = phead->value();
-    next = phead->next();
 
     if (phi->input_count() == 2) {
       if (phi->InputAt(1) != phi) continue;
       phi->input_count(1);
     }
-    queue_.Remove(phead);
 
     if (phi->input_count() == 0) {
       phi->Nilify();
+      phi->Unpin();
     } else if (phi->input_count() == 1) {
       // Enqueue all phi uses
       HIRInstructionList::Item* head = phi->uses()->head();
@@ -74,7 +77,6 @@ void HIRGen::PrunePhis() {
             head->value()->Is(HIRInstruction::kPhi)) {
           HIRPhi* use = HIRPhi::Cast(head->value());
           queue_.Push(use);
-          if (next == NULL) next = queue_.tail();
         }
       }
 
@@ -84,11 +86,16 @@ void HIRGen::PrunePhis() {
   }
 
   // Put phis back into blocks
-  phead = queue_.head();
+  phead = phis_.head();
   for (; phead != NULL; phead = phead->next()) {
     HIRPhi* phi = phead->value();
 
-    if (phi->IsRemoved()) continue;
+    // Do not add removed and unused phis
+    if (!phi->Is(HIRInstruction::kPhi) ||phi->IsRemoved()) continue;
+    if (phi->uses()->length() == 0) {
+      phi->block()->Remove(phi);
+      continue;
+    }
     phi->block()->phis()->Push(phi);
   }
 }
@@ -176,6 +183,186 @@ void HIRGen::EnumerateDFS(HIRBlock* b, HIRBlockList* blocks) {
 // Implementation of Globel Code Motion algorithm from
 // Cliff Click's paper.
 void HIRGen::GlobalCodeMotion() {
+  HIRInstructionList instructions_;
+
+  // For each block
+  HIRBlockList::Item* bhead = blocks_.head();
+  for (; bhead != NULL; bhead = bhead->next()) {
+    HIRBlock* block = bhead->value();
+
+    if (block->IsLoop()) {
+      // Pin instructions that are second inputs of loop's phis
+      HIRPhiList::Item* phead = block->phis()->head();
+      for (; phead != NULL; phead = phead->next()) {
+        HIRPhi* phi = phead->value();
+        phi->InputAt(1)->Pin();
+      }
+    }
+  }
+
+  // For each block
+  bhead = blocks_.head();
+  for (; bhead != NULL; bhead = bhead->next()) {
+    HIRBlock* block = bhead->value();
+
+    // Schedule arguments of every pinned instruction
+    // (And clear blocks)
+    HIRInstruction* instr;
+    while ((instr = block->instructions()->Shift()) != NULL) {
+      instructions_.Push(instr);
+      if (!instr->IsPinned()) continue;
+
+      instr->gcm_visited = 1;
+      HIRInstructionList::Item* ahead = instr->args()->head();
+      for (; ahead != NULL; ahead = ahead->next()) {
+        ScheduleEarly(ahead->value(), block->root());
+      }
+    }
+  }
+
+  // Schedule early all unscheduled and unpinned instructions
+  HIRInstructionList::Item* ihead = instructions_.head();
+  for (; ihead != NULL; ihead = ihead->next()) {
+    HIRInstruction* instr = ihead->value();
+    if (instr->IsPinned() || instr->gcm_visited == 1) {
+      continue;
+    }
+    ScheduleEarly(instr, instr->block()->root());
+  }
+
+  // Schedule uses of every pinned instruction
+  ihead = instructions_.head();
+  for (; ihead != NULL; ihead = ihead->next()) {
+    HIRInstruction* instr = ihead->value();
+
+    if (!instr->IsPinned()) continue;
+
+    instr->gcm_visited = 2;
+    HIRInstructionList::Item* uhead = instr->uses()->head();
+    for (; uhead != NULL; uhead = uhead->next()) {
+      ScheduleLate(uhead->value());
+    }
+  }
+
+  // Constants have no uses - but schedule them anyway,
+  // also visit previously unvisited instructions
+  ihead = instructions_.head();
+  for (; ihead != NULL; ihead = ihead->next()) {
+    HIRInstruction* instr = ihead->value();
+    if (instr->IsPinned() || instr->gcm_visited == 2) {
+      continue;
+    }
+    ScheduleLate(instr);
+  }
+
+  // Put instructions back into blocks
+  ihead = instructions_.tail();
+  for (; ihead != NULL; ihead = ihead->prev()) {
+    HIRInstruction* instr = ihead->value();
+
+    if (instr->Is(HIRInstruction::kGoto) ||
+        instr->Is(HIRInstruction::kIf) ||
+        instr->Is(HIRInstruction::kReturn)) {
+      // Control instructions are always at end
+      instr->block()->instructions()->Push(instr);
+    } else {
+      // Others in any positions
+      instr->block()->instructions()->Unshift(instr);
+    }
+  }
+}
+
+
+void HIRGen::ScheduleEarly(HIRInstruction* instr, HIRBlock* root) {
+  // Ignore already visited instructions
+  if (instr->gcm_visited) return;
+  instr->gcm_visited = 1;
+  if (instr->IsPinned()) return;
+
+  // Start with the shallowest dominator
+  instr->block(root);
+
+  // Schedule all inputs
+  HIRInstructionList::Item* ahead = instr->args()->head();
+  for (; ahead != NULL; ahead = ahead->next()) {
+    HIRInstruction* arg = ahead->value();
+    ScheduleEarly(arg, root);
+
+    // Choose the deepest dominator input
+    if (instr->block()->dominator_depth() < arg->block()->dominator_depth()) {
+      instr->block(arg->block());
+    }
+  }
+}
+
+
+void HIRGen::ScheduleLate(HIRInstruction* instr) {
+  // Ignore already visited instructions
+  if (instr->gcm_visited == 2) return;
+  instr->gcm_visited = 2;
+  if (instr->IsPinned()) return;
+
+  HIRBlock* lca = NULL;
+
+  HIRInstructionList::Item* uhead = instr->uses()->head();
+  for (; uhead != NULL; uhead = uhead->next()) {
+    HIRInstruction* use = uhead->value();
+    ScheduleLate(use);
+    HIRBlock* use_block = use->block();
+
+    // Use occurs in `use`'s block, for phis
+    if (use->Is(HIRInstruction::kPhi)) {
+      int j = HIRPhi::Cast(use)->InputAt(0) == instr ? 0 : 1;
+      use_block = use->block()->PredAt(j);
+    }
+
+    lca = FindLCA(lca, use_block);
+  }
+
+  if (lca == NULL) lca = instr->block();
+
+  // Select best block between ->block() and lca
+  HIRBlock* best = lca;
+
+  // Constants should be close to instructions
+  if (!instr->Is(HIRInstruction::kLiteral) &&
+      !instr->Is(HIRInstruction::kNil)) {
+    while (lca != instr->block()) {
+      if (lca->loop_depth < best->loop_depth) {
+        best = lca;
+      }
+      lca = lca->dominator();
+    }
+  }
+  instr->block(lca);
+}
+
+
+HIRBlock* HIRGen::FindLCA(HIRBlock* a, HIRBlock* b) {
+  if (a == NULL) return b;
+
+  while (a->dominator_depth() > b->dominator_depth()) {
+    a = a->dominator();
+  }
+
+  while (b->dominator_depth() > a->dominator_depth()) {
+    b = b->dominator();
+  }
+
+  while (a != b) {
+    a = a->dominator();
+    b = b->dominator();
+  }
+
+  return a;
+}
+
+
+HIRInstruction* HIRGen::Visit(AstNode* stmt) {
+  // Do not generate code for functions in the ends of the graph
+  if (current_block()->IsEnded()) return Add(new HIRNil());
+
+  return Visitor<HIRInstruction>::Visit(stmt);
 }
 
 
@@ -252,7 +439,9 @@ HIRInstruction* HIRGen::VisitFunction(AstNode* stmt) {
           one->length(1);
 
           HIRInstruction* hone = Visit(one);
-          index = Add(new HIRBinOp(BinOp::kAdd))->AddArg(index)->AddArg(hone);
+          index = Add(new HIRBinOp(BinOp::kAdd))
+              ->AddArg(index)
+              ->AddArg(hone);
         }
       } else {
         HIRInstruction* length = Add(new HIRSizeof())
@@ -266,7 +455,7 @@ HIRInstruction* HIRGen::VisitFunction(AstNode* stmt) {
     VisitChildren(stmt);
 
     if (!current_block()->IsEnded()) {
-      HIRInstruction* val = Add(HIRInstruction::kNil);
+      HIRInstruction* val = Add(new HIRNil());
       HIRInstruction* end = Return(new HIRReturn());
       end->AddArg(val);
     }
@@ -294,18 +483,27 @@ HIRInstruction* HIRGen::VisitAssign(AstNode* stmt) {
     } else {
       Add(new HIRStoreContext(value->slot()))->AddArg(rhs);
     }
-    return rhs;
   } else if (stmt->lhs()->is(AstNode::kMember)) {
     HIRInstruction* property = Visit(stmt->lhs()->rhs());
     HIRInstruction* receiver = Visit(stmt->lhs()->lhs());
 
-    return Add(new HIRStoreProperty())
+    // This is a little bit tricky, every store to local object
+    // generates new object (virtually). It seems to be pretty
+    // useful for GCM
+    HIRInstruction* updated_obj = Add(new HIRStoreProperty())
         ->AddArg(receiver)
         ->AddArg(property)
-        ->AddArg(rhs);
+        ->AddArg(rhs)
+        ->Unpin();
+
+    if (receiver->slot() != NULL) {
+      assert(receiver->slot()->is_stack());
+      Assign(receiver->slot(), updated_obj);
+    }
   } else {
     UNEXPECTED
   }
+  return rhs;
 }
 
 
@@ -364,7 +562,6 @@ HIRInstruction* HIRGen::VisitIf(AstNode* stmt) {
 
 HIRInstruction* HIRGen::VisitWhile(AstNode* stmt) {
   loop_depth_++;
-
   BreakContinueInfo* old = break_continue_info_;
   HIRBlock* start = CreateBlock();
 
@@ -396,13 +593,13 @@ HIRInstruction* HIRGen::VisitWhile(AstNode* stmt) {
   }
   Goto(loop);
   loop->Goto(start);
+  end->loop_depth= --loop_depth_;
 
   // Next current block should not be a join
   set_current_block(break_continue_info_->GetBreak());
 
   // Restore break continue info
   break_continue_info_ = old;
-  loop_depth_--;
 
   return NULL;
 }
@@ -451,7 +648,10 @@ HIRInstruction* HIRGen::VisitUnOp(AstNode* stmt) {
       res = Visit(op->lhs());
       load = res;
 
-      HIRInstruction* bin = Add(new HIRBinOp(type))->AddArg(res)->AddArg(ione);
+      HIRInstruction* bin = Add(new HIRBinOp(type))
+          ->Unpin()
+          ->AddArg(res)
+          ->AddArg(ione);
 
       bin->ast(wrap);
       value = bin;
@@ -471,10 +671,16 @@ HIRInstruction* HIRGen::VisitUnOp(AstNode* stmt) {
       HIRInstruction* receiver = load->args()->head()->value();
       HIRInstruction* property = load->args()->tail()->value();
 
-      Add(new HIRStoreProperty())
+      HIRInstruction* updated_obj = Add(new HIRStoreProperty())
+          ->Unpin()
           ->AddArg(receiver)
           ->AddArg(property)
           ->AddArg(value);
+
+      if (receiver->slot() != NULL) {
+        assert(receiver->slot()->is_stack());
+        Assign(receiver->slot(), updated_obj);
+      }
     } else {
       UNEXPECTED
     }
@@ -508,7 +714,7 @@ HIRInstruction* HIRGen::VisitBinOp(AstNode* stmt) {
   if (!BinOp::is_bool_logic(op->subtype())) {
     HIRInstruction* lhs = Visit(op->lhs());
     HIRInstruction* rhs = Visit(op->rhs());
-    res = Add(new HIRBinOp(op->subtype()))->AddArg(lhs)->AddArg(rhs);
+    res = Add(new HIRBinOp(op->subtype()))->Unpin()->AddArg(lhs)->AddArg(rhs);
   } else {
     HIRInstruction* lhs = Visit(op->lhs());
     HIRBlock* branch = CreateBlock();
@@ -551,7 +757,7 @@ HIRInstruction* HIRGen::VisitBinOp(AstNode* stmt) {
 
 
 HIRInstruction* HIRGen::VisitObjectLiteral(AstNode* stmt) {
-  HIRInstruction* res = Add(new HIRAllocateObject());
+  HIRInstruction* res = Add(new HIRAllocateObject())->Unpin();
   ObjectLiteral* obj = ObjectLiteral::Cast(stmt);
 
   AstList::Item* khead = obj->keys()->head();
@@ -560,10 +766,11 @@ HIRInstruction* HIRGen::VisitObjectLiteral(AstNode* stmt) {
     HIRInstruction* value = Visit(vhead->value());
     HIRInstruction* key = Visit(khead->value());
 
-    Add(new HIRStoreProperty())
+    res = Add(new HIRStoreProperty())
         ->AddArg(res)
         ->AddArg(key)
-        ->AddArg(value);
+        ->AddArg(value)
+        ->Unpin();
   }
 
   return res;
@@ -571,17 +778,18 @@ HIRInstruction* HIRGen::VisitObjectLiteral(AstNode* stmt) {
 
 
 HIRInstruction* HIRGen::VisitArrayLiteral(AstNode* stmt) {
-  HIRInstruction* res = Add(new HIRAllocateArray());
+  HIRInstruction* res = Add(new HIRAllocateArray())->Unpin();
 
   AstList::Item* head = stmt->children()->head();
   for (uint64_t i = 0; head != NULL; head = head->next(), i++) {
     HIRInstruction* key = GetNumber(i);
     HIRInstruction* value = Visit(head->value());
 
-    Add(new HIRStoreProperty())
+    res = Add(new HIRStoreProperty())
         ->AddArg(res)
         ->AddArg(key)
-        ->AddArg(value);
+        ->AddArg(value)
+        ->Unpin();
   }
 
   return res;
@@ -591,17 +799,24 @@ HIRInstruction* HIRGen::VisitArrayLiteral(AstNode* stmt) {
 HIRInstruction* HIRGen::VisitMember(AstNode* stmt) {
   HIRInstruction* prop = Visit(stmt->rhs());
   HIRInstruction* recv = Visit(stmt->lhs());
-  return Add(HIRInstruction::kLoadProperty)->AddArg(recv)->AddArg(prop);
+  return Add(new HIRLoadProperty())->AddArg(recv)->AddArg(prop)->Unpin();
 }
 
 
 HIRInstruction* HIRGen::VisitDelete(AstNode* stmt) {
   HIRInstruction* prop = Visit(stmt->lhs()->rhs());
   HIRInstruction* recv = Visit(stmt->lhs()->lhs());
-  Add(HIRInstruction::kDeleteProperty)->AddArg(recv)->AddArg(prop);
+  HIRInstruction* updated_obj = Add(new HIRDeleteProperty())
+      ->AddArg(recv)
+      ->AddArg(prop);
+
+  if (recv->slot() != NULL) {
+    assert(recv->slot()->is_stack());
+    Assign(recv->slot(), updated_obj);
+  }
 
   // Delete property returns nil
-  return Add(HIRInstruction::kNil);
+  return Add(new HIRNil());
 }
 
 
@@ -613,7 +828,7 @@ HIRInstruction* HIRGen::VisitCall(AstNode* stmt) {
     AstNode* name = AstValue::Cast(fn->variable())->name();
     if (name->length() == 5 && strncmp(name->value(), "__$gc", 5) == 0) {
       Add(new HIRCollectGarbage());
-      return Add(HIRInstruction::kNil);
+      return Add(new HIRNil());
     } else if (name->length() == 8 &&
                strncmp(name->value(), "__$trace", 8) == 0) {
       return Add(new HIRGetStackTrace());
@@ -678,8 +893,10 @@ HIRInstruction* HIRGen::VisitCall(AstNode* stmt) {
 
     HIRInstruction* property = Visit(fn->variable()->rhs());
 
-    var = Add(HIRInstruction::kLoadProperty)->AddArg(receiver)
-                                            ->AddArg(property);
+    var = Add(new HIRLoadProperty())
+        ->Unpin()
+        ->AddArg(receiver)
+        ->AddArg(property);
   } else {
     var = Visit(fn->variable());
   }
@@ -699,24 +916,24 @@ HIRInstruction* HIRGen::VisitCall(AstNode* stmt) {
 
 HIRInstruction* HIRGen::VisitTypeof(AstNode* stmt) {
   HIRInstruction* lhs = Visit(stmt->lhs());
-  return Add(new HIRTypeof())->AddArg(lhs);
+  return Add(new HIRTypeof())->Unpin()->AddArg(lhs);
 }
 
 
 HIRInstruction* HIRGen::VisitKeysof(AstNode* stmt) {
   HIRInstruction* lhs = Visit(stmt->lhs());
-  return Add(new HIRKeysof())->AddArg(lhs);
+  return Add(new HIRKeysof())->Unpin()->AddArg(lhs);
 }
 
 HIRInstruction* HIRGen::VisitSizeof(AstNode* stmt) {
   HIRInstruction* lhs = Visit(stmt->lhs());
-  return Add(new HIRSizeof())->AddArg(lhs);
+  return Add(new HIRSizeof())->Unpin()->AddArg(lhs);
 }
 
 
 HIRInstruction* HIRGen::VisitClone(AstNode* stmt) {
   HIRInstruction* lhs = Visit(stmt->lhs());
-  return Add(new HIRClone())->AddArg(lhs);
+  return Add(new HIRClone())->Unpin()->AddArg(lhs);
 }
 
 
@@ -724,7 +941,8 @@ HIRInstruction* HIRGen::VisitClone(AstNode* stmt) {
 
 
 HIRInstruction* HIRGen::VisitLiteral(AstNode* stmt) {
-  HIRInstruction* i = Add(new HIRLiteral(stmt->type(), root_.Put(stmt)));
+  HIRInstruction* i = Add(new HIRLiteral(stmt->type(), root_.Put(stmt)))
+      ->Unpin();
 
   i->ast(stmt);
 
@@ -738,7 +956,7 @@ HIRInstruction* HIRGen::VisitNumber(AstNode* stmt) {
 
 
 HIRInstruction* HIRGen::VisitNil(AstNode* stmt) {
-  return Add(HIRInstruction::kNil);
+  return Add(new HIRNil())->Unpin();
 }
 
 
@@ -771,11 +989,13 @@ HIRBlock::HIRBlock(HIRGen* g) : id(g->block_id()),
                                 env_(NULL),
                                 pred_count_(0),
                                 succ_count_(0),
+                                root_(NULL),
                                 parent_(NULL),
                                 ancestor_(NULL),
                                 label_(this),
                                 semi_(this),
                                 dominator_(NULL),
+                                dominator_depth_(-1),
                                 lir_(NULL),
                                 start_id_(-1),
                                 end_id_(-1) {
@@ -848,7 +1068,7 @@ void HIRBlock::MarkPreLoop() {
     ScopeSlot* slot = new ScopeSlot(ScopeSlot::kStack);
     slot->index(i);
 
-    Assign(slot, Add(HIRInstruction::kNil));
+    Assign(slot, Add(new HIRNil()));
   }
 }
 
