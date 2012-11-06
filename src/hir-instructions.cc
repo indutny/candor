@@ -9,6 +9,7 @@ namespace internal {
 HIRInstruction::HIRInstruction(Type type) :
     id(-1),
     gcm_visited(0),
+    is_live(0),
     type_(type),
     slot_(NULL),
     ast_(NULL),
@@ -22,6 +23,7 @@ HIRInstruction::HIRInstruction(Type type) :
 HIRInstruction::HIRInstruction(Type type, ScopeSlot* slot) :
     id(-1),
     gcm_visited(0),
+    is_live(0),
     type_(type),
     slot_(slot),
     ast_(NULL),
@@ -35,6 +37,11 @@ HIRInstruction::HIRInstruction(Type type, ScopeSlot* slot) :
 void HIRInstruction::Init(HIRGen* g, HIRBlock* block) {
   id = g->instr_id();
   block_ = block;
+}
+
+
+inline bool HIRInstruction::HasSideEffects() {
+  return false;
 }
 
 
@@ -112,23 +119,6 @@ void HIRInstruction::Print(PrintBuffer* p) {
     if (head->next() != NULL) p->Print(", ");
   }
   p->Print(")\n");
-}
-
-
-bool HIRInstruction::IsPinned() {
-  return pinned_;
-}
-
-
-HIRInstruction* HIRInstruction::Unpin() {
-  pinned_ = false;
-  return this;
-}
-
-
-HIRInstruction* HIRInstruction::Pin() {
-  pinned_ = true;
-  return this;
 }
 
 
@@ -220,6 +210,11 @@ HIREntry::HIREntry(int context_slots_) : HIRInstruction(kEntry),
 }
 
 
+bool HIREntry::HasSideEffects() {
+  return true;
+}
+
+
 void HIREntry::Print(PrintBuffer* p) {
   p->Print("i%d = Entry[%d]\n", id, context_slots_);
 }
@@ -229,7 +224,17 @@ HIRReturn::HIRReturn() : HIRInstruction(kReturn) {
 }
 
 
+bool HIRReturn::HasSideEffects() {
+  return true;
+}
+
+
 HIRIf::HIRIf() : HIRInstruction(kIf) {
+}
+
+
+bool HIRIf::HasSideEffects() {
+  return true;
 }
 
 
@@ -237,11 +242,26 @@ HIRGoto::HIRGoto() : HIRInstruction(kGoto) {
 }
 
 
+bool HIRGoto::HasSideEffects() {
+  return true;
+}
+
+
 HIRCollectGarbage::HIRCollectGarbage() : HIRInstruction(kCollectGarbage) {
 }
 
 
+bool HIRCollectGarbage::HasSideEffects() {
+  return true;
+}
+
+
 HIRGetStackTrace::HIRGetStackTrace() : HIRInstruction(kGetStackTrace) {
+}
+
+
+bool HIRGetStackTrace::HasSideEffects() {
+  return true;
 }
 
 
@@ -291,6 +311,11 @@ HIRStoreContext::HIRStoreContext(ScopeSlot* slot) :
 }
 
 
+bool HIRStoreContext::HasSideEffects() {
+  return true;
+}
+
+
 void HIRStoreContext::CalculateRepresentation() {
   // Basically store property returns it's first argument
   assert(args()->length() == 1);
@@ -303,6 +328,11 @@ HIRLoadProperty::HIRLoadProperty() : HIRInstruction(kLoadProperty) {
 
 
 HIRStoreProperty::HIRStoreProperty() : HIRInstruction(kStoreProperty) {
+}
+
+
+bool HIRStoreProperty::HasSideEffects() {
+  return true;
 }
 
 
@@ -343,6 +373,11 @@ HIRLoadVarArg::HIRLoadVarArg() : HIRInstruction(kLoadVarArg) {
 }
 
 
+bool HIRLoadVarArg::HasSideEffects() {
+  return true;
+}
+
+
 void HIRLoadVarArg::CalculateRepresentation() {
   representation_ = kArrayRepresentation;
 }
@@ -352,7 +387,17 @@ HIRStoreArg::HIRStoreArg() : HIRInstruction(kStoreArg) {
 }
 
 
+bool HIRStoreArg::HasSideEffects() {
+  return true;
+}
+
+
 HIRStoreVarArg::HIRStoreVarArg() : HIRInstruction(kStoreVarArg) {
+}
+
+
+bool HIRStoreVarArg::HasSideEffects() {
+  return true;
 }
 
 
@@ -360,7 +405,17 @@ HIRAlignStack::HIRAlignStack() : HIRInstruction(kAlignStack) {
 }
 
 
+bool HIRAlignStack::HasSideEffects() {
+  return true;
+}
+
+
 HIRCall::HIRCall() : HIRInstruction(kCall) {
+}
+
+
+bool HIRCall::HasSideEffects() {
+  return true;
 }
 
 

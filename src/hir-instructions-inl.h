@@ -94,6 +94,23 @@ inline bool HIRInstruction::IsBoolean() {
 }
 
 
+inline bool HIRInstruction::IsPinned() {
+  return pinned_;
+}
+
+
+inline HIRInstruction* HIRInstruction::Unpin() {
+  pinned_ = false;
+  return this;
+}
+
+
+inline HIRInstruction* HIRInstruction::Pin() {
+  pinned_ = true;
+  return this;
+}
+
+
 inline HIRBlock* HIRInstruction::block() {
   return block_;
 }

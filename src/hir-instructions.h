@@ -86,11 +86,10 @@ class HIRInstruction : public ZoneObject {
 
   int id;
   int gcm_visited;
+  int is_live;
 
   virtual void ReplaceArg(HIRInstruction* o, HIRInstruction* n);
-  bool IsPinned();
-  HIRInstruction* Unpin();
-  HIRInstruction* Pin();
+  virtual bool HasSideEffects();
   virtual void CalculateRepresentation();
   void Remove();
   void RemoveUse(HIRInstruction* i);
@@ -109,6 +108,10 @@ class HIRInstruction : public ZoneObject {
   inline bool IsHeapNumber();
   inline bool IsString();
   inline bool IsBoolean();
+
+  inline bool IsPinned();
+  inline HIRInstruction* Unpin();
+  inline HIRInstruction* Pin();
 
   inline HIRBlock* block();
   inline void block(HIRBlock* block);
@@ -214,6 +217,7 @@ class HIREntry : public HIRInstruction {
   HIREntry(int context_slots);
 
   void Print(PrintBuffer* p);
+  bool HasSideEffects();
   inline int context_slots();
 
   HIR_DEFAULT_METHODS(Entry)
@@ -226,6 +230,8 @@ class HIRReturn : public HIRInstruction {
   public:
   HIRReturn();
 
+  bool HasSideEffects();
+
   HIR_DEFAULT_METHODS(Return)
 
  private:
@@ -234,6 +240,8 @@ class HIRReturn : public HIRInstruction {
 class HIRIf : public HIRInstruction {
   public:
   HIRIf();
+
+  bool HasSideEffects();
 
   HIR_DEFAULT_METHODS(If)
 
@@ -244,6 +252,8 @@ class HIRGoto : public HIRInstruction {
   public:
   HIRGoto();
 
+  bool HasSideEffects();
+
   HIR_DEFAULT_METHODS(Goto)
 
  private:
@@ -253,6 +263,8 @@ class HIRCollectGarbage : public HIRInstruction {
   public:
   HIRCollectGarbage();
 
+  bool HasSideEffects();
+
   HIR_DEFAULT_METHODS(CollectGarbage)
 
  private:
@@ -261,6 +273,8 @@ class HIRCollectGarbage : public HIRInstruction {
 class HIRGetStackTrace : public HIRInstruction {
   public:
   HIRGetStackTrace();
+
+  bool HasSideEffects();
 
   HIR_DEFAULT_METHODS(GetStackTrace)
 
@@ -297,6 +311,7 @@ class HIRStoreContext : public HIRInstruction {
   HIRStoreContext(ScopeSlot* slot);
 
   void CalculateRepresentation();
+  bool HasSideEffects();
   inline ScopeSlot* context_slot();
 
   HIR_DEFAULT_METHODS(StoreContext)
@@ -318,6 +333,7 @@ class HIRStoreProperty : public HIRInstruction {
  public:
   HIRStoreProperty();
 
+  bool HasSideEffects();
   void CalculateRepresentation();
 
   HIR_DEFAULT_METHODS(StoreProperty)
@@ -369,6 +385,7 @@ class HIRLoadVarArg : public HIRInstruction {
  public:
   HIRLoadVarArg();
 
+  bool HasSideEffects();
   void CalculateRepresentation();
 
   HIR_DEFAULT_METHODS(LoadVarArg)
@@ -380,6 +397,8 @@ class HIRStoreArg : public HIRInstruction {
  public:
   HIRStoreArg();
 
+  bool HasSideEffects();
+
   HIR_DEFAULT_METHODS(StoreArg)
 
  private:
@@ -388,6 +407,8 @@ class HIRStoreArg : public HIRInstruction {
 class HIRStoreVarArg : public HIRInstruction {
  public:
   HIRStoreVarArg();
+
+  bool HasSideEffects();
 
   HIR_DEFAULT_METHODS(StoreVarArg)
 
@@ -398,6 +419,8 @@ class HIRAlignStack : public HIRInstruction {
  public:
   HIRAlignStack();
 
+  bool HasSideEffects();
+
   HIR_DEFAULT_METHODS(AlignStack)
 
  private:
@@ -406,6 +429,8 @@ class HIRAlignStack : public HIRInstruction {
 class HIRCall : public HIRInstruction {
  public:
   HIRCall();
+
+  bool HasSideEffects();
 
   HIR_DEFAULT_METHODS(Call)
 

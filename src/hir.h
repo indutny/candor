@@ -164,6 +164,8 @@ class HIRGen : public Visitor<HIRInstruction> {
   void PrunePhis();
   void DeriveDominators();
   void EnumerateDFS(HIRBlock* b, HIRBlockList* blocks);
+  void EliminateDeadCode();
+  void EliminateDeadCode(HIRInstruction* instr);
   void GlobalCodeMotion();
   void ScheduleEarly(HIRInstruction* instr, HIRBlock* root);
   void ScheduleLate(HIRInstruction* instr);

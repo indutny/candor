@@ -18,7 +18,6 @@ TEST_START(hir)
            "# Block 0\n"
            "i0 = Entry[0]\n"
            "i2 = Literal[1]\n"
-           "i4 = Literal[1]\n"
            "i6 = Return(i2)\n")
   HIR_TEST("return { a: 1 }",
            "# Block 0\n"
@@ -45,7 +44,6 @@ TEST_START(hir)
            "i8 = StoreProperty(i2, i6, i4)\n"
            "i10 = Literal[b]\n"
            "i12 = DeleteProperty(i8, i10)\n"
-           "i14 = Nil\n"
            "i16 = Literal[b]\n"
            "i18 = LoadProperty(i12, i16)\n"
            "i20 = Return(i18)\n")
@@ -134,8 +132,6 @@ TEST_START(hir)
            "# Block 0\n"
            "i0 = Entry[0]\n"
            "i2 = Literal[0]\n"
-           "i4 = Literal[1]\n"
-           "i6 = BinOp(i2, i4)\n"
            "i8 = Return(i2)\n")
 
   // Logical operations
@@ -421,7 +417,7 @@ TEST_START(hir)
            "i40 = Return(i6)\n")
 
   // Regression
-  HIR_TEST("global.x++",
+  HIR_TEST("return global.x++",
            "# Block 0\n"
            "i0 = Entry[0]\n"
            "i2 = Literal[1]\n"
@@ -430,8 +426,7 @@ TEST_START(hir)
            "i8 = LoadProperty(i6, i4)\n"
            "i10 = BinOp(i8, i2)\n"
            "i12 = StoreProperty(i6, i4, i10)\n"
-           "i14 = Nil\n"
-           "i16 = Return(i14)\n")
+           "i14 = Return(i8)\n")
 
   // Phi loop
   HIR_TEST("i = 10\n"
@@ -447,7 +442,6 @@ TEST_START(hir)
            "i0 = Entry[0]\n"
            "i2 = Literal[10]\n"
            "i4 = Literal[0]\n"
-           "i6 = Nil\n"
            "i8 = Goto\n"
            "# succ: 1\n"
            "--------\n"

@@ -38,6 +38,7 @@ HIRGen::HIRGen(Heap* heap, const char* filename, AstNode* root)
 
   PrunePhis();
   DeriveDominators();
+  EliminateDeadCode();
   GlobalCodeMotion();
 
   if (log_) {
@@ -198,6 +199,47 @@ void HIRGen::EnumerateDFS(HIRBlock* b, HIRBlockList* blocks) {
     if (succ->dfs_id != -1) continue;
     succ->parent(b);
     EnumerateDFS(succ, blocks);
+  }
+}
+
+
+void HIRGen::EliminateDeadCode() {
+  HIRInstructionList instructions_;
+
+  // For each block
+  HIRBlockList::Item* bhead = blocks_.head();
+  for (; bhead != NULL; bhead = bhead->next()) {
+    HIRBlock* block = bhead->value();
+
+    // Visit instructions with side effects
+    HIRInstruction* instr;
+    while ((instr = block->instructions()->Shift()) != NULL) {
+      instructions_.Push(instr);
+      if (!instr->HasSideEffects()) continue;
+
+      EliminateDeadCode(instr);
+    }
+  }
+
+  // And filter out instructions that are live
+  HIRInstructionList::Item* ihead = instructions_.head();
+  for (; ihead != NULL; ihead = ihead->next()) {
+    HIRInstruction* instr = ihead->value();
+    if (!instr->is_live) continue;
+    instr->block()->instructions()->Push(instr);
+  }
+}
+
+
+void HIRGen::EliminateDeadCode(HIRInstruction* instr) {
+  // Skip already process instructions
+  if (instr->is_live) return;
+  instr->is_live = true;
+
+  // Inputs of live instructions are live
+  HIRInstructionList::Item* ahead = instr->args()->head();
+  for (; ahead != NULL; ahead = ahead->next()) {
+    EliminateDeadCode(ahead->value());
   }
 }
 
