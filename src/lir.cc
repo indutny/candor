@@ -131,6 +131,10 @@ void LGen::VisitGoto(HIRInstruction* instr) {
   HIRPhiList::Item* head = succ->phis()->head();
   for (; head != NULL; head = head->next()) {
     HIRPhi* phi = head->value();
+
+    // Skip phis that are eliminated by Dead Code Eliminator
+    if (!phi->is_live) continue;
+
     LInstruction* lphi = NULL;
 
     assert(!phi->IsRemoved());
