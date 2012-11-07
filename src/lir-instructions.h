@@ -25,7 +25,6 @@ typedef ZoneList<LInstruction*> LInstructionList;
     V(Return) \
     V(LoadContext) \
     V(StoreContext) \
-    V(StoreProperty) \
     V(DeleteProperty) \
     V(LoadArg) \
     V(LoadVarArg) \
@@ -53,6 +52,7 @@ typedef ZoneList<LInstruction*> LInstructionList;
     V(Branch) \
     V(BranchNumber) \
     V(LoadProperty) \
+    V(StoreProperty) \
     V(AllocateObject) \
     V(AllocateArray) \
     V(Goto) \
@@ -256,18 +256,32 @@ class LBranchNumber : public LControlInstruction {
   INSTRUCTION_METHODS(BranchNumber)
 };
 
-class LLoadProperty : public LInstruction {
+class LAccessProperty : public LInstruction {
  public:
-  LLoadProperty() : LInstruction(kLoadProperty), monomorphic_prop_(false) {
+  LAccessProperty(Type type) : LInstruction(type), monomorphic_prop_(false) {
   }
 
   inline void SetMonomorphicProperty();
   inline bool HasMonomorphicProperty();
 
-  INSTRUCTION_METHODS(LoadProperty)
-
  protected:
   bool monomorphic_prop_;
+};
+
+class LLoadProperty : public LAccessProperty {
+ public:
+  LLoadProperty() : LAccessProperty(kLoadProperty) {
+  }
+
+  INSTRUCTION_METHODS(LoadProperty)
+};
+
+class LStoreProperty : public LAccessProperty {
+ public:
+  LStoreProperty() : LAccessProperty(kStoreProperty) {
+  }
+
+  INSTRUCTION_METHODS(StoreProperty)
 };
 
 class LFunction : public LInstruction {

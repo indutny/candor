@@ -123,12 +123,12 @@ inline LControlInstruction* LControlInstruction::Cast(LInstruction* instr) {
 }
 
 
-inline void LLoadProperty::SetMonomorphicProperty() {
+inline void LAccessProperty::SetMonomorphicProperty() {
   monomorphic_prop_ = true;
 }
 
 
-inline bool LLoadProperty::HasMonomorphicProperty() {
+inline bool LAccessProperty::HasMonomorphicProperty() {
   return monomorphic_prop_;
 }
 

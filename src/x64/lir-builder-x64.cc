@@ -179,11 +179,19 @@ void LGen::VisitStoreProperty(HIRInstruction* instr) {
   LInterval* lhs = ToFixed(instr->left(), rax);
   LInterval* rhs = ToFixed(instr->right(), rbx);
   ToFixed(instr->third(), rcx);
-  LInstruction* store = Bind(new LStoreProperty())
+  LStoreProperty* store = new LStoreProperty();
+  Bind(store)
       ->MarkHasCall()
       ->AddScratch(CreateVirtual())
       ->AddArg(lhs, LUse::kRegister)
       ->AddArg(rhs, LUse::kRegister);
+
+  if (instr->right()->Is(HIRInstruction::kLiteral)) {
+    store->AddScratch(CreateVirtual());
+    store->AddScratch(CreateVirtual());
+    store->SetMonomorphicProperty();
+  }
+
   ResultFromFixed(store, rbx);
 }
 
