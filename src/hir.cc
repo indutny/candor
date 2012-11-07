@@ -467,7 +467,7 @@ HIRInstruction* HIRGen::VisitFunction(AstNode* stmt) {
       HIRInstruction* varg_arr = NULL;
       if (varg) {
         // Result vararg array
-        varg_arr = Add(new HIRAllocateArray());
+        varg_arr = Add(new HIRAllocateArray(HArray::kVarArgLength));
 
         // Add number of arguments that are following varg
         varg_rest = GetNumber(fn->args()->length() - i - 1);
@@ -821,8 +821,8 @@ HIRInstruction* HIRGen::VisitBinOp(AstNode* stmt) {
 
 
 HIRInstruction* HIRGen::VisitObjectLiteral(AstNode* stmt) {
-  HIRInstruction* res = Add(new HIRAllocateObject());
   ObjectLiteral* obj = ObjectLiteral::Cast(stmt);
+  HIRInstruction* res = Add(new HIRAllocateObject(obj->keys()->length()));
 
   AstList::Item* khead = obj->keys()->head();
   AstList::Item* vhead = obj->values()->head();
@@ -842,7 +842,7 @@ HIRInstruction* HIRGen::VisitObjectLiteral(AstNode* stmt) {
 
 
 HIRInstruction* HIRGen::VisitArrayLiteral(AstNode* stmt) {
-  HIRInstruction* res = Add(new HIRAllocateArray());
+  HIRInstruction* res = Add(new HIRAllocateArray(stmt->children()->length()));
 
   AstList::Item* head = stmt->children()->head();
   for (uint64_t i = 0; head != NULL; head = head->next(), i++) {

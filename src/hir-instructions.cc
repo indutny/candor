@@ -347,7 +347,9 @@ HIRDeleteProperty::HIRDeleteProperty() : HIRInstruction(kDeleteProperty) {
 }
 
 
-HIRAllocateObject::HIRAllocateObject() : HIRInstruction(kAllocateObject) {
+HIRAllocateObject::HIRAllocateObject(int size)
+    : HIRInstruction(kAllocateObject),
+      size_(RoundUp(PowerOfTwo(size + 1), 64)) {
 }
 
 
@@ -356,7 +358,9 @@ void HIRAllocateObject::CalculateRepresentation() {
 }
 
 
-HIRAllocateArray::HIRAllocateArray() : HIRInstruction(kAllocateArray) {
+HIRAllocateArray::HIRAllocateArray(int size)
+    : HIRInstruction(kAllocateArray),
+      size_(RoundUp(PowerOfTwo(size + 1), 16)) {
 }
 
 

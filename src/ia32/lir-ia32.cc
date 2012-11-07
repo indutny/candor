@@ -111,7 +111,7 @@ void LAllocateObject::Generate(Masm* masm) {
   // XXX Use correct size here
   __ push(Immediate(Heap::kTagNil));
   __ push(Immediate(Heap::kTagNil));
-  __ push(Immediate(HNumber::Tag(16)));
+  __ push(Immediate(HNumber::Tag(size_)));
   __ push(Immediate(HNumber::Tag(Heap::kTagObject)));
   __ Call(masm->stubs()->GetAllocateObjectStub());
   __ addl(esp, Immediate(4 * 4));
@@ -122,7 +122,7 @@ void LAllocateArray::Generate(Masm* masm) {
   // XXX Use correct size here
   __ push(Immediate(Heap::kTagNil));
   __ push(Immediate(Heap::kTagNil));
-  __ push(Immediate(HNumber::Tag(16)));
+  __ push(Immediate(HNumber::Tag(size_)));
   __ push(Immediate(HNumber::Tag(Heap::kTagArray)));
   __ Call(masm->stubs()->GetAllocateObjectStub());
   __ addl(esp, Immediate(4 * 4));

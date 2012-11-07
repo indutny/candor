@@ -43,8 +43,6 @@ typedef ZoneList<LInstruction*> LInstructionList;
     V(Call) \
     V(CollectGarbage) \
     V(GetStackTrace) \
-    V(AllocateObject) \
-    V(AllocateArray) \
     V(Phi)
 
 #define LIR_INSTRUCTION_TYPES(V) \
@@ -55,6 +53,8 @@ typedef ZoneList<LInstruction*> LInstructionList;
     V(Literal) \
     V(Branch) \
     V(BranchNumber) \
+    V(AllocateObject) \
+    V(AllocateArray) \
     V(Goto) \
     LIR_INSTRUCTION_SIMPLE_TYPES(V)
 
@@ -281,6 +281,28 @@ class LLiteral : public LInstruction {
 
  private:
   ScopeSlot* root_slot_;
+};
+
+class LAllocateObject : public LInstruction {
+ public:
+  LAllocateObject(int size) : LInstruction(kAllocateObject), size_(size) {
+  }
+
+  INSTRUCTION_METHODS(AllocateObject)
+
+ private:
+  int size_;
+};
+
+class LAllocateArray : public LInstruction {
+ public:
+  LAllocateArray(int size) : LInstruction(kAllocateArray), size_(size) {
+  }
+
+  INSTRUCTION_METHODS(AllocateArray)
+
+ private:
+  int size_;
 };
 
 #define DEFAULT_INSTR_IMPLEMENTATION(V) \

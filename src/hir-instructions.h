@@ -352,24 +352,28 @@ class HIRDeleteProperty : public HIRInstruction {
 
 class HIRAllocateObject : public HIRInstruction {
  public:
-  HIRAllocateObject();
+  HIRAllocateObject(int size);
 
   void CalculateRepresentation();
+  inline int size();
 
   HIR_DEFAULT_METHODS(AllocateObject)
 
  private:
+  int size_;
 };
 
 class HIRAllocateArray : public HIRInstruction {
  public:
-  HIRAllocateArray();
+  HIRAllocateArray(int size);
 
   void CalculateRepresentation();
+  inline int size();
 
   HIR_DEFAULT_METHODS(AllocateArray)
 
  private:
+  int size_;
 };
 
 class HIRLoadArg : public HIRInstruction {

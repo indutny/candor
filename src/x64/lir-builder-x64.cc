@@ -36,14 +36,16 @@ void LGen::VisitLiteral(HIRInstruction* instr) {
 
 
 void LGen::VisitAllocateObject(HIRInstruction* instr) {
-  LInstruction* op = Bind(new LAllocateObject())->MarkHasCall();
+  HIRAllocateObject* obj = HIRAllocateObject::Cast(instr);
+  LInstruction* op = Bind(new LAllocateObject(obj->size()))->MarkHasCall();
 
   ResultFromFixed(op, rax);
 }
 
 
 void LGen::VisitAllocateArray(HIRInstruction* instr) {
-  LInstruction* op = Bind(new LAllocateArray())->MarkHasCall();
+  HIRAllocateArray* arr = HIRAllocateArray::Cast(instr);
+  LInstruction* op = Bind(new LAllocateArray(arr->size()))->MarkHasCall();
 
   ResultFromFixed(op, rax);
 }

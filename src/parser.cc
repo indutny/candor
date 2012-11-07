@@ -645,6 +645,7 @@ AstNode* Parser::ParseArrayLiteral() {
   Skip();
 
   while (!Peek()->is(kArrayClose) && !Peek()->is(kEnd)) {
+    SkipCr();
     // Parse expression
     AstNode* value = ParseExpression();
     if (value == NULL) {
@@ -653,6 +654,7 @@ AstNode* Parser::ParseArrayLiteral() {
     }
 
     result->children()->Push(value);
+    SkipCr();
 
     // Skip ',' or exit loop on ']'
     if (Peek()->is(kComma)) {
@@ -661,6 +663,8 @@ AstNode* Parser::ParseArrayLiteral() {
       SetError("Expected ']' or ','");
       return NULL;
     }
+
+    SkipCr();
   }
 
   // Skip ']'

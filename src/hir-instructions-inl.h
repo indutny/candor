@@ -237,6 +237,16 @@ inline ScopeSlot* HIRStoreContext::context_slot() {
   return context_slot_;
 }
 
+
+inline int HIRAllocateObject::size() {
+  return size_;
+}
+
+
+inline int HIRAllocateArray::size() {
+  return size_;
+}
+
 } // namespace internal
 } // namespace candor
 

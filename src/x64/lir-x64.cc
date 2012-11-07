@@ -103,7 +103,7 @@ void LLiteral::Generate(Masm* masm) {
 
 void LAllocateObject::Generate(Masm* masm) {
   // XXX Use correct size here
-  __ push(Immediate(HNumber::Tag(16)));
+  __ push(Immediate(HNumber::Tag(size_)));
   __ push(Immediate(HNumber::Tag(Heap::kTagObject)));
   __ Call(masm->stubs()->GetAllocateObjectStub());
 }
@@ -111,7 +111,7 @@ void LAllocateObject::Generate(Masm* masm) {
 
 void LAllocateArray::Generate(Masm* masm) {
   // XXX Use correct size here
-  __ push(Immediate(HNumber::Tag(16)));
+  __ push(Immediate(HNumber::Tag(size_)));
   __ push(Immediate(HNumber::Tag(Heap::kTagArray)));
   __ Call(masm->stubs()->GetAllocateObjectStub());
 }
