@@ -167,6 +167,68 @@ void LBranchNumber::Generate(Masm* masm) {
 
 
 void LLoadProperty::Generate(Masm* masm) {
+  Register tmp0 = scratches[0]->ToRegister();
+  Register tmp1 = scratches[1]->ToRegister();
+
+  Label ic_miss, ic_proto_miss, done;
+  AbsoluteAddress proto_ic, value_offset_ic;
+
+  // If object's map's proto is the same as it was in previous instruction call
+  // there's a big probability that property is till in the same place.
+  __ IsNil(eax, NULL, &ic_miss);
+  __ IsUnboxed(eax, NULL, &ic_miss);
+  __ IsHeapObject(Heap::kTagObject, eax, &ic_miss, NULL);
+
+  Operand map_op(eax, HObject::kMapOffset);
+  Operand proto_op(tmp0, HMap::kProtoOffset);
+  __ mov(tmp0, map_op);
+  __ mov(tmp0, proto_op);
+
+  // Check proto's address
+  while (masm->offset() % 4 != 3) __ nop();
+  __ mov(tmp1, Immediate(Heap::kICZapValue));
+  proto_ic.Target(masm->offset() - 4);
+
+  __ cmpl(tmp0, tmp1);
+  __ jmp(kNe, &ic_proto_miss);
+
+  // IC Hit
+  __ mov(tmp0, map_op);
+
+  // Check key
+  Operand tmp0_op(tmp0, 0);
+  Operand tmp1_op(tmp1, 0);
+
+  while (masm->offset() % 4 != 3) __ nop();
+  __ mov(tmp1, Immediate(0));
+  value_offset_ic.Target(masm->offset() - 4);
+  __ addl(tmp0, tmp1);
+
+  Operand mask_op(eax, HObject::kMaskOffset);
+  __ push(tmp0);
+  __ mov(tmp1, mask_op);
+  __ addl(tmp1, Immediate(HValue::kPointerSize));
+  __ subl(tmp0, tmp1);
+  __ pop(tmp1);
+  __ cmpl(ebx, tmp0_op);
+  __ jmp(kNe, &ic_miss);
+
+  // Return value
+  __ mov(eax, tmp1_op);
+  __ jmp(&done);
+
+  // Update IC on miss
+  __ bind(&ic_proto_miss);
+
+  Operand ic_op(tmp1, 0);
+  __ mov(tmp1, Immediate(0));
+  proto_ic.Use(masm, masm->offset() - 4);
+  proto_ic.NotifyGC();
+
+  __ mov(ic_op, tmp0);
+
+  __ bind(&ic_miss);
+
   __ push(eax);
   __ push(eax);
   __ push(eax);
@@ -177,12 +239,15 @@ void LLoadProperty::Generate(Masm* masm) {
   __ mov(ecx, Immediate(0));
   __ Call(masm->stubs()->GetLookupPropertyStub());
 
-  Label done;
+  __ pop(ebx);
+  __ pop(ebx);
+  __ pop(ebx);
+  __ pop(ebx);
 
-  __ pop(ebx);
-  __ pop(ebx);
-  __ pop(ebx);
-  __ pop(ebx);
+  // Store address of value in IC
+  __ mov(tmp0, Immediate(0));
+  value_offset_ic.Use(masm, masm->offset() - 4);
+  __ mov(tmp0_op, eax);
 
   __ IsNil(eax, NULL, &done);
   Operand qmap(ebx, HObject::kMapOffset);
@@ -193,6 +258,8 @@ void LLoadProperty::Generate(Masm* masm) {
   __ mov(eax, slot);
 
   __ bind(&done);
+  __ xorl(tmp0, tmp0);
+  __ xorl(tmp1, tmp1);
 }
 
 
@@ -759,15 +826,13 @@ void LCollectGarbage::Generate(Masm* masm) {
 
 
 void LGetStackTrace::Generate(Masm* masm) {
-  uint32_t ip = masm->offset();
+  AbsoluteAddress addr;
+
+  addr.Target(masm->offset());
 
   // Pass ip
   __ mov(eax, Immediate(0));
-  RelocationInfo* r = new RelocationInfo(RelocationInfo::kAbsolute,
-                                         RelocationInfo::kLong,
-                                         masm->offset() - 4);
-  masm->relocation_info_.Push(r);
-  r->target(ip);
+  addr.Use(masm, masm->offset() - 4);
   __ Call(masm->stubs()->GetStackTraceStub());
 }
 

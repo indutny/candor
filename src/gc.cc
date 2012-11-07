@@ -97,6 +97,13 @@ void GC::RelocateWeakHandles() {
 
     if (ref->is_weak()) {
       GCValue* v;
+
+      // Skip ICs zap values
+      if (static_cast<uint32_t>(reinterpret_cast<intptr_t>(ref->value())) ==
+               Heap::kICZapValue) {
+        continue;
+      }
+
       if (ref->value()->IsGCMarked()) {
         v = new GCValue(ref->value(),
                         reinterpret_cast<char**>(ref->reference()));
@@ -120,7 +127,7 @@ void GC::ColourFrames(char* stack_top) {
     // Skip C++ frames
     while (frame != NULL &&
            static_cast<uint32_t>(reinterpret_cast<intptr_t>(*frame)) ==
-           Heap::kEnterFrameTag) {
+               Heap::kEnterFrameTag) {
       frame = reinterpret_cast<char**>(*(frame + 1));
     }
     if (frame == NULL) break;

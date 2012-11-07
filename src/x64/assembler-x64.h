@@ -13,6 +13,7 @@ namespace internal {
 
 // Forward declaration
 class Assembler;
+class Heap;
 class Label;
 
 struct Register {
@@ -222,7 +223,8 @@ class RelocationInfo : public ZoneObject {
     kByte,
     kWord,
     kLong,
-    kQuad
+    kQuad,
+    kPointer = kQuad
   };
 
   enum RelocationInfoType {
@@ -236,11 +238,11 @@ class RelocationInfo : public ZoneObject {
                  uint32_t offset) : type_(type),
                                     size_(size),
                                     offset_(offset),
-                                    target_(0) {
-
+                                    target_(0),
+                                    notify_gc_(false) {
   }
 
-  void Relocate(char* buffer);
+  void Relocate(Heap* heap, char* buffer);
 
   inline void target(uint32_t target) { target_ = target; }
 
@@ -252,6 +254,10 @@ class RelocationInfo : public ZoneObject {
 
   // Address to put
   uint32_t target_;
+
+  // GC should relocate this info
+  // (works only with absolute relocs)
+  bool notify_gc_;
 };
 
 enum Condition {
@@ -289,7 +295,7 @@ class Assembler {
   }
 
   // Relocate all absolute/relative addresses in new code space
-  void Relocate(char* buffer);
+  void Relocate(Heap* heap, char* buffer);
 
   // Instructions
   void nop();
@@ -419,6 +425,7 @@ class Assembler {
   uint32_t length_;
 
   ZoneList<RelocationInfo*> relocation_info_;
+  ZoneList<RelocationInfo*> gc_info_;
 };
 
 } // namespace internal

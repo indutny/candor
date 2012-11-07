@@ -98,6 +98,7 @@ class Space {
 };
 
 typedef HashMap<NumberKey, HValueReference, EmptyClass> HValueRefMap;
+typedef List<HValueReference, EmptyClass> HValueRefList;
 typedef HashMap<NumberKey, HValueWeakRef, EmptyClass> HValueWeakRefMap;
 
 class Heap {
@@ -161,6 +162,7 @@ class Heap {
   static const int8_t kMinOldSpaceGeneration = 5;
   static const uint32_t kBindingContextTag = 0x0DEC0DEC;
   static const uint32_t kEnterFrameTag = 0xFEEDBEEE;
+  static const uint32_t kICZapValue = 0xABBADEEF;
 
   Heap(uint32_t page_size) : new_space_(this, page_size),
                              old_space_(this, page_size),

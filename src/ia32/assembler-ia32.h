@@ -5,8 +5,6 @@
 #include <stdlib.h> // NULL
 #include <string.h> // memset
 
-#include "heap.h" // HFunction::slots
-#include "heap-inl.h" // HFunction::slots
 #include "zone.h" // ZoneObject
 #include "utils.h" // List
 
@@ -16,6 +14,7 @@ namespace internal {
 // Forward declaration
 class Assembler;
 class Label;
+class Heap;
 
 struct Register {
   int high() {
@@ -183,7 +182,8 @@ class RelocationInfo : public ZoneObject {
   enum RelocationInfoSize {
     kByte,
     kWord,
-    kLong
+    kLong,
+    kPointer = kLong
   };
 
   enum RelocationInfoType {
@@ -197,11 +197,12 @@ class RelocationInfo : public ZoneObject {
                  uint32_t offset) : type_(type),
                                     size_(size),
                                     offset_(offset),
-                                    target_(0) {
+                                    target_(0),
+                                    notify_gc_(false) {
 
   }
 
-  void Relocate(char* buffer);
+  void Relocate(Heap* heap, char* buffer);
 
   inline void target(uint32_t target) { target_ = target; }
 
@@ -213,6 +214,9 @@ class RelocationInfo : public ZoneObject {
 
   // Address to put
   uint32_t target_;
+
+  // Notify GC
+  bool notify_gc_;
 };
 
 enum Condition {
@@ -250,7 +254,7 @@ class Assembler {
   }
 
   // Relocate all absolute/relative addresses in new code space
-  void Relocate(char* buffer);
+  void Relocate(Heap* heap, char* buffer);
 
   // Instructions
   void nop();

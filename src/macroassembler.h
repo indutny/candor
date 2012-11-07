@@ -163,6 +163,19 @@ class Masm : public Assembler {
   friend class Align;
 };
 
+class AbsoluteAddress {
+ public:
+  AbsoluteAddress() : ip_(-1), r_(NULL) {}
+
+  void Target(int offset);
+  void Use(Masm* masm, int offset);
+  void NotifyGC();
+
+ private:
+  int ip_;
+  RelocationInfo* r_;
+};
+
 } // namespace internal
 } // namespace candor
 

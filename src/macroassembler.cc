@@ -45,5 +45,28 @@ void Masm::Move(LUse* dst, Immediate src) {
   }
 }
 
+
+void AbsoluteAddress::Target(int offset) {
+  assert(ip_ == -1);
+  ip_ = offset;
+}
+
+
+void AbsoluteAddress::Use(Masm* masm, int offset) {
+  assert(r_ == NULL);
+  r_ = new RelocationInfo(RelocationInfo::kAbsolute,
+                          RelocationInfo::kPointer,
+                          offset);
+  r_->target(ip_);
+
+  masm->relocation_info_.Push(r_);
+}
+
+
+void AbsoluteAddress::NotifyGC() {
+  assert(r_ != NULL);
+  r_->notify_gc_ = true;
+}
+
 } // namespace internal
 } // namespace candor

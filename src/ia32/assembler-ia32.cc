@@ -1,11 +1,13 @@
 #include "assembler.h"
 #include "assembler-inl.h"
+#include "heap.h"
+#include "heap-inl.h"
 #include <assert.h>
 
 namespace candor {
 namespace internal {
 
-void RelocationInfo::Relocate(char* buffer) {
+void RelocationInfo::Relocate(Heap* heap, char* buffer) {
   uint32_t addr = 0;
 
   if (type_ == kAbsolute) {
@@ -29,13 +31,20 @@ void RelocationInfo::Relocate(char* buffer) {
    default:
     break;
   }
+
+  if (notify_gc_) {
+    assert(type_ == kAbsolute);
+    heap->Reference(Heap::kRefWeak,
+                    reinterpret_cast<HValue**>(addr),
+                    *reinterpret_cast<HValue**>(addr));
+  }
 }
 
 
-void Assembler::Relocate(char* buffer) {
+void Assembler::Relocate(Heap* heap, char* buffer) {
   ZoneList<RelocationInfo*>::Item* item = relocation_info_.head();
   while (item != NULL) {
-    item->value()->Relocate(buffer);
+    item->value()->Relocate(heap, buffer);
     item = item->next();
   }
 }

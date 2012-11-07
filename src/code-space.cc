@@ -53,7 +53,7 @@ char* CodeSpace::Put(Masm* masm) {
   masm->AlignCode();
 
   char* code = Insert(masm->buffer(), masm->offset());
-  masm->Relocate(code);
+  masm->Relocate(heap(), code);
 
   return code;
 }

@@ -28,7 +28,7 @@ void CPU::Probe() {
   CodePage page(a.length());
   char* code = page.Allocate(a.length());
   memcpy(code, a.buffer(), a.length());
-  a.Relocate(code);
+  a.Relocate(NULL, code);
 
   int32_t features = reinterpret_cast<intptr_t>(
       reinterpret_cast<CPUProbeCallback>(code)());

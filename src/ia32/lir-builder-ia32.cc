@@ -160,6 +160,8 @@ void LGen::VisitLoadProperty(HIRInstruction* instr) {
   LInterval* rhs = ToFixed(instr->right(), ebx);
   LInstruction* load = Bind(new LLoadProperty())
       ->MarkHasCall()
+      ->AddScratch(CreateVirtual())
+      ->AddScratch(CreateVirtual())
       ->AddArg(lhs, LUse::kRegister)
       ->AddArg(rhs, LUse::kRegister);
 
