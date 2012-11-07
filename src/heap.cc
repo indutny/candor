@@ -198,8 +198,8 @@ HValue* HValue::CopyTo(Space* old_space, Space* new_space) {
     size += 3 * kPointerSize;
     break;
    case Heap::kTagMap:
-    // size + space ( keys + values )
-    size += (1 + (As<HMap>()->size() << 1)) * kPointerSize;
+    // size + proto + space ( keys + values )
+    size += (2 + (As<HMap>()->size() << 1)) * kPointerSize;
     break;
    case Heap::kTagCData:
     // size + data
@@ -468,10 +468,13 @@ int64_t HArray::Length(char* obj, bool shrink) {
 char* HMap::NewEmpty(Heap* heap, uint32_t size) {
   char* map = heap->AllocateTagged(Heap::kTagMap,
                                    Heap::kTenureNew,
-                                   ((size << 1) + 1) * kPointerSize);
+                                   ((size << 1) + 2) * kPointerSize);
 
   // Set map's size
   *reinterpret_cast<intptr_t*>(map + kSizeOffset) = size;
+
+  // Set map's proto
+  *reinterpret_cast<void**>(map + kProtoOffset) = NULL;
 
   // Nullify all map's slots (both keys and values)
   size = (size << 1) * kPointerSize;

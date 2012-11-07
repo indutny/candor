@@ -706,6 +706,9 @@ char* RuntimeCloneObject(Heap* heap, char* obj) {
   // Set map's size
   *reinterpret_cast<intptr_t*>(map + HMap::kSizeOffset) = source_map->size();
 
+  // Set map's proto
+  *reinterpret_cast<void**>(map + HMap::kProtoOffset) = source_map;
+
   // Nullify all map's slots (both keys and values)
   uint32_t size = (source_map->size() << 1) * HValue::kPointerSize;
   memcpy(map + HMap::kSpaceOffset, source_map->space(), size);

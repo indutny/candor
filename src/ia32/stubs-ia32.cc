@@ -719,6 +719,10 @@ void CloneObjectStub::Generate() {
   qmap.base(ebx);
   __ mov(ebx, qmap);
 
+  // Set proto
+  Operand qmapproto(ebx, HMap::kProtoOffset);
+  __ mov(qmapproto, eax);
+
   // Skip headers
   __ addl(eax, Immediate(HMap::kSpaceOffset));
   __ addl(ebx, Immediate(HMap::kSpaceOffset));

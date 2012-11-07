@@ -535,10 +535,12 @@ class HMap : public HValue {
   inline uint32_t size() {
     return *reinterpret_cast<uint32_t*>(addr() + kSizeOffset);
   }
+  inline char* proto() { return addr() + kProtoOffset; }
   inline char* space() { return addr() + kSpaceOffset; }
 
   static const int kSizeOffset = HINTERIOR_OFFSET(1);
-  static const int kSpaceOffset = HINTERIOR_OFFSET(2);
+  static const int kProtoOffset = HINTERIOR_OFFSET(2);
+  static const int kSpaceOffset = HINTERIOR_OFFSET(3);
 
   static const Heap::HeapTag class_tag = Heap::kTagMap;
 };

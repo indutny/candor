@@ -277,8 +277,8 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
   Untag(size);
   // keys + values
   shl(size, Immediate(3));
-  // + size
-  addl(size, Immediate(HValue::kPointerSize));
+  // + size + proto
+  addl(size, Immediate(2 * HValue::kPointerSize));
   TagNumber(size);
 
   Allocate(Heap::kTagMap, size, 0, scratch);
@@ -289,8 +289,10 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
 
   // Save map size for GC
   Operand qmapsize(result, HMap::kSizeOffset);
+  Operand qmapproto(result, HMap::kProtoOffset);
   Untag(size);
   mov(qmapsize, size);
+  mov(qmapproto, Immediate(0));
 
   // Fill map with nil
   shl(size, Immediate(3));
