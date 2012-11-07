@@ -154,10 +154,7 @@ void LBranchNumber::Generate(Masm* masm) {
 }
 
 
-void LLoadProperty::Generate(Masm* masm) {
-  Label done;
-  AbsoluteAddress proto_ic, value_offset_ic;
-
+void LAccessProperty::CheckIC(Masm* masm, Label* done) {
   if (HasMonomorphicProperty()) {
     Register tmp0 = scratches[0]->ToRegister();
     Register tmp1 = scratches[1]->ToRegister();
@@ -166,8 +163,8 @@ void LLoadProperty::Generate(Masm* masm) {
 
     Label ic_miss, ic_proto_miss;
 
-    // If object's map's proto is the same as it was in previous instruction call
-    // there's a big probability that property is till in the same place.
+    // If object's map's proto is the same as it was in previous instruction
+    // call there's a big probability that property is till in the same place.
     __ IsNil(rax, NULL, &ic_miss);
     __ IsUnboxed(rax, NULL, &ic_miss);
     __ IsHeapObject(Heap::kTagObject, rax, &ic_miss, NULL);
@@ -191,8 +188,6 @@ void LLoadProperty::Generate(Masm* masm) {
     __ jmp(kNe, &ic_proto_miss);
 
     // IC Hit
-    __ mov(tmp0, map_op);
-
     // Get value from cache
     while (masm->offset() % 4 != 2) __ nop();
     __ mov(tmp1, Immediate(0));
@@ -200,9 +195,8 @@ void LLoadProperty::Generate(Masm* masm) {
     __ IsNil(tmp1, NULL, &ic_miss);
 
     // Return value
-    __ addq(tmp0, tmp1);
-    __ mov(rax, tmp0_op);
-    __ jmp(&done);
+    __ mov(rax, tmp1);
+    __ jmp(done);
 
     // Update IC on miss
     __ bind(&ic_proto_miss);
@@ -216,18 +210,10 @@ void LLoadProperty::Generate(Masm* masm) {
 
     __ bind(&ic_miss);
   }
+}
 
-  __ push(rax);
-  __ push(rax);
 
-  // rax <- object
-  // rbx <- property
-  __ mov(rcx, Immediate(0));
-  __ Call(masm->stubs()->GetLookupPropertyStub());
-
-  __ pop(rbx);
-  __ pop(rbx);
-
+void LAccessProperty::UpdateIC(Masm* masm) {
   if (HasMonomorphicProperty()) {
     Register tmp0 = scratches[0]->ToRegister();
     Operand tmp0_op(tmp0, 0);
@@ -237,6 +223,27 @@ void LLoadProperty::Generate(Masm* masm) {
     value_offset_ic.Use(masm, masm->offset() - 8);
     __ mov(tmp0_op, rax);
   }
+}
+
+
+void LLoadProperty::Generate(Masm* masm) {
+  Label ic_done, done;
+
+  __ push(rax);
+  __ push(rax);
+
+  CheckIC(masm, &ic_done);
+
+  // rax <- object
+  // rbx <- property
+  __ mov(rcx, Immediate(0));
+  __ Call(masm->stubs()->GetLookupPropertyStub());
+  UpdateIC(masm);
+  __ bind(&ic_done);
+
+  __ pop(rbx);
+  __ pop(rbx);
+
 
   __ IsNil(rax, NULL, &done);
   Operand qmap(rbx, HObject::kMapOffset);
@@ -259,16 +266,21 @@ void LLoadProperty::Generate(Masm* masm) {
 
 
 void LStoreProperty::Generate(Masm* masm) {
-  Label done;
+  Label ic_done, done;
 
   __ push(rax);
   __ push(rcx);
+
+  CheckIC(masm, &ic_done);
 
   // rax <- object
   // rbx <- property
   // rcx <- value
   __ mov(rcx, Immediate(1));
   __ Call(masm->stubs()->GetLookupPropertyStub());
+
+  UpdateIC(masm);
+  __ bind(&ic_done);
 
   // Make rax look like unboxed number to GC
   __ dec(rax);
@@ -290,6 +302,14 @@ void LStoreProperty::Generate(Masm* masm) {
   __ mov(slot, rcx);
 
   __ bind(&done);
+
+  if (HasMonomorphicProperty()) {
+    // Cleanup scratches
+    Register tmp0 = scratches[0]->ToRegister();
+    Register tmp1 = scratches[1]->ToRegister();
+    __ xorq(tmp0, tmp0);
+    __ xorq(tmp1, tmp1);
+  }
 }
 
 

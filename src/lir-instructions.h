@@ -261,11 +261,15 @@ class LAccessProperty : public LInstruction {
   LAccessProperty(Type type) : LInstruction(type), monomorphic_prop_(false) {
   }
 
+  void CheckIC(Masm* masm, Label* done);
+  void UpdateIC(Masm* masm);
+
   inline void SetMonomorphicProperty();
   inline bool HasMonomorphicProperty();
 
  protected:
   bool monomorphic_prop_;
+  AbsoluteAddress proto_ic, value_offset_ic;
 };
 
 class LLoadProperty : public LAccessProperty {

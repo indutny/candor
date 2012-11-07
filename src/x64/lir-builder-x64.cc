@@ -182,7 +182,6 @@ void LGen::VisitStoreProperty(HIRInstruction* instr) {
   LStoreProperty* store = new LStoreProperty();
   Bind(store)
       ->MarkHasCall()
-      ->AddScratch(CreateVirtual())
       ->AddArg(lhs, LUse::kRegister)
       ->AddArg(rhs, LUse::kRegister);
 
