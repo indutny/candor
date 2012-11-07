@@ -192,19 +192,9 @@ void LLoadProperty::Generate(Masm* masm) {
   value_offset_ic.Target(masm->offset() - 8);
   __ IsNil(tmp1, NULL, &ic_miss);
 
-  __ addq(tmp0, tmp1);
-
-  Operand mask_op(rax, HObject::kMaskOffset);
-  __ push(tmp0);
-  __ mov(tmp1, mask_op);
-  __ addq(tmp1, Immediate(HValue::kPointerSize));
-  __ subq(tmp0, tmp1);
-  __ pop(tmp1);
-  __ cmpq(rbx, tmp0_op);
-  __ jmp(kNe, &ic_miss);
-
   // Return value
-  __ mov(rax, tmp1_op);
+  __ addq(tmp0, tmp1);
+  __ mov(rax, tmp0_op);
   __ jmp(&done);
 
   // Update IC on miss

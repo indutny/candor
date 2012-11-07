@@ -684,6 +684,9 @@ char* RuntimeKeysof(Heap* heap, char* value) {
 
 
 char* RuntimeCloneObject(Heap* heap, char* obj) {
+  Heap::HeapTag tag = HValue::GetTag(obj);
+  if (tag != Heap::kTagObject && tag != Heap::kTagArray) return HNil::New();
+
   HObject* source_obj = HValue::As<HObject>(obj);
   HMap* source_map = HValue::As<HMap>(source_obj->map());
 
@@ -718,7 +721,13 @@ char* RuntimeCloneObject(Heap* heap, char* obj) {
 
 
 void RuntimeDeleteProperty(Heap* heap, char* obj, char* property) {
+  Heap::HeapTag tag = HValue::GetTag(obj);
+  if (tag != Heap::kTagObject && tag != Heap::kTagArray) return;
+
   intptr_t offset = RuntimeLookupProperty(heap, obj, property, 0);
+
+  // Reset proto, IC could not work with this object anymore
+  *HValue::As<HMap>(HObject::Map(obj))->proto_slot() = NULL;
 
   // Dense arrays doesn't have keys
   if (HValue::GetTag(obj) != Heap::kTagArray || !HArray::IsDense(obj)) {

@@ -206,17 +206,8 @@ void LLoadProperty::Generate(Masm* masm) {
 
   __ addl(tmp0, tmp1);
 
-  Operand mask_op(eax, HObject::kMaskOffset);
-  __ push(tmp0);
-  __ mov(tmp1, mask_op);
-  __ addl(tmp1, Immediate(HValue::kPointerSize));
-  __ subl(tmp0, tmp1);
-  __ pop(tmp1);
-  __ cmpl(ebx, tmp0_op);
-  __ jmp(kNe, &ic_miss);
-
   // Return value
-  __ mov(eax, tmp1_op);
+  __ mov(eax, tmp0_op);
   __ jmp(&done);
 
   // Update IC on miss
