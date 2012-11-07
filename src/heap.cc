@@ -97,6 +97,37 @@ void Space::Clear() {
 }
 
 
+Heap::Heap(uint32_t page_size) : new_space_(this, page_size),
+                                 old_space_(this, page_size),
+                                 last_stack_(NULL),
+                                 last_frame_(NULL),
+                                 pending_exception_(NULL),
+                                 needs_gc_(kGCNone),
+                                 gc_(this) {
+  current_ = this;
+  references_.allocated = true;
+  factory_ = HValue::Cast(HObject::NewEmpty(this));
+  Reference(Heap::kRefPersistent, &factory_, factory_);
+}
+
+
+char* Heap::CreateString(const char* key, uint32_t size) {
+  char* hkey = HString::New(this, Heap::kTenureOld, key, size);
+
+  char** slot = HObject::LookupProperty(this,
+                                        reinterpret_cast<char*>(factory_),
+                                        hkey,
+                                        1);
+  if (*slot == HNil::New()) {
+    *slot = hkey;
+  } else {
+    hkey = *slot;
+  }
+
+  return hkey;
+}
+
+
 const char* Heap::ErrorToString(Error err) {
   switch (err) {
    case kErrorNone:

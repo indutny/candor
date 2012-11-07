@@ -17,14 +17,14 @@ Root::Root(Heap* heap) : heap_(heap) {
   values()->Push(HBoolean::New(heap, Heap::kTenureOld, false));
 
   // Place types
-  values()->Push(HString::New(heap, Heap::kTenureOld, "nil", 3));
-  values()->Push(HString::New(heap, Heap::kTenureOld, "boolean", 7));
-  values()->Push(HString::New(heap, Heap::kTenureOld, "number", 6));
-  values()->Push(HString::New(heap, Heap::kTenureOld, "string", 6));
-  values()->Push(HString::New(heap, Heap::kTenureOld, "object", 6));
-  values()->Push(HString::New(heap, Heap::kTenureOld, "array", 5));
-  values()->Push(HString::New(heap, Heap::kTenureOld, "function", 8));
-  values()->Push(HString::New(heap, Heap::kTenureOld, "cdata", 5));
+  values()->Push(heap->CreateString("nil", 3));
+  values()->Push(heap->CreateString("boolean", 7));
+  values()->Push(heap->CreateString("number", 6));
+  values()->Push(heap->CreateString("string", 6));
+  values()->Push(heap->CreateString("object", 6));
+  values()->Push(heap->CreateString("array", 5));
+  values()->Push(heap->CreateString("function", 8));
+  values()->Push(heap->CreateString("cdata", 5));
 }
 
 
@@ -85,7 +85,7 @@ char* Root::StringToValue(AstNode* node) {
   uint32_t length;
   const char* unescaped = Unescape(node->value(), node->length(), &length);
 
-  char* result = HString::New(heap(), Heap::kTenureOld, unescaped, length);
+  char* result = heap()->CreateString(unescaped, length);
 
   delete unescaped;
 

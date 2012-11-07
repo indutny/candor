@@ -164,16 +164,7 @@ class Heap {
   static const uint32_t kEnterFrameTag = 0xFEEDBEEE;
   static const uint32_t kICZapValue = 0xABBADEEC;
 
-  Heap(uint32_t page_size) : new_space_(this, page_size),
-                             old_space_(this, page_size),
-                             last_stack_(NULL),
-                             last_frame_(NULL),
-                             pending_exception_(NULL),
-                             needs_gc_(kGCNone),
-                             gc_(this) {
-    current_ = this;
-    references_.allocated = true;
-  }
+  Heap(uint32_t page_size);
 
   // TODO: Use thread id
   static inline Heap* Current() { return current_; }
@@ -220,6 +211,9 @@ class Heap {
   inline GC* gc() { return &gc_; }
   inline SourceMap* source_map() { return &source_map_; }
 
+  // Factory methods
+  char* CreateString(const char* key, uint32_t size);
+
  private:
   Space new_space_;
   Space old_space_;
@@ -234,6 +228,7 @@ class Heap {
 
   HValueRefMap references_;
   HValueWeakRefMap weak_references_;
+  HValue* factory_;
 
   GC gc_;
   SourceMap source_map_;
