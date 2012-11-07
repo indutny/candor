@@ -201,6 +201,7 @@ void LLoadProperty::Generate(Masm* masm) {
 
   while (masm->offset() % 4 != 3) __ nop();
   __ mov(tmp1, Immediate(0));
+  __ IsNil(tmp1, NULL, &ic_miss);
   value_offset_ic.Target(masm->offset() - 4);
   __ addl(tmp0, tmp1);
 

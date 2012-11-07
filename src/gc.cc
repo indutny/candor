@@ -98,9 +98,11 @@ void GC::RelocateWeakHandles() {
     if (ref->is_weak()) {
       GCValue* v;
 
+      uint32_t zap = static_cast<uint32_t>(reinterpret_cast<intptr_t>(
+            ref->value()));
+
       // Skip ICs zap values
-      if (static_cast<uint32_t>(reinterpret_cast<intptr_t>(ref->value())) ==
-               Heap::kICZapValue) {
+      if (zap == Heap::kICZapValue || zap == Heap::kICDisabledValue) {
         continue;
       }
 

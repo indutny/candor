@@ -163,6 +163,7 @@ class Heap {
   static const uint32_t kBindingContextTag = 0x0DEC0DEC;
   static const uint32_t kEnterFrameTag = 0xFEEDBEEE;
   static const uint32_t kICZapValue = 0xABBADEEF;
+  static const uint32_t kICDisabledValue = 0xABBAABBA;
 
   Heap(uint32_t page_size) : new_space_(this, page_size),
                              old_space_(this, page_size),
