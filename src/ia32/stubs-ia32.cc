@@ -507,11 +507,20 @@ void LookupPropertyStub::Generate() {
 
     __ bind(&match);
 
-    Label fast_case_end;
+    Label fast_case_end, same_key;
 
     // Insert key if was asked
     __ cmpl(ecx, Immediate(0));
     __ jmp(kEq, &fast_case_end);
+
+    // Inserting key in map is required
+    // invalidate IC if key wasn't the same
+    __ IsNil(scratch, &same_key, NULL);
+
+    Operand proto(scratch, HMap::kProtoOffset);
+    __ mov(scratch, qmap);
+    __ mov(proto, Immediate(Heap::kICDisabledValue));
+    __ bind(&same_key);
 
     // Restore map's interior pointer
     __ mov(scratch, qmap);

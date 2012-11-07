@@ -37,7 +37,7 @@ TEST_START(gc)
   })
 
   // Stress test
-  FUN_TEST("a = 0\ny = 100\nz=1.0\n"
+  FUN_TEST("a = 0\ny = 30\nz=1.0\n"
            "while(--y) {\n"
            "  a = 0\n"
            "  x = 10000\n"

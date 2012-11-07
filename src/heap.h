@@ -162,6 +162,7 @@ class Heap {
   static const int8_t kMinOldSpaceGeneration = 5;
   static const uint32_t kBindingContextTag = 0x0DEC0DEC;
   static const uint32_t kEnterFrameTag = 0xFEEDBEEE;
+  static const uint32_t kICDisabledValue = 0x0;
   static const uint32_t kICZapValue = 0xABBADEEC;
 
   Heap(uint32_t page_size);

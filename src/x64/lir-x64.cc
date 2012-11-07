@@ -177,11 +177,16 @@ void LLoadProperty::Generate(Masm* masm) {
     __ mov(tmp0, map_op);
     __ mov(tmp0, proto_op);
 
-    // Check proto's address
+    // IC's data
     while (masm->offset() % 4 != 2) __ nop();
     __ mov(tmp1, Immediate(Heap::kICZapValue));
     proto_ic.Target(masm->offset() - 8);
 
+    // Check if IC is disabled
+    __ cmpq(tmp1, Immediate(Heap::kICDisabledValue));
+    __ jmp(kEq, &ic_miss);
+
+    // Check if proto is the same
     __ cmpq(tmp0, tmp1);
     __ jmp(kNe, &ic_proto_miss);
 

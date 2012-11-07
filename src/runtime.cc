@@ -179,6 +179,12 @@ intptr_t RuntimeLookupProperty(Heap* heap,
         return RuntimeLookupProperty(heap, obj, keyptr, insert);
       }
 
+      if (key_slot == HNil::New()) {
+        // Reset proto, IC could not work with this object anymore
+        char** proto_slot = HValue::As<HMap>(map)->proto_slot();
+        *reinterpret_cast<intptr_t*>(proto_slot) = Heap::kICDisabledValue;
+      }
+
       *reinterpret_cast<char**>(space + index) = keyptr;
     }
 
@@ -727,7 +733,8 @@ void RuntimeDeleteProperty(Heap* heap, char* obj, char* property) {
   intptr_t offset = RuntimeLookupProperty(heap, obj, property, 0);
 
   // Reset proto, IC could not work with this object anymore
-  *HValue::As<HMap>(HObject::Map(obj))->proto_slot() = NULL;
+  char** proto_slot = HValue::As<HMap>(HObject::Map(obj))->proto_slot();
+  *reinterpret_cast<intptr_t*>(proto_slot) = Heap::kICDisabledValue;
 
   // Dense arrays doesn't have keys
   if (HValue::GetTag(obj) != Heap::kTagArray || !HArray::IsDense(obj)) {

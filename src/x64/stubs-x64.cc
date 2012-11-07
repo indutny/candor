@@ -457,7 +457,7 @@ void LookupPropertyStub::Generate() {
     __ mov(scratch, qmap);
     __ addq(scratch, rdx);
 
-    Label match;
+    Label match, same_key;
 
     // rdx now contains pointer to the key slot in map's space
     // compare key's addresses
@@ -479,6 +479,15 @@ void LookupPropertyStub::Generate() {
     // Insert key if was asked
     __ cmpq(rcx, Immediate(0));
     __ jmp(kEq, &fast_case_end);
+
+    // Inserting key in map is required
+    // invalidate IC if key wasn't the same
+    __ IsNil(scratch, &same_key, NULL);
+
+    Operand proto(scratch, HMap::kProtoOffset);
+    __ mov(scratch, qmap);
+    __ mov(proto, Immediate(Heap::kICDisabledValue));
+    __ bind(&same_key);
 
     // Restore map's interior pointer
     __ mov(scratch, qmap);
