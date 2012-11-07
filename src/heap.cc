@@ -474,7 +474,7 @@ char* HMap::NewEmpty(Heap* heap, uint32_t size) {
   *reinterpret_cast<intptr_t*>(map + kSizeOffset) = size;
 
   // Set map's proto
-  *reinterpret_cast<HMap**>(map + kProtoOffset) = this;
+  *reinterpret_cast<char**>(map + kProtoOffset) = map;
 
   // Nullify all map's slots (both keys and values)
   size = (size << 1) * kPointerSize;
