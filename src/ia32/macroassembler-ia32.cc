@@ -292,7 +292,7 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
   Operand qmapproto(result, HMap::kProtoOffset);
   Untag(size);
   mov(qmapsize, size);
-  mov(qmapproto, Immediate(0));
+  mov(qmapproto, result);
 
   // Fill map with nil
   shl(size, Immediate(3));

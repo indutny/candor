@@ -68,7 +68,12 @@ class GC {
     grey_items()->Push(new GCValue(value, reference));
   }
 
+  inline void push_weak(HValue* value, char** reference) {
+    weak_items()->Push(new GCValue(value, reference));
+  }
+
   inline GCList* grey_items() { return &grey_items_; }
+  inline GCList* weak_items() { return &weak_items_; }
   inline GCList* black_items() { return &black_items_; }
   inline Heap* heap() { return heap_; }
   inline void tmp_space(Space* space) { tmp_space_ = space; }
@@ -79,6 +84,7 @@ class GC {
 
  protected:
   GCList grey_items_;
+  GCList weak_items_;
   GCList black_items_;
   Heap* heap_;
   Space* tmp_space_;

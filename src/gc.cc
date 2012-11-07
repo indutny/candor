@@ -156,6 +156,20 @@ void GC::HandleWeakReferences() {
       ref->value(reinterpret_cast<HValue*>(ref->value()->GetGCMark()));
     }
   }
+
+  while (weak_items()->length() != 0) {
+    GCValue* value = weak_items()->Shift();
+
+    if (!value->value()->IsGCMarked()) {
+      if (IsInCurrentSpace(value->value())) {
+        // Value was GCed
+        value->Relocate(NULL);
+      }
+    } else {
+      // Value wasn't GCed, but was relocated
+      value->Relocate(value->value()->GetGCMark());
+    }
+  }
 }
 
 
@@ -277,6 +291,11 @@ void GC::VisitArray(HArray* arr) {
 
 void GC::VisitMap(HMap* map) {
   uint32_t size = map->size() << 1;
+
+  if (map->proto() != NULL) {
+    push_weak(HValue::Cast(map->proto()), map->proto_slot());
+  }
+
   for (uint32_t i = 0; i < size; i++) {
     if (map->IsEmptySlot(i)) continue;
 

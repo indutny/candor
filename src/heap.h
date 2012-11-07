@@ -535,7 +535,10 @@ class HMap : public HValue {
   inline uint32_t size() {
     return *reinterpret_cast<uint32_t*>(addr() + kSizeOffset);
   }
-  inline char* proto() { return addr() + kProtoOffset; }
+  inline char* proto() { return *proto_slot(); }
+  inline char** proto_slot() {
+    return reinterpret_cast<char**>(addr() + kProtoOffset);
+  }
   inline char* space() { return addr() + kSpaceOffset; }
 
   static const int kSizeOffset = HINTERIOR_OFFSET(1);
