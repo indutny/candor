@@ -25,7 +25,6 @@ typedef ZoneList<LInstruction*> LInstructionList;
     V(Return) \
     V(LoadContext) \
     V(StoreContext) \
-    V(LoadProperty) \
     V(StoreProperty) \
     V(DeleteProperty) \
     V(LoadArg) \
@@ -53,6 +52,7 @@ typedef ZoneList<LInstruction*> LInstructionList;
     V(Literal) \
     V(Branch) \
     V(BranchNumber) \
+    V(LoadProperty) \
     V(AllocateObject) \
     V(AllocateArray) \
     V(Goto) \
@@ -254,6 +254,20 @@ class LBranchNumber : public LControlInstruction {
   }
 
   INSTRUCTION_METHODS(BranchNumber)
+};
+
+class LLoadProperty : public LInstruction {
+ public:
+  LLoadProperty() : LInstruction(kLoadProperty), monomorphic_prop_(false) {
+  }
+
+  inline void SetMonomorphicProperty();
+  inline bool HasMonomorphicProperty();
+
+  INSTRUCTION_METHODS(LoadProperty)
+
+ protected:
+  bool monomorphic_prop_;
 };
 
 class LFunction : public LInstruction {

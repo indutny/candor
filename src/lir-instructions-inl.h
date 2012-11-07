@@ -122,6 +122,16 @@ inline LControlInstruction* LControlInstruction::Cast(LInstruction* instr) {
   return reinterpret_cast<LControlInstruction*>(instr);
 }
 
+
+inline void LLoadProperty::SetMonomorphicProperty() {
+  monomorphic_prop_ = true;
+}
+
+
+inline bool LLoadProperty::HasMonomorphicProperty() {
+  return monomorphic_prop_;
+}
+
 } // namespace internal
 } // namespace candor
 

@@ -158,12 +158,18 @@ void LGen::VisitStoreContext(HIRInstruction* instr) {
 void LGen::VisitLoadProperty(HIRInstruction* instr) {
   LInterval* lhs = ToFixed(instr->left(), eax);
   LInterval* rhs = ToFixed(instr->right(), ebx);
-  LInstruction* load = Bind(new LLoadProperty())
+  LLoadProperty* load = new LLoadProperty();
+
+  Bind(load)
       ->MarkHasCall()
-      ->AddScratch(CreateVirtual())
-      ->AddScratch(CreateVirtual())
       ->AddArg(lhs, LUse::kRegister)
       ->AddArg(rhs, LUse::kRegister);
+
+  if (instr->right()->Is(HIRInstruction::kLiteral)) {
+    load->AddScratch(CreateVirtual());
+    load->AddScratch(CreateVirtual());
+    load->SetMonomorphicProperty();
+  }
 
   ResultFromFixed(load, eax);
 }
