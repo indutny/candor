@@ -269,7 +269,7 @@ class LAccessProperty : public LInstruction {
 
  protected:
   bool monomorphic_prop_;
-  AbsoluteAddress proto_ic, value_offset_ic;
+  AbsoluteAddress proto_ic, value_offset_ic, invalidate_ic;
 };
 
 class LLoadProperty : public LAccessProperty {

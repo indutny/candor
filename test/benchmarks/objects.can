@@ -4,7 +4,7 @@ b = clone a
 i = 100000000
 y = 0
 while (--i) {
-  y = y + b.y
-  b.z = 1
+  y = y + a.y
+  a.z = 1
 }
 global.print(y)

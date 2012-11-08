@@ -46,9 +46,10 @@ void Masm::Move(LUse* dst, Immediate src) {
 }
 
 
-void AbsoluteAddress::Target(int offset) {
+void AbsoluteAddress::Target(Masm* masm, int offset) {
   assert(ip_ == -1);
   ip_ = offset;
+  if (r_ != NULL) Commit(masm);
 }
 
 
@@ -57,8 +58,12 @@ void AbsoluteAddress::Use(Masm* masm, int offset) {
   r_ = new RelocationInfo(RelocationInfo::kAbsolute,
                           RelocationInfo::kPointer,
                           offset);
-  r_->target(ip_);
+  if (ip_ != -1) Commit(masm);
+}
 
+
+void AbsoluteAddress::Commit(Masm* masm) {
+  r_->target(ip_);
   masm->relocation_info_.Push(r_);
 }
 

@@ -189,7 +189,7 @@ void LAccessProperty::CheckIC(Masm* masm, Label* done) {
     // IC's data
     while (masm->offset() % 4 != 3) __ nop();
     __ mov(tmp1, Immediate(Heap::kICZapValue));
-    proto_ic.Target(masm->offset() - 4);
+    proto_ic.Target(masm, masm->offset() - 4);
 
     // Check if IC is disabled
     __ cmpl(tmp1, Immediate(Heap::kICDisabledValue));
@@ -203,7 +203,7 @@ void LAccessProperty::CheckIC(Masm* masm, Label* done) {
     // Get value from cache
     while (masm->offset() % 4 != 3) __ nop();
     __ mov(tmp1, Immediate(0));
-    value_offset_ic.Target(masm->offset() - 4);
+    value_offset_ic.Target(masm, masm->offset() - 4);
     __ IsNil(tmp1, NULL, &ic_miss);
 
     // Return value
@@ -219,6 +219,21 @@ void LAccessProperty::CheckIC(Masm* masm, Label* done) {
     proto_ic.NotifyGC();
 
     __ mov(ic_op, tmp0);
+    __ cmpl(tmp0, Immediate(Heap::kICDisabledValue));
+    __ jmp(kNe, &ic_miss);
+
+    // IC was disabled - nullify cache updating code
+
+    __ mov(tmp0, Immediate(0));
+    invalidate_ic.Use(masm, masm->offset() - 4);
+    __ mov(tmp1, Immediate(0x90909090));
+    __ mov(tmp0_op, tmp1);
+    __ addl(tmp0, Immediate(4));
+    __ mov(tmp0_op, tmp1);
+    __ addl(tmp0, Immediate(4));
+    __ mov(tmp0_op, tmp1);
+    __ addl(tmp0, Immediate(4));
+    __ mov(tmp0_op, tmp1);
 
     __ bind(&ic_miss);
   }
@@ -231,9 +246,15 @@ void LAccessProperty::UpdateIC(Masm* masm) {
     Operand tmp0_op(tmp0, 0);
 
     // Store address of value in IC
+    // (and store addres of this two instructions to nop them later)
+    while (masm->offset() % 4 != 0) __ nop();
+    invalidate_ic.Target(masm, masm->offset());
     __ mov(tmp0, Immediate(0));
     value_offset_ic.Use(masm, masm->offset() - 4);
     __ mov(tmp0_op, eax);
+    __ xorl(tmp0, tmp0);
+    __ xorl(tmp0, tmp0);
+    __ nop();
   }
 }
 
@@ -859,7 +880,7 @@ void LCollectGarbage::Generate(Masm* masm) {
 void LGetStackTrace::Generate(Masm* masm) {
   AbsoluteAddress addr;
 
-  addr.Target(masm->offset());
+  addr.Target(masm, masm->offset());
 
   // Pass ip
   __ mov(eax, Immediate(0));

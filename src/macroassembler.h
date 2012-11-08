@@ -167,11 +167,13 @@ class AbsoluteAddress {
  public:
   AbsoluteAddress() : ip_(-1), r_(NULL) {}
 
-  void Target(int offset);
+  void Target(Masm* masm, int offset);
   void Use(Masm* masm, int offset);
   void NotifyGC();
 
  private:
+  void Commit(Masm* masm);
+
   int ip_;
   RelocationInfo* r_;
 };
