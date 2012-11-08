@@ -273,6 +273,7 @@ class Assembler {
   void cmpl(Register dst, Register src);
   void cmpl(Register dst, Operand& src);
   void cmpl(Register dst, Immediate src);
+  void cmplb(Register dst, Immediate src);
   void cmpl(Operand& dst, Immediate src);
   void cmpb(Register dst, Operand& src);
   void cmpb(Register dst, Immediate src);

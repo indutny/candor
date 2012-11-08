@@ -243,7 +243,7 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
   } else {
     Label array, allocate_map;
 
-    cmpq(tag_reg, Immediate(HNumber::Tag(Heap::kTagArray)));
+    cmpqb(tag_reg, Immediate(HNumber::Tag(Heap::kTagArray)));
     jmp(kEq, &array);
 
     Allocate(Heap::kTagObject, reg_nil, 2 * HValue::kPointerSize, result);
@@ -533,7 +533,7 @@ void Masm::CheckGC() {
 
 
 void Masm::IsNil(Register reference, Label* not_nil, Label* is_nil) {
-  cmpq(reference, Immediate(Heap::kTagNil));
+  cmpqb(reference, Immediate(Heap::kTagNil));
   if (is_nil != NULL) jmp(kEq, is_nil);
   if (not_nil != NULL) jmp(kNe, not_nil);
 }

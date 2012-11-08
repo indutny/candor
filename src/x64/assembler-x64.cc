@@ -152,6 +152,14 @@ void Assembler::cmpq(Register dst, Immediate src) {
 }
 
 
+void Assembler::cmpqb(Register dst, Immediate src) {
+  emit_rexw(rax, dst);
+  emitb(0x83);
+  emit_modrm(dst, 7);
+  emitb(src.value());
+}
+
+
 void Assembler::cmpq(Operand& dst, Immediate src) {
   emit_rexw(rax, dst);
   emitb(0x81);

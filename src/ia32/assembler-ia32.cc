@@ -131,6 +131,13 @@ void Assembler::cmpl(Register dst, Immediate src) {
 }
 
 
+void Assembler::cmplb(Register dst, Immediate src) {
+  emitb(0x83);
+  emit_modrm(dst, 7);
+  emitb(src.value());
+}
+
+
 void Assembler::cmpl(Operand& dst, Immediate src) {
   emitb(0x81);
   emit_modrm(dst, 7);

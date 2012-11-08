@@ -314,6 +314,7 @@ class Assembler {
   void cmpq(Register dst, Register src);
   void cmpq(Register dst, Operand& src);
   void cmpq(Register dst, Immediate src);
+  void cmpqb(Register dst, Immediate src);
   void cmpq(Operand& dst, Immediate src);
   void cmpb(Register dst, Operand& src);
   void cmpb(Register dst, Immediate src);
