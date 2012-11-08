@@ -102,7 +102,6 @@ void LLiteral::Generate(Masm* masm) {
 
 
 void LAllocateObject::Generate(Masm* masm) {
-  // XXX Use correct size here
   __ push(Immediate(HNumber::Tag(size_)));
   __ push(Immediate(HNumber::Tag(Heap::kTagObject)));
   __ Call(masm->stubs()->GetAllocateObjectStub());
@@ -110,7 +109,6 @@ void LAllocateObject::Generate(Masm* masm) {
 
 
 void LAllocateArray::Generate(Masm* masm) {
-  // XXX Use correct size here
   __ push(Immediate(HNumber::Tag(size_)));
   __ push(Immediate(HNumber::Tag(Heap::kTagArray)));
   __ Call(masm->stubs()->GetAllocateObjectStub());
@@ -246,89 +244,17 @@ void LAccessProperty::UpdateIC(Masm* masm) {
 
 
 void LLoadProperty::Generate(Masm* masm) {
-  Label ic_done, done;
-
-  __ push(rax);
-  __ push(rax);
-
-  CheckIC(masm, &ic_done);
-
   // rax <- object
   // rbx <- property
-  __ mov(rcx, Immediate(0));
-  __ Call(masm->stubs()->GetLookupPropertyStub());
-  UpdateIC(masm);
-  __ bind(&ic_done);
-
-  __ pop(rbx);
-  __ pop(rbx);
-
-
-  __ IsNil(rax, NULL, &done);
-  Operand qmap(rbx, HObject::kMapOffset);
-  __ mov(rbx, qmap);
-  __ addq(rax, rbx);
-
-  Operand slot(rax, 0);
-  __ mov(rax, slot);
-
-  __ bind(&done);
-
-  if (HasMonomorphicProperty()) {
-    // Cleanup scratches
-    Register tmp0 = scratches[0]->ToRegister();
-    Register tmp1 = scratches[1]->ToRegister();
-    __ xorq(tmp0, tmp0);
-    __ xorq(tmp1, tmp1);
-  }
+  __ Call(masm->stubs()->GetLoadPropertyStub());
 }
 
 
 void LStoreProperty::Generate(Masm* masm) {
-  Label ic_done, done;
-
-  __ push(rax);
-  __ push(rcx);
-
-  CheckIC(masm, &ic_done);
-
   // rax <- object
   // rbx <- property
   // rcx <- value
-  __ mov(rcx, Immediate(1));
-  __ Call(masm->stubs()->GetLookupPropertyStub());
-
-  UpdateIC(masm);
-  __ bind(&ic_done);
-
-  // Make rax look like unboxed number to GC
-  __ dec(rax);
-  __ CheckGC();
-  __ inc(rax);
-
-  __ pop(rcx);
-  __ pop(rbx);
-
-  __ IsNil(rax, NULL, &done);
-
-  Operand qmap(rbx, HObject::kMapOffset);
-  __ push(rbx);
-  __ mov(rbx, qmap);
-  __ addq(rax, rbx);
-  __ pop(rbx);
-
-  Operand slot(rax, 0);
-  __ mov(slot, rcx);
-
-  __ bind(&done);
-
-  if (HasMonomorphicProperty()) {
-    // Cleanup scratches
-    Register tmp0 = scratches[0]->ToRegister();
-    Register tmp1 = scratches[1]->ToRegister();
-    __ xorq(tmp0, tmp0);
-    __ xorq(tmp1, tmp1);
-  }
+  __ Call(masm->stubs()->GetStorePropertyStub());
 }
 
 

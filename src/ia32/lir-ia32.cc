@@ -260,96 +260,17 @@ void LAccessProperty::UpdateIC(Masm* masm) {
 
 
 void LLoadProperty::Generate(Masm* masm) {
-  Label ic_done, done;
-
-  __ push(eax);
-  __ push(eax);
-  __ push(eax);
-  __ push(eax);
-
-  CheckIC(masm, &ic_done);
-
   // eax <- object
   // ebx <- property
-  __ mov(ecx, Immediate(0));
-  __ Call(masm->stubs()->GetLookupPropertyStub());
-
-  UpdateIC(masm);
-  __ bind(&ic_done);
-
-  __ pop(ebx);
-  __ pop(ebx);
-  __ pop(ebx);
-  __ pop(ebx);
-
-  __ IsNil(eax, NULL, &done);
-  Operand qmap(ebx, HObject::kMapOffset);
-  __ mov(ebx, qmap);
-  __ addl(eax, ebx);
-
-  Operand slot(eax, 0);
-  __ mov(eax, slot);
-
-  __ bind(&done);
-
-  if (HasMonomorphicProperty()) {
-    // Cleanup scratches
-    Register tmp0 = scratches[0]->ToRegister();
-    Register tmp1 = scratch;
-    __ xorl(tmp0, tmp0);
-    __ xorl(tmp1, tmp1);
-  }
+  __ Call(masm->stubs()->GetLoadPropertyStub());
 }
 
 
 void LStoreProperty::Generate(Masm* masm) {
-  Label ic_done;
-
-  __ push(eax);
-  __ push(eax);
-  __ push(ecx);
-  __ push(ecx);
-
   // eax <- object
   // ebx <- property
-  __ mov(ecx, Immediate(1));
-
-  CheckIC(masm, &ic_done);
-  __ Call(masm->stubs()->GetLookupPropertyStub());
-  UpdateIC(masm);
-  __ bind(&ic_done);
-
-  // Make eax look like unboxed number to GC
-  __ dec(eax);
-  __ CheckGC();
-  __ inc(eax);
-
-  __ pop(ecx);
-  __ pop(ecx);
-  __ pop(ebx);
-  __ pop(ebx);
-
-  Label done;
-  __ IsNil(eax, NULL, &done);
-
-  Operand qmap(ebx, HObject::kMapOffset);
-  __ push(ebx);
-  __ mov(ebx, qmap);
-  __ addl(eax, ebx);
-  __ pop(ebx);
-
-  Operand slot(eax, 0);
-  __ mov(slot, ecx);
-
-  __ bind(&done);
-
-  if (HasMonomorphicProperty()) {
-    // Cleanup scratches
-    Register tmp0 = scratches[0]->ToRegister();
-    Register tmp1 = scratch;
-    __ xorl(tmp0, tmp0);
-    __ xorl(tmp1, tmp1);
-  }
+  // ecx <- value
+  __ Call(masm->stubs()->GetStorePropertyStub());
 }
 
 

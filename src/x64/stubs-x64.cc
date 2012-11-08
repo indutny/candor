@@ -20,10 +20,12 @@ BaseStub::BaseStub(CodeSpace* space, StubType type) : space_(space),
 void BaseStub::GeneratePrologue() {
   __ push(rbp);
   __ mov(rbp, rsp);
+  __ AllocateSpills();
 }
 
 
 void BaseStub::GenerateEpilogue(int args) {
+  __ FinalizeSpills();
   __ mov(rsp, rbp);
   __ pop(rbp);
 
@@ -34,8 +36,6 @@ void BaseStub::GenerateEpilogue(int args) {
 
 void EntryStub::Generate() {
   GeneratePrologue();
-
-  __ AllocateSpills();
 
   // Just for alignment
   __ push(Immediate(Heap::kTagNil));
@@ -137,8 +137,6 @@ void EntryStub::Generate() {
   __ pop(r11);
   __ pop(rbx);
   __ pop(rbp);
-
-  __ FinalizeSpills();
 
   GenerateEpilogue(0);
 }
@@ -263,8 +261,6 @@ void AllocateFunctionStub::Generate() {
 void AllocateObjectStub::Generate() {
   GeneratePrologue();
 
-  __ AllocateSpills();
-
   // Arguments
   Operand size(rbp, 24);
   Operand tag(rbp, 16);
@@ -272,8 +268,6 @@ void AllocateObjectStub::Generate() {
   __ mov(rcx, tag);
   __ mov(rbx, size);
   __ AllocateObjectLiteral(Heap::kTagNil, rcx, rbx, rax);
-
-  __ FinalizeSpills();
 
   GenerateEpilogue(2);
 }
@@ -416,7 +410,6 @@ void KeysofStub::Generate() {
 
 void LookupPropertyStub::Generate() {
   GeneratePrologue();
-  __ AllocateSpills();
 
   Label is_object, is_array, cleanup, slow_case;
   Label non_object_error, done;
@@ -595,7 +588,6 @@ void LookupPropertyStub::Generate() {
 
   __ bind(&done);
 
-  __ FinalizeSpills();
   GenerateEpilogue(0);
 }
 
@@ -651,8 +643,6 @@ void CoerceToBooleanStub::Generate() {
 
 void CloneObjectStub::Generate() {
   GeneratePrologue();
-
-  __ AllocateSpills();
 
   Label non_object, done;
 
@@ -722,8 +712,69 @@ void CloneObjectStub::Generate() {
 
   __ bind(&done);
 
-  __ FinalizeSpills();
+  GenerateEpilogue(0);
+}
 
+
+void LoadPropertyStub::Generate() {
+  GeneratePrologue();
+
+  Label done;
+  Masm::Spill rax_s(masm(), rax);
+
+  // rax <- object
+  // rbx <- propery
+  __ mov(rcx, Immediate(0));
+  __ Call(masm()->stubs()->GetLookupPropertyStub());
+
+  __ IsNil(rax, NULL, &done);
+  rax_s.Unspill(rbx);
+  Operand qmap(rbx, HObject::kMapOffset);
+  __ mov(rbx, qmap);
+  __ addq(rax, rbx);
+
+  Operand slot(rax, 0);
+  __ mov(rax, slot);
+
+  __ bind(&done);
+
+  // rax -> result
+  GenerateEpilogue(0);
+}
+
+
+void StorePropertyStub::Generate() {
+  GeneratePrologue();
+
+  Label done;
+  Masm::Spill rax_s(masm(), rax);
+  Masm::Spill rcx_s(masm(), rcx);
+
+  // rax <- object
+  // rbx <- propery
+  // rcx <- value
+  __ mov(rcx, Immediate(1));
+  __ Call(masm()->stubs()->GetLookupPropertyStub());
+
+  // Make rax look like unboxed number to GC
+  __ dec(rax);
+  __ CheckGC();
+  __ inc(rax);
+
+  __ IsNil(rax, NULL, &done);
+  rax_s.Unspill(rbx);
+  rcx_s.Unspill(rcx);
+  Operand qmap(rbx, HObject::kMapOffset);
+  __ mov(rbx, qmap);
+  __ addq(rax, rbx);
+
+  Operand slot(rax, 0);
+  __ mov(slot, rcx);
+
+  __ bind(&done);
+  rax_s.Unspill(rbx);
+
+  // ebx <- object
   GenerateEpilogue(0);
 }
 
@@ -828,9 +879,6 @@ void BinOpStub::Generate() {
 
   // rax <- lhs
   // rbx <- rhs
-
-  // Allocate space for spill slots
-  __ AllocateSpills();
 
   Label not_unboxed, done;
   Label lhs_to_heap, rhs_to_heap;
@@ -1090,8 +1138,6 @@ void BinOpStub::Generate() {
   __ xorq(rbx, rbx);
 
   __ CheckGC();
-
-  __ FinalizeSpills();
 
   GenerateEpilogue(0);
 }
