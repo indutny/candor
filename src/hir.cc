@@ -39,6 +39,7 @@ HIRGen::HIRGen(Heap* heap, const char* filename, AstNode* root)
   PrunePhis();
   DeriveDominators();
   EliminateDeadCode();
+  GlobalValueNumbering();
   GlobalCodeMotion();
 
   if (log_) {
@@ -241,6 +242,10 @@ void HIRGen::EliminateDeadCode(HIRInstruction* instr) {
   for (; ahead != NULL; ahead = ahead->next()) {
     EliminateDeadCode(ahead->value());
   }
+}
+
+
+void HIRGen::GlobalValueNumbering() {
 }
 
 
