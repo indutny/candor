@@ -28,8 +28,6 @@ namespace internal {
     V(LookupProperty)\
     V(CoerceToBoolean)\
     V(CloneObject)\
-    V(LoadProperty)\
-    V(StoreProperty)\
     V(DeleteProperty)\
     V(HashValue)\
     V(StackTrace)

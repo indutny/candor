@@ -149,6 +149,15 @@ char* CodeSpace::Insert(char* code, uint32_t length) {
 }
 
 
+char* CodeSpace::CreatePIC() {
+  PIC* p = new PIC(this);
+
+  pics_.Push(p);
+
+  return p->Generate();
+}
+
+
 Value* CodeSpace::Run(char* fn, uint32_t argc, Value* argv[]) {
   if (fn == HNil::New() || HValue::IsUnboxed(fn)) {
     return reinterpret_cast<Value*>(HNil::New());

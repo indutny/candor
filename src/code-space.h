@@ -39,6 +39,7 @@ class CodeSpace {
                 char** root,
                 Error** error);
   char* Insert(char* code, uint32_t length);
+  char* CreatePIC();
 
   Value* Run(char* fn, uint32_t argc, Value* argv[]);
 

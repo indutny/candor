@@ -9,15 +9,18 @@ namespace candor {
 namespace internal {
 
 PIC::PIC(CodeSpace* space) : space_(space), index_(0) {
-#ifndef NDEBUG
   memset(protos_, 0, sizeof(protos_));
-  memset(props_, 0, sizeof(props_));
   memset(results_, 0, sizeof(results_));
-#endif // NDEBUG
+
+  for (int i = 0; i < kMaxSize; i++) {
+    space->heap()->Reference(Heap::kRefWeak,
+                             reinterpret_cast<HValue**>(&protos_[i]),
+                             reinterpret_cast<HValue*>(protos_[i]));
+  }
 }
 
 
-void PIC::Miss(char* object, char* property, intptr_t result) {
+void PIC::Miss(char* object, intptr_t result) {
   char* on_stack;
   if (index_ == kMaxSize) return Invalidate(&on_stack - 2);
 
@@ -25,11 +28,11 @@ void PIC::Miss(char* object, char* property, intptr_t result) {
   if (tag != Heap::kTagObject) return;
 
   char* map = HValue::As<HObject>(object)->map();
-  protos_[index_] = HValue::As<HMap>(map)->proto();
-  props_[index_] = property;
-  results_[index_] = result;
+  protos_[index_ >> 1] = HValue::As<HMap>(map)->proto();
+  results_[index_ >> 1] = result;
 
-  index_++;
+  // Index should look like a tagged value
+  index_ += 2;
 }
 
 

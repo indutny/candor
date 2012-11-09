@@ -263,35 +263,60 @@ void LAccessProperty::UpdateIC(Masm* masm) {
 
 
 void LLoadProperty::Generate(Masm* masm) {
-  AbsoluteAddress addr;
-
-  // Pass ip of stub's address
-  __ mov(edx, Immediate(0));
-  addr.Use(masm, masm->offset() - 4);
-
-  while (masm->offset() % 2 != 1) __ nop();
-  addr.Target(masm, masm->offset() + 1);
+  Label done;
+  Masm::Spill eax_s(masm, eax);
 
   // eax <- object
-  // ebx <- property
-  __ Call(masm->stubs()->GetLoadPropertyStub());
+  // ebx <- propery
+  __ mov(ecx, Immediate(0));
+  __ Call(masm->stubs()->GetLookupPropertyStub());
+
+  __ IsNil(eax, NULL, &done);
+  eax_s.Unspill(ebx);
+  Operand qmap(ebx, HObject::kMapOffset);
+  __ mov(ebx, qmap);
+  __ addl(eax, ebx);
+
+  Operand slot(eax, 0);
+  __ mov(eax, slot);
+
+  __ bind(&done);
 }
 
 
 void LStoreProperty::Generate(Masm* masm) {
-  AbsoluteAddress addr;
+  GeneratePrologue();
 
-  // Pass ip of stub's address
-  __ mov(edx, Immediate(0));
-  addr.Use(masm, masm->offset() - 4);
-
-  while (masm->offset() % 2 != 1) __ nop();
-  addr.Target(masm, masm->offset() + 1);
+  Label done;
+  Masm::Spill eax_s(masm, eax);
+  Masm::Spill ecx_s(masm, ecx);
 
   // eax <- object
-  // ebx <- property
+  // ebx <- propery
   // ecx <- value
-  __ Call(masm->stubs()->GetStorePropertyStub());
+  __ mov(ecx, Immediate(1));
+  __ Call(masm->stubs()->GetLookupPropertyStub());
+
+  // Make eax look like unboxed number to GC
+  __ dec(eax);
+  __ CheckGC();
+  __ inc(eax);
+
+  __ IsNil(eax, NULL, &done);
+  eax_s.Unspill(ebx);
+  ecx_s.Unspill(ecx);
+  Operand qmap(ebx, HObject::kMapOffset);
+  __ mov(ebx, qmap);
+  __ addl(eax, ebx);
+
+  Operand slot(eax, 0);
+  __ mov(slot, ecx);
+
+  // ebx <- object
+  __ bind(&done);
+  eax_s.Unspill(ebx);
+
+  GenerateEpilogue(0);
 }
 
 

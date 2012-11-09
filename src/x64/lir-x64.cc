@@ -248,35 +248,63 @@ void LAccessProperty::UpdateIC(Masm* masm) {
 
 
 void LLoadProperty::Generate(Masm* masm) {
-  AbsoluteAddress addr;
-
-  // Pass ip of stub's address
-  __ mov(rdx, Immediate(0));
-  addr.Use(masm, masm->offset() - 8);
-
-  while (masm->offset() % 2 != 0) __ nop();
-  addr.Target(masm, masm->offset() + 2);
+  Label done;
+  Masm::Spill rax_s(masm, rax);
 
   // rax <- object
-  // rbx <- property
-  __ Call(masm->stubs()->GetLoadPropertyStub());
+  // rbx <- propery
+  __ mov(rcx, Immediate(0));
+  if (HasMonomorphicProperty()) {
+    __ Call(masm->space()->CreatePIC());
+  } else {
+    __ Call(masm->stubs()->GetLookupPropertyStub());
+  }
+
+  __ IsNil(rax, NULL, &done);
+  rax_s.Unspill(rbx);
+  Operand qmap(rbx, HObject::kMapOffset);
+  __ mov(rbx, qmap);
+  __ addq(rax, rbx);
+
+  Operand slot(rax, 0);
+  __ mov(rax, slot);
+
+  __ bind(&done);
 }
 
 
 void LStoreProperty::Generate(Masm* masm) {
-  AbsoluteAddress addr;
-
-  // Pass ip of stub's address
-  __ mov(rdx, Immediate(0));
-  addr.Use(masm, masm->offset() - 8);
-
-  while (masm->offset() % 2 != 0) __ nop();
-  addr.Target(masm, masm->offset() + 2);
+  Label done;
+  Masm::Spill rax_s(masm, rax);
+  Masm::Spill rcx_s(masm, rcx);
 
   // rax <- object
-  // rbx <- property
+  // rbx <- propery
   // rcx <- value
-  __ Call(masm->stubs()->GetStorePropertyStub());
+  __ mov(rcx, Immediate(1));
+  if (HasMonomorphicProperty()) {
+    __ Call(masm->space()->CreatePIC());
+  } else {
+    __ Call(masm->stubs()->GetLookupPropertyStub());
+  }
+
+  // Make rax look like unboxed number to GC
+  __ dec(rax);
+  __ CheckGC();
+  __ inc(rax);
+
+  __ IsNil(rax, NULL, &done);
+  rax_s.Unspill(rbx);
+  rcx_s.Unspill(rcx);
+  Operand qmap(rbx, HObject::kMapOffset);
+  __ mov(rbx, qmap);
+  __ addq(rax, rbx);
+
+  Operand slot(rax, 0);
+  __ mov(slot, rcx);
+
+  __ bind(&done);
+  rax_s.Unspill(rbx);
 }
 
 

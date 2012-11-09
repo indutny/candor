@@ -15,16 +15,15 @@ class PIC {
   char* Generate();
 
  protected:
-  void Miss(char* object, char* property, intptr_t result);
+  void Miss(char* object, intptr_t result);
   void Invalidate(char** ip);
 
-  static const int kMaxSize = 10;
+  static const int kMaxSize = 5;
 
   CodeSpace* space_;
   char* protos_[kMaxSize];
-  char* props_[kMaxSize];
   intptr_t results_[kMaxSize];
-  int index_;
+  intptr_t index_;
 };
 
 } // namespace internal

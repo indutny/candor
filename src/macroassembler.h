@@ -142,6 +142,7 @@ class Masm : public Assembler {
 
   inline Heap* heap() { return space_->heap(); }
   inline Stubs* stubs() { return space_->stubs(); }
+  inline CodeSpace* space() { return space_; }
 
   inline void stack_slots(uint32_t stack_slots) {
     spill_offset_ = (1 + stack_slots) * HValue::kPointerSize;

@@ -774,69 +774,6 @@ void CloneObjectStub::Generate() {
 }
 
 
-void LoadPropertyStub::Generate() {
-  GeneratePrologue();
-
-  Label done;
-  Masm::Spill eax_s(masm(), eax);
-
-  // eax <- object
-  // ebx <- propery
-  __ mov(ecx, Immediate(0));
-  __ Call(masm()->stubs()->GetLookupPropertyStub());
-
-  __ IsNil(eax, NULL, &done);
-  eax_s.Unspill(ebx);
-  Operand qmap(ebx, HObject::kMapOffset);
-  __ mov(ebx, qmap);
-  __ addl(eax, ebx);
-
-  Operand slot(eax, 0);
-  __ mov(eax, slot);
-
-  __ bind(&done);
-
-  // eax -> result
-  GenerateEpilogue(0);
-}
-
-
-void StorePropertyStub::Generate() {
-  GeneratePrologue();
-
-  Label done;
-  Masm::Spill eax_s(masm(), eax);
-  Masm::Spill ecx_s(masm(), ecx);
-
-  // eax <- object
-  // ebx <- propery
-  // ecx <- value
-  __ mov(ecx, Immediate(1));
-  __ Call(masm()->stubs()->GetLookupPropertyStub());
-
-  // Make eax look like unboxed number to GC
-  __ dec(eax);
-  __ CheckGC();
-  __ inc(eax);
-
-  __ IsNil(eax, NULL, &done);
-  eax_s.Unspill(ebx);
-  ecx_s.Unspill(ecx);
-  Operand qmap(ebx, HObject::kMapOffset);
-  __ mov(ebx, qmap);
-  __ addl(eax, ebx);
-
-  Operand slot(eax, 0);
-  __ mov(slot, ecx);
-
-  // ebx <- object
-  __ bind(&done);
-  eax_s.Unspill(ebx);
-
-  GenerateEpilogue(0);
-}
-
-
 void DeletePropertyStub::Generate() {
   GeneratePrologue();
 
