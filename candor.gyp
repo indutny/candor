@@ -33,6 +33,7 @@
       'src/hir-instructions.cc',
       'src/lir.cc',
       'src/lir-instructions.cc',
+      'src/pic.cc',
       'src/macroassembler.cc',
       'src/runtime.cc',
     ],
@@ -44,6 +45,7 @@
           'src/x64/stubs-x64.cc',
           'src/x64/lir-builder-x64.cc',
           'src/x64/lir-x64.cc',
+          'src/x64/pic-x64.cc',
         ]
       }],
       ['target_arch == "ia32"', {
@@ -53,6 +55,7 @@
           'src/ia32/stubs-ia32.cc',
           'src/ia32/lir-builder-ia32.cc',
           'src/ia32/lir-ia32.cc',
+          'src/ia32/pic-ia64.cc',
         ]
       }],
     ]

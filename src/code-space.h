@@ -17,6 +17,7 @@ class Masm;
 class Stubs;
 class CodePage;
 class CodeInfo;
+class PIC;
 
 class CodeSpace {
  public:
@@ -49,6 +50,7 @@ class CodeSpace {
   Stubs* stubs_;
   char* entry_;
   List<CodePage*, EmptyClass> pages_;
+  List<PIC*, EmptyClass> pics_;
   List<CodeInfo*, EmptyClass> infos_;
 };
 

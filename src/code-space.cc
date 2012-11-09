@@ -11,6 +11,7 @@
 #include "lir-inl.h" // LIR
 #include "source-map.h" // SourceMap
 #include "stubs.h" // EntryStub
+#include "pic.h" // PIC
 #include "utils.h" // GetPageSize
 
 #include <stdlib.h> // NULL
