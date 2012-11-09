@@ -214,8 +214,12 @@ class Heap {
 
   // Factory methods
   char* CreateString(const char* key, uint32_t size);
+  char* CreateNumber(double num);
+  char* CreateBoolean(bool value);
 
  private:
+  char* ToFactory(char* key);
+
   Space new_space_;
   Space old_space_;
 

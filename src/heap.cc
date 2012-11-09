@@ -111,20 +111,33 @@ Heap::Heap(uint32_t page_size) : new_space_(this, page_size),
 }
 
 
-char* Heap::CreateString(const char* key, uint32_t size) {
-  char* hkey = HString::New(this, Heap::kTenureOld, key, size);
-
+char* Heap::ToFactory(char* key) {
   char** slot = HObject::LookupProperty(this,
                                         reinterpret_cast<char*>(factory_),
-                                        hkey,
+                                        key,
                                         1);
   if (*slot == HNil::New()) {
-    *slot = hkey;
+    *slot = key;
   } else {
-    hkey = *slot;
+    key = *slot;
   }
 
-  return hkey;
+  return key;
+}
+
+
+char* Heap::CreateString(const char* key, uint32_t size) {
+  return ToFactory(HString::New(this, Heap::kTenureOld, key, size));
+}
+
+
+char* Heap::CreateNumber(double num) {
+  return ToFactory(HNumber::New(this, Heap::kTenureOld, num));
+}
+
+
+char* Heap::CreateBoolean(bool value) {
+  return ToFactory(HBoolean::New(this, Heap::kTenureOld, value));
 }
 
 

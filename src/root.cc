@@ -13,8 +13,8 @@ Root::Root(Heap* heap) : heap_(heap) {
   values()->Push(HObject::NewEmpty(heap));
 
   // Place some root values
-  values()->Push(HBoolean::New(heap, Heap::kTenureOld, true));
-  values()->Push(HBoolean::New(heap, Heap::kTenureOld, false));
+  values()->Push(heap->CreateBoolean(true));
+  values()->Push(heap->CreateBoolean(false));
 
   // Place types
   values()->Push(heap->CreateString("nil", 3));
@@ -43,10 +43,10 @@ ScopeSlot* Root::Put(AstNode* node) {
     value = StringToValue(node);
     break;
    case AstNode::kTrue:
-    value = HBoolean::New(heap(), Heap::kTenureOld, true);
+    value = heap()->CreateBoolean(true);
     break;
    case AstNode::kFalse:
-    value = HBoolean::New(heap(), Heap::kTenureOld, false);
+    value = heap()->CreateBoolean(false);
     break;
    case AstNode::kNil:
     slot->type(ScopeSlot::kImmediate);
@@ -67,7 +67,7 @@ char* Root::NumberToValue(AstNode* node, ScopeSlot* slot) {
     // Allocate boxed heap number
     double value = StringToDouble(node->value(), node->length());
 
-    return HNumber::New(heap(), Heap::kTenureOld, value);
+    return heap()->CreateNumber(value);
   } else {
     // Allocate unboxed number
     int64_t value = StringToInt(node->value(), node->length());

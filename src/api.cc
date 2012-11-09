@@ -360,9 +360,7 @@ Nil* Nil::New() {
 
 
 Boolean* Boolean::New(bool value) {
-  return Cast<Boolean>(HBoolean::New(ISOLATE->heap,
-                                     Heap::kTenureNew,
-                                     value));
+  return Cast<Boolean>(ISOLATE->heap->CreateBoolean(value));
 }
 
 
