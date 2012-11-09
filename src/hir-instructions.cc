@@ -9,11 +9,14 @@ namespace internal {
 HIRInstruction::HIRInstruction(Type type) :
     id(-1),
     gcm_visited(0),
+    gvn_visited(0),
     is_live(0),
     type_(type),
     slot_(NULL),
     ast_(NULL),
     lir_(NULL),
+    hashed_(false),
+    hash_(0),
     removed_(false),
     pinned_(true),
     representation_(kHoleRepresentation) {
@@ -23,11 +26,14 @@ HIRInstruction::HIRInstruction(Type type) :
 HIRInstruction::HIRInstruction(Type type, ScopeSlot* slot) :
     id(-1),
     gcm_visited(0),
+    gvn_visited(0),
     is_live(0),
     type_(type),
     slot_(slot),
     ast_(NULL),
     lir_(NULL),
+    hashed_(false),
+    hash_(0),
     removed_(false),
     pinned_(true),
     representation_(kHoleRepresentation) {
@@ -40,8 +46,13 @@ void HIRInstruction::Init(HIRGen* g, HIRBlock* block) {
 }
 
 
-inline bool HIRInstruction::HasSideEffects() {
+bool HIRInstruction::HasSideEffects() {
   return false;
+}
+
+
+bool HIRInstruction::HasGVNSideEffects() {
+  return HasSideEffects();
 }
 
 
@@ -92,6 +103,67 @@ void HIRInstruction::RemoveUse(HIRInstruction* i) {
       break;
     }
   }
+}
+
+
+uint32_t HIRInstruction::Hash(HIRInstruction* instr) {
+  // Loop detected
+  if (instr->hashed_) return instr->hash_;
+  instr->hashed_ = true;
+
+  // Some outstanding hash - just in case of loops
+  instr->hash_ = 0xffff;
+
+  // Jenkins for following sequence
+  // [type] [hash of input 1] ... [hash of input N]
+  uint32_t r = instr->type() & 0xff;
+  r += r << 10;
+  r ^= r >> 6;
+
+  HIRInstructionList::Item* ahead = instr->args()->head();
+  for (; ahead != NULL; ahead = ahead->next()) {
+    uint32_t arg_hash = Hash(ahead->value());
+
+    while (arg_hash != 0) {
+      r += arg_hash & 0xff;
+      r += r << 10;
+      r ^= r >> 6;
+      arg_hash = arg_hash >> 8;
+    }
+  }
+
+  // Shuffle bits
+  r += r << 3;
+  r ^= r >> 13;
+  r += r << 15;
+
+  instr->hash_ = r;
+  return r;
+}
+
+
+int HIRInstruction::Compare(HIRInstruction* a, HIRInstruction* b) {
+  if (a == b) return 0;
+
+  // Types should be equal
+  if (a->type() != b->type()) return -1;
+
+  // Arguments should be equal too
+  if (a->args()->length() != b->args()->length()) return -1;
+
+  HIRInstructionList::Item* ahead = a->args()->head();
+  HIRInstructionList::Item* bhead = b->args()->head();
+  for (; ahead != NULL; ahead = ahead->next(), bhead = bhead->next()) {
+    if (ahead->value() != bhead->value()) return -1;
+  }
+
+  return a->IsGVNEqual(b) ? 0 : 1;
+}
+
+
+bool HIRInstruction::IsGVNEqual(HIRInstruction* to) {
+  // Default implementation
+  return true;
 }
 
 
@@ -164,6 +236,14 @@ HIRLiteral::HIRLiteral(AstNode::Type type, ScopeSlot* slot) :
 }
 
 
+bool HIRLiteral::IsGVNEqual(HIRInstruction* to) {
+  if (!to->Is(HIRInstruction::kLiteral)) return false;
+  HIRLiteral* lto = HIRLiteral::Cast(to);
+
+  return this->root_slot()->is_equal(lto->root_slot());
+}
+
+
 void HIRLiteral::CalculateRepresentation() {
   switch (type_) {
    case AstNode::kNumber:
@@ -198,6 +278,11 @@ void HIRFunction::CalculateRepresentation() {
 
 void HIRFunction::Print(PrintBuffer* p) {
   p->Print("i%d = Function[b%d]\n", id, body->id);
+}
+
+
+bool HIRFunction::IsGVNEqual(HIRInstruction* to) {
+  return this == to;
 }
 
 
@@ -299,9 +384,19 @@ void HIRBinOp::CalculateRepresentation() {
 }
 
 
+bool HIRBinOp::IsGVNEqual(HIRInstruction* to) {
+  return binop_type_ == HIRBinOp::Cast(to)->binop_type_;
+}
+
+
 HIRLoadContext::HIRLoadContext(ScopeSlot* slot)
     : HIRInstruction(kLoadContext),
       context_slot_(slot) {
+}
+
+
+bool HIRLoadContext::HasGVNSideEffects() {
+  return true;
 }
 
 
@@ -353,6 +448,11 @@ HIRAllocateObject::HIRAllocateObject(int size)
 }
 
 
+bool HIRAllocateObject::HasGVNSideEffects() {
+  return true;
+}
+
+
 void HIRAllocateObject::CalculateRepresentation() {
   representation_ = kObjectRepresentation;
 }
@@ -361,6 +461,11 @@ void HIRAllocateObject::CalculateRepresentation() {
 HIRAllocateArray::HIRAllocateArray(int size)
     : HIRInstruction(kAllocateArray),
       size_(RoundUp(PowerOfTwo(size + 1), 16)) {
+}
+
+
+bool HIRAllocateArray::HasGVNSideEffects() {
+  return true;
 }
 
 

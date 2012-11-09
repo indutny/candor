@@ -246,6 +246,55 @@ void HIRGen::EliminateDeadCode(HIRInstruction* instr) {
 
 
 void HIRGen::GlobalValueNumbering() {
+  HIRInstructionMap* gvn_ = NULL;
+  HIRBlock* root_ = NULL;
+
+  // For each block
+  HIRBlockList::Item* bhead = blocks_.head();
+  for (; bhead != NULL; bhead = bhead->next()) {
+    HIRBlock* block = bhead->value();
+
+    if (root_ != block->root()) {
+      root_ = block->root();
+      gvn_ = new HIRInstructionMap();
+    }
+
+    // Visit instructions that wasn't yet visited
+    HIRInstructionList::Item* ihead = block->instructions()->head();
+    for (; ihead != NULL; ihead = ihead->next()) {
+      HIRInstruction* instr = ihead->value();
+
+      GlobalValueNumbering(instr, gvn_);
+    }
+  }
+}
+
+
+void HIRGen::GlobalValueNumbering(HIRInstruction* instr,
+                                  HIRInstructionMap* gvn) {
+  if (instr->gvn_visited) return;
+  instr->gvn_visited = 1;
+
+  // Instructions with side effects can't be replaced
+  if (instr->HasGVNSideEffects()) return;
+
+  // Process inputs first
+  HIRInstructionList::Item* ahead = instr->args()->head();
+  for (; ahead != NULL; ahead = ahead->next()) {
+    HIRInstruction* arg = ahead->value();
+    GlobalValueNumbering(arg, gvn);
+  }
+
+  HIRInstruction* copy = gvn->Get(instr);
+
+  // If there're already equivalent instruction in GVN, replace current with it
+  if (copy != NULL) {
+    Replace(instr, copy);
+    instr->block()->Remove(instr);
+    return;
+  }
+
+  gvn->Set(instr, instr);
 }
 
 

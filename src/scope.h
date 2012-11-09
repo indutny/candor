@@ -49,6 +49,10 @@ class ScopeSlot : public ZoneObject {
   inline bool is_immediate() { return type_ == kImmediate; }
 
   inline void type(Type type) { type_ = type; }
+  inline bool is_equal(ScopeSlot* to) {
+    return type_ == to->type_ && index_ == to->index_ &&
+           depth_ == to->depth_ && value_ == to->value_;
+  }
 
   // Register slots should have a value (unboxed nil or number)
   inline char* value() { assert(is_immediate()); return value_; }
@@ -66,7 +70,7 @@ class ScopeSlot : public ZoneObject {
 
   void Print(PrintBuffer* p);
 
- private:
+ protected:
   Type type_;
   char* value_;
 

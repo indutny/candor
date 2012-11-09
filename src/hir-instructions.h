@@ -17,6 +17,7 @@ class HIRPhi;
 class LInstruction;
 
 typedef ZoneList<HIRInstruction*> HIRInstructionList;
+typedef HashMap<HIRInstruction, HIRInstruction, ZoneObject> HIRInstructionMap;
 typedef ZoneList<HIRPhi*> HIRPhiList;
 
 #define HIR_INSTRUCTION_TYPES(V) \
@@ -86,13 +87,19 @@ class HIRInstruction : public ZoneObject {
 
   int id;
   int gcm_visited;
+  int gvn_visited;
   int is_live;
 
   virtual void ReplaceArg(HIRInstruction* o, HIRInstruction* n);
   virtual bool HasSideEffects();
+  virtual bool HasGVNSideEffects();
   virtual void CalculateRepresentation();
   void Remove();
   void RemoveUse(HIRInstruction* i);
+
+  // GVN hashmap routines
+  static uint32_t Hash(HIRInstruction* instr);
+  static int Compare(HIRInstruction* a, HIRInstruction* b);
 
   inline HIRInstruction* AddArg(Type type);
   inline HIRInstruction* AddArg(HIRInstruction* instr);
@@ -130,11 +137,16 @@ class HIRInstruction : public ZoneObject {
   inline void lir(LInstruction* lir);
 
  protected:
+  virtual bool IsGVNEqual(HIRInstruction* to);
+
   Type type_;
   ScopeSlot* slot_;
   AstNode* ast_;
   LInstruction* lir_;
   HIRBlock* block_;
+
+  bool hashed_;
+  uint32_t hash_;
 
   bool removed_;
   bool pinned_;
@@ -187,7 +199,9 @@ class HIRLiteral : public HIRInstruction {
 
   HIR_DEFAULT_METHODS(Literal)
 
- private:
+ protected:
+  bool IsGVNEqual(HIRInstruction* to);
+
   AstNode::Type type_;
   ScopeSlot* root_slot_;
 };
@@ -203,6 +217,9 @@ class HIRFunction : public HIRInstruction {
   void Print(PrintBuffer* p);
 
   HIR_DEFAULT_METHODS(Function)
+
+ protected:
+  bool IsGVNEqual(HIRInstruction* to);
 };
 
 class HIRNil : public HIRInstruction {
@@ -290,7 +307,9 @@ class HIRBinOp : public HIRInstruction {
 
   HIR_DEFAULT_METHODS(BinOp)
 
- private:
+ protected:
+  bool IsGVNEqual(HIRInstruction* to);
+
   BinOp::BinOpType binop_type_;
 };
 
@@ -299,10 +318,11 @@ class HIRLoadContext : public HIRInstruction {
   HIRLoadContext(ScopeSlot* slot);
 
   inline ScopeSlot* context_slot();
+  bool HasGVNSideEffects();
 
   HIR_DEFAULT_METHODS(LoadContext)
 
- private:
+ protected:
   ScopeSlot* context_slot_;
 };
 
@@ -354,6 +374,7 @@ class HIRAllocateObject : public HIRInstruction {
  public:
   HIRAllocateObject(int size);
 
+  bool HasGVNSideEffects();
   void CalculateRepresentation();
   inline int size();
 
@@ -367,6 +388,7 @@ class HIRAllocateArray : public HIRInstruction {
  public:
   HIRAllocateArray(int size);
 
+  bool HasGVNSideEffects();
   void CalculateRepresentation();
   inline int size();
 

@@ -27,16 +27,26 @@ Root::Root(Heap* heap) : heap_(heap) {
   values()->Push(heap->CreateString("cdata", 5));
 }
 
+ScopeSlot* Root::GetSlot(char* value) {
+  ScopeSlot* slot = map_.Get(NumberKey::New(value));
+
+  if (slot != NULL) return slot;
+  slot = new ScopeSlot(ScopeSlot::kContext, -2);
+  slot->index(values()->length());
+  values()->Push(value);
+  map_.Set(NumberKey::New(value), slot);
+
+  return slot;
+}
+
 
 ScopeSlot* Root::Put(AstNode* node) {
-  ScopeSlot* slot = new ScopeSlot(ScopeSlot::kContext, -2);
-
-  slot->index(values()->length());
-
+  ScopeSlot* slot = NULL;
   char* value = HNil::New();
+
   switch (node->type()) {
    case AstNode::kNumber:
-    value = NumberToValue(node, slot);
+    value = NumberToValue(node, &slot);
     break;
    case AstNode::kProperty:
    case AstNode::kString:
@@ -49,20 +59,22 @@ ScopeSlot* Root::Put(AstNode* node) {
     value = heap()->CreateBoolean(false);
     break;
    case AstNode::kNil:
-    slot->type(ScopeSlot::kImmediate);
-    slot->value(HNil::New());
-    break;
+    {
+      slot = new ScopeSlot(ScopeSlot::kContext, -2);
+      slot->type(ScopeSlot::kImmediate);
+      slot->value(HNil::New());
+    }
    default: UNEXPECTED break;
   }
-  if (value != NULL) {
-    values()->Push(value);
-  }
 
-  return slot;
+  if (slot != NULL) return slot;
+
+  assert(value != NULL);
+  return GetSlot(value);
 }
 
 
-char* Root::NumberToValue(AstNode* node, ScopeSlot* slot) {
+char* Root::NumberToValue(AstNode* node, ScopeSlot** slot) {
   if (StringIsDouble(node->value(), node->length())) {
     // Allocate boxed heap number
     double value = StringToDouble(node->value(), node->length());
@@ -73,8 +85,10 @@ char* Root::NumberToValue(AstNode* node, ScopeSlot* slot) {
     int64_t value = StringToInt(node->value(), node->length());
 
     // Change slot's type
-    slot->type(ScopeSlot::kImmediate);
-    slot->value(HNumber::New(heap(), value));
+    ScopeSlot* s =  new ScopeSlot(ScopeSlot::kContext, -2);
+    s->type(ScopeSlot::kImmediate);
+    s->value(HNumber::New(heap(), value));
+    *slot = s;
 
     return NULL;
   }

@@ -22,15 +22,17 @@ class Root {
   ScopeSlot* Put(AstNode* node);
   HContext* Allocate();
 
-  char* NumberToValue(AstNode* node, ScopeSlot* slot);
-  char* StringToValue(AstNode* node);
-
   inline Heap* heap() { return heap_; }
   inline HValueList* values() { return &values_; }
 
  private:
+  char* NumberToValue(AstNode* node, ScopeSlot** slot);
+  char* StringToValue(AstNode* node);
+  ScopeSlot* GetSlot(char* value);
+
   Heap* heap_;
   HValueList values_;
+  HashMap<NumberKey, ScopeSlot, ZoneObject> map_;
 };
 
 } // namespace internal

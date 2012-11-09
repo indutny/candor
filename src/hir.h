@@ -167,6 +167,7 @@ class HIRGen : public Visitor<HIRInstruction> {
   void EliminateDeadCode();
   void EliminateDeadCode(HIRInstruction* instr);
   void GlobalValueNumbering();
+  void GlobalValueNumbering(HIRInstruction* instr, HIRInstructionMap* gvn);
   void GlobalCodeMotion();
   void ScheduleEarly(HIRInstruction* instr, HIRBlock* root);
   void ScheduleLate(HIRInstruction* instr);
