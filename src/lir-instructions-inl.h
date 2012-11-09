@@ -42,6 +42,7 @@ inline LInstruction* LInstruction::SetResult(LInterval* res,
                                              LUse::Type use_type) {
   assert(result == NULL);
   result = res->Use(use_type, this);
+  res->definition(this);
   propagated_ = result;
 
   return this;

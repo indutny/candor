@@ -62,6 +62,11 @@ inline LInterval* LGen::CreateStackSlot(int index) {
 }
 
 
+inline LInterval* LGen::CreateConst() {
+  return CreateInterval(LInterval::kConst, virtual_index());
+}
+
+
 inline LBlock* LGen::IsBlockStart(int pos) {
   HIRBlockList::Item* bhead = blocks_.head();
   for (; bhead != NULL; bhead = bhead->next()) {
@@ -161,6 +166,11 @@ inline bool LUse::is_stackslot() {
 }
 
 
+inline bool LUse::is_const() {
+  return interval()->is_const();
+}
+
+
 inline bool LUse::IsEqual(LUse* use) {
   return interval()->IsEqual(use->interval());
 }
@@ -207,6 +217,21 @@ inline bool LInterval::is_stackslot() {
 }
 
 
+inline bool LInterval::is_const() {
+  return type_ == kConst;
+}
+
+
+inline LInstruction* LInterval::definition() {
+  return definition_;
+}
+
+
+inline void LInterval::definition(LInstruction* definition) {
+  definition_ = definition;
+}
+
+
 inline bool LInterval::IsEqual(LInterval* i) {
   return i->type() == this->type() && i->index() == this->index();
 }
@@ -222,6 +247,7 @@ inline void LInterval::Print(PrintBuffer* p) {
     }
     break;
    case kStackSlot: p->Print("[%d]:%d", index(), id); break;
+   case kConst: p->Print("c%d", id); break;
    default: UNEXPECTED
   }
 }

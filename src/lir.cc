@@ -40,7 +40,7 @@ LGen::LGen(HIRGen* hir, const char* filename, HIRBlock* root)
   if (log_) {
     PrintBuffer p(stdout);
     p.Print("## LIR %s Start ##\n", filename == NULL ? "unknown" : filename);
-    Print(&p);
+    Print(&p, true);
     p.Print("## LIR End ##\n");
   }
 }
@@ -391,6 +391,29 @@ void LGen::WalkIntervals() {
       // Skip unused
       if (interval->ranges()->length() == 0) continue;
       inactive_.Push(interval);
+    } else if (interval->is_const()) {
+      // Rematerialize const intervals before their uses
+      LUseList::Item* utail = interval->uses()->tail();
+      for (; utail != NULL; utail = utail->prev()) {
+        LUse* use = utail->value();
+
+        // Skip constant definition
+        if (use->instr()->result == use) continue;
+
+        // Skip use in movements that was just created
+        if (use->instr()->type() == LInstruction::kGap) continue;
+
+        LInterval* reg = CreateVirtual();
+        LGap* gap = GetGap(use->instr()->id - 1);
+        gap->Add(interval->Use(LUse::kAny, gap),
+                 reg->Use(LUse::kRegister, gap));
+
+        // Replace interval in use
+        use->interval(reg);
+        reg->AddRange(use->instr()->id - 1, use->instr()->id);
+      }
+    } else if (interval->is_stackslot()) {
+      // Fix gap's stackslots
     } else {
       // Regular virtual one
       assert(interval->is_virtual());
@@ -819,6 +842,8 @@ void LGen::PrintIntervals(PrintBuffer* p) {
       p->Print("%s     : ", RegisterNameByIndex(interval->id));
     } else if (interval->is_stackslot()) {
       p->Print("%03d [%02d]: ", interval->id, interval->index());
+    } else if (interval->is_const()) {
+      p->Print("%03d c   : ", interval->id);
     } else {
       p->Print("%03d     : ", interval->id);
     }

@@ -394,14 +394,11 @@ void HIRGen::ScheduleLate(HIRInstruction* instr) {
   HIRBlock* best = lca;
 
   // Constants should be close to instructions
-  if (!instr->Is(HIRInstruction::kLiteral) &&
-      !instr->Is(HIRInstruction::kNil)) {
-    while (lca != instr->block()) {
-      if (lca->loop_depth < best->loop_depth) {
-        best = lca;
-      }
-      lca = lca->dominator();
+  while (lca != instr->block()) {
+    if (lca->loop_depth < best->loop_depth) {
+      best = lca;
     }
+    lca = lca->dominator();
   }
   instr->block(lca);
 }

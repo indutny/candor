@@ -8,6 +8,11 @@ namespace internal {
 void Masm::Move(LUse* dst, LUse* src) {
   if (src->is_register()) {
     Move(dst, src->ToRegister());
+  } else if (src->is_const()) {
+    // Generate const load
+    LInstruction* c = src->interval()->definition();
+    c->result = dst;
+    c->Generate(this);
   } else {
     assert(src->is_stackslot());
     Move(dst, *src->ToOperand());

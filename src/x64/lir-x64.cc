@@ -84,11 +84,15 @@ void LGap::Generate(Masm* masm) {
 
 
 void LNil::Generate(Masm* masm) {
+  if (result->instr() == this) return;
+
   __ Move(result, Immediate(Heap::kTagNil));
 }
 
 
 void LLiteral::Generate(Masm* masm) {
+  if (result->instr() == this) return;
+
   if (root_slot_->is_immediate()) {
     __ Move(result,
             Immediate(reinterpret_cast<intptr_t>(root_slot_->value())));

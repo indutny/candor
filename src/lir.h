@@ -78,6 +78,7 @@ class LUse : public ZoneObject {
   inline bool is_virtual();
   inline bool is_register();
   inline bool is_stackslot();
+  inline bool is_const();
 
   inline LInstruction* instr();
   inline Type type();
@@ -100,12 +101,14 @@ class LInterval : public ZoneObject {
   enum Type {
     kVirtual,
     kRegister,
-    kStackSlot
+    kStackSlot,
+    kConst
   };
 
   LInterval(Type type, int index) : id(-1),
                                     register_hint(NULL),
                                     type_(type),
+                                    definition_(NULL),
                                     index_(index),
                                     fixed_(false),
                                     split_parent_(NULL) {
@@ -128,6 +131,11 @@ class LInterval : public ZoneObject {
   inline bool is_virtual();
   inline bool is_register();
   inline bool is_stackslot();
+  inline bool is_const();
+
+  // Used to identify definition of consts
+  inline LInstruction* definition();
+  inline void definition(LInstruction* definition);
 
   inline int index();
   inline LRangeList* ranges();
@@ -147,6 +155,7 @@ class LInterval : public ZoneObject {
 
  private:
   Type type_;
+  LInstruction* definition_;
   int index_;
   LRangeList ranges_;
   LUseList uses_;
@@ -217,6 +226,7 @@ class LGen : public ZoneObject {
   inline LInterval* CreateVirtual();
   inline LInterval* CreateRegister(Register reg);
   inline LInterval* CreateStackSlot(int index);
+  inline LInterval* CreateConst();
   inline LBlock* IsBlockStart(int pos);
 
   LInterval* ToFixed(HIRInstruction* instr, Register reg);

@@ -13,7 +13,7 @@ void LGen::VisitNop(HIRInstruction* instr) {
 
 void LGen::VisitNil(HIRInstruction* instr) {
   Bind(new LNil())
-      ->SetResult(CreateVirtual(), LUse::kAny);
+      ->SetResult(CreateConst(), LUse::kAny);
 }
 
 
@@ -31,7 +31,7 @@ void LGen::VisitReturn(HIRInstruction* instr) {
 
 void LGen::VisitLiteral(HIRInstruction* instr) {
   Bind(new LLiteral(HIRLiteral::Cast(instr)->root_slot()))
-      ->SetResult(CreateVirtual(), LUse::kAny);
+      ->SetResult(CreateConst(), LUse::kAny);
 }
 
 
