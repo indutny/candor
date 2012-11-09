@@ -3,17 +3,14 @@ b = { x: 1, y: 2, z: 3 }
 c = clone a
 d = clone b
 
-get(obj) {
-  return obj.z
-}
-
 i = 100000000
 y = 0
 while (--i) {
   if (i % 2 == 0) {
-    get(c)
+    x = c
   } else {
-    get(d)
+    x = d
   }
+  x.z = 1
 }
 global.print(y)

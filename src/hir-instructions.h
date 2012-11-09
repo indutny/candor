@@ -344,6 +344,7 @@ class HIRLoadProperty : public HIRInstruction {
  public:
   HIRLoadProperty();
 
+  bool HasGVNSideEffects();
   HIR_DEFAULT_METHODS(LoadProperty)
 
  private:

@@ -84,7 +84,9 @@ void HIRGen::PrunePhis() {
     HIRPhi* phi = phead->value();
 
     if (phi->input_count() == 2) {
-      if (phi->InputAt(1) != phi) continue;
+      if (phi->InputAt(1) != phi && phi->InputAt(0) != phi->InputAt(1)) {
+        continue;
+      }
       phi->input_count(1);
     }
 
@@ -914,7 +916,7 @@ HIRInstruction* HIRGen::VisitArrayLiteral(AstNode* stmt) {
 HIRInstruction* HIRGen::VisitMember(AstNode* stmt) {
   HIRInstruction* prop = Visit(stmt->rhs());
   HIRInstruction* recv = Visit(stmt->lhs());
-  return Add(new HIRLoadProperty())->AddArg(recv)->AddArg(prop)->Unpin();
+  return Add(new HIRLoadProperty())->AddArg(recv)->AddArg(prop);
 }
 
 
@@ -1009,7 +1011,6 @@ HIRInstruction* HIRGen::VisitCall(AstNode* stmt) {
     HIRInstruction* property = Visit(fn->variable()->rhs());
 
     var = Add(new HIRLoadProperty())
-        ->Unpin()
         ->AddArg(receiver)
         ->AddArg(property);
   } else {
@@ -1147,22 +1148,24 @@ void HIRBlock::AddPredecessor(HIRBlock* b) {
 
     HIRInstruction* old = this->env()->At(i);
 
+    // In loop values can be propagated up to the block where it was declared
+    if (old == curr) continue;
+
     // Value already present in block
     if (old != NULL) {
       HIRPhi* phi = this->env()->PhiAt(i);
 
-      // In loop values can be propagated up to the block where it was declared
-      if (old == curr) continue;
-
       // Create phi if needed
       if (phi == NULL || phi->block() != this) {
         assert(phis_.length() == instructions_.length());
+        ScopeSlot* slot = new ScopeSlot(ScopeSlot::kStack);
+        slot->index(i);
 
-        phi = CreatePhi(curr->slot());
+        phi = CreatePhi(slot);
         Add(phi);
         phi->AddInput(old);
 
-        Assign(curr->slot(), phi);
+        Assign(slot, phi);
       }
 
       // Add value as phi's input

@@ -422,6 +422,11 @@ HIRLoadProperty::HIRLoadProperty() : HIRInstruction(kLoadProperty) {
 }
 
 
+bool HIRLoadProperty::HasGVNSideEffects() {
+  return true;
+}
+
+
 HIRStoreProperty::HIRStoreProperty() : HIRInstruction(kStoreProperty) {
 }
 

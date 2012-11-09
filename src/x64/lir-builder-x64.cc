@@ -166,8 +166,6 @@ void LGen::VisitLoadProperty(HIRInstruction* instr) {
       ->AddArg(rhs, LUse::kRegister);
 
   if (instr->right()->Is(HIRInstruction::kLiteral)) {
-    load->AddScratch(CreateVirtual());
-    load->AddScratch(CreateVirtual());
     load->SetMonomorphicProperty();
   }
 
@@ -186,8 +184,6 @@ void LGen::VisitStoreProperty(HIRInstruction* instr) {
       ->AddArg(rhs, LUse::kRegister);
 
   if (instr->right()->Is(HIRInstruction::kLiteral)) {
-    store->AddScratch(CreateVirtual());
-    store->AddScratch(CreateVirtual());
     store->SetMonomorphicProperty();
   }
 
