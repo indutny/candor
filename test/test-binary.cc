@@ -97,6 +97,14 @@ TEST_START(binary)
     ASSERT(result->As<Boolean>()->IsTrue());
   })
 
+  FUN_TEST("return nil < 1", {
+    ASSERT(result->As<Boolean>()->IsTrue());
+  })
+
+  FUN_TEST("return nil < 3", {
+    ASSERT(result->As<Boolean>()->IsTrue());
+  })
+
   FUN_TEST("return 123 <= '100'", {
     ASSERT(result->As<Boolean>()->IsFalse());
   })

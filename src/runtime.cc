@@ -808,5 +808,10 @@ char* RuntimeStackTrace(Heap* heap, char** frame, char* ip) {
   return result;
 }
 
+
+void RuntimePIC(char* ip) {
+  // TODO: Implement me
+}
+
 } // namespace internal
 } // namespace candor

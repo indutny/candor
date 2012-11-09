@@ -301,8 +301,8 @@ class BinOp : public AstNode {
   static inline bool NumToCompare(BinOpType type, int num) {
     assert(is_logic(type));
     switch (type) {
-     case kLt: return num == -1;
-     case kGt: return num == 1;
+     case kLt: return num < 0;
+     case kGt: return num > 0;
      case kLe: return num <= 0;
      case kGe: return num >= 0;
      case kStrictEq: case kEq: return num == 0;
