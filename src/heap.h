@@ -160,6 +160,7 @@ class Heap {
 
   // Tenure configuration (GC)
   static const int8_t kMinOldSpaceGeneration = 5;
+  static const uint32_t kMinFactorySize = 128;
   static const uint32_t kBindingContextTag = 0x0DEC0DEC;
   static const uint32_t kEnterFrameTag = 0xFEEDBEEE;
   static const uint32_t kICDisabledValue = 0x0;
@@ -483,8 +484,8 @@ class HString : public HValue {
 
 class HObject : public HValue {
  public:
-  static char* NewEmpty(Heap* heap);
-  static void Init(Heap* heap, char* obj);
+  static char* NewEmpty(Heap* heap, uint32_t size = 16);
+  static void Init(Heap* heap, char* obj, uint32_t size);
 
   inline char* map() { return *map_slot(); }
   inline char** map_slot() { return MapSlot(addr()); }

@@ -106,7 +106,7 @@ Heap::Heap(uint32_t page_size) : new_space_(this, page_size),
                                  gc_(this) {
   current_ = this;
   references_.allocated = true;
-  factory_ = HValue::Cast(HObject::NewEmpty(this));
+  factory_ = HValue::Cast(HObject::NewEmpty(this, kMinFactorySize));
   Reference(Heap::kRefPersistent, &factory_, factory_);
 }
 
@@ -439,19 +439,17 @@ uint32_t HString::Hash(Heap* heap, char* addr) {
 }
 
 
-char* HObject::NewEmpty(Heap* heap) {
+char* HObject::NewEmpty(Heap* heap, uint32_t size) {
   char* obj = heap->AllocateTagged(Heap::kTagObject,
                                    Heap::kTenureNew,
                                    2 * kPointerSize);
-  HObject::Init(heap, obj);
+  HObject::Init(heap, obj, size);
 
   return obj;
 }
 
 
-void HObject::Init(Heap* heap, char* obj) {
-  static const uint32_t size = 16;
-
+void HObject::Init(Heap* heap, char* obj, uint32_t size) {
   // Set mask
   *reinterpret_cast<intptr_t*>(obj + kMaskOffset) = (size - 1) * kPointerSize;
   // Set map
@@ -470,7 +468,7 @@ char* HArray::NewEmpty(Heap* heap) {
                                    Heap::kTenureNew,
                                    3 * kPointerSize);
 
-  HObject::Init(heap, obj);
+  HObject::Init(heap, obj, 16);
 
   // Set length
   SetLength(obj, 0);
