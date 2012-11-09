@@ -77,7 +77,7 @@ char* RuntimeStackTrace(Heap* heap, char** frame, char* ip);
 
 // Polymorphic inline cache callback
 typedef void (*RuntimePICCallback)(char* ip);
-void RuntimePIC(char* ip);
+void RuntimeLoadPropertyPIC(char* ip);
 
 } // namespace internal
 } // namespace candor

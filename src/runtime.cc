@@ -809,7 +809,7 @@ char* RuntimeStackTrace(Heap* heap, char** frame, char* ip) {
 }
 
 
-void RuntimePIC(char* ip) {
+void RuntimeLoadPropertyPIC(char* ip) {
   // TODO: Implement me
 }
 

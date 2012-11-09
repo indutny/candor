@@ -248,6 +248,15 @@ void LAccessProperty::UpdateIC(Masm* masm) {
 
 
 void LLoadProperty::Generate(Masm* masm) {
+  AbsoluteAddress addr;
+
+  // Pass ip of stub's address
+  __ mov(rdx, Immediate(0));
+  addr.Use(masm, masm->offset() - 8);
+
+  while (masm->offset() % 2 != 0) __ nop();
+  addr.Target(masm, masm->offset() + 2);
+
   // rax <- object
   // rbx <- property
   __ Call(masm->stubs()->GetLoadPropertyStub());
@@ -255,6 +264,15 @@ void LLoadProperty::Generate(Masm* masm) {
 
 
 void LStoreProperty::Generate(Masm* masm) {
+  AbsoluteAddress addr;
+
+  // Pass ip of stub's address
+  __ mov(rdx, Immediate(0));
+  addr.Use(masm, masm->offset() - 8);
+
+  while (masm->offset() % 2 != 0) __ nop();
+  addr.Target(masm, masm->offset() + 2);
+
   // rax <- object
   // rbx <- property
   // rcx <- value

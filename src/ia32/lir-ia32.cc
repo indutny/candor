@@ -85,7 +85,6 @@ void LGap::Generate(Masm* masm) {
 
 void LNil::Generate(Masm* masm) {
   if (result->instr() == this) return;
-
   __ Move(result, Immediate(Heap::kTagNil));
 }
 
@@ -264,6 +263,15 @@ void LAccessProperty::UpdateIC(Masm* masm) {
 
 
 void LLoadProperty::Generate(Masm* masm) {
+  AbsoluteAddress addr;
+
+  // Pass ip of stub's address
+  __ mov(edx, Immediate(0));
+  addr.Use(masm, masm->offset() - 4);
+
+  while (masm->offset() % 2 != 1) __ nop();
+  addr.Target(masm, masm->offset() + 1);
+
   // eax <- object
   // ebx <- property
   __ Call(masm->stubs()->GetLoadPropertyStub());
@@ -271,6 +279,15 @@ void LLoadProperty::Generate(Masm* masm) {
 
 
 void LStoreProperty::Generate(Masm* masm) {
+  AbsoluteAddress addr;
+
+  // Pass ip of stub's address
+  __ mov(edx, Immediate(0));
+  addr.Use(masm, masm->offset() - 4);
+
+  while (masm->offset() % 2 != 1) __ nop();
+  addr.Target(masm, masm->offset() + 1);
+
   // eax <- object
   // ebx <- property
   // ecx <- value
