@@ -55,7 +55,7 @@
           'src/ia32/stubs-ia32.cc',
           'src/ia32/lir-builder-ia32.cc',
           'src/ia32/lir-ia32.cc',
-          'src/ia32/pic-ia64.cc',
+          'src/ia32/pic-ia32.cc',
         ]
       }],
     ]
