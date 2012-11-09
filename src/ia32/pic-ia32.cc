@@ -5,10 +5,7 @@
 namespace candor {
 namespace internal {
 
-char* PIC::Generate() {
-  Masm masm(space_);
-
-  return space_->Put(&masm);
+void PIC::Generate(Masm* masm) {
 }
 
 } // namespace internal

@@ -1,10 +1,19 @@
 a = { x: 1, y: 2, z: 3 }
-b = clone a
+b = { x: 1, y: 2, z: 3 }
+c = clone a
+d = clone b
+
+get(obj) {
+  return obj.z
+}
 
 i = 100000000
 y = 0
 while (--i) {
-  y = y + a.y
-  a.z = 1
+  if (i % 2 == 0) {
+    get(c)
+  } else {
+    get(d)
+  }
 }
 global.print(y)

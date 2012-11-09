@@ -182,6 +182,11 @@ inline void HIRInstruction::lir(LInstruction* lir) {
 
 
 inline void HIRPhi::AddInput(HIRInstruction* instr) {
+  // Skip if input is already here
+  for (int i = 0; i < input_count_; i++) {
+    if (inputs_[i] == instr) return;
+  }
+
   assert(input_count_ < 2);
   assert(instr != NULL);
   inputs_[input_count_++] = instr;

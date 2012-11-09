@@ -6,7 +6,9 @@
 namespace candor {
 namespace internal {
 
+// Forward declarations
 class CodeSpace;
+class Masm;
 
 class PIC {
  public:
@@ -15,14 +17,19 @@ class PIC {
   char* Generate();
 
  protected:
+  typedef void (*MissCallback)(PIC* pic, char* object, intptr_t result);
+
+  void Generate(Masm* masm);
+
+  static void Miss(PIC* pic, char* object, intptr_t result);
   void Miss(char* object, intptr_t result);
   void Invalidate(char** ip);
 
   static const int kMaxSize = 5;
 
   CodeSpace* space_;
-  char* protos_[kMaxSize];
-  intptr_t results_[kMaxSize];
+  char** protos_[kMaxSize];
+  intptr_t* results_[kMaxSize];
   intptr_t index_;
 };
 

@@ -501,6 +501,7 @@ class HIRClone : public HIRInstruction {
   HIRClone();
 
   void CalculateRepresentation();
+  bool HasGVNSideEffects();
 
   HIR_DEFAULT_METHODS(Clone)
 

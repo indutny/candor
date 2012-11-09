@@ -285,8 +285,6 @@ void LLoadProperty::Generate(Masm* masm) {
 
 
 void LStoreProperty::Generate(Masm* masm) {
-  GeneratePrologue();
-
   Label done;
   Masm::Spill eax_s(masm, eax);
   Masm::Spill ecx_s(masm, ecx);
@@ -315,8 +313,6 @@ void LStoreProperty::Generate(Masm* masm) {
   // ebx <- object
   __ bind(&done);
   eax_s.Unspill(ebx);
-
-  GenerateEpilogue(0);
 }
 
 

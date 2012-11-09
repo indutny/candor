@@ -559,6 +559,11 @@ HIRClone::HIRClone() : HIRInstruction(kClone) {
 }
 
 
+bool HIRClone::HasGVNSideEffects() {
+  return true;
+}
+
+
 void HIRClone::CalculateRepresentation() {
   representation_ = kObjectRepresentation;
 }

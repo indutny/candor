@@ -6,20 +6,19 @@
 namespace candor {
 namespace internal {
 
-#define __ masm.
+#define __ masm->
 
-char* PIC::Generate() {
-  Masm masm(space_);
+void PIC::Generate(Masm* masm) {
   __ push(rbp);
   __ mov(rbp, rsp);
 
   // Allocate spills
   __ AllocateSpills();
 
-  Label miss;
-  Operand rax_op(rax, 0), rbx_op(rbx, 0), rdx_op(rdx, 0);
+  Label miss, end;
+  Operand rdx_op(rdx, 0);
   Operand map_op(rax, HObject::kMapOffset), proto_op(rax, HMap::kProtoOffset);
-  Masm::Spill rax_s(&masm, rax), rbx_s(&masm, rbx);
+  Masm::Spill rax_s(masm, rax), rbx_s(masm, rbx);
 
   // Fast-case non-object
   __ IsNil(rax, NULL, &miss);
@@ -29,6 +28,8 @@ char* PIC::Generate() {
   // Load proto
   __ mov(rax, map_op);
   __ mov(rax, proto_op);
+  __ cmpq(rax, Immediate(Heap::kICDisabledValue));
+  __ jmp(kEq, &miss);
 
   // Load current index
   __ mov(rdx, Immediate(reinterpret_cast<intptr_t>(&index_)));
@@ -40,28 +41,50 @@ char* PIC::Generate() {
     // Perform checks
     __ cmpq(rdx, Immediate(i * 2));
     __ jmp(kLe, &miss);
-    __ mov(rbx, Immediate(reinterpret_cast<intptr_t>(&protos_[i])));
-    __ cmpq(rax, rbx_op);
+    __ mov(rbx, Immediate(0));
+    protos_[i] = reinterpret_cast<char**>(static_cast<intptr_t>(
+          masm->offset() - 8));
+    __ cmpq(rax, rbx);
     __ jmp(kNe, &local_miss);
-    __ mov(rax, Immediate(reinterpret_cast<intptr_t>(&results_[i])));
-    __ mov(rax, rax_op);
-    __ ret(0);
+    __ mov(rax, Immediate(0));
+    results_[i] = reinterpret_cast<intptr_t*>(static_cast<intptr_t>(
+          masm->offset() - 8));
+    __ jmp(&end);
     __ bind(&local_miss);
   }
 
   // Cache failed - call runtime
   __ bind(&miss);
 
-  rax_s.Unspill();
   rbx_s.Unspill();
+  rbx_s.SpillReg(rax);
+  rax_s.Unspill();
   __ Call(space_->stubs()->GetLookupPropertyStub());
 
+  rbx_s.Unspill(rbx);
+  __ cmpq(rbx, Immediate(Heap::kICDisabledValue));
+  __ jmp(kEq, &end);
+
+  // Amend PIC
+  __ Pushad();
+
+  // Miss(this, object, result)
+  __ mov(rdi, Immediate(reinterpret_cast<intptr_t>(this)));
+  rax_s.Unspill(rsi);
+  __ mov(rdx, rax);
+  MissCallback miss_cb = &Miss;
+  __ mov(scratch, Immediate(*reinterpret_cast<intptr_t*>(&miss_cb)));
+  __ Call(scratch);
+
+  __ Popad(reg_nil);
+
+  // Return value
+  __ bind(&end);
   __ FinalizeSpills();
+  __ xorq(rbx, rbx);
   __ mov(rsp, rbp);
   __ pop(rbp);
   __ ret(0);
-
-  return space_->Put(&masm);
 }
 
 } // namespace internal
