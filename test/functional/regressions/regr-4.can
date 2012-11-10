@@ -1,0 +1,24 @@
+print = global.print
+assert = global.assert
+
+print("-- can: hir regr#4 --")
+
+a = { prop: 2 }
+b = { prop: 3 }
+a = clone a
+b = clone b
+
+i = 0
+total = 0
+while (i < 10) {
+  if (i % 2 == 0) {
+    obj = a
+  } else {
+    obj = b
+  }
+  obj.prop = obj.prop + obj.prop
+  i++
+}
+
+assert(a.prop == 64, "a is correct")
+assert(b.prop == 96, "a is correct")
