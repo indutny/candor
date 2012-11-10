@@ -25,14 +25,17 @@ void PIC::Generate(Masm* masm) {
   __ mov(eax_s, eax);
   __ mov(ebx_s, ebx);
 
+  // Proto in case of array
+  __ mov(edx, Immediate(Heap::kICDisabledValue));
+
   // Fast-case non-object
   __ IsNil(eax, NULL, &miss);
   __ IsUnboxed(eax, NULL, &miss);
   __ IsHeapObject(Heap::kTagObject, eax, &miss, NULL);
 
   // Load proto
-  __ mov(eax, proto_op);
-  __ cmpl(eax, Immediate(Heap::kICDisabledValue));
+  __ mov(edx, proto_op);
+  __ cmpl(edx, Immediate(Heap::kICDisabledValue));
   __ jmp(kEq, &miss);
 
   // Jump into correct section
@@ -48,7 +51,7 @@ void PIC::Generate(Masm* masm) {
     __ mov(ebx, Immediate(0));
     protos_[i] = reinterpret_cast<char**>(static_cast<intptr_t>(
           masm->offset() - 4));
-    __ cmpl(eax, ebx);
+    __ cmpl(edx, ebx);
     __ jmp(kNe, &local_miss);
     __ mov(eax, Immediate(0));
     results_[i] = reinterpret_cast<intptr_t*>(static_cast<intptr_t>(
@@ -65,7 +68,7 @@ void PIC::Generate(Masm* masm) {
   __ bind(&miss);
 
   __ mov(ebx, ebx_s);
-  __ mov(ebx_s, eax);
+  __ mov(ebx_s, edx);
   __ mov(eax, eax_s);
   __ Call(space_->stubs()->GetLookupPropertyStub());
 
