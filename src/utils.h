@@ -488,8 +488,8 @@ class HashMap {
   bool allocated;
 
  private:
-  static const uint32_t size_ = 128;
-  static const uint32_t mask_ = 127;
+  static const uint32_t size_ = 32;
+  static const uint32_t mask_ = 31;
   Item* map_[size_];
   Item* head_;
   Item* current_;

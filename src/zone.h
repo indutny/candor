@@ -54,7 +54,7 @@ class Zone {
 
     page_size_ = GetPageSize();
 
-    blocks_.Push(new ZoneBlock(page_size_));
+    blocks_.Push(new ZoneBlock(10 * page_size_));
   }
 
   ~Zone() {
