@@ -12,14 +12,20 @@ void PIC::Generate(Masm* masm) {
   __ push(rbp);
   __ mov(rbp, rsp);
 
-  // Allocate spills
-  __ AllocateSpills();
+  // Place for spills
+  __ push(Immediate(Heap::kTagNil));
+  __ push(Immediate(Heap::kTagNil));
+  __ push(Immediate(Heap::kTagNil));
+  __ push(Immediate(Heap::kTagNil));
 
   Label miss, end;
   Label cases[kMaxSize];
   Operand rdx_op(rdx, 0);
   Operand proto_op(rax, HObject::kProtoOffset);
-  Masm::Spill rax_s(masm, rax), rbx_s(masm, rbx);
+  Operand rax_s(rbp, -16), rbx_s(rbp, -24);
+
+  __ mov(rax_s, rax);
+  __ mov(rbx_s, rbx);
 
   // Fast-case non-object
   __ IsNil(rax, NULL, &miss);
@@ -60,12 +66,12 @@ void PIC::Generate(Masm* masm) {
   // Cache failed - call runtime
   __ bind(&miss);
 
-  rbx_s.Unspill();
-  rbx_s.SpillReg(rax);
-  rax_s.Unspill();
+  __ mov(rbx, rbx_s);
+  __ mov(rbx_s, rax);
+  __ mov(rax, rax_s);
   __ Call(space_->stubs()->GetLookupPropertyStub());
 
-  rbx_s.Unspill(rbx);
+  __ mov(rbx, rbx_s);
   __ cmpq(rbx, Immediate(Heap::kICDisabledValue));
   __ jmp(kEq, &end);
 
@@ -74,7 +80,7 @@ void PIC::Generate(Masm* masm) {
 
   // Miss(this, object, result, ip)
   __ mov(rdi, Immediate(reinterpret_cast<intptr_t>(this)));
-  rax_s.Unspill(rsi);
+  __ mov(rsi, rax_s);
   __ mov(rdx, rax);
 
   Operand caller_ip(rbp, 8);
@@ -88,7 +94,6 @@ void PIC::Generate(Masm* masm) {
 
   // Return value
   __ bind(&end);
-  __ FinalizeSpills();
   __ xorq(rbx, rbx);
   __ mov(rsp, rbp);
   __ pop(rbp);

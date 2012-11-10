@@ -12,14 +12,18 @@ void PIC::Generate(Masm* masm) {
   __ push(ebp);
   __ mov(ebp, esp);
 
-  // Allocate spills
-  __ AllocateSpills();
+  // Place for spills
+  __ push(Immediate(Heap::kTagNil));
+  __ push(Immediate(Heap::kTagNil));
 
   Label miss, end;
   Label cases[kMaxSize];
   Operand edx_op(edx, 0);
   Operand proto_op(eax, HObject::kProtoOffset);
-  Masm::Spill eax_s(masm, eax), ebx_s(masm, ebx);
+  Operand eax_s(ebp, -8), ebx_s(ebp, -12);
+
+  __ mov(eax_s, eax);
+  __ mov(ebx_s, ebx);
 
   // Fast-case non-object
   __ IsNil(eax, NULL, &miss);
@@ -60,12 +64,12 @@ void PIC::Generate(Masm* masm) {
   // Cache failed - call runtime
   __ bind(&miss);
 
-  ebx_s.Unspill();
-  ebx_s.SpillReg(eax);
-  eax_s.Unspill();
+  __ mov(ebx, ebx_s);
+  __ mov(ebx_s, eax);
+  __ mov(eax, eax_s);
   __ Call(space_->stubs()->GetLookupPropertyStub());
 
-  ebx_s.Unspill(ebx);
+  __ mov(ebx, ebx_s);
   __ cmpl(ebx, Immediate(Heap::kICDisabledValue));
   __ jmp(kEq, &end);
 
@@ -74,7 +78,7 @@ void PIC::Generate(Masm* masm) {
 
   // Miss(this, object, result, ip)
   __ mov(edi, Immediate(reinterpret_cast<intptr_t>(this)));
-  eax_s.Unspill(esi);
+  __ mov(esi, eax_s);
   __ mov(edx, eax);
 
   Operand caller_ip(ebp, 4);
@@ -93,7 +97,6 @@ void PIC::Generate(Masm* masm) {
 
   // Return value
   __ bind(&end);
-  __ FinalizeSpills();
   __ xorl(ebx, ebx);
   __ mov(esp, ebp);
   __ pop(ebp);
