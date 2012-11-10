@@ -30,7 +30,7 @@ class PIC {
   CodeSpace* space_;
   char** protos_[kMaxSize];
   intptr_t* results_[kMaxSize];
-  intptr_t index_;
+  intptr_t* index_;
 };
 
 } // namespace internal

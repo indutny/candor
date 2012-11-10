@@ -32,25 +32,16 @@ void PIC::Generate(Masm* masm) {
   __ jmp(kEq, &miss);
 
   // Load current index
-  __ mov(rdx, Immediate(reinterpret_cast<intptr_t>(&index_)));
-  __ mov(rdx, rdx_op);
+  __ mov(rdx, Immediate(0));
+  index_ = reinterpret_cast<intptr_t*>(static_cast<intptr_t>(
+        masm->offset() - 8));
+
+  Label cases[kMaxSize];
 
   for (int i = 0; i < kMaxSize; i++) {
-    Label local_miss;
-
     // Perform checks
     __ cmpq(rdx, Immediate(i * 2));
-    __ jmp(kLe, &miss);
-    __ mov(rbx, Immediate(0));
-    protos_[i] = reinterpret_cast<char**>(static_cast<intptr_t>(
-          masm->offset() - 8));
-    __ cmpq(rax, rbx);
-    __ jmp(kNe, &local_miss);
-    __ mov(rax, Immediate(0));
-    results_[i] = reinterpret_cast<intptr_t*>(static_cast<intptr_t>(
-          masm->offset() - 8));
-    __ jmp(&end);
-    __ bind(&local_miss);
+    __ jmp(kEq, &cases[i]);
   }
 
   // Cache failed - call runtime
@@ -85,6 +76,26 @@ void PIC::Generate(Masm* masm) {
   __ mov(rsp, rbp);
   __ pop(rbp);
   __ ret(0);
+
+  for (int i = kMaxSize - 1; i >= 0; i--) {
+    Label local_miss;
+
+    __ bind(&cases[i]);
+    __ mov(rbx, Immediate(0));
+    protos_[i] = reinterpret_cast<char**>(static_cast<intptr_t>(
+          masm->offset() - 8));
+    __ cmpq(rax, rbx);
+    __ jmp(kNe, &local_miss);
+    __ mov(rax, Immediate(0));
+    results_[i] = reinterpret_cast<intptr_t*>(static_cast<intptr_t>(
+          masm->offset() - 8));
+    __ xorq(rbx, rbx);
+    __ mov(rsp, rbp);
+    __ pop(rbp);
+    __ ret(0);
+    __ bind(&local_miss);
+  }
+  __ jmp(&miss);
 }
 
 } // namespace internal

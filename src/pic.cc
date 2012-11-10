@@ -8,7 +8,7 @@
 namespace candor {
 namespace internal {
 
-PIC::PIC(CodeSpace* space) : space_(space), index_(0) {
+PIC::PIC(CodeSpace* space) : space_(space) {
 }
 
 
@@ -18,6 +18,9 @@ char* PIC::Generate() {
   Generate(&masm);
 
   char* addr = space_->Put(&masm);
+
+  index_ = reinterpret_cast<intptr_t*>(
+      reinterpret_cast<intptr_t>(index_) + addr);
 
   // At this stage protos_ and results_ should contain offsets,
   // get real addresses for them and reference protos in heap
@@ -42,18 +45,22 @@ void PIC::Miss(PIC* pic, char* object, intptr_t result) {
 
 
 void PIC::Miss(char* object, intptr_t result) {
+  int index = *index_;
+
   // char* on_stack;
-  if (index_ >= 2 * kMaxSize) return; // pic->Invalidate(&on_stack - 2);
+  if (index >= 2 * kMaxSize) return; // pic->Invalidate(&on_stack - 2);
 
   Heap::HeapTag tag = HValue::GetTag(object);
   if (tag != Heap::kTagObject) return;
 
   char* map = HValue::As<HObject>(object)->map();
-  *protos_[index_ >> 1] = HValue::As<HMap>(map)->proto();
-  *results_[index_ >> 1] = result;
+  *protos_[index >> 1] = HValue::As<HMap>(map)->proto();
+  *results_[index >> 1] = result;
 
   // Index should look like a tagged value
-  index_ += 2;
+  index += 2;
+
+  *index_ = index;
 }
 
 
