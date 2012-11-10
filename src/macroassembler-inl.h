@@ -83,7 +83,7 @@ inline void Masm::SpillSlot(uint32_t index, Operand& op) {
 #elif CANDOR_ARCH_ia32
   op.base(ebp);
 #endif
-  op.disp(-spill_offset_ - 8 - HValue::kPointerSize * index);
+  op.disp(-spill_offset_ - HValue::kPointerSize * (index + 1));
 }
 
 } // namespace internal
