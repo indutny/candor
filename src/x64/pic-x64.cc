@@ -28,7 +28,7 @@ void PIC::Generate(Masm* masm) {
   __ mov(rbx_s, rbx);
 
   // Proto in case of array
-  __ mov(rdx, Immediate(Heap::kICDisabledValue));
+  __ movl(rdx, Immediate(Heap::kICDisabledValue));
 
   // Fast-case non-object
   __ IsNil(rax, NULL, &miss);

@@ -328,6 +328,7 @@ class Assembler {
   void mov(Operand& dst, Register src);
   void mov(Register dst, Immediate src);
   void mov(Operand& dst, Immediate src);
+  void movl(Register dst, Immediate src);
   void movl(Operand& dst, Immediate src);
   void movb(Register dst, Immediate src);
   void movb(Operand& dst, Immediate src);

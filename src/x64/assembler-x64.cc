@@ -290,6 +290,14 @@ void Assembler::movl(Operand& dst, Immediate src) {
 }
 
 
+void Assembler::movl(Register dst, Immediate src) {
+  emit_rexw(dst);
+  emitb(0xC7);
+  emit_modrm(dst, 0);
+  emitl(src.value());
+}
+
+
 void Assembler::movb(Register dst, Immediate src) {
   emit_rexw(dst);
   emitb(0xC6);
