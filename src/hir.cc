@@ -1038,12 +1038,12 @@ HIRInstruction* HIRGen::VisitTypeof(AstNode* stmt) {
 
 HIRInstruction* HIRGen::VisitKeysof(AstNode* stmt) {
   HIRInstruction* lhs = Visit(stmt->lhs());
-  return Add(new HIRKeysof())->Unpin()->AddArg(lhs);
+  return Add(new HIRKeysof())->AddArg(lhs);
 }
 
 HIRInstruction* HIRGen::VisitSizeof(AstNode* stmt) {
   HIRInstruction* lhs = Visit(stmt->lhs());
-  return Add(new HIRSizeof())->Unpin()->AddArg(lhs);
+  return Add(new HIRSizeof())->AddArg(lhs);
 }
 
 
