@@ -229,7 +229,6 @@ void LStoreProperty::Generate(Masm* masm) {
 
   // ebx <- object
   __ bind(&done);
-  eax_s.Unspill(ebx);
 }
 
 

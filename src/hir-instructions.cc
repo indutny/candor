@@ -542,6 +542,11 @@ void HIRKeysof::CalculateRepresentation() {
 }
 
 
+bool HIRKeysof::HasGVNSideEffects() {
+  return true;
+}
+
+
 HIRSizeof::HIRSizeof() : HIRInstruction(kSizeof) {
 }
 
@@ -551,12 +556,22 @@ void HIRSizeof::CalculateRepresentation() {
 }
 
 
+bool HIRSizeof::HasGVNSideEffects() {
+  return true;
+}
+
+
 HIRTypeof::HIRTypeof() : HIRInstruction(kTypeof) {
 }
 
 
 void HIRTypeof::CalculateRepresentation() {
   representation_ = kStringRepresentation;
+}
+
+
+bool HIRTypeof::HasGVNSideEffects() {
+  return true;
 }
 
 

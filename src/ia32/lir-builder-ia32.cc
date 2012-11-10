@@ -186,8 +186,6 @@ void LGen::VisitStoreProperty(HIRInstruction* instr) {
   if (instr->right()->Is(HIRInstruction::kLiteral)) {
     store->SetMonomorphicProperty();
   }
-
-  ResultFromFixed(store, ebx);
 }
 
 

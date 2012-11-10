@@ -213,7 +213,6 @@ void LStoreProperty::Generate(Masm* masm) {
   __ mov(slot, rcx);
 
   __ bind(&done);
-  rax_s.Unspill(rbx);
 }
 
 

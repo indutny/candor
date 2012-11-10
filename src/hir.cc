@@ -604,19 +604,10 @@ HIRInstruction* HIRGen::VisitAssign(AstNode* stmt) {
     HIRInstruction* property = Visit(stmt->lhs()->rhs());
     HIRInstruction* receiver = Visit(stmt->lhs()->lhs());
 
-    // This is a little bit tricky, every store to local object
-    // generates new object (virtually). It seems to be pretty
-    // useful for GCM
-    HIRInstruction* updated_obj = Add(new HIRStoreProperty())
+    Add(new HIRStoreProperty())
         ->AddArg(receiver)
         ->AddArg(property)
-        ->AddArg(rhs)
-        ->Unpin();
-
-    if (receiver->slot() != NULL) {
-      assert(receiver->slot()->is_stack());
-      Assign(receiver->slot(), updated_obj);
-    }
+        ->AddArg(rhs);
   } else {
     UNEXPECTED
   }
@@ -788,16 +779,10 @@ HIRInstruction* HIRGen::VisitUnOp(AstNode* stmt) {
       HIRInstruction* receiver = load->args()->head()->value();
       HIRInstruction* property = load->args()->tail()->value();
 
-      HIRInstruction* updated_obj = Add(new HIRStoreProperty())
-          ->Unpin()
+      Add(new HIRStoreProperty())
           ->AddArg(receiver)
           ->AddArg(property)
           ->AddArg(value);
-
-      if (receiver->slot() != NULL) {
-        assert(receiver->slot()->is_stack());
-        Assign(receiver->slot(), updated_obj);
-      }
     } else {
       UNEXPECTED
     }
@@ -883,11 +868,10 @@ HIRInstruction* HIRGen::VisitObjectLiteral(AstNode* stmt) {
     HIRInstruction* value = Visit(vhead->value());
     HIRInstruction* key = Visit(khead->value());
 
-    res = Add(new HIRStoreProperty())
+    Add(new HIRStoreProperty())
         ->AddArg(res)
         ->AddArg(key)
-        ->AddArg(value)
-        ->Unpin();
+        ->AddArg(value);
   }
 
   return res;
@@ -902,11 +886,10 @@ HIRInstruction* HIRGen::VisitArrayLiteral(AstNode* stmt) {
     HIRInstruction* key = GetNumber(i);
     HIRInstruction* value = Visit(head->value());
 
-    res = Add(new HIRStoreProperty())
+    Add(new HIRStoreProperty())
         ->AddArg(res)
         ->AddArg(key)
-        ->AddArg(value)
-        ->Unpin();
+        ->AddArg(value);
   }
 
   return res;

@@ -469,6 +469,7 @@ class HIRKeysof : public HIRInstruction {
   HIRKeysof();
 
   void CalculateRepresentation();
+  bool HasGVNSideEffects();
 
   HIR_DEFAULT_METHODS(Keysof)
 
@@ -480,6 +481,7 @@ class HIRSizeof : public HIRInstruction {
   HIRSizeof();
 
   void CalculateRepresentation();
+  bool HasGVNSideEffects();
 
   HIR_DEFAULT_METHODS(Sizeof)
 
@@ -491,6 +493,7 @@ class HIRTypeof : public HIRInstruction {
   HIRTypeof();
 
   void CalculateRepresentation();
+  bool HasGVNSideEffects();
 
   HIR_DEFAULT_METHODS(Typeof)
 
