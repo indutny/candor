@@ -178,7 +178,11 @@ void LLoadProperty::Generate(Masm* masm) {
   // eax <- object
   // ebx <- propery
   __ mov(ecx, Immediate(0));
-  __ Call(masm->stubs()->GetLookupPropertyStub());
+  if (HasMonomorphicProperty()) {
+    __ Call(masm->space()->CreatePIC());
+  } else {
+    __ Call(masm->stubs()->GetLookupPropertyStub());
+  }
 
   __ IsNil(eax, NULL, &done);
   eax_s.Unspill(ebx);
@@ -202,7 +206,11 @@ void LStoreProperty::Generate(Masm* masm) {
   // ebx <- propery
   // ecx <- value
   __ mov(ecx, Immediate(1));
-  __ Call(masm->stubs()->GetLookupPropertyStub());
+  if (HasMonomorphicProperty()) {
+    __ Call(masm->space()->CreatePIC());
+  } else {
+    __ Call(masm->stubs()->GetLookupPropertyStub());
+  }
 
   // Make eax look like unboxed number to GC
   __ dec(eax);

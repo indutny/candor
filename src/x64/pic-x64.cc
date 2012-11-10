@@ -16,6 +16,7 @@ void PIC::Generate(Masm* masm) {
   __ AllocateSpills();
 
   Label miss, end;
+  Label cases[kMaxSize];
   Operand rdx_op(rdx, 0);
   Operand proto_op(rax, HObject::kProtoOffset);
   Masm::Spill rax_s(masm, rax), rbx_s(masm, rbx);
@@ -30,17 +31,30 @@ void PIC::Generate(Masm* masm) {
   __ cmpq(rax, Immediate(Heap::kICDisabledValue));
   __ jmp(kEq, &miss);
 
-  // Load current index
-  __ mov(rdx, Immediate(0));
-  index_ = reinterpret_cast<intptr_t*>(static_cast<intptr_t>(
-        masm->offset() - 8));
+  // Jump into correct section
+  __ jmp(&miss);
+  jmp_ = reinterpret_cast<uint32_t*>(static_cast<intptr_t>(
+        masm->offset() - 4));
 
-  Label cases[kMaxSize];
+  for (int i = kMaxSize - 1; i >= 0; i--) {
+    Label local_miss;
 
-  for (int i = 0; i < kMaxSize; i++) {
-    // Perform checks
-    __ cmpq(rdx, Immediate(i * 2));
-    __ jmp(kEq, &cases[i]);
+    section_size_ = masm->offset();
+    __ bind(&cases[i]);
+    __ mov(rbx, Immediate(0));
+    protos_[i] = reinterpret_cast<char**>(static_cast<intptr_t>(
+          masm->offset() - 8));
+    __ cmpq(rax, rbx);
+    __ jmp(kNe, &local_miss);
+    __ mov(rax, Immediate(0));
+    results_[i] = reinterpret_cast<intptr_t*>(static_cast<intptr_t>(
+          masm->offset() - 8));
+    __ xorq(rbx, rbx);
+    __ mov(rsp, rbp);
+    __ pop(rbp);
+    __ ret(0);
+    __ bind(&local_miss);
+    section_size_ = masm->offset() - section_size_;
   }
 
   // Cache failed - call runtime
@@ -58,10 +72,14 @@ void PIC::Generate(Masm* masm) {
   // Amend PIC
   __ Pushad();
 
-  // Miss(this, object, result)
+  // Miss(this, object, result, ip)
   __ mov(rdi, Immediate(reinterpret_cast<intptr_t>(this)));
   rax_s.Unspill(rsi);
   __ mov(rdx, rax);
+
+  Operand caller_ip(rbp, 8);
+  __ mov(rcx, caller_ip);
+
   MissCallback miss_cb = &Miss;
   __ mov(scratch, Immediate(*reinterpret_cast<intptr_t*>(&miss_cb)));
   __ Call(scratch);
@@ -75,26 +93,6 @@ void PIC::Generate(Masm* masm) {
   __ mov(rsp, rbp);
   __ pop(rbp);
   __ ret(0);
-
-  for (int i = kMaxSize - 1; i >= 0; i--) {
-    Label local_miss;
-
-    __ bind(&cases[i]);
-    __ mov(rbx, Immediate(0));
-    protos_[i] = reinterpret_cast<char**>(static_cast<intptr_t>(
-          masm->offset() - 8));
-    __ cmpq(rax, rbx);
-    __ jmp(kNe, &local_miss);
-    __ mov(rax, Immediate(0));
-    results_[i] = reinterpret_cast<intptr_t*>(static_cast<intptr_t>(
-          masm->offset() - 8));
-    __ xorq(rbx, rbx);
-    __ mov(rsp, rbp);
-    __ pop(rbp);
-    __ ret(0);
-    __ bind(&local_miss);
-  }
-  __ jmp(&miss);
 }
 
 } // namespace internal

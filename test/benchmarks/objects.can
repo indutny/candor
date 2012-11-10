@@ -3,14 +3,18 @@ b = { x: 1, y: 2, z: 3 }
 c = clone a
 d = clone b
 
-i = 100000000
+i = 30000000
 y = 0
 while (--i) {
-  if (i % 2 == 0) {
+  if (i % 2) {
     x = c
   } else {
     x = d
   }
   x.z = 1
+  x.z = 1
+  x.z = 1
+  x.z = 1
+  x.z = 1
 }
-global.print(y)
+global.print(c.z, c.z)
