@@ -166,6 +166,8 @@ class HIRGen : public Visitor<HIRInstruction> {
   void EnumerateDFS(HIRBlock* b, HIRBlockList* blocks);
   void EliminateDeadCode();
   void EliminateDeadCode(HIRInstruction* instr);
+  void FindEffects();
+  void FindEffects(HIRInstruction* instr);
   void GlobalValueNumbering();
   void GlobalValueNumbering(HIRInstruction* instr, HIRInstructionMap* gvn);
   void GlobalCodeMotion();

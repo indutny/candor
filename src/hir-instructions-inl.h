@@ -152,6 +152,11 @@ inline HIRInstructionList* HIRInstruction::uses() {
 }
 
 
+inline HIRInstructionList* HIRInstruction::effects() {
+  return &effects_;
+}
+
+
 inline HIRInstruction* HIRInstruction::left() {
   assert(args()->length() >= 1);
   return args()->head()->value();

@@ -10,6 +10,7 @@ HIRInstruction::HIRInstruction(Type type) :
     id(-1),
     gcm_visited(0),
     gvn_visited(0),
+    alias_visited(0),
     is_live(0),
     type_(type),
     slot_(NULL),
@@ -27,6 +28,7 @@ HIRInstruction::HIRInstruction(Type type, ScopeSlot* slot) :
     id(-1),
     gcm_visited(0),
     gvn_visited(0),
+    alias_visited(0),
     is_live(0),
     type_(type),
     slot_(slot),
@@ -58,6 +60,11 @@ bool HIRInstruction::HasGVNSideEffects() {
 
 inline void HIRInstruction::CalculateRepresentation() {
   representation_ = kUnknownRepresentation;
+}
+
+
+bool HIRInstruction::Effects(HIRInstruction* instr) {
+  return false;
 }
 
 
@@ -229,9 +236,8 @@ void HIRPhi::ReplaceArg(HIRInstruction* o, HIRInstruction* n) {
 }
 
 
-void HIRChi::CalculateRepresentation() {
-  assert(args()->length() == 1);
-  representation_ = args()->head()->value()->representation();
+bool HIRPhi::Effects(HIRInstruction* instr) {
+  return true;
 }
 
 
@@ -449,7 +455,17 @@ void HIRStoreProperty::CalculateRepresentation() {
 }
 
 
+bool HIRStoreProperty::Effects(HIRInstruction* instr) {
+  return args()->head()->value() == instr;
+}
+
+
 HIRDeleteProperty::HIRDeleteProperty() : HIRInstruction(kDeleteProperty) {
+}
+
+
+bool HIRDeleteProperty::Effects(HIRInstruction* instr) {
+  return args()->head()->value() == instr;
 }
 
 
@@ -536,6 +552,11 @@ HIRCall::HIRCall() : HIRInstruction(kCall) {
 
 bool HIRCall::HasSideEffects() {
   return true;
+}
+
+
+bool HIRCall::Effects(HIRInstruction* instr) {
+  return instr != args()->head()->value();
 }
 
 

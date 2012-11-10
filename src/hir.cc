@@ -39,6 +39,7 @@ HIRGen::HIRGen(Heap* heap, const char* filename, AstNode* root)
   PrunePhis();
   DeriveDominators();
   EliminateDeadCode();
+  FindEffects();
   GlobalValueNumbering();
   GlobalCodeMotion();
 
@@ -247,6 +248,56 @@ void HIRGen::EliminateDeadCode(HIRInstruction* instr) {
 }
 
 
+void HIRGen::FindEffects() {
+  // For each block
+  HIRBlockList::Item* bhead = blocks_.head();
+  for (; bhead != NULL; bhead = bhead->next()) {
+    HIRBlock* block = bhead->value();
+
+    // Visit instructions that wasn't yet visited
+    HIRInstructionList::Item* ihead = block->instructions()->head();
+    for (; ihead != NULL; ihead = ihead->next()) {
+      HIRInstruction* instr = ihead->value();
+      FindEffects(instr);
+    }
+  }
+}
+
+
+void HIRGen::FindEffects(HIRInstruction* instr) {
+  if (instr->alias_visited) return;
+  instr->alias_visited = 1;
+
+  HashMap<NumberKey, HIRInstruction, ZoneObject> effects_;
+
+  HIRInstructionList::Item* uhead = instr->uses()->head();
+  for (; uhead != NULL; uhead = uhead->next()) {
+    HIRInstruction* use = uhead->value();
+
+    // Process uses first
+    FindEffects(use);
+
+    // And copy their effects in
+    HIRInstructionList::Item* ehead = use->effects()->head();
+    for (; ehead != NULL; ehead = ehead->next()) {
+      HIRInstruction* effect = ehead->value();
+
+      // Avoid dublicates
+      if (effects_.Get(NumberKey::New(effect->id)) != NULL) continue;
+      effects_.Set(NumberKey::New(effect->id), effect);
+      instr->effects()->Push(effect);
+    }
+
+    // Phi effects it's inputs, and call effects it's arguments
+    if (use->Effects(instr)) {
+      if (effects_.Get(NumberKey::New(use->id)) != NULL) continue;
+      effects_.Set(NumberKey::New(use->id), use);
+      instr->effects()->Push(use);
+    }
+  }
+}
+
+
 void HIRGen::GlobalValueNumbering() {
   HIRInstructionMap* gvn_ = NULL;
   HIRBlock* root_ = NULL;
@@ -400,15 +451,34 @@ void HIRGen::ScheduleEarly(HIRInstruction* instr, HIRBlock* root) {
   if (instr->IsPinned()) return;
 
   // Start with the shallowest dominator
-  instr->block(root);
+  HIRInstructionList::Item* ahead = instr->args()->head();
+  bool under_effect = false;
+  for (; ahead != NULL; ahead = ahead->next()) {
+    HIRInstruction* arg = ahead->value();
+
+    HIRInstructionList::Item* ehead = arg->effects()->head();
+    for (; ehead != NULL; ehead = ehead->next()) {
+      HIRInstruction* effect = ehead->value();
+
+      // Instruction can't be placed before it's input's effects
+      if (effect->block()->dominator_depth() <=
+          instr->block()->dominator_depth()) {
+        under_effect = true;
+        break;
+      }
+    }
+
+    if (under_effect) break;
+  }
+  if (!under_effect) instr->block(root);
 
   // Schedule all inputs
-  HIRInstructionList::Item* ahead = instr->args()->head();
+  ahead = instr->args()->head();
   for (; ahead != NULL; ahead = ahead->next()) {
     HIRInstruction* arg = ahead->value();
     ScheduleEarly(arg, root);
 
-    // Choose the deepest dominator input
+    // Choose the deepest input in dominator tree
     if (instr->block()->dominator_depth() < arg->block()->dominator_depth()) {
       instr->block(arg->block());
     }
@@ -605,6 +675,7 @@ HIRInstruction* HIRGen::VisitAssign(AstNode* stmt) {
     HIRInstruction* receiver = Visit(stmt->lhs()->lhs());
 
     Add(new HIRStoreProperty())
+        ->Unpin()
         ->AddArg(receiver)
         ->AddArg(property)
         ->AddArg(rhs);
@@ -780,6 +851,7 @@ HIRInstruction* HIRGen::VisitUnOp(AstNode* stmt) {
       HIRInstruction* property = load->args()->tail()->value();
 
       Add(new HIRStoreProperty())
+          ->Unpin()
           ->AddArg(receiver)
           ->AddArg(property)
           ->AddArg(value);
@@ -899,7 +971,7 @@ HIRInstruction* HIRGen::VisitArrayLiteral(AstNode* stmt) {
 HIRInstruction* HIRGen::VisitMember(AstNode* stmt) {
   HIRInstruction* prop = Visit(stmt->rhs());
   HIRInstruction* recv = Visit(stmt->lhs());
-  return Add(new HIRLoadProperty())->AddArg(recv)->AddArg(prop);
+  return Add(new HIRLoadProperty())->Unpin()->AddArg(recv)->AddArg(prop);
 }
 
 
@@ -994,6 +1066,7 @@ HIRInstruction* HIRGen::VisitCall(AstNode* stmt) {
     HIRInstruction* property = Visit(fn->variable()->rhs());
 
     var = Add(new HIRLoadProperty())
+        ->Unpin()
         ->AddArg(receiver)
         ->AddArg(property);
   } else {
@@ -1021,12 +1094,12 @@ HIRInstruction* HIRGen::VisitTypeof(AstNode* stmt) {
 
 HIRInstruction* HIRGen::VisitKeysof(AstNode* stmt) {
   HIRInstruction* lhs = Visit(stmt->lhs());
-  return Add(new HIRKeysof())->AddArg(lhs);
+  return Add(new HIRKeysof())->Unpin()->AddArg(lhs);
 }
 
 HIRInstruction* HIRGen::VisitSizeof(AstNode* stmt) {
   HIRInstruction* lhs = Visit(stmt->lhs());
-  return Add(new HIRSizeof())->AddArg(lhs);
+  return Add(new HIRSizeof())->Unpin()->AddArg(lhs);
 }
 
 

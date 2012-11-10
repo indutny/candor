@@ -50,7 +50,6 @@ typedef ZoneList<HIRPhi*> HIRPhiList;
     V(GetStackTrace) \
     V(AllocateObject) \
     V(AllocateArray) \
-    V(Chi) \
     V(Phi)
 
 #define HIR_INSTRUCTION_ENUM(I) \
@@ -81,14 +80,6 @@ class HIRInstruction : public ZoneObject {
     kHoleRepresentation       = 0x300 // 10000000000
   };
 
-  // If instruction has effect - it needs to be reloaded before it's use,
-  // if reload happened and effect was weak - reset effect
-  enum Effect {
-    kNoEffect,
-    kWeakEffect,
-    kPersistentEffect
-  };
-
   HIRInstruction(Type type);
   HIRInstruction(Type type, ScopeSlot* slot);
 
@@ -97,12 +88,14 @@ class HIRInstruction : public ZoneObject {
   int id;
   int gcm_visited;
   int gvn_visited;
+  int alias_visited;
   int is_live;
 
   virtual void ReplaceArg(HIRInstruction* o, HIRInstruction* n);
   virtual bool HasSideEffects();
   virtual bool HasGVNSideEffects();
   virtual void CalculateRepresentation();
+  virtual bool Effects(HIRInstruction* instr);
   void Remove();
   void RemoveUse(HIRInstruction* i);
 
@@ -137,6 +130,7 @@ class HIRInstruction : public ZoneObject {
   inline void ast(AstNode* ast);
   inline HIRInstructionList* args();
   inline HIRInstructionList* uses();
+  inline HIRInstructionList* effects();
 
   inline HIRInstruction* left();
   inline HIRInstruction* right();
@@ -154,8 +148,6 @@ class HIRInstruction : public ZoneObject {
   LInstruction* lir_;
   HIRBlock* block_;
 
-  Effect effect_;
-
   bool hashed_;
   uint32_t hash_;
 
@@ -167,6 +159,7 @@ class HIRInstruction : public ZoneObject {
 
   HIRInstructionList args_;
   HIRInstructionList uses_;
+  HIRInstructionList effects_;
 };
 
 #undef HIR_INSTRUCTION_ENUM
@@ -185,6 +178,7 @@ class HIRPhi : public HIRInstruction {
 
   void ReplaceArg(HIRInstruction* o, HIRInstruction* n);
   void CalculateRepresentation();
+  bool Effects(HIRInstruction* instr);
 
   inline void AddInput(HIRInstruction* instr);
   inline HIRInstruction* InputAt(int i);
@@ -198,14 +192,6 @@ class HIRPhi : public HIRInstruction {
  private:
   int input_count_;
   HIRInstruction* inputs_[2];
-};
-
-class HIRChi : public HIRInstruction {
- public:
-  HIRChi(ScopeSlot* slot);
-
-  void CalculateRepresentation();
-  HIR_DEFAULT_METHODS(Chi)
 };
 
 class HIRLiteral : public HIRInstruction {
@@ -375,6 +361,7 @@ class HIRStoreProperty : public HIRInstruction {
 
   bool HasSideEffects();
   void CalculateRepresentation();
+  bool Effects(HIRInstruction* instr);
 
   HIR_DEFAULT_METHODS(StoreProperty)
 
@@ -385,6 +372,7 @@ class HIRDeleteProperty : public HIRInstruction {
  public:
   HIRDeleteProperty();
 
+  bool Effects(HIRInstruction* instr);
   HIR_DEFAULT_METHODS(DeleteProperty)
 
  private:
@@ -477,6 +465,7 @@ class HIRCall : public HIRInstruction {
   HIRCall();
 
   bool HasSideEffects();
+  bool Effects(HIRInstruction* instr);
 
   HIR_DEFAULT_METHODS(Call)
 

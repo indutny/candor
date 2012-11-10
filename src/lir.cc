@@ -183,13 +183,6 @@ void LGen::VisitPhi(HIRInstruction* instr) {
   Bind(instr->lir());
 }
 
-
-void LGen::VisitChi(HIRInstruction* instr) {
-  Bind(new LMove())
-      ->AddArg(instr, LUse::kAny)
-      ->SetResult(CreateVirtual(), LUse::kAny);
-}
-
 #undef LGEN_VISIT_SWITCH
 
 void LGen::ComputeLocalLiveSets() {
