@@ -50,6 +50,7 @@ typedef ZoneList<HIRPhi*> HIRPhiList;
     V(GetStackTrace) \
     V(AllocateObject) \
     V(AllocateArray) \
+    V(Chi) \
     V(Phi)
 
 #define HIR_INSTRUCTION_ENUM(I) \
@@ -78,6 +79,14 @@ class HIRInstruction : public ZoneObject {
 
     // no value, not for real use
     kHoleRepresentation       = 0x300 // 10000000000
+  };
+
+  // If instruction has effect - it needs to be reloaded before it's use,
+  // if reload happened and effect was weak - reset effect
+  enum Effect {
+    kNoEffect,
+    kWeakEffect,
+    kPersistentEffect
   };
 
   HIRInstruction(Type type);
@@ -145,6 +154,8 @@ class HIRInstruction : public ZoneObject {
   LInstruction* lir_;
   HIRBlock* block_;
 
+  Effect effect_;
+
   bool hashed_;
   uint32_t hash_;
 
@@ -187,6 +198,14 @@ class HIRPhi : public HIRInstruction {
  private:
   int input_count_;
   HIRInstruction* inputs_[2];
+};
+
+class HIRChi : public HIRInstruction {
+ public:
+  HIRChi(ScopeSlot* slot);
+
+  void CalculateRepresentation();
+  HIR_DEFAULT_METHODS(Chi)
 };
 
 class HIRLiteral : public HIRInstruction {

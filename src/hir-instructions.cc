@@ -229,6 +229,12 @@ void HIRPhi::ReplaceArg(HIRInstruction* o, HIRInstruction* n) {
 }
 
 
+void HIRChi::CalculateRepresentation() {
+  assert(args()->length() == 1);
+  representation_ = args()->head()->value()->representation();
+}
+
+
 HIRLiteral::HIRLiteral(AstNode::Type type, ScopeSlot* slot) :
     HIRInstruction(kLiteral),
     type_(type),
