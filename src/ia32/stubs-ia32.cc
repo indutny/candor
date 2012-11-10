@@ -487,6 +487,7 @@ void LookupPropertyStub::Generate() {
     __ addl(edx, Immediate(HMap::kSpaceOffset));
 
     Operand qmap(eax, HObject::kMapOffset);
+    Operand qproto(eax, HObject::kProtoOffset);
     __ mov(scratch, qmap);
     __ addl(scratch, edx);
 
@@ -517,9 +518,7 @@ void LookupPropertyStub::Generate() {
     // invalidate IC if key wasn't the same
     __ IsNil(scratch, &same_key, NULL);
 
-    Operand proto(scratch, HMap::kProtoOffset);
-    __ mov(scratch, qmap);
-    __ mov(proto, Immediate(Heap::kICDisabledValue));
+    __ mov(qproto, Immediate(Heap::kICDisabledValue));
     __ bind(&same_key);
 
     // Restore map's interior pointer
@@ -729,8 +728,8 @@ void CloneObjectStub::Generate() {
   __ mov(ebx, qmap);
 
   // Set proto
-  Operand qmapproto(ebx, HMap::kProtoOffset);
-  __ mov(qmapproto, eax);
+  Operand qproto(edx, HObject::kProtoOffset);
+  __ mov(qproto, eax);
 
   // Skip headers
   __ addl(eax, Immediate(HMap::kSpaceOffset));

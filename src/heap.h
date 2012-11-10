@@ -163,7 +163,7 @@ class Heap {
   static const uint32_t kMinFactorySize = 128;
   static const uint32_t kBindingContextTag = 0x0DEC0DEC;
   static const uint32_t kEnterFrameTag = 0xFEEDBEEE;
-  static const uint32_t kICDisabledValue = 0x0;
+  static const uint32_t kICDisabledValue = 0xABBAABBA;
   static const uint32_t kICZapValue = 0xABBADEEC;
 
   Heap(uint32_t page_size);
@@ -491,6 +491,8 @@ class HObject : public HValue {
   inline char** map_slot() { return MapSlot(addr()); }
   inline uint32_t mask() { return *mask_slot(); }
   inline uint32_t* mask_slot() { return MaskSlot(addr()); }
+  inline char* proto() { return *proto_slot(); }
+  inline char** proto_slot() { return ProtoSlot(addr()); }
 
   static inline char** MapSlot(char* addr) {
     return reinterpret_cast<char**>(addr + kMapOffset);
@@ -500,11 +502,16 @@ class HObject : public HValue {
     return reinterpret_cast<uint32_t*>(addr + kMaskOffset);
   }
   static inline uint32_t Mask(char* addr) { return *MaskSlot(addr); }
+  static inline char** ProtoSlot(char* addr) {
+    return reinterpret_cast<char**>(addr + kProtoOffset);
+  }
+  static inline char* Proto(char* addr) { return *ProtoSlot(addr); }
 
   static char** LookupProperty(Heap* heap, char* addr, char* key, int insert);
 
   static const int kMaskOffset = HINTERIOR_OFFSET(1);
   static const int kMapOffset = HINTERIOR_OFFSET(2);
+  static const int kProtoOffset = HINTERIOR_OFFSET(3);
 
   static const Heap::HeapTag class_tag = Heap::kTagObject;
 };
@@ -521,7 +528,7 @@ class HArray : public HObject {
 
   static const int kVarArgLength = 16;
   static const int kDenseLengthMax = 128;
-  static const int kLengthOffset = HINTERIOR_OFFSET(3);
+  static const int kLengthOffset = HINTERIOR_OFFSET(4);
 
   static const Heap::HeapTag class_tag = Heap::kTagArray;
 };
@@ -538,15 +545,10 @@ class HMap : public HValue {
   inline uint32_t size() {
     return *reinterpret_cast<uint32_t*>(addr() + kSizeOffset);
   }
-  inline char* proto() { return *proto_slot(); }
-  inline char** proto_slot() {
-    return reinterpret_cast<char**>(addr() + kProtoOffset);
-  }
   inline char* space() { return addr() + kSpaceOffset; }
 
   static const int kSizeOffset = HINTERIOR_OFFSET(1);
-  static const int kProtoOffset = HINTERIOR_OFFSET(2);
-  static const int kSpaceOffset = HINTERIOR_OFFSET(3);
+  static const int kSpaceOffset = HINTERIOR_OFFSET(2);
 
   static const Heap::HeapTag class_tag = Heap::kTagMap;
 };

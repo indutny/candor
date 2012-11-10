@@ -225,6 +225,7 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
                                  Register result) {
   Operand qmask(result, HObject::kMaskOffset);
   Operand qmap(result, HObject::kMapOffset);
+  Operand qproto(result, HObject::kProtoOffset);
 
   // Array only field
   Operand qlength(result, HArray::kLengthOffset);
@@ -233,7 +234,7 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
     // mask + map
     Allocate(tag,
              reg_nil,
-             (tag == Heap::kTagArray ? 3 : 2) * HValue::kPointerSize,
+             (tag == Heap::kTagArray ? 4 : 3) * HValue::kPointerSize,
              result);
 
     // Set length
@@ -246,12 +247,12 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
     cmpqb(tag_reg, Immediate(HNumber::Tag(Heap::kTagArray)));
     jmp(kEq, &array);
 
-    Allocate(Heap::kTagObject, reg_nil, 2 * HValue::kPointerSize, result);
+    Allocate(Heap::kTagObject, reg_nil, 3 * HValue::kPointerSize, result);
 
     jmp(&allocate_map);
     bind(&array);
 
-    Allocate(Heap::kTagArray, reg_nil, 3 * HValue::kPointerSize, result);
+    Allocate(Heap::kTagArray, reg_nil, 4 * HValue::kPointerSize, result);
     mov(qlength, Immediate(0));
 
     bind(&allocate_map);
@@ -273,12 +274,13 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
   Untag(size);
   // keys + values
   shl(size, Immediate(4));
-  // + proto + size
-  addq(size, Immediate(2 * HValue::kPointerSize));
+  // + size
+  addq(size, Immediate(1 * HValue::kPointerSize));
   TagNumber(size);
 
   Allocate(Heap::kTagMap, size, 0, scratch);
   mov(qmap, scratch);
+  mov(qproto, scratch);
 
   size_s.Unspill();
   Spill result_s(this, result);
@@ -286,10 +288,8 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
 
   // Save map size for GC
   Operand qmapsize(result, HMap::kSizeOffset);
-  Operand qmapproto(result, HMap::kProtoOffset);
   Untag(size);
   mov(qmapsize, size);
-  mov(qmapproto, result);
 
   // Fill map with nil
   shl(size, Immediate(4));

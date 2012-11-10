@@ -164,6 +164,9 @@ void GC::HandleWeakReferences() {
   while (weak_items()->length() != 0) {
     GCValue* value = weak_items()->Shift();
 
+    // Skip ICs zap values and everything unboxed
+    if (HValue::IsUnboxed(reinterpret_cast<char*>(value->value()))) continue;
+
     if (!value->value()->IsGCMarked()) {
       if (IsInCurrentSpace(value->value())) {
         // Value was GCed
@@ -284,6 +287,10 @@ void GC::VisitFunction(HFunction* fn) {
 
 
 void GC::VisitObject(HObject* obj) {
+  if (obj->proto() != NULL) {
+    push_weak(HValue::Cast(obj->proto()), obj->proto_slot());
+  }
+
   push_grey(HValue::Cast(obj->map()), obj->map_slot());
 }
 
@@ -295,10 +302,6 @@ void GC::VisitArray(HArray* arr) {
 
 void GC::VisitMap(HMap* map) {
   uint32_t size = map->size() << 1;
-
-  if (map->proto() != NULL) {
-    push_weak(HValue::Cast(map->proto()), map->proto_slot());
-  }
 
   for (uint32_t i = 0; i < size; i++) {
     if (map->IsEmptySlot(i)) continue;

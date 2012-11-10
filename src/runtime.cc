@@ -181,7 +181,7 @@ intptr_t RuntimeLookupProperty(Heap* heap,
 
       if (key_slot == HNil::New()) {
         // Reset proto, IC could not work with this object anymore
-        char** proto_slot = HValue::As<HMap>(map)->proto_slot();
+        char** proto_slot = HObject::ProtoSlot(obj);
         *reinterpret_cast<intptr_t*>(proto_slot) = Heap::kICDisabledValue;
       }
 
@@ -712,11 +712,11 @@ char* RuntimeCloneObject(Heap* heap, char* obj) {
   // Set map
   *reinterpret_cast<char**>(result + HObject::kMapOffset) = map;
 
+  // Set map's proto
+  *reinterpret_cast<void**>(obj + HObject::kProtoOffset) = source_map;
+
   // Set map's size
   *reinterpret_cast<intptr_t*>(map + HMap::kSizeOffset) = source_map->size();
-
-  // Set map's proto
-  *reinterpret_cast<void**>(map + HMap::kProtoOffset) = source_map;
 
   // Nullify all map's slots (both keys and values)
   uint32_t size = (source_map->size() << 1) * HValue::kPointerSize;
@@ -733,7 +733,7 @@ void RuntimeDeleteProperty(Heap* heap, char* obj, char* property) {
   intptr_t offset = RuntimeLookupProperty(heap, obj, property, 0);
 
   // Reset proto, IC could not work with this object anymore
-  char** proto_slot = HValue::As<HMap>(HObject::Map(obj))->proto_slot();
+  char** proto_slot = HObject::ProtoSlot(obj);
   *reinterpret_cast<intptr_t*>(proto_slot) = Heap::kICDisabledValue;
 
   // Dense arrays doesn't have keys

@@ -53,8 +53,7 @@ void PIC::Miss(char* object, intptr_t result) {
   Heap::HeapTag tag = HValue::GetTag(object);
   if (tag != Heap::kTagObject) return;
 
-  char* map = HValue::As<HObject>(object)->map();
-  *protos_[index >> 1] = HValue::As<HMap>(map)->proto();
+  *protos_[index >> 1] = HValue::As<HObject>(object)->proto();
   *results_[index >> 1] = result;
 
   // Index should look like a tagged value

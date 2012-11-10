@@ -234,16 +234,16 @@ HValue* HValue::CopyTo(Space* old_space, Space* new_space) {
     }
     break;
    case Heap::kTagObject:
-    // mask + map
-    size += 2 * kPointerSize;
-    break;
-   case Heap::kTagArray:
-    // mask + map + length
+    // mask + map + proto
     size += 3 * kPointerSize;
     break;
+   case Heap::kTagArray:
+    // mask + map + proto + length
+    size += 4 * kPointerSize;
+    break;
    case Heap::kTagMap:
-    // size + proto + space ( keys + values )
-    size += (2 + (As<HMap>()->size() << 1)) * kPointerSize;
+    // size + space ( keys + values )
+    size += (1 + (As<HMap>()->size() << 1)) * kPointerSize;
     break;
    case Heap::kTagCData:
     // size + data
@@ -442,7 +442,7 @@ uint32_t HString::Hash(Heap* heap, char* addr) {
 char* HObject::NewEmpty(Heap* heap, uint32_t size) {
   char* obj = heap->AllocateTagged(Heap::kTagObject,
                                    Heap::kTenureNew,
-                                   2 * kPointerSize);
+                                   3 * kPointerSize);
   HObject::Init(heap, obj, size);
 
   return obj;
@@ -453,7 +453,10 @@ void HObject::Init(Heap* heap, char* obj, uint32_t size) {
   // Set mask
   *reinterpret_cast<intptr_t*>(obj + kMaskOffset) = (size - 1) * kPointerSize;
   // Set map
-  *reinterpret_cast<char**>(obj + kMapOffset) = HMap::NewEmpty(heap, size);
+  char* map = HMap::NewEmpty(heap, size);
+  *reinterpret_cast<char**>(obj + kMapOffset) = map;
+  // Set proto
+  *reinterpret_cast<char**>(obj + kProtoOffset) = map;
 }
 
 
@@ -466,7 +469,7 @@ char** HObject::LookupProperty(Heap* heap, char* addr, char* key, int insert) {
 char* HArray::NewEmpty(Heap* heap) {
   char* obj = heap->AllocateTagged(Heap::kTagArray,
                                    Heap::kTenureNew,
-                                   3 * kPointerSize);
+                                   4 * kPointerSize);
 
   HObject::Init(heap, obj, 16);
 
@@ -510,13 +513,10 @@ int64_t HArray::Length(char* obj, bool shrink) {
 char* HMap::NewEmpty(Heap* heap, uint32_t size) {
   char* map = heap->AllocateTagged(Heap::kTagMap,
                                    Heap::kTenureNew,
-                                   ((size << 1) + 2) * kPointerSize);
+                                   ((size << 1) + 1) * kPointerSize);
 
   // Set map's size
   *reinterpret_cast<intptr_t*>(map + kSizeOffset) = size;
-
-  // Set map's proto
-  *reinterpret_cast<char**>(map + kProtoOffset) = map;
 
   // Nullify all map's slots (both keys and values)
   size = (size << 1) * kPointerSize;

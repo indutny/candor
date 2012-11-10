@@ -17,7 +17,7 @@ void PIC::Generate(Masm* masm) {
 
   Label miss, end;
   Operand rdx_op(rdx, 0);
-  Operand map_op(rax, HObject::kMapOffset), proto_op(rax, HMap::kProtoOffset);
+  Operand proto_op(rax, HObject::kProtoOffset);
   Masm::Spill rax_s(masm, rax), rbx_s(masm, rbx);
 
   // Fast-case non-object
@@ -26,7 +26,6 @@ void PIC::Generate(Masm* masm) {
   __ IsHeapObject(Heap::kTagObject, rax, &miss, NULL);
 
   // Load proto
-  __ mov(rax, map_op);
   __ mov(rax, proto_op);
   __ cmpq(rax, Immediate(Heap::kICDisabledValue));
   __ jmp(kEq, &miss);
