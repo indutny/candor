@@ -281,6 +281,8 @@ class CWrapper {
 
   void Ref();
   void Unref();
+  bool IsWeak();
+  bool IsPersistent();
 
  protected:
   static void WeakCallback(Value* data);

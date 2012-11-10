@@ -555,6 +555,16 @@ void CWrapper::Unref() {
 }
 
 
+bool CWrapper::IsWeak() {
+  return ref.IsWeak();
+}
+
+
+bool CWrapper::IsPersistent() {
+  return ref.IsPersistent();
+}
+
+
 void CWrapper::WeakCallback(Value* data) {
   CWrapper* wrapper = *reinterpret_cast<CWrapper**>(
       data->As<CData>()->GetContents());
