@@ -192,27 +192,27 @@ class Operand : public ZoneObject {
     eight = 3
   };
 
-  Operand(Register base, Scale scale, uint32_t disp) : base_(base),
+  Operand(Register base, Scale scale, int32_t disp) : base_(base),
                                                        scale_(scale),
                                                        disp_(disp) {
   }
-  Operand(Register base, uint32_t disp) : base_(base),
+  Operand(Register base, int32_t disp) : base_(base),
                                           scale_(one),
                                           disp_(disp) {
   }
 
   inline Register base() { return base_; }
   inline Scale scale() { return scale_; }
-  inline uint32_t disp() { return disp_; }
+  inline int32_t disp() { return disp_; }
 
   inline Register base(Register base) { return base_ = base; }
   inline Scale scale(Scale scale) { return scale_ = scale; }
-  inline uint32_t disp(uint32_t disp) { return disp_ = disp; }
+  inline int32_t disp(int32_t disp) { return disp_ = disp; }
 
  private:
   Register base_;
   Scale scale_;
-  uint32_t disp_;
+  int32_t disp_;
 
   friend class Assembler;
 };
