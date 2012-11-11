@@ -71,7 +71,6 @@ void PIC::Generate(Masm* masm) {
   __ push(eax_s);
   __ push(Immediate(reinterpret_cast<intptr_t>(this)));
   __ Call(space_->stubs()->GetPICMissStub());
-  __ addlb(esp, Immediate(8 * 4));
 
   // Return value
   __ bind(&end);
