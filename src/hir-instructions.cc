@@ -435,6 +435,27 @@ HIRLoadProperty::HIRLoadProperty() : HIRInstruction(kLoadProperty) {
 
 
 bool HIRLoadProperty::HasGVNSideEffects() {
+  return false;
+}
+
+
+bool HIRLoadProperty::IsGVNEqual(HIRInstruction* to) {
+  if (effects_in()->length() != to->effects_in()->length()) return false;
+
+  // Effects should be the same
+  HIRInstructionList::Item* ahead = effects_in()->head();
+  for (; ahead != NULL; ahead = ahead->next()) {
+    HIRInstructionList::Item* bhead = to->effects_in()->head();
+    bool matches = false;
+    for (; bhead != NULL; bhead = bhead->next()) {
+      if (bhead->value() == ahead->value()) {
+        matches = true;
+        break;
+      }
+    }
+
+    if (!matches) return false;
+  }
   return true;
 }
 
@@ -461,6 +482,11 @@ bool HIRStoreProperty::Effects(HIRInstruction* instr) {
 
 
 HIRDeleteProperty::HIRDeleteProperty() : HIRInstruction(kDeleteProperty) {
+}
+
+
+bool HIRDeleteProperty::HasSideEffects() {
+  return true;
 }
 
 
@@ -528,11 +554,21 @@ bool HIRStoreArg::HasSideEffects() {
 }
 
 
+bool HIRStoreArg::Effects(HIRInstruction* instr) {
+  return true;
+}
+
+
 HIRStoreVarArg::HIRStoreVarArg() : HIRInstruction(kStoreVarArg) {
 }
 
 
 bool HIRStoreVarArg::HasSideEffects() {
+  return true;
+}
+
+
+bool HIRStoreVarArg::Effects(HIRInstruction* instr) {
   return true;
 }
 
@@ -552,11 +588,6 @@ HIRCall::HIRCall() : HIRInstruction(kCall) {
 
 bool HIRCall::HasSideEffects() {
   return true;
-}
-
-
-bool HIRCall::Effects(HIRInstruction* instr) {
-  return instr != args()->head()->value();
 }
 
 

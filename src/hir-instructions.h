@@ -17,7 +17,9 @@ class HIRPhi;
 class LInstruction;
 
 typedef ZoneList<HIRInstruction*> HIRInstructionList;
-typedef HashMap<HIRInstruction, HIRInstruction, ZoneObject> HIRInstructionMap;
+typedef HashMap<NumberKey, HIRInstruction, ZoneObject> HIRInstructionMap;
+typedef HashMap<HIRInstruction, HIRInstruction, ZoneObject>
+    HIRInstructionGVNMap;
 typedef ZoneList<HIRPhi*> HIRPhiList;
 
 #define HIR_INSTRUCTION_TYPES(V) \
@@ -130,7 +132,8 @@ class HIRInstruction : public ZoneObject {
   inline void ast(AstNode* ast);
   inline HIRInstructionList* args();
   inline HIRInstructionList* uses();
-  inline HIRInstructionList* effects();
+  inline HIRInstructionList* effects_in();
+  inline HIRInstructionList* effects_out();
 
   inline HIRInstruction* left();
   inline HIRInstruction* right();
@@ -159,7 +162,8 @@ class HIRInstruction : public ZoneObject {
 
   HIRInstructionList args_;
   HIRInstructionList uses_;
-  HIRInstructionList effects_;
+  HIRInstructionList effects_in_;
+  HIRInstructionList effects_out_;
 };
 
 #undef HIR_INSTRUCTION_ENUM
@@ -353,6 +357,7 @@ class HIRLoadProperty : public HIRInstruction {
   HIR_DEFAULT_METHODS(LoadProperty)
 
  private:
+  bool IsGVNEqual(HIRInstruction* to);
 };
 
 class HIRStoreProperty : public HIRInstruction {
@@ -372,6 +377,7 @@ class HIRDeleteProperty : public HIRInstruction {
  public:
   HIRDeleteProperty();
 
+  bool HasSideEffects();
   bool Effects(HIRInstruction* instr);
   HIR_DEFAULT_METHODS(DeleteProperty)
 
@@ -432,6 +438,7 @@ class HIRStoreArg : public HIRInstruction {
   HIRStoreArg();
 
   bool HasSideEffects();
+  bool Effects(HIRInstruction* instr);
 
   HIR_DEFAULT_METHODS(StoreArg)
 
@@ -443,6 +450,7 @@ class HIRStoreVarArg : public HIRInstruction {
   HIRStoreVarArg();
 
   bool HasSideEffects();
+  bool Effects(HIRInstruction* instr);
 
   HIR_DEFAULT_METHODS(StoreVarArg)
 
@@ -465,7 +473,6 @@ class HIRCall : public HIRInstruction {
   HIRCall();
 
   bool HasSideEffects();
-  bool Effects(HIRInstruction* instr);
 
   HIR_DEFAULT_METHODS(Call)
 

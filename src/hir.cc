@@ -37,6 +37,7 @@ HIRGen::HIRGen(Heap* heap, const char* filename, AstNode* root)
   }
 
   PrunePhis();
+  FindReachableBlocks();
   DeriveDominators();
   EliminateDeadCode();
   FindEffects();
@@ -128,6 +129,26 @@ void HIRGen::PrunePhis() {
 }
 
 
+void HIRGen::FindReachableBlocks() {
+  bool change;
+  do {
+    change = false;
+
+    HIRBlockList::Item* bhead = blocks_.head();
+    for (; bhead != NULL; bhead = bhead->next()) {
+      HIRBlock* block = bhead->value();
+
+      for (int i = 0; i < block->succ_count(); i++) {
+        if (block->reachable_from()->Copy(
+                block->SuccAt(i)->reachable_from())) {
+          change = true;
+        }
+      }
+    }
+  } while (change);
+};
+
+
 // Implementation of:
 //   A fast algorithm for finding dominators in a flowgraph,
 //   by T Lengauer, RE Tarjan
@@ -138,7 +159,7 @@ void HIRGen::DeriveDominators() {
     HIRBlockList dfs_blocks_;
     HIRBlock* root = rhead->value();
 
-    // Visit and enumarate blocks in DFS order
+    // Visit and enumerate blocks in DFS order
     EnumerateDFS(root, &dfs_blocks_);
 
     // Visit all blocks except root in reverse order
@@ -254,18 +275,31 @@ void HIRGen::FindEffects() {
   for (; bhead != NULL; bhead = bhead->next()) {
     HIRBlock* block = bhead->value();
 
-    // Visit instructions that wasn't yet visited
+    // Visit instructions in order uses -> instr
     HIRInstructionList::Item* ihead = block->instructions()->head();
     for (; ihead != NULL; ihead = ihead->next()) {
       HIRInstruction* instr = ihead->value();
-      FindEffects(instr);
+      FindOutEffects(instr);
+    }
+  }
+
+  // For each block
+  bhead = blocks_.head();
+  for (; bhead != NULL; bhead = bhead->next()) {
+    HIRBlock* block = bhead->value();
+
+    // Visit instructions in order args -> instr
+    HIRInstructionList::Item* ihead = block->instructions()->head();
+    for (; ihead != NULL; ihead = ihead->next()) {
+      HIRInstruction* instr = ihead->value();
+      FindInEffects(instr);
     }
   }
 }
 
 
-void HIRGen::FindEffects(HIRInstruction* instr) {
-  if (instr->alias_visited) return;
+void HIRGen::FindOutEffects(HIRInstruction* instr) {
+  if (instr->alias_visited == 1) return;
   instr->alias_visited = 1;
 
   HashMap<NumberKey, HIRInstruction, ZoneObject> effects_;
@@ -275,31 +309,74 @@ void HIRGen::FindEffects(HIRInstruction* instr) {
     HIRInstruction* use = uhead->value();
 
     // Process uses first
-    FindEffects(use);
+    FindOutEffects(use);
 
     // And copy their effects in
-    HIRInstructionList::Item* ehead = use->effects()->head();
+    HIRInstructionList::Item* ehead = use->effects_out()->head();
     for (; ehead != NULL; ehead = ehead->next()) {
       HIRInstruction* effect = ehead->value();
 
-      // Avoid dublicates
-      if (effects_.Get(NumberKey::New(effect->id)) != NULL) continue;
-      effects_.Set(NumberKey::New(effect->id), effect);
-      instr->effects()->Push(effect);
+      NumberKey* key = NumberKey::New(effect->id);
+      if (effects_.Get(key) != NULL) continue;
+
+      effects_.Set(key, effect);
+      instr->effects_out()->Push(effect);
     }
 
     // Phi effects it's inputs, and call effects it's arguments
     if (use->Effects(instr)) {
-      if (effects_.Get(NumberKey::New(use->id)) != NULL) continue;
-      effects_.Set(NumberKey::New(use->id), use);
-      instr->effects()->Push(use);
+      NumberKey* key = NumberKey::New(use->id);
+      if (effects_.Get(key) != NULL) continue;
+
+      effects_.Set(key, use);
+      instr->effects_out()->Push(use);
+    }
+  }
+}
+
+
+void HIRGen::FindInEffects(HIRInstruction* instr) {
+  if (instr->alias_visited == 2) return;
+  instr->alias_visited = 2;
+
+  HashMap<NumberKey, HIRInstruction, ZoneObject> effects_;
+
+  HIRInstructionList::Item* ahead = instr->args()->head();
+  for (; ahead != NULL; ahead = ahead->next()) {
+    HIRInstruction* arg = ahead->value();
+
+    // If inputs are under effect - instruction is under effect too
+    FindInEffects(arg);
+    HIRInstructionList::Item* ehead = instr->effects_in()->head();
+    for (; ehead != NULL; ehead = ehead->next()) {
+      HIRInstruction* effect = ehead->value();
+      NumberKey* key = NumberKey::New(effect->id);
+      if (effects_.Get(key) != NULL) continue;
+
+      effects_.Set(key, effect);
+      instr->effects_in()->Push(effect);
+    }
+
+    ehead = arg->effects_out()->head();
+    for (; ehead != NULL; ehead = ehead->next()) {
+      // If instruction may be reachable from one of outcoming effects of
+      // it's arguments - it's under effect.
+      HIRInstruction* effect = ehead->value();
+      if (instr->block()->reachable_from()->Test(effect->block()->id) &&
+          effect->id < instr->id) {
+        NumberKey* key = NumberKey::New(effect->id);
+        if (effects_.Get(key) != NULL) continue;
+
+        effects_.Set(key, effect);
+        instr->effects_in()->Push(effect);
+      }
     }
   }
 }
 
 
 void HIRGen::GlobalValueNumbering() {
-  HIRInstructionMap* gvn_ = NULL;
+  HIRInstructionGVNMap* gvn_ = NULL;
   HIRBlock* root_ = NULL;
 
   // For each block
@@ -309,7 +386,8 @@ void HIRGen::GlobalValueNumbering() {
 
     if (root_ != block->root()) {
       root_ = block->root();
-      gvn_ = new HIRInstructionMap();
+      delete gvn_;
+      gvn_ = new HIRInstructionGVNMap();
     }
 
     // Visit instructions that wasn't yet visited
@@ -320,11 +398,13 @@ void HIRGen::GlobalValueNumbering() {
       GlobalValueNumbering(instr, gvn_);
     }
   }
+
+  delete gvn_;
 }
 
 
 void HIRGen::GlobalValueNumbering(HIRInstruction* instr,
-                                  HIRInstructionMap* gvn) {
+                                  HIRInstructionGVNMap* gvn) {
   if (instr->gvn_visited) return;
   instr->gvn_visited = 1;
 
@@ -451,29 +531,10 @@ void HIRGen::ScheduleEarly(HIRInstruction* instr, HIRBlock* root) {
   if (instr->IsPinned()) return;
 
   // Start with the shallowest dominator
-  HIRInstructionList::Item* ahead = instr->args()->head();
-  bool under_effect = false;
-  for (; ahead != NULL; ahead = ahead->next()) {
-    HIRInstruction* arg = ahead->value();
-
-    HIRInstructionList::Item* ehead = arg->effects()->head();
-    for (; ehead != NULL; ehead = ehead->next()) {
-      HIRInstruction* effect = ehead->value();
-
-      // Instruction can't be placed before it's input's effects
-      if (effect->block()->dominator_depth() <=
-          instr->block()->dominator_depth()) {
-        under_effect = true;
-        break;
-      }
-    }
-
-    if (under_effect) break;
-  }
-  if (!under_effect) instr->block(root);
+  if (instr->effects_in()->length() == 0) instr->block(root);
 
   // Schedule all inputs
-  ahead = instr->args()->head();
+  HIRInstructionList::Item* ahead = instr->args()->head();
   for (; ahead != NULL; ahead = ahead->next()) {
     HIRInstruction* arg = ahead->value();
     ScheduleEarly(arg, root);
@@ -514,14 +575,14 @@ void HIRGen::ScheduleLate(HIRInstruction* instr) {
   // Select best block between ->block() and lca
   HIRBlock* best = lca;
 
-  // Constants should be close to instructions
-  while (lca != instr->block()) {
+  while (lca->reachable_from()->Test(instr->block()->id) &&
+         lca != instr->block()) {
     if (lca->loop_depth < best->loop_depth) {
       best = lca;
     }
     lca = lca->dominator();
   }
-  instr->block(lca);
+  instr->block(best);
 }
 
 
@@ -675,7 +736,6 @@ HIRInstruction* HIRGen::VisitAssign(AstNode* stmt) {
     HIRInstruction* receiver = Visit(stmt->lhs()->lhs());
 
     Add(new HIRStoreProperty())
-        ->Unpin()
         ->AddArg(receiver)
         ->AddArg(property)
         ->AddArg(rhs);
@@ -851,7 +911,6 @@ HIRInstruction* HIRGen::VisitUnOp(AstNode* stmt) {
       HIRInstruction* property = load->args()->tail()->value();
 
       Add(new HIRStoreProperty())
-          ->Unpin()
           ->AddArg(receiver)
           ->AddArg(property)
           ->AddArg(value);
@@ -1105,7 +1164,7 @@ HIRInstruction* HIRGen::VisitSizeof(AstNode* stmt) {
 
 HIRInstruction* HIRGen::VisitClone(AstNode* stmt) {
   HIRInstruction* lhs = Visit(stmt->lhs());
-  return Add(new HIRClone())->Unpin()->AddArg(lhs);
+  return Add(new HIRClone())->AddArg(lhs);
 }
 
 
@@ -1156,6 +1215,7 @@ HIRBlock::HIRBlock(HIRGen* g) : id(g->block_id()),
                                 dfs_id(-1),
                                 loop_depth(-1),
                                 g_(g),
+                                reachable_from_(256),
                                 loop_(false),
                                 ended_(false),
                                 env_(NULL),
@@ -1175,6 +1235,7 @@ HIRBlock::HIRBlock(HIRGen* g) : id(g->block_id()),
   pred_[1] = NULL;
   succ_[0] = NULL;
   succ_[1] = NULL;
+  reachable_from_.Set(id);
 }
 
 

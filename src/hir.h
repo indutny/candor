@@ -77,6 +77,7 @@ class HIRBlock : public ZoneObject {
   inline bool IsLoop();
   inline HIRPhi* CreatePhi(ScopeSlot* slot);
 
+  inline BitMap<EmptyClass>* reachable_from();
   inline HIREnvironment* env();
   inline void env(HIREnvironment* env);
   inline HIRInstructionList* instructions();
@@ -110,6 +111,7 @@ class HIRBlock : public ZoneObject {
   inline HIRBlock* Evaluate();
 
   HIRGen* g_;
+  BitMap<EmptyClass> reachable_from_;
 
   bool loop_;
   bool ended_;
@@ -162,14 +164,16 @@ class HIRGen : public Visitor<HIRInstruction> {
   HIRGen(Heap* heap, const char* filename, AstNode* root);
 
   void PrunePhis();
+  void FindReachableBlocks();
   void DeriveDominators();
   void EnumerateDFS(HIRBlock* b, HIRBlockList* blocks);
   void EliminateDeadCode();
   void EliminateDeadCode(HIRInstruction* instr);
   void FindEffects();
-  void FindEffects(HIRInstruction* instr);
+  void FindOutEffects(HIRInstruction* instr);
+  void FindInEffects(HIRInstruction* instr);
   void GlobalValueNumbering();
-  void GlobalValueNumbering(HIRInstruction* instr, HIRInstructionMap* gvn);
+  void GlobalValueNumbering(HIRInstruction* instr, HIRInstructionGVNMap* gvn);
   void GlobalCodeMotion();
   void ScheduleEarly(HIRInstruction* instr, HIRBlock* root);
   void ScheduleLate(HIRInstruction* instr);

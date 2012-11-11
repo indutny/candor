@@ -287,6 +287,11 @@ inline void HIRBlock::root(HIRBlock* root) {
 }
 
 
+inline BitMap<EmptyClass>* HIRBlock::reachable_from() {
+  return &reachable_from_;
+}
+
+
 inline HIREnvironment* HIRBlock::env() {
   assert(env_ != NULL);
   return env_;

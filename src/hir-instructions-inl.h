@@ -152,8 +152,13 @@ inline HIRInstructionList* HIRInstruction::uses() {
 }
 
 
-inline HIRInstructionList* HIRInstruction::effects() {
-  return &effects_;
+inline HIRInstructionList* HIRInstruction::effects_in() {
+  return &effects_in_;
+}
+
+
+inline HIRInstructionList* HIRInstruction::effects_out() {
+  return &effects_out_;
 }
 
 

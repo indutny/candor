@@ -50,6 +50,23 @@ inline uint32_t ComputeHash(const char* key, uint32_t length) {
 }
 
 
+// Find minimum number that's greater than value and is dividable by to
+inline uint32_t RoundUp(uint32_t value, uint32_t to) {
+  if (value % to == 0) return value;
+
+  return value + to - value % to;
+}
+
+
+inline uint32_t PowerOfTwo(uint32_t value) {
+  uint32_t result = 2;
+
+  while (result != 0 && result < value) result <<= 1;
+
+  return result;
+}
+
+
 class EmptyClass { };
 
 template <class T, class ItemParent>
@@ -781,6 +798,74 @@ class FreeList {
   int length_;
 };
 
+template <class Base>
+class BitMap : public Base {
+ public:
+  BitMap(int size) : size_(size) {
+    space_ = new uint32_t[size / 32];
+    memset(space_, 0, size / 32);
+  }
+
+  ~BitMap() {
+    delete[] space_;
+  }
+
+  inline void Set(int key) {
+    assert(key >= 0);
+
+    // Grow map if needed
+    Grow(key);
+
+    int index = key / 32;
+    int pos = key % 32;
+    uint32_t mask = 1;
+    while (pos-- > 0) {
+      mask <<= 1;
+    }
+
+    space_[index] |= mask;
+  }
+
+  inline void Grow(int size) {
+    if (size < size_) return;
+
+    int new_size = RoundUp(size, 16);
+    uint32_t* new_space = new uint32_t[new_size / 32];
+    memcpy(new_space, space_, size / 32);
+    memset(new_space + (size / 32), 0, (new_size - size) / 32);
+    delete[] space_;
+    space_ = new_space;
+    size_ = new_size;
+  }
+
+  inline bool Test(int key) {
+    if (key >= size_) return false;
+
+    int index = key / 32;
+    int pos = key % 32;
+    uint32_t mask = 1;
+    while (pos-- > 0) {
+      mask <<= 1;
+    }
+
+    return (space_[index] & mask) != 0;
+  }
+
+  inline bool Copy(BitMap<Base>* to) {
+    bool change = false;
+    to->Grow(size_);
+    for (int i = 0; i < (size_ / 32); i++) {
+      if ((to->space_[i] & space_[i]) != space_[i]) change = true;
+
+      to->space_[i] |= space_[i];
+    }
+    return change;
+  }
+
+ protected:
+  int size_;
+  uint32_t* space_;
+};
 
 // For debug printing AST and other things
 class PrintBuffer {
@@ -872,22 +957,6 @@ class ErrorHandler {
   int32_t error_pos_;
   const char* error_msg_;
 };
-
-// Find minimum number that's greater than value and is dividable by to
-inline uint32_t RoundUp(uint32_t value, uint32_t to) {
-  if (value % to == 0) return value;
-
-  return value + to - value % to;
-}
-
-
-inline uint32_t PowerOfTwo(uint32_t value) {
-  uint32_t result = 2;
-
-  while (result != 0 && result < value) result <<= 1;
-
-  return result;
-}
 
 
 // Naive only for lexer generated number strings

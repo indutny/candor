@@ -11,10 +11,6 @@ while (--i) {
   } else {
     x = d
   }
-  x.z = 1
-  x.z = 1
-  x.z = 1
-  x.z = 1
-  x.z = 1
+  x.z = x.z + x.z + x.z
 }
-global.print(c.z, c.z)
+global.print(c.z, d.z)
