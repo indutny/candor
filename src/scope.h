@@ -82,7 +82,7 @@ class ScopeSlot : public ZoneObject {
 };
 
 // On each block or function enter new scope is created
-class Scope : public HashMap<StringKey<ZoneObject>, ScopeSlot, ZoneObject> {
+class Scope : public ZoneMap<StringKey<ZoneObject>, ScopeSlot, ZoneObject> {
  public:
   enum Type {
     kBlock,

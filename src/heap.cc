@@ -105,7 +105,6 @@ Heap::Heap(uint32_t page_size) : new_space_(this, page_size),
                                  needs_gc_(kGCNone),
                                  gc_(this) {
   current_ = this;
-  references_.allocated = true;
   factory_ = HValue::Cast(HObject::NewEmpty(this, kMinFactorySize));
   Reference(Heap::kRefPersistent, &factory_, factory_);
 }

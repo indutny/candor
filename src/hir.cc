@@ -306,7 +306,7 @@ void HIRGen::FindOutEffects(HIRInstruction* instr) {
   if (instr->alias_visited == 1) return;
   instr->alias_visited = 1;
 
-  HashMap<NumberKey, HIRInstruction, ZoneObject> effects_;
+  ZoneMap<NumberKey, HIRInstruction, ZoneObject> effects_;
 
   HIRInstructionList::Item* uhead = instr->uses()->head();
   for (; uhead != NULL; uhead = uhead->next()) {
@@ -343,7 +343,7 @@ void HIRGen::FindInEffects(HIRInstruction* instr) {
   if (instr->alias_visited == 2) return;
   instr->alias_visited = 2;
 
-  HashMap<NumberKey, HIRInstruction, ZoneObject> effects_;
+  ZoneMap<NumberKey, HIRInstruction, ZoneObject> effects_;
 
   HIRInstructionList::Item* ahead = instr->args()->head();
   for (; ahead != NULL; ahead = ahead->next()) {

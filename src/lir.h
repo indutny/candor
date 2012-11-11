@@ -28,7 +28,7 @@ class SourceMap;
 typedef ZoneList<LInterval*> LIntervalList;
 typedef ZoneList<LRange*> LRangeList;
 typedef ZoneList<LUse*> LUseList;
-typedef HashMap<NumberKey, LUse, ZoneObject> LUseMap;
+typedef ZoneMap<NumberKey, LUse, ZoneObject> LUseMap;
 
 class LRange : public ZoneObject {
  public:

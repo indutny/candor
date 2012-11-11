@@ -756,7 +756,7 @@ void LGen::AllocateSpills() {
       }
     }
 
-    HashMap<NumberKey, LInterval, ZoneObject> blocked;
+    ZoneMap<NumberKey, LInterval, ZoneObject> blocked;
     int max_index = 0;
 
     head = active_spills_.head();

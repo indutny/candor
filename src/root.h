@@ -32,7 +32,7 @@ class Root {
 
   Heap* heap_;
   HValueList values_;
-  HashMap<NumberKey, ScopeSlot, ZoneObject> map_;
+  ZoneMap<NumberKey, ScopeSlot, ZoneObject> map_;
 };
 
 } // namespace internal

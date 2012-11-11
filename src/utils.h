@@ -345,8 +345,8 @@ class StringKey : public Base {
 };
 
 
-template <class Key, class Value, class ItemParent>
-class HashMap {
+template <class Key, class Value, class ItemParent, class Policy>
+class GenericHashMap {
  public:
   typedef void (*EnumerateCallback)(void* map, Value* value);
 
@@ -377,14 +377,14 @@ class HashMap {
     Item* prev_scalar_;
     Item* next_scalar_;
 
-    friend class HashMap;
+    friend class GenericHashMap;
   };
 
-  HashMap() : allocated(false), head_(NULL), current_(NULL) {
+  GenericHashMap() : head_(NULL), current_(NULL) {
     memset(&map_, 0, sizeof(map_));
   }
 
-  ~HashMap() {
+  ~GenericHashMap() {
     Item* i = head_;
 
     while (i != NULL) {
@@ -394,7 +394,7 @@ class HashMap {
       i = i->next_scalar();
 
       delete prev;
-      if (allocated) delete value;
+      Policy::Delete(value);
     }
   }
 
@@ -481,7 +481,7 @@ class HashMap {
         }
 
         // Remove any allocated data
-        if (allocated) delete i->value();
+        Policy::Delete(i->value());
         delete i;
 
         return;
@@ -502,8 +502,6 @@ class HashMap {
 
   inline Item* head() { return head_; }
 
-  bool allocated;
-
  private:
   static const uint32_t size_ = 32;
   static const uint32_t mask_ = 31;
@@ -512,6 +510,19 @@ class HashMap {
   Item* current_;
 };
 
+
+template <class Key, class Value, class ItemParent>
+class HashMap : public GenericHashMap<Key,
+                                      Value,
+                                      ItemParent,
+                                      DeletePolicy<Value*> > {
+ public:
+};
+
+template <class Key, class Value, class ItemParent>
+class ZoneMap : public GenericHashMap<Key, Value, ItemParent, NopPolicy> {
+ public:
+};
 
 class NumberKey {
  public:

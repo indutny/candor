@@ -17,7 +17,7 @@ class HIRPhi;
 class LInstruction;
 
 typedef ZoneList<HIRInstruction*> HIRInstructionList;
-typedef HashMap<NumberKey, HIRInstruction, ZoneObject> HIRInstructionMap;
+typedef ZoneMap<NumberKey, HIRInstruction, ZoneObject> HIRInstructionMap;
 typedef ZoneList<HIRPhi*> HIRPhiList;
 
 #define HIR_INSTRUCTION_TYPES(V) \
@@ -166,10 +166,9 @@ class HIRInstruction : public ZoneObject {
 
 #undef HIR_INSTRUCTION_ENUM
 
-class HIRGVNMap : public HashMap<HIRInstruction, HIRInstruction, ZoneObject>,
+class HIRGVNMap : public ZoneMap<HIRInstruction, HIRInstruction, ZoneObject>,
                   public ZoneObject {
  public:
-  HIRGVNMap() {}
 };
 
 #define HIR_DEFAULT_METHODS(V) \
