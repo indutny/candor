@@ -37,8 +37,8 @@ while (--i) {
 // Bigger Rehashing dense->dense->...->object
 i = 0
 a = []
-while (++i < 100000) {
+while (++i < 10000) {
   a[i] = i
 }
 
-assert(sizeof a === 100000, "array grows through rehashing")
+assert(sizeof a === 10000, "array grows through rehashing")

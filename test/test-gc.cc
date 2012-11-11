@@ -40,7 +40,7 @@ TEST_START(gc)
   FUN_TEST("a = 0\ny = 30\nz=1.0\n"
            "while(--y) {\n"
            "  a = 0\n"
-           "  x = 10000\n"
+           "  x = 2000\n"
            "  while(--x) {\n"
            "    a = { x: { y: a } }\n"
            "  }\n"

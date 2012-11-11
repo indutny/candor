@@ -174,6 +174,35 @@ bool HIRInstruction::IsGVNEqual(HIRInstruction* to) {
 }
 
 
+bool HIRInstruction::HasSameEffects(HIRInstruction* to) {
+  if (effects_in()->length() != to->effects_in()->length()) return false;
+
+  // Effects should be the same
+  HIRInstructionList::Item* ahead = effects_in()->head();
+  for (; ahead != NULL; ahead = ahead->next()) {
+    HIRInstruction *aeffect = ahead->value();
+
+    // If object has escaped - it can be replaced by the same instruction
+    if (aeffect->Is(HIRInstruction::kStoreArg) ||
+        aeffect->Is(HIRInstruction::kLoadArg)) {
+      return false;
+    }
+
+    HIRInstructionList::Item* bhead = to->effects_in()->head();
+    bool matches = false;
+    for (; bhead != NULL; bhead = bhead->next()) {
+      if (bhead->value() == ahead->value()) {
+        matches = true;
+        break;
+      }
+    }
+
+    if (!matches) return false;
+  }
+  return true;
+}
+
+
 void HIRInstruction::Print(PrintBuffer* p) {
   p->Print("i%d = ", id);
 
@@ -440,23 +469,7 @@ bool HIRLoadProperty::HasGVNSideEffects() {
 
 
 bool HIRLoadProperty::IsGVNEqual(HIRInstruction* to) {
-  if (effects_in()->length() != to->effects_in()->length()) return false;
-
-  // Effects should be the same
-  HIRInstructionList::Item* ahead = effects_in()->head();
-  for (; ahead != NULL; ahead = ahead->next()) {
-    HIRInstructionList::Item* bhead = to->effects_in()->head();
-    bool matches = false;
-    for (; bhead != NULL; bhead = bhead->next()) {
-      if (bhead->value() == ahead->value()) {
-        matches = true;
-        break;
-      }
-    }
-
-    if (!matches) return false;
-  }
-  return true;
+  return HasSameEffects(to);
 }
 
 
@@ -568,11 +581,6 @@ bool HIRStoreVarArg::HasSideEffects() {
 }
 
 
-bool HIRStoreVarArg::Effects(HIRInstruction* instr) {
-  return true;
-}
-
-
 HIRAlignStack::HIRAlignStack() : HIRInstruction(kAlignStack) {
 }
 
@@ -600,8 +608,8 @@ void HIRKeysof::CalculateRepresentation() {
 }
 
 
-bool HIRKeysof::HasGVNSideEffects() {
-  return true;
+bool HIRKeysof::IsGVNEqual(HIRInstruction* to) {
+  return HasSameEffects(to);
 }
 
 
@@ -614,8 +622,8 @@ void HIRSizeof::CalculateRepresentation() {
 }
 
 
-bool HIRSizeof::HasGVNSideEffects() {
-  return true;
+bool HIRSizeof::IsGVNEqual(HIRInstruction* to) {
+  return HasSameEffects(to);
 }
 
 
@@ -625,11 +633,6 @@ HIRTypeof::HIRTypeof() : HIRInstruction(kTypeof) {
 
 void HIRTypeof::CalculateRepresentation() {
   representation_ = kStringRepresentation;
-}
-
-
-bool HIRTypeof::HasGVNSideEffects() {
-  return true;
 }
 
 

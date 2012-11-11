@@ -31,3 +31,27 @@ a:x()
   assert(obj2 === obj3, "Object should be visible")
 })(obj2 = {})
 
+// Escaping object
+escape(o) {
+  return () {
+    o[0] = 2
+    o[1] = 3
+  }
+}
+eo = [ 1 ]
+
+eo1 = eo[0]
+eos1 = sizeof eo
+eos2 = sizeof eo
+change = escape(eo)
+eo2 = eo[0]
+change()
+eo3 = eo[0]
+eos3 = sizeof eo
+
+assert(eo1 == 1, "Escape #1")
+assert(eo2 == 1, "Escape #2")
+assert(eo3 == 2, "Escape #3")
+assert(eos1 == 1, "Escape #4")
+assert(eos2 == 1, "Escape #5")
+assert(eos3 == 2, "Escape #6")
