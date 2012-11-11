@@ -39,7 +39,7 @@ void EntryStub::Generate() {
   GeneratePrologue();
 
   // Just for alignment
-  __ push(Immediate(Heap::kTagNil));
+  __ pushb(Immediate(Heap::kTagNil));
 
   // rdi <- function addr
   // rsi <- unboxed arguments count (tagged)
@@ -67,7 +67,7 @@ void EntryStub::Generate() {
   // Odd arguments count check (for alignment)
   __ testb(scratch, Immediate(1));
   __ jmp(kEq, &even);
-  __ push(Immediate(0));
+  __ pushb(Immediate(0));
   __ bind(&even);
 
   // Get pointer to the end of arguments array
@@ -146,7 +146,7 @@ void EntryStub::Generate() {
 void AllocateStub::Generate() {
   GeneratePrologue();
   // Align stack
-  __ push(Immediate(0));
+  __ pushb(Immediate(0));
   __ push(rbx);
 
   // Arguments

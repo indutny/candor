@@ -85,6 +85,12 @@ void Assembler::push(Immediate imm) {
 }
 
 
+void Assembler::pushb(Immediate imm) {
+  emitb(0x6A);
+  emitb(imm.value());
+}
+
+
 void Assembler::push(Operand& src) {
   emitb(0xFF);
   emit_modrm(src, 6);

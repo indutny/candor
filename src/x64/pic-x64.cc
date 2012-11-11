@@ -13,8 +13,8 @@ void PIC::Generate(Masm* masm) {
   __ mov(rbp, rsp);
 
   // Place for spills
-  __ push(Immediate(Heap::kTagNil));
-  __ push(Immediate(Heap::kTagNil));
+  __ pushb(Immediate(Heap::kTagNil));
+  __ pushb(Immediate(Heap::kTagNil));
 
   Label miss, end;
   Operand rdx_op(rdx, 0);

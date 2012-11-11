@@ -69,11 +69,11 @@ void EntryStub::Generate() {
   __ jmp(kEq, &align3);
 
   __ bind(&align1);
-  __ push(Immediate(0));
+  __ pushb(Immediate(0));
   __ bind(&align2);
-  __ push(Immediate(0));
+  __ pushb(Immediate(0));
   __ bind(&align3);
-  __ push(Immediate(0));
+  __ pushb(Immediate(0));
 
   __ bind(&even);
 
@@ -141,9 +141,9 @@ void AllocateStub::Generate() {
   GeneratePrologue();
 
   // Align stack
-  __ push(Immediate(0));
-  __ push(Immediate(0));
-  __ push(Immediate(0));
+  __ pushb(Immediate(0));
+  __ pushb(Immediate(0));
+  __ pushb(Immediate(0));
   __ push(ebx);
 
   // Arguments

@@ -107,14 +107,14 @@ void LLiteral::Generate(Masm* masm) {
 
 void LAllocateObject::Generate(Masm* masm) {
   __ push(Immediate(HNumber::Tag(size_)));
-  __ push(Immediate(HNumber::Tag(Heap::kTagObject)));
+  __ pushb(Immediate(HNumber::Tag(Heap::kTagObject)));
   __ Call(masm->stubs()->GetAllocateObjectStub());
 }
 
 
 void LAllocateArray::Generate(Masm* masm) {
   __ push(Immediate(HNumber::Tag(size_)));
-  __ push(Immediate(HNumber::Tag(Heap::kTagArray)));
+  __ pushb(Immediate(HNumber::Tag(Heap::kTagArray)));
   __ Call(masm->stubs()->GetAllocateObjectStub());
 }
 
@@ -615,7 +615,7 @@ void LAlignStack::Generate(Masm* masm) {
   Label even;
   __ testb(inputs[0]->ToRegister(), Immediate(HNumber::Tag(1)));
   __ jmp(kEq, &even);
-  __ push(Immediate(Heap::kTagNil));
+  __ pushb(Immediate(Heap::kTagNil));
   __ bind(&even);
 }
 

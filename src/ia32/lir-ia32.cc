@@ -112,10 +112,10 @@ void LLiteral::Generate(Masm* masm) {
 
 void LAllocateObject::Generate(Masm* masm) {
   // XXX Use correct size here
-  __ push(Immediate(Heap::kTagNil));
-  __ push(Immediate(Heap::kTagNil));
+  __ pushb(Immediate(Heap::kTagNil));
+  __ pushb(Immediate(Heap::kTagNil));
   __ push(Immediate(HNumber::Tag(size_)));
-  __ push(Immediate(HNumber::Tag(Heap::kTagObject)));
+  __ pushb(Immediate(HNumber::Tag(Heap::kTagObject)));
   __ Call(masm->stubs()->GetAllocateObjectStub());
   __ addlb(esp, Immediate(4 * 4));
 }
@@ -123,10 +123,10 @@ void LAllocateObject::Generate(Masm* masm) {
 
 void LAllocateArray::Generate(Masm* masm) {
   // XXX Use correct size here
-  __ push(Immediate(Heap::kTagNil));
-  __ push(Immediate(Heap::kTagNil));
+  __ pushb(Immediate(Heap::kTagNil));
+  __ pushb(Immediate(Heap::kTagNil));
   __ push(Immediate(HNumber::Tag(size_)));
-  __ push(Immediate(HNumber::Tag(Heap::kTagArray)));
+  __ pushb(Immediate(HNumber::Tag(Heap::kTagArray)));
   __ Call(masm->stubs()->GetAllocateObjectStub());
   __ addlb(esp, Immediate(4 * 4));
 }
@@ -343,8 +343,8 @@ void LFunction::Generate(Masm* masm) {
   block_->label()->label->AddUse(masm, addr);
 
   // Call stub
-  __ push(Immediate(Heap::kTagNil));
-  __ push(Immediate(Heap::kTagNil));
+  __ pushb(Immediate(Heap::kTagNil));
+  __ pushb(Immediate(Heap::kTagNil));
   __ push(Immediate(HNumber::Tag(arg_count_)));
   __ push(scratches[0]->ToRegister());
   __ Call(masm->stubs()->GetAllocateFunctionStub());
@@ -638,7 +638,7 @@ void LAlignStack::Generate(Masm* masm) {
   __ bind(&loop);
   __ testb(scratches[0]->ToRegister(), Immediate(HNumber::Tag(3)));
   __ jmp(kEq, &even);
-  __ push(Immediate(Heap::kTagNil));
+  __ pushb(Immediate(Heap::kTagNil));
   __ addlb(scratches[0]->ToRegister(), Immediate(HNumber::Tag(1)));
   __ jmp(&loop);
   __ bind(&even);

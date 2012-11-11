@@ -68,7 +68,7 @@ void Masm::AlignCode() {
 Masm::Align::Align(Masm* masm) : masm_(masm), align_(masm->align_) {
   if (align_ % 2 == 0) return;
 
-  masm->push(Immediate(Heap::kTagNil));
+  masm->pushb(Immediate(Heap::kTagNil));
   masm->align_ += 1;
 }
 
@@ -353,7 +353,7 @@ void Masm::EnterFramePrologue() {
   Immediate last_frame(reinterpret_cast<intptr_t>(heap()->last_frame()));
   Operand scratch_op(scratch, 0);
 
-  push(Immediate(Heap::kTagNil));
+  pushb(Immediate(Heap::kTagNil));
   mov(scratch, last_frame);
   push(scratch_op);
   mov(scratch, last_stack);
