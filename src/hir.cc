@@ -170,13 +170,16 @@ void HIRGen::DeriveDominators() {
 
       // Propagate dominators from predecessors
       for (int i = 0; i < w->pred_count(); i++) {
+        // Skip unreachable predecessors
+        if (w->PredAt(i)->dfs_id == -1) continue;
+
         HIRBlock* u = w->PredAt(i)->Evaluate();
         if (u->semi()->dfs_id < w->semi()->dfs_id) w->semi(u->semi());
       }
       w->semi()->dominates()->Push(w);
       w->ancestor(parent);
 
-      // Empty parent's bucket and set semidominators
+      // Time to empty parent's bucket and set semidominators
       while (parent->dominates()->length() > 0) {
         HIRBlock* v = parent->dominates()->Shift();
         HIRBlock* u = v->Evaluate();
@@ -200,6 +203,7 @@ void HIRGen::DeriveDominators() {
     for (; dhead != NULL; dhead = dhead->next()) {
       HIRBlock* w = dhead->value();
       if (w->dominator() != w->semi()) {
+        assert(w->dominator() != NULL);
         w->dominator(w->dominator()->dominator());
       }
 
