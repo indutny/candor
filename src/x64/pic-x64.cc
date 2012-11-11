@@ -15,8 +15,6 @@ void PIC::Generate(Masm* masm) {
   // Place for spills
   __ push(Immediate(Heap::kTagNil));
   __ push(Immediate(Heap::kTagNil));
-  __ push(Immediate(Heap::kTagNil));
-  __ push(Immediate(Heap::kTagNil));
 
   Label miss, end;
   Operand rdx_op(rdx, 0);
@@ -57,8 +55,10 @@ void PIC::Generate(Masm* masm) {
   // Cache failed - call runtime
   __ bind(&miss);
 
-  __ mov(rbx, rbx_s);
-  __ mov(rax, rax_s);
+  if (size_ != 0) {
+    __ mov(rbx, rbx_s);
+    __ mov(rax, rax_s);
+  }
   __ Call(space_->stubs()->GetLookupPropertyStub());
 
   // Miss(this, object, result, ip)

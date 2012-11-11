@@ -58,8 +58,10 @@ void PIC::Generate(Masm* masm) {
   // Cache failed - call runtime
   __ bind(&miss);
 
-  __ mov(ebx, ebx_s);
-  __ mov(eax, eax_s);
+  if (size_ != 0) {
+    __ mov(ebx, ebx_s);
+    __ mov(eax, eax_s);
+  }
   __ Call(space_->stubs()->GetLookupPropertyStub());
 
   // Miss(this, object, result, ip)
