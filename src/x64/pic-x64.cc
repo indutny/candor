@@ -19,7 +19,6 @@ void PIC::Generate(Masm* masm) {
   __ push(Immediate(Heap::kTagNil));
 
   Label miss, end;
-  Label cases[kMaxSize];
   Operand rdx_op(rdx, 0);
   Operand proto_op(rax, HObject::kProtoOffset);
   Operand rax_s(rbp, -16), rbx_s(rbp, -24);
@@ -27,56 +26,40 @@ void PIC::Generate(Masm* masm) {
   __ mov(rax_s, rax);
   __ mov(rbx_s, rbx);
 
-  // Proto in case of array
-  __ movl(rdx, Immediate(Heap::kICDisabledValue));
+  if (size_ != 0) {
+    // Fast-case non-object
+    __ IsNil(rax, NULL, &miss);
+    __ IsUnboxed(rax, NULL, &miss);
+    __ IsHeapObject(Heap::kTagObject, rax, &miss, NULL);
 
-  // Fast-case non-object
-  __ IsNil(rax, NULL, &miss);
-  __ IsUnboxed(rax, NULL, &miss);
-  __ IsHeapObject(Heap::kTagObject, rax, &miss, NULL);
+    // Load proto
+    __ mov(rdx, proto_op);
+    __ cmpq(rdx, Immediate(Heap::kICDisabledValue));
+    __ jmp(kEq, &miss);
+  }
 
-  // Load proto
-  __ mov(rdx, proto_op);
-  __ cmpq(rdx, Immediate(Heap::kICDisabledValue));
-  __ jmp(kEq, &miss);
-
-  // Jump into correct section
-  __ jmp(&miss);
-  jmp_ = reinterpret_cast<uint32_t*>(static_cast<intptr_t>(
-        masm->offset() - 4));
-
-  for (int i = kMaxSize - 1; i >= 0; i--) {
+  for (int i = size_ - 1; i >= 0; i--) {
     Label local_miss;
 
-    section_size_ = masm->offset();
-    __ bind(&cases[i]);
-    __ mov(rbx, Immediate(0));
-    protos_[i] = reinterpret_cast<char**>(static_cast<intptr_t>(
+    __ mov(rbx, Immediate(reinterpret_cast<intptr_t>(protos_[i])));
+    proto_offsets_[i] = reinterpret_cast<char**>(static_cast<intptr_t>(
           masm->offset() - 8));
     __ cmpq(rdx, rbx);
     __ jmp(kNe, &local_miss);
-    __ mov(rax, Immediate(0));
-    results_[i] = reinterpret_cast<intptr_t*>(static_cast<intptr_t>(
-          masm->offset() - 8));
+    __ mov(rax, Immediate(results_[i]));
     __ xorq(rbx, rbx);
     __ mov(rsp, rbp);
     __ pop(rbp);
     __ ret(0);
     __ bind(&local_miss);
-    section_size_ = masm->offset() - section_size_;
   }
 
   // Cache failed - call runtime
   __ bind(&miss);
 
   __ mov(rbx, rbx_s);
-  __ mov(rbx_s, rdx);
   __ mov(rax, rax_s);
   __ Call(space_->stubs()->GetLookupPropertyStub());
-
-  __ mov(rbx, rbx_s);
-  __ cmpq(rbx, Immediate(Heap::kICDisabledValue));
-  __ jmp(kEq, &end);
 
   // Amend PIC
   __ Pushad();

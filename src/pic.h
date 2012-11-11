@@ -14,6 +14,7 @@ class Masm;
 class PIC {
  public:
   PIC(CodeSpace* space);
+  ~PIC();
 
   char* Generate();
 
@@ -28,17 +29,14 @@ class PIC {
   static void Miss(PIC* pic, char* object, intptr_t result, char* ip);
   void Miss(char* object, intptr_t result, char* ip);
 
-  static const int kMaxSize = 6;
+  static const int kMaxSize = 5;
 
   CodeSpace* space_;
   char* addr_;
-  char** protos_[kMaxSize];
-  intptr_t* results_[kMaxSize];
-  uint32_t* jmp_;
-
-  // Data for calculating jmp offset
-  intptr_t index_;
-  intptr_t section_size_;
+  char** protos_;
+  char** proto_offsets_[kMaxSize];
+  intptr_t* results_;
+  int size_;
 };
 
 } // namespace internal
