@@ -162,6 +162,7 @@ class BreakContinueInfo : public ZoneObject {
 class HIRGen : public Visitor<HIRInstruction> {
  public:
   HIRGen(Heap* heap, const char* filename, AstNode* root);
+  ~HIRGen();
 
   void PrunePhis();
   void FindReachableBlocks();

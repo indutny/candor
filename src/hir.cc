@@ -53,6 +53,14 @@ HIRGen::HIRGen(Heap* heap, const char* filename, AstNode* root)
 }
 
 
+HIRGen::~HIRGen() {
+  // Bitmaps in blocks are allocated :(
+  HIRBlock* b;
+  while ((b = blocks_.Shift()) != NULL) {
+    delete b;
+  }
+}
+
 void HIRGen::EnableLogging() {
   log_ = true;
 }

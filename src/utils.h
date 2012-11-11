@@ -814,11 +814,12 @@ class BitMap : public Base {
  public:
   BitMap(int size) : size_(size) {
     space_ = new uint32_t[size / 32];
-    memset(space_, 0, size / 32);
+    memset(space_, 0, sizeof(*space_) * size / 32);
   }
 
   ~BitMap() {
     delete[] space_;
+    space_ = NULL;
   }
 
   inline void Set(int key) {
@@ -842,8 +843,10 @@ class BitMap : public Base {
 
     int new_size = RoundUp(size, 16);
     uint32_t* new_space = new uint32_t[new_size / 32];
-    memcpy(new_space, space_, size / 32);
-    memset(new_space + (size / 32), 0, (new_size - size) / 32);
+    memcpy(new_space, space_, sizeof(*new_space) * size / 32);
+    memset(new_space + (size / 32),
+           0,
+           sizeof(*new_space) * (new_size - size) / 32);
     delete[] space_;
     space_ = new_space;
     size_ = new_size;
