@@ -344,6 +344,7 @@ class Assembler {
   void addqb(Register dst, Immediate src);
   void subq(Register dst, Register src);
   void subq(Register dst, Immediate src);
+  void subqb(Register dst, Immediate src);
   void imulq(Register src);
   void idivq(Register src);
 

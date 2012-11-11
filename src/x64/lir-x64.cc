@@ -341,7 +341,7 @@ void LCall::Generate(Masm* masm) {
 
   __ testb(scratch, Immediate(HNumber::Tag(1)));
   __ jmp(kEq, &even_argc);
-  __ addq(scratch, Immediate(HNumber::Tag(1)));
+  __ addqb(scratch, Immediate(HNumber::Tag(1)));
   __ bind(&even_argc);
   __ shl(scratch, Immediate(2));
   __ addq(scratch, rsp);
@@ -403,7 +403,7 @@ void LLoadArg::Generate(Masm* masm) {
   __ cmpq(scratch, argc);
   __ jmp(kGe, &oob);
 
-  __ addq(scratch, Immediate(HNumber::Tag(2)));
+  __ addqb(scratch, Immediate(HNumber::Tag(2)));
   __ shl(scratch, 2);
   __ addq(scratch, rbp);
   __ Move(result, slot);
@@ -480,7 +480,7 @@ void LLoadVarArg::Generate(Masm* masm) {
 
   // Get stack offset
   offset_s.Unspill();
-  __ addq(offset, Immediate(HNumber::Tag(2)));
+  __ addqb(offset, Immediate(HNumber::Tag(2)));
   __ addq(offset, rbx);
   __ shl(offset, 2);
   __ addq(offset, rbp);
@@ -494,11 +494,11 @@ void LLoadVarArg::Generate(Masm* masm) {
   __ bind(&preloop);
 
   // Increment array index
-  __ addq(rbx, Immediate(HNumber::Tag(1)));
+  __ addqb(rbx, Immediate(HNumber::Tag(1)));
 
   // rdx --
   rdx_s.Unspill();
-  __ subq(rdx, Immediate(HNumber::Tag(1)));
+  __ subqb(rdx, Immediate(HNumber::Tag(1)));
   __ jmp(&loop);
 
   __ bind(&end);
@@ -549,7 +549,7 @@ void LStoreVarArg::Generate(Masm* masm) {
   __ jmp(kEq, &not_array);
 
   // index--;
-  __ subq(index, Immediate(HNumber::Tag(1)));
+  __ subqb(index, Immediate(HNumber::Tag(1)));
 
   index_s.SpillReg(index);
 
@@ -573,7 +573,7 @@ void LStoreVarArg::Generate(Masm* masm) {
   __ jmp(kEq, &odd_end);
 
   // index--;
-  __ subq(index, Immediate(HNumber::Tag(1)));
+  __ subqb(index, Immediate(HNumber::Tag(1)));
 
   array_s.Unspill();
   index_s.SpillReg(index);

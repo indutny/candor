@@ -315,6 +315,13 @@ void Assembler::subl(Register dst, Immediate src) {
 }
 
 
+void Assembler::sublb(Register dst, Immediate src) {
+  emitb(0x83);
+  emit_modrm(dst, 0x05);
+  emitb(src.value());
+}
+
+
 void Assembler::imull(Register src) {
   emitb(0xF7);
   emit_modrm(src, 0x05);

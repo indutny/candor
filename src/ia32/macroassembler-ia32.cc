@@ -78,7 +78,7 @@ Masm::Align::Align(Masm* masm) : masm_(masm), align_(masm->align_) {
 
 
 Masm::Align::~Align() {
-  masm_->addl(esp, Immediate((masm_->align_ - align_) * 4));
+  masm_->addlb(esp, Immediate((masm_->align_ - align_) * 4));
   masm_->align_ = align_;
 }
 
@@ -165,7 +165,7 @@ void Masm::Allocate(Heap::HeapTag tag,
   } else {
     mov(eax, size_reg);
     Untag(eax);
-    addl(eax, Immediate(HValue::kPointerSize));
+    addlb(eax, Immediate(HValue::kPointerSize));
     TagNumber(eax);
   }
   push(eax);
@@ -173,14 +173,14 @@ void Masm::Allocate(Heap::HeapTag tag,
   push(eax);
 
   Call(stubs()->GetAllocateStub());
-  addl(esp, Immediate(4 * 2));
+  addlb(esp, Immediate(4 * 2));
 
   if (!result.is(eax)) {
     mov(result, eax);
     pop(eax);
     pop(eax);
   } else {
-    addl(esp, Immediate(4 * 2));
+    addlb(esp, Immediate(4 * 2));
   }
 }
 
@@ -279,7 +279,7 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
   // keys + values
   shl(size, Immediate(3));
   // + size
-  addl(size, Immediate(1 * HValue::kPointerSize));
+  addlb(size, Immediate(1 * HValue::kPointerSize));
   TagNumber(size);
 
   Allocate(Heap::kTagMap, size, 0, scratch);
@@ -296,9 +296,9 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
 
   // Fill map with nil
   shl(size, Immediate(3));
-  addl(result, Immediate(HMap::kSpaceOffset));
+  addlb(result, Immediate(HMap::kSpaceOffset));
   addl(size, result);
-  subl(size, Immediate(HValue::kPointerSize));
+  sublb(size, Immediate(HValue::kPointerSize));
   Fill(result, size, Immediate(Heap::kTagNil));
 
   result_s.Unspill();
@@ -321,7 +321,7 @@ void Masm::Fill(Register start, Register end, Immediate value) {
   mov(op, scratch);
 
   // Move
-  addl(start, Immediate(4));
+  addlb(start, Immediate(4));
 
   bind(&entry);
 
@@ -341,9 +341,9 @@ void Masm::FillStackSlots() {
   mov(eax, esp);
   mov(ebx, ebp);
   // Skip eax/ebx/scratch
-  addl(eax, Immediate(4 * 3));
+  addlb(eax, Immediate(4 * 3));
   // Skip frame info
-  subl(ebx, Immediate(4 * 1));
+  sublb(ebx, Immediate(4 * 1));
   Fill(eax, ebx, Immediate(Heap::kTagNil));
   pop(ebx);
   pop(eax);
@@ -366,7 +366,7 @@ void Masm::EnterFramePrologue() {
 
 
 void Masm::EnterFrameEpilogue() {
-  addl(esp, Immediate(4 << 2));
+  addlb(esp, Immediate(4 << 2));
 }
 
 
@@ -449,7 +449,7 @@ void Masm::StringHash(Register str, Register result) {
   mov(ecx, length_field);
 
   // str += kValueOffset
-  addl(str, Immediate(HString::kValueOffset));
+  addlb(str, Immediate(HString::kValueOffset));
 
   // while (ecx != 0)
   Label loop_start, loop_cond, loop_end;
@@ -519,11 +519,11 @@ void Masm::StringHash(Register str, Register result) {
   pop(str);
 
   if (result.is(eax)) {
-    addl(esp, Immediate(4 * 3));
+    addlb(esp, Immediate(4 * 3));
   } else {
     mov(result, eax);
     pop(eax);
-    addl(esp, Immediate(4 * 2));
+    addlb(esp, Immediate(4 * 2));
   }
 
   bind(&done);
@@ -648,7 +648,7 @@ void Masm::CallFunction(Register fn) {
   push(eax);
   push(fn);
   Call(stubs()->GetCallBindingStub());
-  addl(esp, Immediate(16));
+  addlb(esp, Immediate(16));
 
   bind(&done);
 }

@@ -117,7 +117,7 @@ void LAllocateObject::Generate(Masm* masm) {
   __ push(Immediate(HNumber::Tag(size_)));
   __ push(Immediate(HNumber::Tag(Heap::kTagObject)));
   __ Call(masm->stubs()->GetAllocateObjectStub());
-  __ addl(esp, Immediate(4 * 4));
+  __ addlb(esp, Immediate(4 * 4));
 }
 
 
@@ -128,7 +128,7 @@ void LAllocateArray::Generate(Masm* masm) {
   __ push(Immediate(HNumber::Tag(size_)));
   __ push(Immediate(HNumber::Tag(Heap::kTagArray)));
   __ Call(masm->stubs()->GetAllocateObjectStub());
-  __ addl(esp, Immediate(4 * 4));
+  __ addlb(esp, Immediate(4 * 4));
 }
 
 
@@ -348,7 +348,7 @@ void LFunction::Generate(Masm* masm) {
   __ push(Immediate(HNumber::Tag(arg_count_)));
   __ push(scratches[0]->ToRegister());
   __ Call(masm->stubs()->GetAllocateFunctionStub());
-  __ addl(esp, Immediate(4 * 4));
+  __ addlb(esp, Immediate(4 * 4));
 }
 
 
@@ -364,7 +364,7 @@ void LCall::Generate(Masm* masm) {
   __ testb(ecx, Immediate(HNumber::Tag(3)));
   __ jmp(kEq, &even_argc);
   __ orlb(ecx, Immediate(HNumber::Tag(3)));
-  __ addl(ecx, Immediate(HNumber::Tag(1)));
+  __ addlb(ecx, Immediate(HNumber::Tag(1)));
   __ bind(&even_argc);
   __ shl(ecx, Immediate(1));
   __ addl(ecx, esp);
@@ -424,7 +424,7 @@ void LLoadArg::Generate(Masm* masm) {
   __ cmpl(scratch, argc);
   __ jmp(kGe, &oob);
 
-  __ addl(scratch, Immediate(HNumber::Tag(2)));
+  __ addlb(scratch, Immediate(HNumber::Tag(2)));
   __ shl(scratch, 1);
   __ addl(scratch, ebp);
   __ Move(result, slot);
@@ -501,7 +501,7 @@ void LLoadVarArg::Generate(Masm* masm) {
 
   // Get stack offset
   offset_s.Unspill();
-  __ addl(offset, Immediate(HNumber::Tag(2)));
+  __ addlb(offset, Immediate(HNumber::Tag(2)));
   __ addl(offset, ebx);
   __ shl(offset, 1);
   __ addl(offset, ebp);
@@ -515,11 +515,11 @@ void LLoadVarArg::Generate(Masm* masm) {
   __ bind(&preloop);
 
   // Increment array index
-  __ addl(ebx, Immediate(HNumber::Tag(1)));
+  __ addlb(ebx, Immediate(HNumber::Tag(1)));
 
   // edx --
   edx_s.Unspill();
-  __ subl(edx, Immediate(HNumber::Tag(1)));
+  __ sublb(edx, Immediate(HNumber::Tag(1)));
   __ jmp(&loop);
 
   __ bind(&end);
@@ -570,7 +570,7 @@ void LStoreVarArg::Generate(Masm* masm) {
   __ jmp(kEq, &not_array);
 
   // index--;
-  __ subl(index, Immediate(HNumber::Tag(1)));
+  __ sublb(index, Immediate(HNumber::Tag(1)));
 
   index_s.SpillReg(index);
 
@@ -594,7 +594,7 @@ void LStoreVarArg::Generate(Masm* masm) {
   __ jmp(kEq, &odd_end);
 
   // index--;
-  __ subl(index, Immediate(HNumber::Tag(1)));
+  __ sublb(index, Immediate(HNumber::Tag(1)));
 
   array_s.Unspill();
   index_s.SpillReg(index);
@@ -639,7 +639,7 @@ void LAlignStack::Generate(Masm* masm) {
   __ testb(scratches[0]->ToRegister(), Immediate(HNumber::Tag(3)));
   __ jmp(kEq, &even);
   __ push(Immediate(Heap::kTagNil));
-  __ addl(scratches[0]->ToRegister(), Immediate(HNumber::Tag(1)));
+  __ addlb(scratches[0]->ToRegister(), Immediate(HNumber::Tag(1)));
   __ jmp(&loop);
   __ bind(&even);
 }

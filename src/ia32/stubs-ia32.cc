@@ -87,7 +87,7 @@ void EntryStub::Generate() {
 
   __ bind(&args);
 
-  __ subl(ebx, Immediate(4));
+  __ sublb(ebx, Immediate(4));
 
   // Get argument from list
   Operand arg(ebx, 0);
@@ -212,7 +212,7 @@ void AllocateStub::Generate() {
     __ mov(scratch, Immediate(*reinterpret_cast<intptr_t*>(&allocate)));
 
     __ Call(scratch);
-    __ addl(esp, 4 * 4);
+    __ addlb(esp, 4 * 4);
     __ Popad(eax);
   }
 
@@ -295,7 +295,7 @@ void CallBindingStub::Generate() {
   __ mov(ebx, ebp);
 
   // old ebp + return address + two arguments + two words alignment
-  __ addl(ebx, Immediate(6 * 4));
+  __ addlb(ebx, Immediate(6 * 4));
   __ mov(scratch, eax);
   __ shl(scratch, Immediate(2));
   __ subl(ebx, scratch);
@@ -315,7 +315,7 @@ void CallBindingStub::Generate() {
   __ push(eax); // <- argc
   __ mov(scratch, fn);
   __ Call(code);
-  __ addl(esp, Immediate(4 * 4));
+  __ addlb(esp, Immediate(4 * 4));
 
   __ ExitFrameEpilogue();
 
@@ -349,7 +349,7 @@ void CollectGarbageStub::Generate() {
     __ mov(eax, Immediate(*reinterpret_cast<intptr_t*>(&gc)));
     __ Call(eax);
 
-    __ addl(esp, Immediate(4 * 4));
+    __ addlb(esp, Immediate(4 * 4));
   }
 
   __ Popad(reg_nil);
@@ -415,7 +415,7 @@ void SizeofStub::Generate() {
   __ push(esi);
   __ push(edi);
   __ call(eax);
-  __ addl(esp, Immediate(4 * 4));
+  __ addlb(esp, Immediate(4 * 4));
 
   __ Popad(eax);
 
@@ -441,7 +441,7 @@ void KeysofStub::Generate() {
   __ push(esi);
   __ push(edi);
   __ call(eax);
-  __ addl(esp, Immediate(4 * 4));
+  __ addlb(esp, Immediate(4 * 4));
 
   __ Popad(eax);
 
@@ -485,7 +485,7 @@ void LookupPropertyStub::Generate() {
 
     // offset = hash & mask + kSpaceOffset
     __ andl(edx, esi);
-    __ addl(edx, Immediate(HMap::kSpaceOffset));
+    __ addlb(edx, Immediate(HMap::kSpaceOffset));
 
     Operand qmap(eax, HObject::kMapOffset);
     Operand qproto(eax, HObject::kProtoOffset);
@@ -535,7 +535,7 @@ void LookupPropertyStub::Generate() {
     // eax = key_offset + mask + 4
     __ mov(eax, edx);
     __ addl(eax, esi);
-    __ addl(eax, Immediate(HValue::kPointerSize));
+    __ addlb(eax, Immediate(HValue::kPointerSize));
 
     // Cleanup
     __ xorl(edx, edx);
@@ -587,7 +587,7 @@ void LookupPropertyStub::Generate() {
 
     // Get index
     __ mov(eax, esi);
-    __ addl(eax, Immediate(HMap::kSpaceOffset));
+    __ addlb(eax, Immediate(HMap::kSpaceOffset));
 
     // Cleanup
     __ xorl(edx, edx);
@@ -621,7 +621,7 @@ void LookupPropertyStub::Generate() {
   __ push(esi);
   __ push(edi);
   __ call(eax);
-  __ addl(esp, Immediate(4 * 4));
+  __ addlb(esp, Immediate(4 * 4));
 
   __ Popad(eax);
 
@@ -714,7 +714,7 @@ void CoerceToBooleanStub::Generate() {
   __ push(esi);
   __ push(edi);
   __ call(eax);
-  __ addl(esp, Immediate(4 * 4));
+  __ addlb(esp, Immediate(4 * 4));
 
   __ Popad(eax);
 
@@ -760,8 +760,8 @@ void CloneObjectStub::Generate() {
   __ mov(qproto, eax);
 
   // Skip headers
-  __ addl(eax, Immediate(HMap::kSpaceOffset));
-  __ addl(ebx, Immediate(HMap::kSpaceOffset));
+  __ addlb(eax, Immediate(HMap::kSpaceOffset));
+  __ addlb(ebx, Immediate(HMap::kSpaceOffset));
 
   // NOTE: ecx is tagged here
 
@@ -775,8 +775,8 @@ void CloneObjectStub::Generate() {
   __ mov(to, scratch);
 
   // Move forward
-  __ addl(eax, Immediate(4));
-  __ addl(ebx, Immediate(4));
+  __ addlb(eax, Immediate(4));
+  __ addlb(ebx, Immediate(4));
 
   __ dec(ecx);
 
@@ -822,7 +822,7 @@ void DeletePropertyStub::Generate() {
   __ push(esi);
   __ push(edi);
   __ call(eax);
-  __ addl(esp, Immediate(4 * 4));
+  __ addlb(esp, Immediate(4 * 4));
 
   __ Popad(reg_nil);
 
@@ -849,7 +849,7 @@ void HashValueStub::Generate() {
   __ push(esi);
   __ push(edi);
   __ call(eax);
-  __ addl(esp, Immediate(4 * 4));
+  __ addlb(esp, Immediate(4 * 4));
 
   __ Popad(eax);
 
@@ -882,7 +882,7 @@ void StackTraceStub::Generate() {
   __ push(edi);
   __ mov(eax, Immediate(*reinterpret_cast<intptr_t*>(&strace)));
   __ call(eax);
-  __ addl(esp, Immediate(4 * 4));
+  __ addlb(esp, Immediate(4 * 4));
 
   __ Popad(eax);
 
@@ -1177,7 +1177,7 @@ void BinOpStub::Generate() {
   __ push(edi);
   __ mov(scratch, Immediate(*reinterpret_cast<intptr_t*>(&cb)));
   __ call(scratch);
-  __ addl(esp, Immediate(4 * 4));
+  __ addlb(esp, Immediate(4 * 4));
 
   __ Popad(eax);
 

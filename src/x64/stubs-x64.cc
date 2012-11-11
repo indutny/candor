@@ -79,7 +79,7 @@ void EntryStub::Generate() {
 
   __ bind(&args);
 
-  __ subq(rbx, Immediate(8));
+  __ subqb(rbx, Immediate(8));
 
   // Get argument from list
   Operand arg(rbx, 0);
@@ -289,7 +289,7 @@ void CallBindingStub::Generate() {
   __ mov(rsi, rbp);
 
   // old rbp + return address + two arguments
-  __ addq(rsi, Immediate(4 * 8));
+  __ addqb(rsi, Immediate(4 * 8));
   __ mov(scratch, rdi);
   __ shl(scratch, Immediate(3));
   __ subq(rsi, scratch);
@@ -445,7 +445,7 @@ void LookupPropertyStub::Generate() {
 
     // offset = hash & mask + kSpaceOffset
     __ andq(rdx, rsi);
-    __ addq(rdx, Immediate(HMap::kSpaceOffset));
+    __ addqb(rdx, Immediate(HMap::kSpaceOffset));
 
     Operand qmap(rax, HObject::kMapOffset);
     Operand qproto(rax, HObject::kProtoOffset);
@@ -495,7 +495,7 @@ void LookupPropertyStub::Generate() {
     // rax = key_offset + mask + 8
     __ mov(rax, rdx);
     __ addq(rax, rsi);
-    __ addq(rax, Immediate(HValue::kPointerSize));
+    __ addqb(rax, Immediate(HValue::kPointerSize));
 
     // Cleanup
     __ xorq(rdx, rdx);
@@ -547,7 +547,7 @@ void LookupPropertyStub::Generate() {
 
     // Get index
     __ mov(rax, rsi);
-    __ addq(rax, Immediate(HMap::kSpaceOffset));
+    __ addqb(rax, Immediate(HMap::kSpaceOffset));
 
     // Cleanup
     __ xorq(rdx, rdx);
@@ -701,8 +701,8 @@ void CloneObjectStub::Generate() {
   __ mov(qproto, rax);
 
   // Skip headers
-  __ addq(rax, Immediate(HMap::kSpaceOffset));
-  __ addq(rbx, Immediate(HMap::kSpaceOffset));
+  __ addqb(rax, Immediate(HMap::kSpaceOffset));
+  __ addqb(rbx, Immediate(HMap::kSpaceOffset));
 
   // NOTE: rcx is tagged here
 
@@ -716,8 +716,8 @@ void CloneObjectStub::Generate() {
   __ mov(to, scratch);
 
   // Move forward
-  __ addq(rax, Immediate(8));
-  __ addq(rbx, Immediate(8));
+  __ addqb(rax, Immediate(8));
+  __ addqb(rbx, Immediate(8));
 
   __ dec(rcx);
 

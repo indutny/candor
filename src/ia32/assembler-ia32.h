@@ -300,6 +300,7 @@ class Assembler {
   void addlb(Register dst, Immediate src);
   void subl(Register dst, Register src);
   void subl(Register dst, Immediate src);
+  void sublb(Register dst, Immediate src);
   void imull(Register src);
   void idivl(Register src);
 

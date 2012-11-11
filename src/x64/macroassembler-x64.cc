@@ -75,7 +75,7 @@ Masm::Align::Align(Masm* masm) : masm_(masm), align_(masm->align_) {
 
 Masm::Align::~Align() {
   if (align_ % 2 == 0) return;
-  masm_->addq(rsp, 8);
+  masm_->addqb(rsp, 8);
   masm_->align_ -= 1;
 }
 
@@ -164,7 +164,7 @@ void Masm::Allocate(Heap::HeapTag tag,
   } else {
     mov(rax, size_reg);
     Untag(rax);
-    addq(rax, Immediate(HValue::kPointerSize));
+    addqb(rax, Immediate(HValue::kPointerSize));
     TagNumber(rax);
   }
   push(rax);
@@ -275,7 +275,7 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
   // keys + values
   shl(size, Immediate(4));
   // + size
-  addq(size, Immediate(1 * HValue::kPointerSize));
+  addqb(size, Immediate(1 * HValue::kPointerSize));
   TagNumber(size);
 
   Allocate(Heap::kTagMap, size, 0, scratch);
@@ -293,9 +293,9 @@ void Masm::AllocateObjectLiteral(Heap::HeapTag tag,
 
   // Fill map with nil
   shl(size, Immediate(4));
-  addq(result, Immediate(HMap::kSpaceOffset));
+  addqb(result, Immediate(HMap::kSpaceOffset));
   addq(size, result);
-  subq(size, Immediate(HValue::kPointerSize));
+  subqb(size, Immediate(HValue::kPointerSize));
   Fill(result, size, Immediate(Heap::kTagNil));
 
   result_s.Unspill();
@@ -318,7 +318,7 @@ void Masm::Fill(Register start, Register end, Immediate value) {
   mov(op, scratch);
 
   // Move
-  addq(start, Immediate(8));
+  addqb(start, Immediate(8));
 
   bind(&entry);
 
@@ -338,9 +338,9 @@ void Masm::FillStackSlots() {
   mov(rsi, rsp);
   mov(rdi, rbp);
   // Skip rsi/rdi/scratch
-  addq(rsi, Immediate(8 * 3));
+  addqb(rsi, Immediate(8 * 3));
   // Skip frame info
-  subq(rdi, Immediate(8 * 1));
+  subqb(rdi, Immediate(8 * 1));
   Fill(rsi, rdi, Immediate(Heap::kTagNil));
   pop(rdi);
   pop(rsi);
@@ -363,7 +363,7 @@ void Masm::EnterFramePrologue() {
 
 
 void Masm::EnterFrameEpilogue() {
-  addq(rsp, Immediate(4 << 3));
+  addqb(rsp, Immediate(4 << 3));
 }
 
 
@@ -437,7 +437,7 @@ void Masm::StringHash(Register str, Register result) {
   mov(rcx, length_field);
 
   // str += kValueOffset
-  addq(str, Immediate(HString::kValueOffset));
+  addqb(str, Immediate(HString::kValueOffset));
 
   // while (rcx != 0)
   Label loop_start, loop_cond, loop_end;
