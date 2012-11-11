@@ -66,7 +66,8 @@ void PIC::Generate(Masm* masm) {
   __ push(caller_ip);
   __ push(rax);
   __ push(rax_s);
-  __ push(Immediate(reinterpret_cast<intptr_t>(this)));
+  __ mov(scratch, Immediate(reinterpret_cast<intptr_t>(this)));
+  __ push(scratch);
   __ Call(space_->stubs()->GetPICMissStub());
   __ addqb(rsp, Immediate(8 * 4));
 
