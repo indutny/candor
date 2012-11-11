@@ -101,7 +101,7 @@ char* Root::StringToValue(AstNode* node) {
 
   char* result = heap()->CreateString(unescaped, length);
 
-  delete unescaped;
+  delete[] unescaped;
 
   return result;
 }
