@@ -173,7 +173,7 @@ class HIRGen : public Visitor<HIRInstruction> {
   void FindOutEffects(HIRInstruction* instr);
   void FindInEffects(HIRInstruction* instr);
   void GlobalValueNumbering();
-  void GlobalValueNumbering(HIRInstruction* instr, HIRInstructionGVNMap* gvn);
+  void GlobalValueNumbering(HIRInstruction* instr, HIRGVNMap* gvn);
   void GlobalCodeMotion();
   void ScheduleEarly(HIRInstruction* instr, HIRBlock* root);
   void ScheduleLate(HIRInstruction* instr);

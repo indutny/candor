@@ -380,7 +380,7 @@ void HIRGen::FindInEffects(HIRInstruction* instr) {
 
 
 void HIRGen::GlobalValueNumbering() {
-  HIRInstructionGVNMap* gvn_ = NULL;
+  HIRGVNMap* gvn_ = NULL;
   HIRBlock* root_ = NULL;
 
   // For each block
@@ -390,8 +390,7 @@ void HIRGen::GlobalValueNumbering() {
 
     if (root_ != block->root()) {
       root_ = block->root();
-      delete gvn_;
-      gvn_ = new HIRInstructionGVNMap();
+      gvn_ = new HIRGVNMap();
     }
 
     // Visit instructions that wasn't yet visited
@@ -402,13 +401,11 @@ void HIRGen::GlobalValueNumbering() {
       GlobalValueNumbering(instr, gvn_);
     }
   }
-
-  delete gvn_;
 }
 
 
 void HIRGen::GlobalValueNumbering(HIRInstruction* instr,
-                                  HIRInstructionGVNMap* gvn) {
+                                  HIRGVNMap* gvn) {
   if (instr->gvn_visited) return;
   instr->gvn_visited = 1;
 
