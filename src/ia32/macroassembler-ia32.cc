@@ -602,7 +602,7 @@ void Masm::Call(Register addr) {
 
 
 void Masm::Call(Operand& addr) {
-  while ((offset() & 0x1) != 0x0) {
+  while ((offset() & 0x1) != 0x1) {
     nop();
   }
   call(addr);

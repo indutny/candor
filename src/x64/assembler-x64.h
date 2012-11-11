@@ -208,6 +208,7 @@ class Operand : public ZoneObject {
   inline Register base(Register base) { return base_ = base; }
   inline Scale scale(Scale scale) { return scale_ = scale; }
   inline int32_t disp(int32_t disp) { return disp_ = disp; }
+  inline bool byte_disp() { return disp() > -128 && disp() < 128; }
 
  private:
   Register base_;

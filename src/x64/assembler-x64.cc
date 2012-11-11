@@ -389,9 +389,9 @@ void Assembler::subq(Register dst, Immediate src) {
 
 void Assembler::subqb(Register dst, Immediate src) {
   emit_rexw(rax, dst);
-  emitb(0x83);
+  emitb(0x81);
   emit_modrm(dst, 0x05);
-  emitb(src.value());
+  emitl(src.value());
 }
 
 

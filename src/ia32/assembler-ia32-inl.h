@@ -32,8 +32,13 @@ inline void Assembler::emit_modrm(Register dst, Register src) {
 
 inline void Assembler::emit_modrm(Register dst, Operand& src) {
   if (src.scale() == Operand::one) {
-    emitb(0x80 | dst.low() << 3 | src.base().low());
-    emitl(src.disp());
+    if (src.byte_disp()) {
+      emitb(0x40 | dst.low() << 3 | src.base().low());
+      emitb(src.disp());
+    } else {
+      emitb(0x80 | dst.low() << 3 | src.base().low());
+      emitl(src.disp());
+    }
   } else {
   }
 }
@@ -45,8 +50,13 @@ inline void Assembler::emit_modrm(Register dst, uint32_t op) {
 
 
 inline void Assembler::emit_modrm(Operand& dst, uint32_t op) {
-  emitb(0x80 | op << 3 | dst.base().low());
-  emitl(dst.disp());
+  if (dst.byte_disp()) {
+    emitb(0x40 | op << 3 | dst.base().low());
+    emitb(dst.disp());
+  } else {
+    emitb(0x80 | op << 3 | dst.base().low());
+    emitl(dst.disp());
+  }
 }
 
 
@@ -66,14 +76,24 @@ inline void Assembler::emit_modrm(DoubleRegister dst, DoubleRegister src) {
 
 
 inline void Assembler::emit_modrm(DoubleRegister dst, Operand& src) {
-  emitb(0x80 | dst.low() << 3 | src.base().low());
-  emitl(src.disp());
+  if (src.byte_disp()) {
+    emitb(0x40 | dst.low() << 3 | src.base().low());
+    emitb(src.disp());
+  } else {
+    emitb(0x80 | dst.low() << 3 | src.base().low());
+    emitl(src.disp());
+  }
 }
 
 
 inline void Assembler::emit_modrm(Operand& dst, DoubleRegister src) {
-  emitb(0x80 | dst.base().low() << 3 | src.low());
-  emitl(dst.disp());
+  if (dst.byte_disp()) {
+    emitb(0x40 | dst.base().low() << 3 | src.low());
+    emitb(dst.disp());
+  } else {
+    emitb(0x80 | dst.base().low() << 3 | src.low());
+    emitl(dst.disp());
+  }
 }
 
 
