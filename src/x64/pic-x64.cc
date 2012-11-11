@@ -61,22 +61,14 @@ void PIC::Generate(Masm* masm) {
   __ mov(rax, rax_s);
   __ Call(space_->stubs()->GetLookupPropertyStub());
 
-  // Amend PIC
-  __ Pushad();
-
   // Miss(this, object, result, ip)
-  __ mov(rdi, Immediate(reinterpret_cast<intptr_t>(this)));
-  __ mov(rsi, rax_s);
-  __ mov(rdx, rax);
-
   Operand caller_ip(rbp, 8);
-  __ mov(rcx, caller_ip);
-
-  MissCallback miss_cb = &Miss;
-  __ mov(scratch, Immediate(*reinterpret_cast<intptr_t*>(&miss_cb)));
-  __ Call(scratch);
-
-  __ Popad(reg_nil);
+  __ push(caller_ip);
+  __ push(rax);
+  __ push(rax_s);
+  __ push(Immediate(reinterpret_cast<intptr_t>(this)));
+  __ Call(space_->stubs()->GetPICMissStub());
+  __ addqb(rsp, Immediate(8 * 4));
 
   // Return value
   __ bind(&end);

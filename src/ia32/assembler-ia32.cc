@@ -295,6 +295,13 @@ void Assembler::addl(Register dst, Immediate imm) {
 }
 
 
+void Assembler::addlb(Register dst, Immediate imm) {
+  emitb(0x83);
+  emit_modrm(dst, 0);
+  emitb(imm.value());
+}
+
+
 void Assembler::subl(Register dst, Register src) {
   emitb(0x2B);
   emit_modrm(dst, src);

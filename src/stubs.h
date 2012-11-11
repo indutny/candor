@@ -26,6 +26,7 @@ namespace internal {
     V(Sizeof)\
     V(Keysof)\
     V(LookupProperty)\
+    V(PICMiss)\
     V(CoerceToBoolean)\
     V(CloneObject)\
     V(DeleteProperty)\

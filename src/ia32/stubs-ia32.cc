@@ -4,6 +4,7 @@
 #include "ast.h" // BinOp
 #include "macroassembler.h" // Masm
 #include "runtime.h"
+#include "pic.h"
 
 namespace candor {
 namespace internal {
@@ -634,6 +635,33 @@ void LookupPropertyStub::Generate() {
   __ bind(&done);
 
   GenerateEpilogue();
+}
+
+
+void PICMissStub::Generate() {
+  GeneratePrologue();
+
+  Operand space(ebp, 8);
+  Operand object(ebp, 12);
+  Operand result(ebp, 16);
+  Operand ip(ebp, 20);
+
+  // Amend PIC
+  __ Pushad();
+
+  __ push(ip);
+  __ push(result);
+  __ push(object);
+  __ push(space);
+
+  PIC::MissCallback miss_cb = &PIC::Miss;
+  __ mov(scratch, Immediate(*reinterpret_cast<intptr_t*>(&miss_cb)));
+  __ Call(scratch);
+  __ addlb(esp, Immediate(4 * 4));
+
+  __ Popad(reg_nil);
+
+  GenerateEpilogue(0);
 }
 
 

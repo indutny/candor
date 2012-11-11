@@ -297,6 +297,7 @@ class Assembler {
   void addl(Register dst, Register src);
   void addl(Register dst, Operand& src);
   void addl(Register dst, Immediate src);
+  void addlb(Register dst, Immediate src);
   void subl(Register dst, Register src);
   void subl(Register dst, Immediate src);
   void imull(Register src);

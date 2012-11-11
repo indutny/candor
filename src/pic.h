@@ -13,20 +13,21 @@ class Masm;
 
 class PIC {
  public:
-  PIC(CodeSpace* space);
-  ~PIC();
-
-  char* Generate();
-
- protected:
   typedef void (*MissCallback)(PIC* pic,
                                char* object,
                                intptr_t result,
                                char* ip);
 
+  PIC(CodeSpace* space);
+  ~PIC();
+
+  char* Generate();
+  static void Miss(PIC* pic, char* object, intptr_t result, char* ip);
+
+ protected:
+
   void Generate(Masm* masm);
 
-  static void Miss(PIC* pic, char* object, intptr_t result, char* ip);
   void Miss(char* object, intptr_t result, char* ip);
 
   static const int kMaxSize = 5;

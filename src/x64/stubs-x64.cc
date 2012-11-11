@@ -5,6 +5,7 @@
 #include "macroassembler.h" // Masm
 #include "macroassembler-inl.h"
 #include "runtime.h"
+#include "pic.h"
 
 namespace candor {
 namespace internal {
@@ -586,6 +587,32 @@ void LookupPropertyStub::Generate() {
   __ mov(rax, Immediate(Heap::kTagNil));
 
   __ bind(&done);
+
+  GenerateEpilogue(0);
+}
+
+
+void PICMissStub::Generate() {
+  GeneratePrologue();
+
+  Operand space(rbp, 16);
+  Operand object(rbp, 24);
+  Operand result(rbp, 32);
+  Operand ip(rbp, 48);
+
+  // Amend PIC
+  __ Pushad();
+
+  __ mov(rsi, space);
+  __ mov(rdi, object);
+  __ mov(rdx, result);
+  __ mov(rcx, ip);
+
+  PIC::MissCallback miss_cb = &PIC::Miss;
+  __ mov(scratch, Immediate(*reinterpret_cast<intptr_t*>(&miss_cb)));
+  __ Call(scratch);
+
+  __ Popad(reg_nil);
 
   GenerateEpilogue(0);
 }

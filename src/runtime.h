@@ -75,10 +75,6 @@ void RuntimeDeleteProperty(Heap* heap, char* obj, char* property);
 typedef char* (*RuntimeStackTraceCallback)(Heap* heap, char** frame, char* ip);
 char* RuntimeStackTrace(Heap* heap, char** frame, char* ip);
 
-// Polymorphic inline cache callback
-typedef void (*RuntimePICCallback)(char* ip);
-void RuntimeLoadPropertyPIC(char* ip);
-
 } // namespace internal
 } // namespace candor
 
