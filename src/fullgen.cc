@@ -12,6 +12,7 @@ Fullgen::Fullgen(CodeSpace* space, SourceMap* map)
     : Visitor<FInstruction>(kPreorder),
       space_(space),
       root_(space->heap()),
+      instr_id_(0),
       loop_start_(NULL),
       loop_end_(NULL),
       source_map_(map) {

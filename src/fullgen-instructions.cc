@@ -1,4 +1,5 @@
 #include "fullgen.h"
+#include "fullgen-inl.h"
 #include "fullgen-instructions.h"
 #include "fullgen-instructions-inl.h"
 
@@ -10,6 +11,11 @@ FInstruction::FInstruction(Type type) : id(-1), type_(type), input_count_(0) {
   inputs[0] = NULL;
   inputs[1] = NULL;
   inputs[2] = NULL;
+}
+
+
+void FInstruction::Init(Fullgen* f) {
+  id = f->instr_id();
 }
 
 

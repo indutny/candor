@@ -1,6 +1,7 @@
 #ifndef _SRC_FULLGEN_INSTRUCTIONS_H
 #define _SRC_FULLGEN_INSTRUCTIONS_H
 
+#include "macroassembler.h"
 #include "zone.h"
 #include "utils.h"
 
@@ -8,10 +9,13 @@ namespace candor {
 namespace internal {
 
 // Forward declarations
-class Masm;
+class Fullgen;
 
 #define FULLGEN_INSTRUCTION_TYPES(V) \
-    V(Nop)
+    V(Nop) \
+    V(Label) \
+    V(Entry) \
+    V(Return)
 
 #define FULLGEN_INSTRUCTION_ENUM(V) \
     k##V,
@@ -30,6 +34,7 @@ class FInstruction : public ZoneObject {
   inline void AddArg(FOperand* op);
 
   virtual void Print(PrintBuffer* p);
+  virtual void Init(Fullgen* f);
   virtual void Generate(Masm* masm) = 0;
 
   int id;
@@ -42,6 +47,37 @@ class FInstruction : public ZoneObject {
 };
 
 #undef FULLGEN_INSTRUCTION_ENUM
+
+#define FULLGEN_DEFAULT_METHODS(V) \
+    void Generate(Masm* masm);
+
+class FNop : public FInstruction {
+ public:
+  FNop() : FInstruction(kNop) {
+  }
+
+  FULLGEN_DEFAULT_METHODS(Nop)
+};
+
+class FLabel : public FInstruction {
+ public:
+  FLabel() : FInstruction(kLabel) {
+  }
+
+  FULLGEN_DEFAULT_METHODS(Label)
+
+  Label label;
+};
+
+class FReturn : public FInstruction {
+ public:
+  FReturn() : FInstruction(kReturn) {
+  }
+
+  FULLGEN_DEFAULT_METHODS(Return)
+};
+
+#undef FULLGEN_DEFAULT_METHODS
 
 } // internal
 } // candor

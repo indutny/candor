@@ -86,17 +86,20 @@ class Fullgen : public Visitor<FInstruction> {
   inline void Print(char* out, int32_t size);
   void Print(PrintBuffer* p);
 
-  inline FLabel* loop_start() { return loop_start_; }
-  inline void loop_start(FLabel* loop_start) { loop_start_ = loop_start; }
-  inline FLabel* loop_end() { return loop_end_; }
-  inline void loop_end(FLabel* loop_end) { loop_end_ = loop_end; }
+  inline int instr_id();
 
-  inline SourceMap* source_map() { return source_map_; }
+  inline FLabel* loop_start();
+  inline void loop_start(FLabel* loop_start);
+  inline FLabel* loop_end();
+  inline void loop_end(FLabel* loop_end);
+
+  inline SourceMap* source_map();
 
  private:
   CodeSpace* space_;
   Root root_;
 
+  int instr_id_;
   FLabel* loop_start_;
   FLabel* loop_end_;
 
