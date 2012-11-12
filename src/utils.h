@@ -812,9 +812,9 @@ class FreeList {
 template <class Base>
 class BitMap : public Base {
  public:
-  BitMap(int size) : size_(size) {
-    space_ = new uint32_t[size / 32];
-    memset(space_, 0, sizeof(*space_) * size / 32);
+  BitMap(int size) : size_(size / 32) {
+    space_ = new uint32_t[size_];
+    memset(space_, 0, sizeof(*space_) * size_);
   }
 
   ~BitMap() {
@@ -826,7 +826,7 @@ class BitMap : public Base {
     assert(key >= 0);
 
     // Grow map if needed
-    Grow(key);
+    Grow((key / 32) + 1);
 
     int index = key / 32;
     int pos = key % 32;
@@ -835,25 +835,28 @@ class BitMap : public Base {
       mask <<= 1;
     }
 
+    assert(size_ > index);
     space_[index] |= mask;
   }
 
   inline void Grow(int size) {
-    if (size < size_) return;
+    if (size <= size_) return;
 
+    // Create new space
     int new_size = RoundUp(size, 16);
-    uint32_t* new_space = new uint32_t[new_size / 32];
-    memcpy(new_space, space_, sizeof(*new_space) * size / 32);
-    memset(new_space + (size / 32),
-           0,
-           sizeof(*new_space) * (new_size - size) / 32);
+    uint32_t* new_space = new uint32_t[new_size];
+
+    // Copy old data in
+    memcpy(new_space, space_, size_ * sizeof(*new_space));
+    memset(new_space + size_, 0, sizeof(*new_space) * (new_size - size_));
+
     delete[] space_;
     space_ = new_space;
     size_ = new_size;
   }
 
   inline bool Test(int key) {
-    if (key >= size_) return false;
+    if ((key / 32) >= size_) return false;
 
     int index = key / 32;
     int pos = key % 32;
@@ -862,13 +865,15 @@ class BitMap : public Base {
       mask <<= 1;
     }
 
+    assert(index < size_);
     return (space_[index] & mask) != 0;
   }
 
   inline bool Copy(BitMap<Base>* to) {
     bool change = false;
     to->Grow(size_);
-    for (int i = 0; i < (size_ / 32); i++) {
+    assert(to->size_ >= size_);
+    for (int i = 0; i < size_; i++) {
       if ((to->space_[i] & space_[i]) != space_[i]) change = true;
 
       to->space_[i] |= space_[i];
