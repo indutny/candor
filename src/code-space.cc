@@ -75,6 +75,9 @@ Error* CodeSpace::CreateError(CodeChunk* chunk,
 CodeChunk* CodeSpace::CreateChunk(const char* filename,
                                   const char* source,
                                   uint32_t length) {
+  // Remove unused code data first
+  CollectGarbage();
+
   CodeChunk* c = new CodeChunk(filename, source, length);
   chunks_.Push(c);
 

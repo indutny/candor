@@ -28,9 +28,6 @@ void GC::CollectGarbage(char* stack_top) {
     heap()->needs_gc(Heap::kGCNewSpace);
   }
 
-  // Remove unused code data
-  heap()->code_space()->CollectGarbage();
-
   switch (heap()->needs_gc()) {
    case Heap::kGCNewSpace: gc_type(kNewSpace); break;
    case Heap::kGCOldSpace: gc_type(kOldSpace); break;
