@@ -20,12 +20,17 @@ class CodeChunk;
 class Code;
 class PIC;
 
+typedef List<CodePage*, EmptyClass> CodePageList;
+typedef List<CodeChunk*, EmptyClass> CodeChunkList;;
+
 class CodeSpace {
  public:
   typedef Value* (*Code)(char*, uint32_t, Value* []);
 
   CodeSpace(Heap* heap);
   ~CodeSpace();
+
+  void CollectGarbage();
 
   Error* CreateError(CodeChunk* chunk, const char* message, uint32_t offset);
 
@@ -50,9 +55,9 @@ class CodeSpace {
   Heap* heap_;
   Stubs* stubs_;
   char* entry_;
-  List<CodePage*, EmptyClass> pages_;
+  CodePageList pages_;
   List<PIC*, EmptyClass> pics_;
-  List<CodeChunk*, EmptyClass> chunks_;
+  CodeChunkList chunks_;
 };
 
 class CodePage {

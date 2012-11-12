@@ -33,6 +33,29 @@ CodeSpace::~CodeSpace() {
 }
 
 
+void CodeSpace::CollectGarbage() {
+  // Remove unused chunks
+  CodeChunkList::Item* chead = chunks_.head();
+  CodeChunkList::Item* cnext;
+  for (; chead != NULL; chead = cnext) {
+    CodeChunk* chunk = chead->value();
+    cnext = chead->next();
+
+    if (chunk->ref_ == 0) chunks_.Remove(chead);
+  }
+
+  // Remove unused pages
+  CodePageList::Item* phead = pages_.head();
+  CodePageList::Item* pnext;
+  for (; phead != NULL; phead = pnext) {
+    CodePage* page = phead->value();
+    pnext = phead->next();
+
+    if (page->ref_ == 0) pages_.Remove(phead);
+  }
+}
+
+
 Error* CodeSpace::CreateError(CodeChunk* chunk,
                               const char* message,
                               uint32_t offset) {
