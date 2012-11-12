@@ -2,12 +2,10 @@
 #define _SRC_FULLGEN_H_
 
 #include "visitor.h"
-#include "code-space.h"
+#include "root.h"
 #include "ast.h" // AstNode, FunctionLiteral
 #include "zone.h" // ZoneObject
 #include "utils.h" // List
-
-#include "macroassembler.h"
 
 #include <assert.h> // assert
 #include <stdint.h> // uint32_t
@@ -17,202 +15,92 @@ namespace internal {
 
 // Forward declaration
 class Heap;
-class Register;
+class CodeSpace;
 class SourceMap;
+class FInstruction;
+class FLabel;
 
-class FFunction : public ZoneObject {
+class FOperand : public ZoneObject {
  public:
-  FFunction(Masm* masm) : masm_(masm), addr_(0) {
+  enum Type {
+    kStack,
+    kContext,
+    kRegister
+  };
+
+  FOperand(Type type, int index, int depth) : type_(type),
+                                              index_(index),
+                                              depth_(depth) {
   }
 
-  void Use(uint32_t offset);
-  void Allocate(uint32_t addr);
-  virtual void Generate() = 0;
-
-  inline Masm* masm() { return masm_; }
+  void Print(PrintBuffer* p);
 
  protected:
-  Masm* masm_;
-  List<RelocationInfo*, ZoneObject> uses_;
-  uint32_t addr_;
-};
-
-class FAstSpill : public AstValue {
- public:
-  FAstSpill(Masm::Spill* spill) : AstValue(kSpill), spill_(spill) {
-  }
-
-  static inline FAstSpill* Cast(AstValue* value) {
-    assert(value->is_spill());
-    return reinterpret_cast<FAstSpill*>(value);
-  }
-
-  inline Masm::Spill* spill() { return spill_; }
-
- protected:
-  Masm::Spill* spill_;
-};
-
-class FAstOperand : public AstValue {
- public:
-  FAstOperand(Operand* op) : AstValue(kOperand), op_(op) {
-  }
-
-  static inline FAstOperand* Cast(AstValue* value) {
-    assert(value->is_operand());
-    return reinterpret_cast<FAstOperand*>(value);
-  }
-
-  inline Operand* op() { return op_; }
-
- protected:
-  Operand* op_;
+  Type type_;
+  int index_;
+  int depth_;
 };
 
 // Generates non-optimized code by visiting each node in AST tree in-order
-class Fullgen : public Masm, public Visitor {
+class Fullgen : public Visitor<FInstruction> {
  public:
-  class CandorFunction : public FFunction {
-   public:
-    CandorFunction(Fullgen* fullgen, FunctionLiteral* fn) : FFunction(fullgen),
-                                                            fullgen_(fullgen),
-                                                            fn_(fn) {
-    }
-
-    inline Fullgen* fullgen() { return fullgen_; }
-    inline FunctionLiteral* fn() { return fn_; }
-
-    static inline CandorFunction* Cast(void* value) {
-      return reinterpret_cast<CandorFunction*>(value);
-    }
-
-    void Generate();
-
-   protected:
-    Fullgen* fullgen_;
-    FunctionLiteral* fn_;
-  };
-
-  class LoopVisitor {
-   public:
-    LoopVisitor(Fullgen* fullgen, Label* start, Label* end) :
-        fullgen_(fullgen) {
-      prev_start_ = fullgen->loop_start();
-      prev_end_ = fullgen->loop_end();
-      fullgen->loop_start(start);
-      fullgen->loop_end(end);
-    }
-
-    ~LoopVisitor() {
-      fullgen_->loop_start(prev_start_);
-      fullgen_->loop_end(prev_end_);
-    }
-
-   private:
-    Fullgen* fullgen_;
-    Label* prev_start_;
-    Label* prev_end_;
-  };
-
-  enum VisitorType {
-    kValue,
-    kSlot
-  };
-
   Fullgen(CodeSpace* space, SourceMap* map);
-
-  void InitRoots();
-
-  void Throw(Heap::Error err);
 
   void Generate(AstNode* ast);
 
-  void GeneratePrologue(AstNode* stmt);
-  void GenerateEpilogue(AstNode* stmt);
+  FInstruction* Visit(AstNode* node);
 
-  // Stores reference to HValue inside root context
-  void PlaceInRoot(char* addr);
+  FInstruction* VisitFunction(AstNode* stmt);
+  FInstruction* VisitCall(AstNode* stmt);
+  FInstruction* VisitAssign(AstNode* stmt);
 
-  // Alloctes HContext object for root variables
-  char* AllocateRoot();
+  FInstruction* VisitValue(AstNode* node);
 
-  AstNode* Visit(AstNode* node);
+  FInstruction* VisitNumber(AstNode* node);
+  FInstruction* VisitNil(AstNode* node);
+  FInstruction* VisitTrue(AstNode* node);
+  FInstruction* VisitFalse(AstNode* node);
+  FInstruction* VisitString(AstNode* node);
+  FInstruction* VisitProperty(AstNode* node);
 
-  AstNode* VisitFunction(AstNode* stmt);
-  AstNode* VisitCall(AstNode* stmt);
-  AstNode* VisitAssign(AstNode* stmt);
+  FInstruction* VisitIf(AstNode* node);
+  FInstruction* VisitWhile(AstNode* node);
 
-  AstNode* VisitValue(AstNode* node);
+  FInstruction* VisitMember(AstNode* node);
+  FInstruction* VisitObjectLiteral(AstNode* node);
+  FInstruction* VisitArrayLiteral(AstNode* node);
 
-  AstNode* VisitNumber(AstNode* node);
-  AstNode* VisitNil(AstNode* node);
-  AstNode* VisitTrue(AstNode* node);
-  AstNode* VisitFalse(AstNode* node);
-  AstNode* VisitString(AstNode* node);
-  AstNode* VisitProperty(AstNode* node);
+  FInstruction* VisitReturn(AstNode* node);
+  FInstruction* VisitClone(AstNode* node);
+  FInstruction* VisitDelete(AstNode* node);
+  FInstruction* VisitBreak(AstNode* node);
+  FInstruction* VisitContinue(AstNode* node);
 
-  AstNode* VisitIf(AstNode* node);
-  AstNode* VisitWhile(AstNode* node);
+  FInstruction* VisitTypeof(AstNode* node);
+  FInstruction* VisitSizeof(AstNode* node);
+  FInstruction* VisitKeysof(AstNode* node);
 
-  AstNode* VisitMember(AstNode* node);
-  AstNode* VisitObjectLiteral(AstNode* node);
-  AstNode* VisitArrayLiteral(AstNode* node);
+  FInstruction* VisitUnOp(AstNode* node);
+  FInstruction* VisitBinOp(AstNode* node);
 
-  AstNode* VisitReturn(AstNode* node);
-  AstNode* VisitClone(AstNode* node);
-  AstNode* VisitDelete(AstNode* node);
-  AstNode* VisitBreak(AstNode* node);
-  AstNode* VisitContinue(AstNode* node);
+  inline void Print(char* out, int32_t size);
+  void Print(PrintBuffer* p);
 
-  AstNode* VisitTypeof(AstNode* node);
-  AstNode* VisitSizeof(AstNode* node);
-  AstNode* VisitKeysof(AstNode* node);
+  inline FLabel* loop_start() { return loop_start_; }
+  inline void loop_start(FLabel* loop_start) { loop_start_ = loop_start; }
+  inline FLabel* loop_end() { return loop_end_; }
+  inline void loop_end(FLabel* loop_end) { loop_end_ = loop_end; }
 
-  AstNode* VisitUnOp(AstNode* node);
-  AstNode* VisitBinOp(AstNode* node);
-
-  AstNode* VisitFor(VisitorType type, AstNode* node);
-
-  inline Label* loop_start() { return loop_start_; }
-  inline void loop_start(Label* loop_start) { loop_start_ = loop_start; }
-  inline Label* loop_end() { return loop_end_; }
-  inline void loop_end(Label* loop_end) { loop_end_ = loop_end; }
-
-  inline void SetError(const char* message, uint32_t offset) {
-    if (error_msg_ != NULL) return;
-
-    error_msg_ = message;
-    error_pos_ = offset;
-  }
-
-  inline bool has_error() { return error_msg_ != NULL; }
-  inline const char* error_msg() { return error_msg_; }
-
-  inline uint32_t error_pos() { return error_pos_; }
-
-  inline Heap* heap() { return space_->heap(); }
-  inline bool visiting_for_value() { return visitor_type_ == kValue; }
-  inline bool visiting_for_slot() { return visitor_type_ == kSlot; }
-  inline List<FFunction*, ZoneObject>* fns() { return &fns_; }
-  inline void current_function(CandorFunction* fn) { current_function_ = fn; }
-  inline CandorFunction* current_function() { return current_function_; }
-  inline List<char*, ZoneObject>* root_context() { return &root_context_; }
   inline SourceMap* source_map() { return source_map_; }
 
  private:
   CodeSpace* space_;
-  VisitorType visitor_type_;
-  List<FFunction*, ZoneObject> fns_;
-  CandorFunction* current_function_;
-  List<char*, ZoneObject> root_context_;
+  Root root_;
 
-  Label* loop_start_;
-  Label* loop_end_;
+  FLabel* loop_start_;
+  FLabel* loop_end_;
 
   SourceMap* source_map_;
-
-  const char* error_msg_;
-  uint32_t error_pos_;
 };
 
 } // namespace internal
