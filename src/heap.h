@@ -26,6 +26,7 @@ namespace internal {
 class Heap;
 class HValueReference;
 class HValueWeakRef;
+class CodeSpace;
 
 class Space {
  public:
@@ -211,6 +212,8 @@ class Heap {
   inline HValueWeakRefMap* weak_references() { return &weak_references_; }
 
   inline GC* gc() { return &gc_; }
+  inline CodeSpace* code_space() { return code_space_; }
+  inline void code_space(CodeSpace* code_space) { code_space_ = code_space; }
   inline SourceMap* source_map() { return &source_map_; }
 
   // Factory methods
@@ -237,6 +240,7 @@ class Heap {
   HValue* factory_;
 
   GC gc_;
+  CodeSpace* code_space_;
   SourceMap source_map_;
 
   static Heap* current_;

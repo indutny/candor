@@ -9,6 +9,7 @@ namespace internal {
 
 // Forward declarations
 class CodeSpace;
+class CodeChunk;
 class Masm;
 
 class PIC {
@@ -33,7 +34,7 @@ class PIC {
   static const int kMaxSize = 5;
 
   CodeSpace* space_;
-  char* addr_;
+  CodeChunk* chunk_;
   char** protos_;
   char** proto_offsets_[kMaxSize];
   intptr_t* results_;

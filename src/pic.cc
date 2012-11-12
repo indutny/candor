@@ -10,6 +10,7 @@ namespace candor {
 namespace internal {
 
 PIC::PIC(CodeSpace* space) : space_(space),
+                             chunk_(NULL),
                              protos_(NULL),
                              results_(NULL),
                              size_(0) {
@@ -19,6 +20,7 @@ PIC::PIC(CodeSpace* space) : space_(space),
 PIC::~PIC() {
   delete[] protos_;
   delete[] results_;
+  chunk_ = NULL;
 }
 
 
@@ -28,22 +30,22 @@ char* PIC::Generate() {
 
   Generate(&masm);
 
-  char* addr = space_->Put(&masm);
+  if (chunk_ != NULL) chunk_->Unref();
+  chunk_ = space_->CreateChunk("__pic__", "", 0);
+  space_->Put(chunk_, &masm);
 
   // At this stage protos_ and results_ should contain offsets,
   // get real addresses for them and reference protos in heap
   for (int i = 0; i < size_; i++) {
     proto_offsets_[i] = reinterpret_cast<char**>(
-        addr + reinterpret_cast<intptr_t>(proto_offsets_[i]));
+        chunk_->addr() + reinterpret_cast<intptr_t>(proto_offsets_[i]));
 
     space_->heap()->Reference(Heap::kRefWeak,
                               reinterpret_cast<HValue**>(proto_offsets_[i]),
                               reinterpret_cast<HValue*>(*proto_offsets_[i]));
   }
 
-  addr_ = addr;
-
-  return addr;
+  return chunk_->addr();
 }
 
 
@@ -60,7 +62,7 @@ void PIC::Miss(char* object, intptr_t result, char* ip) {
   // Search for correct IP to replace
   for (size_t i = 3; i < 2 * sizeof(void*); i++) {
     char** iip = reinterpret_cast<char**>(ip - i);
-    if (*iip == addr_) {
+    if (*iip == chunk_->addr()) {
       call_ip = iip;
       break;
     }

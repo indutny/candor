@@ -24,6 +24,7 @@ namespace internal {
 CodeSpace::CodeSpace(Heap* heap) : heap_(heap) {
   stubs_ = new Stubs(this);
   entry_ = stubs()->GetEntryStub();
+  heap->code_space(this);
 }
 
 
@@ -32,31 +33,66 @@ CodeSpace::~CodeSpace() {
 }
 
 
-Error* CodeSpace::CreateError(const char* filename,
-                              const char* source,
-                              uint32_t length,
+Error* CodeSpace::CreateError(CodeChunk* chunk,
                               const char* message,
                               uint32_t offset) {
   Error* err = new Error();
 
   err->message = message;
-  err->line = GetSourceLineByOffset(source, offset, &err->offset);
+  err->line = GetSourceLineByOffset(chunk->source(), offset, &err->offset);
 
-  err->filename = filename;
-  err->source = source;
-  err->length = length;
+  err->filename = chunk->filename();
+  err->source = chunk->source();
+  err->length = chunk->source_len();
 
   return err;
 }
 
 
-char* CodeSpace::Put(Masm* masm) {
+CodeChunk* CodeSpace::CreateChunk(const char* filename,
+                                  const char* source,
+                                  uint32_t length) {
+  CodeChunk* c = new CodeChunk(filename, source, length);
+  chunks_.Push(c);
+
+  return c;
+}
+
+
+void CodeSpace::Put(CodeChunk* chunk, Masm* masm) {
+  // Align code in chunk
   masm->AlignCode();
 
-  char* code = Insert(masm->buffer(), masm->offset());
-  masm->Relocate(heap(), code);
+  char* code = masm->buffer();
+  uint32_t length = masm->offset();
 
-  return code;
+  // Go through pages to find one with enough space
+  CodePage* p = NULL;
+  List<CodePage*, EmptyClass>::Item* item = pages_.head();
+  while (item != NULL) {
+    if (item->value()->Has(length)) {
+      p = item->value();
+      break;
+    }
+    item = item->next();
+  }
+
+  // If failed - allocate new page
+  if (p == NULL) {
+    p = new CodePage(length);
+    pages_.Push(p);
+  }
+
+  // Copy code into executable memory
+  chunk->page_ = p;
+  chunk->addr_ = p->Allocate(length);
+  memcpy(chunk->addr_, code, length);
+
+  // Chunk now references page
+  p->Ref();
+
+  // Relocate references
+  masm->Relocate(heap(), chunk->addr_);
 }
 
 
@@ -67,30 +103,22 @@ char* CodeSpace::Compile(const char* filename,
                          Error** error) {
   Zone zone;
 
-  // Store copy of filename and source within codespace.
-  // This way we can always be sure that it will be alive as far as
-  // code space itself is alive.
-  CodeInfo* info = new CodeInfo(filename, source, length);
-  infos_.Push(info);
+  CodeChunk* chunk = CreateChunk(filename, source, length);
 
-  Parser p(info->source(), info->source_len());
+  Parser p(chunk->source(), chunk->source_len());
 
   AstNode* ast = p.Execute();
 
   if (p.has_error()) {
-    *error = CreateError(filename,
-                         info->source(),
-                         info->source_len(),
-                         p.error_msg(),
-                         p.error_pos());
+    *error = CreateError(chunk, p.error_msg(), p.error_pos());
     return NULL;
   }
 
-  // Add scope information to variables (i.e. stack vs context, and indexes)
+  // Add scope chunkrmation to variables (i.e. stack vs context, and indexes)
   Scope::Analyze(ast);
 
   // Generate CFG with SSA
-  HIRGen hir(heap(), filename, ast);
+  HIRGen hir(heap(), chunk->filename(), ast);
 
   // Store root
   *root = hir.root()->Allocate()->addr();
@@ -103,49 +131,22 @@ char* CodeSpace::Compile(const char* filename,
   HIRBlockList::Item* head = hir.roots()->head();
   for (; head != NULL; head = head->next()) {
     // Generate LIR
-    LGen lir(&hir, filename, head->value());
+    LGen lir(&hir, chunk->filename(), head->value());
 
     // Generate Masm code
     lir.Generate(&masm, heap()->source_map());
   }
 
   // Put code into code space
-  char* addr = Put(&masm);
+  Put(chunk, &masm);
 
   // Relocate source map
-  heap()->source_map()->Commit(info->filename(),
-                               info->source(),
-                               info->source_len(),
-                               addr);
+  heap()->source_map()->Commit(chunk->filename(),
+                               chunk->source(),
+                               chunk->source_len(),
+                               chunk->addr());
 
-  return addr;
-}
-
-
-char* CodeSpace::Insert(char* code, uint32_t length) {
-  CodePage* page = NULL;
-
-  // Go through pages to find enough space
-  List<CodePage*, EmptyClass>::Item* item = pages_.head();
-  while (item != NULL) {
-    if (item->value()->Has(length)) {
-      page = item->value();
-      break;
-    }
-    item = item->next();
-  }
-
-  // If failed - allocate new page
-  if (page == NULL) {
-    page = new CodePage(length);
-    pages_.Push(page);
-  }
-
-  char* space = page->Allocate(length);
-
-  memcpy(space, code, length);
-
-  return space;
+  return chunk->addr();
 }
 
 
@@ -169,7 +170,7 @@ Value* CodeSpace::Run(char* fn, uint32_t argc, Value* argv[]) {
 }
 
 
-CodePage::CodePage(uint32_t size) : offset_(0) {
+CodePage::CodePage(uint32_t size) : offset_(0), ref_(0) {
   size_ = RoundUp(size, GetPageSize());
 
   page_ = reinterpret_cast<char*>(mmap(0,
@@ -210,8 +211,19 @@ char* CodePage::Allocate(uint32_t size) {
 }
 
 
-CodeInfo::CodeInfo(const char* filename, const char* source, uint32_t length)
-    : source_len_(length) {
+void CodePage::Ref() {
+  ref_++;
+}
+
+
+void CodePage::Unref() {
+  ref_--;
+  assert(ref_ >= 0);
+}
+
+
+CodeChunk::CodeChunk(const char* filename, const char* source, uint32_t length)
+    : source_len_(length), page_(NULL), ref_(1) {
   int filename_len = strlen(filename) + 1;
 
   filename_ = new char[filename_len];
@@ -222,9 +234,21 @@ CodeInfo::CodeInfo(const char* filename, const char* source, uint32_t length)
 }
 
 
-CodeInfo::~CodeInfo() {
+CodeChunk::~CodeChunk() {
   delete[] filename_;
   delete[] source_;
+  page_->Unref();
+}
+
+
+void CodeChunk::Ref() {
+  ref_++;
+}
+
+
+void CodeChunk::Unref() {
+  ref_--;
+  assert(ref_ >= 0);
 }
 
 } // namespace internal

@@ -16,7 +16,8 @@ class Heap;
 class Masm;
 class Stubs;
 class CodePage;
-class CodeInfo;
+class CodeChunk;
+class Code;
 class PIC;
 
 class CodeSpace {
@@ -26,20 +27,19 @@ class CodeSpace {
   CodeSpace(Heap* heap);
   ~CodeSpace();
 
-  Error* CreateError(const char* filename,
-                     const char* source,
-                     uint32_t length,
-                     const char* message,
-                     uint32_t offset);
+  Error* CreateError(CodeChunk* chunk, const char* message, uint32_t offset);
 
-  char* Put(Masm* masm);
+  CodeChunk* CreateChunk(const char* filename,
+                         const char* source,
+                         uint32_t length);
+  char* CreatePIC();
+
+  void Put(CodeChunk* chunk, Masm* masm);
   char* Compile(const char* filename,
                 const char* source,
                 uint32_t length,
                 char** root,
                 Error** error);
-  char* Insert(char* code, uint32_t length);
-  char* CreatePIC();
 
   Value* Run(char* fn, uint32_t argc, Value* argv[]);
 
@@ -52,22 +52,7 @@ class CodeSpace {
   char* entry_;
   List<CodePage*, EmptyClass> pages_;
   List<PIC*, EmptyClass> pics_;
-  List<CodeInfo*, EmptyClass> infos_;
-};
-
-class CodeInfo {
- public:
-  CodeInfo(const char* filename, const char* source, uint32_t length);
-  ~CodeInfo();
-
-  inline const char* filename() { return filename_; }
-  inline const char* source() { return source_; }
-  inline uint32_t source_len() { return source_len_; }
-
- private:
-  char* filename_;
-  char* source_;
-  uint32_t source_len_;
+  List<CodeChunk*, EmptyClass> chunks_;
 };
 
 class CodePage {
@@ -78,12 +63,42 @@ class CodePage {
   bool Has(uint32_t size);
   char* Allocate(uint32_t size);
 
+  void Ref();
+  void Unref();
+
  private:
   uint32_t offset_;
   uint32_t size_;
   uint32_t guard_size_;
+  int ref_;
   char* page_;
   char* guard_;
+
+  friend class CodeSpace;
+};
+
+class CodeChunk {
+ public:
+  CodeChunk(const char* filename, const char* source, uint32_t length);
+  ~CodeChunk();
+
+  void Ref();
+  void Unref();
+
+  inline const char* filename() { return filename_; }
+  inline const char* source() { return source_; }
+  inline uint32_t source_len() { return source_len_; }
+  inline char* addr() { return addr_; }
+
+ private:
+  char* filename_;
+  char* source_;
+  uint32_t source_len_;
+  CodePage* page_;
+  char* addr_;
+  int ref_;
+
+  friend class CodeSpace;
 };
 
 } // internal

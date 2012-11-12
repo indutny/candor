@@ -125,7 +125,9 @@ BINARY_STUBS_LIST(BINARY_STUB_CLASS_DECL)
         Zone zone;\
         V##Stub stub(space());\
         stub.Generate();\
-        stub_##V##_ = space()->Put(stub.masm());\
+        CodeChunk* chunk = space()->CreateChunk("__" #V "__stub__", "", 0); \
+        space()->Put(chunk, stub.masm()); \
+        stub_##V##_ = chunk->addr(); \
       }\
       return stub_##V##_;\
     }
