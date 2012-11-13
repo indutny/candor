@@ -17,7 +17,7 @@ void FNop::Generate(Masm* masm) {
 
 
 void FNil::Generate(Masm* masm) {
-  __ mov(rax, Immediate(Heap::kTagNil));
+  __ mov(eax, Immediate(Heap::kTagNil));
 }
 
 
