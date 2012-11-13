@@ -25,8 +25,18 @@ inline FInstruction* FInstruction::AddArg(FOperand* op) {
 }
 
 
+inline AstNode* FInstruction::ast() {
+  return ast_;
+}
+
+
 inline void FInstruction::ast(AstNode* ast) {
   ast_ = ast;
+}
+
+
+inline FInstruction::Type FInstruction::type() {
+  return type_;
 }
 
 #define FULLGEN_INSTRUCTION_TYPE_TO_STR(V) \
@@ -42,8 +52,18 @@ inline const char* FInstruction::TypeToStr(Type type) {
 
 #undef FULLGEN_INSTRUCTION_TYPE_TO_STR
 
-inline AstNode* FFunction::ast() {
-  return ast_;
+inline AstNode* FFunction::root_ast() {
+  return root_ast_;
+}
+
+
+inline int FEntry::stack_slots() {
+  return stack_slots_;
+}
+
+
+inline void FEntry::stack_slots(int stack_slots) {
+  stack_slots_ = stack_slots;
 }
 
 } // namespace internal

@@ -22,6 +22,8 @@ class FInstruction;
 class FFunction;
 class FLabel;
 class FOperand;
+class Masm;
+class Operand;
 
 typedef ZoneList<FOperand*> FOperandList;
 
@@ -29,8 +31,7 @@ class FOperand : public ZoneObject {
  public:
   enum Type {
     kStack,
-    kContext,
-    kRegister
+    kContext
   };
 
   FOperand(Type type, int index, int depth) : type_(type),
@@ -39,6 +40,7 @@ class FOperand : public ZoneObject {
   }
 
   void Print(PrintBuffer* p);
+  Operand* ToOperand();
 
  protected:
   Type type_;
@@ -58,12 +60,6 @@ class FContextSlot : public FOperand {
   }
 };
 
-class FRegister : public FOperand {
- public:
-  FRegister(int index) : FOperand(kRegister, index, -1) {
-  }
-};
-
 class FScopedSlot {
  public:
   FScopedSlot(Fullgen* f);
@@ -80,9 +76,10 @@ class FScopedSlot {
 // Generates non-optimized code by visiting each node in AST tree in-order
 class Fullgen : public Visitor<FInstruction> {
  public:
-  Fullgen(Heap* heap);
+  Fullgen(Heap* heap, const char* filename);
 
-  void Generate(AstNode* ast);
+  void Build(AstNode* ast);
+  void Generate(Masm* masm);
 
   FInstruction* Visit(AstNode* node);
 

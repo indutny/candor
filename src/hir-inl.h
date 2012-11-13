@@ -1,11 +1,13 @@
 #ifndef _SRC_HIR_INL_H_
 #define _SRC_HIR_INL_H_
 
-#include "hir.h"
-#include "assert.h"
-
+#ifndef __STDC_FORMAT_MACROS
 #define __STDC_FORMAT_MACROS
+#endif // _STDC_FORMAT_MACROS
 #include <inttypes.h> // PRIu64
+
+#include "hir.h"
+#include <assert.h>
 
 namespace candor {
 namespace internal {

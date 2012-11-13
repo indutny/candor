@@ -5,6 +5,8 @@
 #include "parser.h" // Parser
 #include "scope.h" // Scope
 #include "macroassembler.h" // Masm
+#include "fullgen.h" // Fullgen
+#include "fullgen-inl.h" // Fullgen
 #include "hir.h" // HIR
 #include "hir-inl.h" // HIR
 #include "lir.h" // LIR
@@ -143,24 +145,30 @@ char* CodeSpace::Compile(const char* filename,
   // Add scope chunkrmation to variables (i.e. stack vs context, and indexes)
   Scope::Analyze(ast);
 
-  // Generate CFG with SSA
-  HIRGen hir(heap(), chunk->filename(), ast);
-
-  // Store root
-  *root = hir.root()->Allocate()->addr();
-
-  // Generate low-level representation
   Masm masm(this);
 
-  // For each root in reverse order generate lir
-  // (Generate children first, parents later)
-  HIRBlockList::Item* head = hir.roots()->head();
-  for (; head != NULL; head = head->next()) {
-    // Generate LIR
-    LGen lir(&hir, chunk->filename(), head->value());
+  if (false) {
+    // Generate CFG with SSA
+    HIRGen hir(heap(), chunk->filename(), ast);
 
-    // Generate Masm code
-    lir.Generate(&masm, heap()->source_map());
+    // Store root
+    *root = hir.root()->Allocate()->addr();
+
+    // Generate low-level representation:
+    //   For each root in reverse order generate lir
+    //   (Generate children first, parents later)
+    HIRBlockList::Item* head = hir.roots()->head();
+    for (; head != NULL; head = head->next()) {
+      // Generate LIR
+      LGen lir(&hir, chunk->filename(), head->value());
+
+      // Generate Masm code
+      lir.Generate(&masm, heap()->source_map());
+    }
+  } else {
+    Fullgen f(heap(), chunk->filename());
+    f.Build(ast);
+    f.Generate(&masm);
   }
 
   // Put code into code space

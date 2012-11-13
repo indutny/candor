@@ -1,7 +1,10 @@
 #ifndef _SRC_FULLGEN_INL_H_
 #define _SRC_FULLGEN_INL_H_
 
+#ifndef __STDC_FORMAT_MACROS
 #define __STDC_FORMAT_MACROS
+#endif // _STDC_FORMAT_MACROS
+
 #include <inttypes.h> // PRIu64
 
 #include "fullgen.h"
@@ -46,7 +49,7 @@ inline FOperand* Fullgen::GetSlot() {
 
   // Create new slot
   FOperand* slot = new FStackSlot(
-      current_function()->ast()->stack_slots() + stack_index_++);
+      current_function()->root_ast()->stack_slots() + stack_index_++);
 
   return slot;
 }

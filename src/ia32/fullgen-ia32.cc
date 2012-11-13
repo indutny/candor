@@ -11,6 +11,14 @@ namespace internal {
 
 #define __ masm->
 
+Operand* FOperand::ToOperand() {
+  assert(type_ == kStack);
+
+  // Argc and return address
+  return new Operand(ebp, -HValue::kPointerSize * (index() + 3));
+}
+
+
 void FNop::Generate(Masm* masm) {
   // Nop
 }
@@ -31,6 +39,15 @@ void FEntry::Generate(Masm* masm) {
 
 
 void FReturn::Generate(Masm* masm) {
+}
+
+
+void FChi::Generate(Masm* masm) {
+  if (result == NULL) return;
+
+  // Just move input to output
+  __ mov(scratch, *inputs[0]->ToOperand());
+  __ mov(*result->ToOperand(), scratch);
 }
 
 
@@ -131,10 +148,6 @@ void FLoadArg::Generate(Masm* masm) {
 
 
 void FLoadVarArg::Generate(Masm* masm) {
-}
-
-
-void FAlignCode::Generate(Masm* masm) {
 }
 
 

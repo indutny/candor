@@ -1,5 +1,7 @@
 #include "fullgen.h"
 #include "fullgen-inl.h"
+#include "fullgen-instructions.h"
+#include "fullgen-instructions-inl.h"
 #include "heap.h"
 #include "heap-inl.h"
 #include "scope.h" // ScopeSlot
@@ -8,7 +10,7 @@
 namespace candor {
 namespace internal {
 
-Fullgen::Fullgen(Heap* heap)
+Fullgen::Fullgen(Heap* heap, const char* filename)
     : Visitor<FInstruction>(kPreorder),
       heap_(heap),
       root_(heap),
@@ -20,7 +22,7 @@ Fullgen::Fullgen(Heap* heap)
 }
 
 
-void Fullgen::Generate(AstNode* ast) {
+void Fullgen::Build(AstNode* ast) {
   FFunction* fn = new FFunction(ast);
   fn->Init(this);
 
@@ -30,11 +32,38 @@ void Fullgen::Generate(AstNode* ast) {
 
     FFunction* current = work_queue_.Shift();
     set_current_function(current);
-    Visit(current->ast());
+    Visit(current->root_ast());
     set_current_function(NULL);
+
+    current->entry->stack_slots(stack_index_ +
+                                current->root_ast()->stack_slots());
 
     if (work_queue_.length() != 0) Add(new FAlignCode());
   }
+}
+
+
+void Fullgen::Generate(Masm* masm) {
+  FInstructionList::Item* ihead = instructions_.head();
+  for (; ihead != NULL; ihead = ihead->next()) {
+    FInstruction* instr = ihead->value();
+    if (instr->type() == FInstruction::kEntry) {
+      if (ihead->prev() != NULL) masm->FinalizeSpills();
+
+      // +1 for argc
+      masm->stack_slots(FEntry::Cast(instr)->stack_slots() + 1);
+    }
+
+    // Amend source map
+    if (instr->ast() != NULL) {
+      source_map()->Push(masm->offset(), instr->ast()->offset());
+    }
+
+    // generate instruction itself
+    instr->Generate(masm);
+  }
+  masm->FinalizeSpills();
+  masm->AlignCode();
 }
 
 
@@ -144,10 +173,11 @@ void Fullgen::LoadArguments(FunctionLiteral* fn) {
 FInstruction* Fullgen::VisitFunction(AstNode* stmt) {
   FunctionLiteral* fn = FunctionLiteral::Cast(stmt);
 
-  if (current_function()->ast() == stmt) {
+  if (current_function()->root_ast() == stmt) {
     current_function()->body = new FLabel();
     Add(current_function()->body);
-    Add(new FEntry(stmt->context_slots()));
+    current_function()->entry = new FEntry(stmt->context_slots());
+    Add(current_function()->entry);
 
     // Load all passed arguments
     LoadArguments(fn);
@@ -215,7 +245,7 @@ FInstruction* Fullgen::VisitProperty(AstNode* node) {
 
 FInstruction* Fullgen::VisitAssign(AstNode* stmt) {
   FScopedSlot rhs(this);
-  FInstruction* irhs = Visit(stmt->rhs())->SetResult(&rhs);
+  Visit(stmt->rhs())->SetResult(&rhs);
 
   if (stmt->lhs()->is(AstNode::kValue)) {
     AstValue* value = AstValue::Cast(stmt->lhs());
@@ -242,7 +272,7 @@ FInstruction* Fullgen::VisitAssign(AstNode* stmt) {
     UNEXPECTED
   }
 
-  return irhs;
+  return Add(new FChi())->AddArg(&rhs);
 }
 
 
@@ -620,15 +650,15 @@ FInstruction* Fullgen::VisitBinOp(AstNode* node) {
 
 
 void Fullgen::Print(PrintBuffer* p) {
-  ZoneList<FInstruction*>::Item* ihead = instructions_.head();
+  FInstructionList::Item* ihead = instructions_.head();
   for (; ihead != NULL; ihead = ihead->next()) {
     ihead->value()->Print(p);
   }
 }
 
 
-void FChi::Generate(Masm* masm) {
-  // Just move input to output
+void FAlignCode::Generate(Masm* masm) {
+  masm->AlignCode();
 }
 
 
@@ -647,7 +677,6 @@ void FOperand::Print(PrintBuffer* p) {
   switch (type_) {
    case kStack: p->Print("s[%d]", index_); break;
    case kContext: p->Print("c[%d:%d]", index_, depth_); break;
-   case kRegister: p->Print("%s", RegisterNameByIndex(index_)); break;
    default: UNEXPECTED
   }
 }

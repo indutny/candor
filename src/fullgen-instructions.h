@@ -69,7 +69,9 @@ class FInstruction : public ZoneObject {
   static inline const char* TypeToStr(Type type);
   inline FInstruction* SetResult(FOperand* op);
   inline FInstruction* AddArg(FOperand* op);
+  inline AstNode* ast();
   inline void ast(AstNode* ast);
+  inline Type type();
 
   virtual void Print(PrintBuffer* p);
   virtual void Init(Fullgen* f);
@@ -89,7 +91,11 @@ class FInstruction : public ZoneObject {
 #undef FULLGEN_INSTRUCTION_ENUM
 
 #define FULLGEN_DEFAULT_METHODS(V) \
-    void Generate(Masm* masm);
+    void Generate(Masm* masm); \
+    static inline F##V* Cast(FInstruction* instr) { \
+      assert(instr->type() == k##V); \
+      return reinterpret_cast<F##V*>(instr); \
+    }
 
 class FNop : public FInstruction {
  public:
@@ -123,10 +129,13 @@ class FEntry : public FInstruction {
                               context_slots_(context_slots) {
   }
 
+  inline int stack_slots();
+  inline void stack_slots(int stack_slots);
   FULLGEN_DEFAULT_METHODS(Entry)
 
  protected:
   int context_slots_;
+  int stack_slots_;
 };
 
 class FReturn : public FInstruction {
@@ -139,16 +148,20 @@ class FReturn : public FInstruction {
 
 class FFunction : public FInstruction {
  public:
-  FFunction(AstNode* ast) : FInstruction(kFunction), body(NULL), ast_(ast) {
+  FFunction(AstNode* ast) : FInstruction(kFunction),
+                            body(NULL),
+                            entry(NULL),
+                            root_ast_(ast) {
   }
 
   FULLGEN_DEFAULT_METHODS(Function)
 
-  inline AstNode* ast();
+  inline AstNode* root_ast();
   FLabel* body;
+  FEntry* entry;
 
  protected:
-  AstNode* ast_;
+  AstNode* root_ast_;
 };
 
 class FLiteral : public FInstruction {

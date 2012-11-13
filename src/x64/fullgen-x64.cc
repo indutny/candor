@@ -11,13 +11,21 @@ namespace internal {
 
 #define __ masm->
 
+Operand* FOperand::ToOperand() {
+  assert(type_ == kStack);
+
+  // Argc and return address
+  return new Operand(rbp, -HValue::kPointerSize * (index_ + 3));
+}
+
+
 void FNop::Generate(Masm* masm) {
   // Nop
 }
 
 
 void FNil::Generate(Masm* masm) {
-  __ mov(rax, Immediate(Heap::kTagNil));
+  __ mov(*result->ToOperand(), Immediate(Heap::kTagNil));
 }
 
 
@@ -27,18 +35,53 @@ void FLabel::Generate(Masm* masm) {
 
 
 void FEntry::Generate(Masm* masm) {
+  __ push(rbp);
+  __ mov(rbp, rsp);
+
+  // Allocate spills
+  __ AllocateSpills();
+
+  // Save argc
+  Operand argc(rbp, -HValue::kPointerSize * 2);
+  __ mov(argc, rax);
+
+  // Allocate context slots
+  __ AllocateContext(context_slots_);
 }
 
 
 void FReturn::Generate(Masm* masm) {
+  __ mov(rax, *inputs[0]->ToOperand());
+  __ mov(rsp, rbp);
+  __ pop(rbp);
+  __ ret(0);
 }
 
 
-void FFunction::Generate(Masm* masm) {
+void FChi::Generate(Masm* masm) {
+  if (result == NULL) return;
+
+  // Just move input to output
+  __ mov(scratch, *inputs[0]->ToOperand());
+  __ mov(*result->ToOperand(), scratch);
 }
 
 
 void FLiteral::Generate(Masm* masm) {
+  if (slot_->is_immediate()) {
+    __ mov(*result->ToOperand(),
+           Immediate(reinterpret_cast<intptr_t>(slot_->value())));
+  } else {
+    assert(slot_->is_context());
+    assert(slot_->depth() == -2);
+    Operand slot(root_reg, HContext::GetIndexDisp(slot_->index()));
+    __ mov(scratch, slot);
+    __ mov(*result->ToOperand(), scratch);
+  }
+}
+
+
+void FFunction::Generate(Masm* masm) {
 }
 
 
@@ -131,10 +174,6 @@ void FLoadArg::Generate(Masm* masm) {
 
 
 void FLoadVarArg::Generate(Masm* masm) {
-}
-
-
-void FAlignCode::Generate(Masm* masm) {
 }
 
 

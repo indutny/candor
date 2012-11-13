@@ -88,8 +88,8 @@ using namespace internal;
       ASSERT(!p.has_error());\
       Scope::Analyze(ast);\
       ASSERT(ast != NULL);\
-      Fullgen gen(&heap);\
-      gen.Generate(ast);\
+      Fullgen gen(&heap, "test");\
+      gen.Build(ast);\
       gen.Print(out, sizeof(out));\
       if (strcmp(expected, out) != 0) {\
         fprintf(stderr, "Fullgen test failed, got:\n%s\n expected:\n%s\n",\
