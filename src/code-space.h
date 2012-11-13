@@ -21,7 +21,7 @@ class Code;
 class PIC;
 
 typedef List<CodePage*, EmptyClass> CodePageList;
-typedef List<CodeChunk*, EmptyClass> CodeChunkList;;
+typedef List<CodeChunk*, EmptyClass> CodeChunkList;
 
 class CodeSpace {
  public:

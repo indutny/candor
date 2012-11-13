@@ -32,6 +32,8 @@ void Fullgen::Generate(AstNode* ast) {
     set_current_function(current);
     Visit(current->ast());
     set_current_function(NULL);
+
+    if (work_queue_.length() != 0) Add(new FAlignCode());
   }
 }
 
@@ -43,12 +45,114 @@ FInstruction* Fullgen::Visit(AstNode* node) {
 }
 
 
+void Fullgen::LoadArguments(FunctionLiteral* fn) {
+  FScopedSlot index(this);
+  FScopedSlot arg_slot(this);
+  int flat_index = 0;
+  bool seen_varg = false;
+
+  if (fn->args()->length() > 0) {
+    Add(GetNumber(0))->SetResult(&index);
+  }
+
+  AstList::Item* args_head = fn->args()->head();
+  for (int i = 0; args_head != NULL; args_head = args_head->next(), i++) {
+    AstNode* arg = args_head->value();
+    bool varg = false;
+
+    FInstruction* instr;
+    if (arg->is(AstNode::kVarArg)) {
+      assert(arg->lhs()->is(AstNode::kValue));
+      arg = arg->lhs();
+
+      varg = true;
+      seen_varg = true;
+      instr = new FLoadVarArg();
+    } else {
+      instr = new FLoadArg();
+    }
+
+    AstValue* value = AstValue::Cast(arg);
+
+    FInstruction* varg_rest = NULL;
+    FInstruction* varg_arr = NULL;
+    if (varg) {
+      // Result vararg array
+      varg_arr = Add(new FAllocateArray(HArray::kVarArgLength));
+
+      // Add number of arguments that are following varg
+      varg_rest = GetNumber(fn->args()->length() - i - 1);
+    }
+    FInstruction* load_arg = Add(instr)->AddArg(&index)->SetResult(&arg_slot);
+
+    if (varg) {
+      FScopedSlot rest(this), arr(this);
+      varg_rest->SetResult(&rest);
+      varg_arr->SetResult(&arr);
+
+      load_arg->AddArg(&rest)->AddArg(&arr);
+      load_arg = varg_arr;
+    }
+
+    if (value->slot()->is_stack()) {
+      Add(new FStore())
+          ->AddArg(CreateOperand(value->slot()))
+          ->AddArg(load_arg->result);
+    } else {
+      Add(new FStoreContext())
+          ->AddArg(CreateOperand(value->slot()))
+          ->AddArg(load_arg->result);
+    }
+
+    // Do not generate index if args has ended
+    if (args_head->next() == NULL) continue;
+
+    // Increment index
+    if (!varg) {
+      // By 1
+      if (!seen_varg) {
+        // Index is linear here, just generate new literal
+        GetNumber(++flat_index)->SetResult(&index);
+      } else {
+        // Do "Full" math
+        AstNode* one = new AstNode(AstNode::kNumber, fn);
+
+        one->value("1");
+        one->length(1);
+
+        FScopedSlot f_one(this);
+        Visit(one)->SetResult(&f_one);
+        Add(new FBinOp(BinOp::kAdd))
+            ->AddArg(&index)
+            ->AddArg(&f_one)
+            ->SetResult(&index);
+      }
+    } else {
+      FScopedSlot length(this);
+      Add(new FSizeof())->AddArg(load_arg->result)->SetResult(&length);
+
+      // By length of vararg
+      Add(new FBinOp(BinOp::kAdd))
+          ->AddArg(&index)
+          ->AddArg(&length)
+          ->SetResult(&index);
+    }
+  }
+}
+
+
 FInstruction* Fullgen::VisitFunction(AstNode* stmt) {
+  FunctionLiteral* fn = FunctionLiteral::Cast(stmt);
+
   if (current_function()->ast() == stmt) {
     current_function()->body = new FLabel();
     Add(current_function()->body);
-    Add(new FEntry());
+    Add(new FEntry(stmt->context_slots()));
 
+    // Load all passed arguments
+    LoadArguments(fn);
+
+    // Generate body
     VisitChildren(stmt);
 
     // In case if there're no return statement in function
@@ -59,12 +163,15 @@ FInstruction* Fullgen::VisitFunction(AstNode* stmt) {
       arg->SetResult(&result);
       Add(new FReturn())->AddArg(&result);
     }
+
+    return NULL;
   } else {
     FFunction* fn = new FFunction(stmt);
     Add(fn);
     work_queue_.Push(fn);
+
+    return fn;
   }
-  return NULL;
 }
 
 
@@ -286,7 +393,115 @@ FInstruction* Fullgen::VisitContinue(AstNode* node) {
 
 
 FInstruction* Fullgen::VisitCall(AstNode* stmt) {
-  return NULL;
+  FunctionLiteral* fn = FunctionLiteral::Cast(stmt);
+
+  // handle __$gc() and __$trace() calls
+  if (fn->variable()->is(AstNode::kValue)) {
+    AstNode* name = AstValue::Cast(fn->variable())->name();
+    if (name->length() == 5 && strncmp(name->value(), "__$gc", 5) == 0) {
+      Add(new FCollectGarbage());
+      return Add(new FNil());
+    } else if (name->length() == 8 &&
+               strncmp(name->value(), "__$trace", 8) == 0) {
+      return Add(new FGetStackTrace());
+    }
+  }
+
+  // Generate all arg's values and populate list of stores
+  FInstruction* vararg = NULL;
+  FOperandList arg_slots;
+  FInstructionList stores_;
+  AstList::Item* item = fn->args()->head();
+  for (; item != NULL; item = item->next()) {
+    AstNode* arg = item->value();
+    FInstruction* current;
+    FInstruction* rhs;
+
+    if (arg->is(AstNode::kSelf)) {
+      // Process self argument later
+      continue;
+    } else if (arg->is(AstNode::kVarArg)) {
+      current = new FStoreVarArg();
+      rhs = Visit(arg->lhs());
+      vararg = rhs;
+    } else {
+      current = new FStoreArg();
+      rhs = Visit(arg);
+    }
+
+    FOperand* slot = GetSlot();
+    rhs->SetResult(slot);
+    current->AddArg(slot);
+    arg_slots.Push(slot);
+
+    stores_.Unshift(current);
+  }
+
+  // Determine argc and alignment
+  int argc = fn->args()->length();
+  if (vararg != NULL) argc--;
+
+  FScopedSlot argc_slot(this);
+  GetNumber(argc)->SetResult(&argc_slot);
+
+  // If call has vararg - increase argc by ...
+  if (vararg != NULL) {
+    FScopedSlot length(this);
+    Add(new FSizeof())
+        ->AddArg(vararg->result)
+        ->SetResult(&length);
+
+    // ... by the length of vararg
+    Add(new FBinOp(BinOp::kAdd))
+        ->AddArg(&argc_slot)
+        ->AddArg(&length)
+        ->SetResult(&argc_slot);
+  }
+
+  // Process self argument
+  FInstruction* receiver = NULL;
+  if (fn->args()->length() > 0 &&
+      fn->args()->head()->value()->is(AstNode::kSelf)) {
+    FOperand* slot = GetSlot();
+    arg_slots.Push(slot);
+    receiver = Visit(fn->variable()->lhs())->SetResult(slot);
+
+    FInstruction* store = new FStoreArg();
+    store->AddArg(slot);
+    stores_.Push(store);
+  }
+
+  FInstruction* var;
+  if (fn->args()->length() > 0 &&
+      fn->args()->head()->value()->is(AstNode::kSelf)) {
+    assert(fn->variable()->is(AstNode::kMember));
+
+    FScopedSlot property(this);
+    Visit(fn->variable()->rhs())->SetResult(&property);
+
+    var = Add(new FLoadProperty())
+        ->AddArg(receiver->result)
+        ->AddArg(&property);
+  } else {
+    var = Visit(fn->variable());
+  }
+
+  // Add stack alignment instruction
+  Add(new FAlignStack())->AddArg(&argc_slot);
+
+  // Now add stores to hir
+  FInstructionList::Item* hhead = stores_.head();
+  for (; hhead != NULL; hhead = hhead->next()) {
+    Add(hhead->value());
+  }
+
+  FScopedSlot var_slot(this);
+  var->SetResult(&var_slot);
+
+  // Release slots used for arguments
+  while (arg_slots.length() > 0) ReleaseSlot(arg_slots.Shift());
+
+  return Add(new FCall())->AddArg(&var_slot)->AddArg(&argc_slot);
 }
 
 

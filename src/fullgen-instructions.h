@@ -12,6 +12,9 @@ namespace internal {
 // Forward declarations
 class Fullgen;
 class ScopeSlot;
+class FInstruction;
+
+typedef ZoneList<FInstruction*> FInstructionList;
 
 #define FULLGEN_INSTRUCTION_TYPES(V) \
     V(Nop) \
@@ -45,6 +48,10 @@ class ScopeSlot;
     V(StoreVarArg) \
     V(LoadArg) \
     V(LoadVarArg) \
+    V(AlignCode) \
+    V(AlignStack) \
+    V(CollectGarbage) \
+    V(GetStackTrace) \
     V(Call)
 
 #define FULLGEN_INSTRUCTION_ENUM(V) \
@@ -112,10 +119,14 @@ class FLabel : public FInstruction {
 
 class FEntry : public FInstruction {
  public:
-  FEntry() : FInstruction(kEntry) {
+  FEntry(int context_slots) : FInstruction(kEntry),
+                              context_slots_(context_slots) {
   }
 
   FULLGEN_DEFAULT_METHODS(Entry)
+
+ protected:
+  int context_slots_;
 };
 
 class FReturn : public FInstruction {
@@ -371,6 +382,38 @@ class FLoadVarArg : public FInstruction {
   }
 
   FULLGEN_DEFAULT_METHODS(LoadVarArg)
+};
+
+class FAlignCode : public FInstruction {
+ public:
+  FAlignCode() : FInstruction(kAlignCode) {
+  }
+
+  FULLGEN_DEFAULT_METHODS(AlignCode)
+};
+
+class FAlignStack : public FInstruction {
+ public:
+  FAlignStack() : FInstruction(kAlignStack) {
+  }
+
+  FULLGEN_DEFAULT_METHODS(AlignStack)
+};
+
+class FCollectGarbage : public FInstruction {
+ public:
+  FCollectGarbage() : FInstruction(kCollectGarbage) {
+  }
+
+  FULLGEN_DEFAULT_METHODS(CollectGarbage)
+};
+
+class FGetStackTrace : public FInstruction {
+ public:
+  FGetStackTrace() : FInstruction(kGetStackTrace) {
+  }
+
+  FULLGEN_DEFAULT_METHODS(GetStackTrace)
 };
 
 class FCall : public FInstruction {

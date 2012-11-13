@@ -135,4 +135,48 @@ TEST_START(fullgen)
                "30 Label\n"
                "32 s[0] = Nil\n"
                "34 Return(s[0])\n")
+
+  // Functions and arguments
+  FULLGEN_TEST("a(x, y..., p) {}",
+               "0 Label\n"
+               "2 Entry\n"
+               "4 s[1] = Function\n"
+               "6 Store(s[0], s[1])\n"
+               "8 s[1] = Nil\n"
+               "10 Return(s[1])\n"
+               "12 AlignCode\n"
+               "14 Label\n"
+               "16 Entry\n"
+               "20 s[3] = Literal\n"
+               "20 s[3] = Literal\n"
+               "22 s[4] = LoadArg(s[3])\n"
+               "24 Store(s[0], s[4])\n"
+               "26 s[3] = Literal\n"
+               "28 s[6] = AllocateArray\n"
+               "30 s[5] = Literal\n"
+               "32 s[4] = LoadVarArg(s[3], s[5], s[6])\n"
+               "34 Store(s[1], s[6])\n"
+               "36 s[5] = Sizeof(s[6])\n"
+               "38 s[3] = BinOp(s[3], s[5])\n"
+               "40 s[4] = LoadArg(s[3])\n"
+               "42 Store(s[2], s[4])\n"
+               "44 s[3] = Nil\n"
+               "46 Return(s[3])\n")
+  FULLGEN_TEST("a(x, y..., p)",
+               "0 Label\n"
+               "2 Entry\n"
+               "4 s[4] = Load(s[0])\n"
+               "6 s[5] = Load(s[1])\n"
+               "8 s[6] = Load(s[2])\n"
+               "10 s[7] = Literal\n"
+               "12 s[8] = Sizeof(s[5])\n"
+               "14 s[7] = BinOp(s[7], s[8])\n"
+               "16 s[8] = Load(s[3])\n"
+               "18 AlignStack(s[7])\n"
+               "20 StoreArg(s[6])\n"
+               "22 StoreVarArg(s[5])\n"
+               "24 StoreArg(s[4])\n"
+               "26 Call(s[8], s[7])\n"
+               "28 s[7] = Nil\n"
+               "30 Return(s[7])\n")
 TEST_END(fullgen)

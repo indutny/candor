@@ -134,6 +134,22 @@ void FLoadVarArg::Generate(Masm* masm) {
 }
 
 
+void FAlignCode::Generate(Masm* masm) {
+}
+
+
+void FAlignStack::Generate(Masm* masm) {
+}
+
+
+void FCollectGarbage::Generate(Masm* masm) {
+}
+
+
+void FGetStackTrace::Generate(Masm* masm) {
+}
+
+
 void FCall::Generate(Masm* masm) {
 }
 

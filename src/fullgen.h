@@ -86,6 +86,7 @@ class Fullgen : public Visitor<FInstruction> {
 
   FInstruction* Visit(AstNode* node);
 
+  void LoadArguments(FunctionLiteral* fn);
   FInstruction* VisitFunction(AstNode* stmt);
   FInstruction* VisitCall(AstNode* stmt);
   FInstruction* VisitAssign(AstNode* stmt);
