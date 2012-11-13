@@ -1,6 +1,7 @@
 #ifndef _SRC_FULLGEN_INSTRUCTIONS_H
 #define _SRC_FULLGEN_INSTRUCTIONS_H
 
+#include "ast.h" // AstNode
 #include "macroassembler.h"
 #include "zone.h"
 #include "utils.h"
@@ -10,12 +11,41 @@ namespace internal {
 
 // Forward declarations
 class Fullgen;
+class ScopeSlot;
 
 #define FULLGEN_INSTRUCTION_TYPES(V) \
     V(Nop) \
+    V(Chi) \
+    V(Nil) \
     V(Label) \
     V(Entry) \
-    V(Return)
+    V(Return) \
+    V(Function) \
+    V(Literal) \
+    V(BinOp) \
+    V(Not) \
+    V(Store) \
+    V(StoreContext) \
+    V(StoreProperty) \
+    V(Load) \
+    V(LoadContext) \
+    V(LoadProperty) \
+    V(DeleteProperty) \
+    V(AllocateObject) \
+    V(AllocateArray) \
+    V(Clone) \
+    V(Typeof) \
+    V(Sizeof) \
+    V(Keysof) \
+    V(If) \
+    V(Goto) \
+    V(Break) \
+    V(Continue) \
+    V(StoreArg) \
+    V(StoreVarArg) \
+    V(LoadArg) \
+    V(LoadVarArg) \
+    V(Call)
 
 #define FULLGEN_INSTRUCTION_ENUM(V) \
     k##V,
@@ -30,8 +60,9 @@ class FInstruction : public ZoneObject {
   FInstruction(Type type);
 
   static inline const char* TypeToStr(Type type);
-  inline void SetResult(FOperand* op);
-  inline void AddArg(FOperand* op);
+  inline FInstruction* SetResult(FOperand* op);
+  inline FInstruction* AddArg(FOperand* op);
+  inline void ast(AstNode* ast);
 
   virtual void Print(PrintBuffer* p);
   virtual void Init(Fullgen* f);
@@ -42,6 +73,8 @@ class FInstruction : public ZoneObject {
   FOperand* inputs[3];
 
  protected:
+  Fullgen* f_;
+  AstNode* ast_;
   Type type_;
   int input_count_;
 };
@@ -59,6 +92,14 @@ class FNop : public FInstruction {
   FULLGEN_DEFAULT_METHODS(Nop)
 };
 
+class FNil : public FInstruction {
+ public:
+  FNil() : FInstruction(kNil) {
+  }
+
+  FULLGEN_DEFAULT_METHODS(Nil)
+};
+
 class FLabel : public FInstruction {
  public:
   FLabel() : FInstruction(kLabel) {
@@ -69,12 +110,275 @@ class FLabel : public FInstruction {
   Label label;
 };
 
+class FEntry : public FInstruction {
+ public:
+  FEntry() : FInstruction(kEntry) {
+  }
+
+  FULLGEN_DEFAULT_METHODS(Entry)
+};
+
 class FReturn : public FInstruction {
  public:
   FReturn() : FInstruction(kReturn) {
   }
 
   FULLGEN_DEFAULT_METHODS(Return)
+};
+
+class FFunction : public FInstruction {
+ public:
+  FFunction(AstNode* ast) : FInstruction(kFunction), body(NULL), ast_(ast) {
+  }
+
+  FULLGEN_DEFAULT_METHODS(Function)
+
+  inline AstNode* ast();
+  FLabel* body;
+
+ protected:
+  AstNode* ast_;
+};
+
+class FLiteral : public FInstruction {
+ public:
+  FLiteral(AstNode::Type type, ScopeSlot* slot) : FInstruction(kLiteral),
+                                                  type_(type),
+                                                  slot_(slot) {
+  }
+
+  FULLGEN_DEFAULT_METHODS(Literal)
+
+ protected:
+  AstNode::Type type_;
+  ScopeSlot* slot_;
+};
+
+class FBinOp : public FInstruction {
+ public:
+  FBinOp(BinOp::BinOpType sub_type) : FInstruction(kBinOp),
+                                      sub_type_(sub_type) {
+  }
+
+  FULLGEN_DEFAULT_METHODS(BinOp)
+
+ protected:
+  BinOp::BinOpType sub_type_;
+};
+
+class FNot : public FInstruction {
+ public:
+  FNot() : FInstruction(kNot) {
+  }
+
+  FULLGEN_DEFAULT_METHODS(Not)
+};
+
+class FStore : public FInstruction {
+ public:
+  FStore() : FInstruction(kStore) {
+  }
+
+  FULLGEN_DEFAULT_METHODS(Store)
+};
+
+class FStoreContext : public FInstruction {
+ public:
+  FStoreContext() : FInstruction(kStoreContext) {
+  }
+
+  FULLGEN_DEFAULT_METHODS(StoreContext)
+};
+
+class FStoreProperty : public FInstruction {
+ public:
+  FStoreProperty() : FInstruction(kStoreProperty) {
+  }
+
+  FULLGEN_DEFAULT_METHODS(StoreProperty)
+};
+
+class FLoad : public FInstruction {
+ public:
+  FLoad() : FInstruction(kLoad) {
+  }
+
+  FULLGEN_DEFAULT_METHODS(Load)
+};
+
+class FLoadContext : public FInstruction {
+ public:
+  FLoadContext() : FInstruction(kLoadContext) {
+  }
+
+  FULLGEN_DEFAULT_METHODS(LoadContext)
+};
+
+class FLoadProperty : public FInstruction {
+ public:
+  FLoadProperty() : FInstruction(kLoadProperty) {
+  }
+
+  FULLGEN_DEFAULT_METHODS(LoadProperty)
+};
+
+class FDeleteProperty : public FInstruction {
+ public:
+  FDeleteProperty() : FInstruction(kDeleteProperty) {
+  }
+
+  FULLGEN_DEFAULT_METHODS(DeleteProperty)
+};
+
+class FAllocateObject : public FInstruction {
+ public:
+  FAllocateObject(int size) : FInstruction(kAllocateObject), size_(size) {
+  }
+
+  FULLGEN_DEFAULT_METHODS(AllocateObject)
+
+ protected:
+  int size_;
+};
+
+class FAllocateArray : public FInstruction {
+ public:
+  FAllocateArray(int size) : FInstruction(kAllocateArray), size_(size) {
+  }
+
+  FULLGEN_DEFAULT_METHODS(AllocateArray)
+
+ protected:
+  int size_;
+};
+
+class FChi : public FInstruction {
+ public:
+  FChi() : FInstruction(kChi) {
+  }
+
+  FULLGEN_DEFAULT_METHODS(Chi)
+};
+
+class FClone : public FInstruction {
+ public:
+  FClone() : FInstruction(kClone) {
+  }
+
+  FULLGEN_DEFAULT_METHODS(Clone)
+};
+
+class FSizeof : public FInstruction {
+ public:
+  FSizeof() : FInstruction(kSizeof) {
+  }
+
+  FULLGEN_DEFAULT_METHODS(Sizeof)
+};
+
+class FTypeof : public FInstruction {
+ public:
+  FTypeof() : FInstruction(kTypeof) {
+  }
+
+  FULLGEN_DEFAULT_METHODS(Typeof)
+};
+
+class FKeysof : public FInstruction {
+ public:
+  FKeysof() : FInstruction(kKeysof) {
+  }
+
+  FULLGEN_DEFAULT_METHODS(Keysof)
+};
+
+class FBreak : public FInstruction {
+ public:
+  FBreak(FLabel* label) : FInstruction(kBreak), label_(label) {
+  }
+
+  void Print(PrintBuffer* p);
+  FULLGEN_DEFAULT_METHODS(Break)
+
+ protected:
+  FLabel* label_;
+};
+
+class FContinue : public FInstruction {
+ public:
+  FContinue(FLabel* label) : FInstruction(kContinue), label_(label) {
+  }
+
+  void Print(PrintBuffer* p);
+  FULLGEN_DEFAULT_METHODS(Continue)
+
+ protected:
+  FLabel* label_;
+};
+
+class FIf : public FInstruction {
+ public:
+  FIf(FLabel* t, FLabel* f) : FInstruction(kIf), t_(t), f_(f) {
+  }
+
+  void Print(PrintBuffer* p);
+  FULLGEN_DEFAULT_METHODS(If)
+
+ protected:
+  FLabel* t_;
+  FLabel* f_;
+};
+
+class FGoto : public FInstruction {
+ public:
+  FGoto(FLabel* label) : FInstruction(kGoto), label_(label) {
+  }
+
+  void Print(PrintBuffer* p);
+  FULLGEN_DEFAULT_METHODS(Goto)
+
+ protected:
+  FLabel* label_;
+};
+
+class FStoreArg : public FInstruction {
+ public:
+  FStoreArg() : FInstruction(kStoreArg) {
+  }
+
+  FULLGEN_DEFAULT_METHODS(StoreArg)
+};
+
+class FStoreVarArg : public FInstruction {
+ public:
+  FStoreVarArg() : FInstruction(kStoreVarArg) {
+  }
+
+  FULLGEN_DEFAULT_METHODS(StoreVarArg)
+};
+
+class FLoadArg : public FInstruction {
+ public:
+  FLoadArg() : FInstruction(kLoadArg) {
+  }
+
+  FULLGEN_DEFAULT_METHODS(LoadArg)
+};
+
+class FLoadVarArg : public FInstruction {
+ public:
+  FLoadVarArg() : FInstruction(kLoadVarArg) {
+  }
+
+  FULLGEN_DEFAULT_METHODS(LoadVarArg)
+};
+
+class FCall : public FInstruction {
+ public:
+  FCall() : FInstruction(kCall) {
+  }
+
+  FULLGEN_DEFAULT_METHODS(Call)
 };
 
 #undef FULLGEN_DEFAULT_METHODS

@@ -9,6 +9,7 @@
     V(numbers)\
     V(parser)\
     V(scope)\
+    V(fullgen) \
     V(hir) \
     V(lir)
 

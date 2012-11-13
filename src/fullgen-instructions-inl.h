@@ -1,21 +1,32 @@
 #ifndef _SRC_FULLGEN_INSTRUCTION_INL_H_
 #define _SRC_FULLGEN_INSTRUCTION_INL_H_
 
+#include "fullgen.h"
+#include "fullgen-inl.h"
 #include "fullgen-instructions.h"
 #include <assert.h> // assert
 
 namespace candor {
 namespace internal {
 
-inline void FInstruction::SetResult(FOperand* op) {
+inline FInstruction* FInstruction::SetResult(FOperand* op) {
   assert(result == NULL);
   result = op;
+
+  return this;
 }
 
 
-inline void FInstruction::AddArg(FOperand* op) {
+inline FInstruction* FInstruction::AddArg(FOperand* op) {
   assert(input_count_ < 3);
-  inputs[input_count_++];
+  inputs[input_count_++] = op;
+
+  return this;
+}
+
+
+inline void FInstruction::ast(AstNode* ast) {
+  ast_ = ast;
 }
 
 #define FULLGEN_INSTRUCTION_TYPE_TO_STR(V) \
@@ -30,6 +41,10 @@ inline const char* FInstruction::TypeToStr(Type type) {
 }
 
 #undef FULLGEN_INSTRUCTION_TYPE_TO_STR
+
+inline AstNode* FFunction::ast() {
+  return ast_;
+}
 
 } // namespace internal
 } // namespace candor

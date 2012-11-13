@@ -78,6 +78,28 @@ using namespace internal;
       ast = NULL;\
     }
 
+#define FULLGEN_TEST(code, expected)\
+    {\
+      Zone z;\
+      char out[10024];\
+      Heap heap(2 * 1024 * 1024);\
+      Parser p(code, strlen(code));\
+      AstNode* ast = p.Execute();\
+      ASSERT(!p.has_error());\
+      Scope::Analyze(ast);\
+      ASSERT(ast != NULL);\
+      Fullgen gen(&heap);\
+      gen.Generate(ast);\
+      gen.Print(out, sizeof(out));\
+      if (strcmp(expected, out) != 0) {\
+        fprintf(stderr, "Fullgen test failed, got:\n%s\n expected:\n%s\n",\
+                out,\
+                expected);\
+        abort();\
+      }\
+      ast = NULL;\
+    }
+
 #define HIR_TEST(code, expected)\
     {\
       Zone z;\

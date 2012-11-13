@@ -22,6 +22,7 @@ test-runner: build
 test: test-runner can
 	@./test-runner parser
 	@./test-runner scope
+	@./test-runner fullgen
 #	@./test-runner hir
 #	@./test-runner lir
 	@./test-runner functional

@@ -1,6 +1,11 @@
 #include "visitor.h"
 #include "ast.h"
-#include "hir.h" // HIRInstruction
+#include "hir.h"
+#include "hir-instructions.h" // HIRInstruction
+#include "hir-instructions-inl.h" // HIRInstruction
+#include "fullgen.h"
+#include "fullgen-instructions.h" // FInstruction
+#include "fullgen-instructions-inl.h" // FInstruction
 #include "utils.h" // List
 #include "zone.h" // ZoneObject
 
@@ -27,6 +32,7 @@ namespace internal {
 // Instantiate Visitor
 template class Visitor<AstNode>;
 template class Visitor<HIRInstruction>;
+template class Visitor<FInstruction>;
 
 template <class T>
 T* Visitor<T>::Visit(AstNode* node) {

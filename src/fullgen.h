@@ -15,10 +15,15 @@ namespace internal {
 
 // Forward declaration
 class Heap;
-class CodeSpace;
 class SourceMap;
+class ScopeSlot;
+class Fullgen;
 class FInstruction;
+class FFunction;
 class FLabel;
+class FOperand;
+
+typedef ZoneList<FOperand*> FOperandList;
 
 class FOperand : public ZoneObject {
  public:
@@ -41,10 +46,41 @@ class FOperand : public ZoneObject {
   int depth_;
 };
 
+class FStackSlot : public FOperand {
+ public:
+  FStackSlot(int index) : FOperand(kStack, index, -1) {
+  }
+};
+
+class FContextSlot : public FOperand {
+ public:
+  FContextSlot(int index, int depth) : FOperand(kContext, index, depth) {
+  }
+};
+
+class FRegister : public FOperand {
+ public:
+  FRegister(int index) : FOperand(kRegister, index, -1) {
+  }
+};
+
+class FScopedSlot {
+ public:
+  FScopedSlot(Fullgen* f);
+  ~FScopedSlot();
+
+  inline FOperand* operand();
+  inline FOperand* operator&() { return operand(); }
+
+ protected:
+  Fullgen* f_;
+  FOperand* operand_;
+};
+
 // Generates non-optimized code by visiting each node in AST tree in-order
 class Fullgen : public Visitor<FInstruction> {
  public:
-  Fullgen(CodeSpace* space, SourceMap* map);
+  Fullgen(Heap* heap);
 
   void Generate(AstNode* ast);
 
@@ -56,6 +92,7 @@ class Fullgen : public Visitor<FInstruction> {
 
   FInstruction* VisitValue(AstNode* node);
 
+  FInstruction* VisitLiteral(AstNode* node);
   FInstruction* VisitNumber(AstNode* node);
   FInstruction* VisitNil(AstNode* node);
   FInstruction* VisitTrue(AstNode* node);
@@ -86,24 +123,39 @@ class Fullgen : public Visitor<FInstruction> {
   inline void Print(char* out, int32_t size);
   void Print(PrintBuffer* p);
 
+  inline FInstruction* Add(FInstruction* instr);
+  inline FOperand* CreateOperand(ScopeSlot* slot);
+
+  inline void EmptySlots();
+  inline FOperand* GetSlot();
+  inline void ReleaseSlot(FOperand* slot);
+  inline FInstruction* GetNumber(uint64_t i);
+
   inline int instr_id();
 
-  inline FLabel* loop_start();
-  inline void loop_start(FLabel* loop_start);
-  inline FLabel* loop_end();
-  inline void loop_end(FLabel* loop_end);
+  inline FFunction* current_function();
+  inline void set_current_function(FFunction* current_function);
 
   inline SourceMap* source_map();
 
  private:
-  CodeSpace* space_;
+  Heap* heap_;
   Root root_;
 
+  ZoneList<FFunction*> work_queue_;
+  ZoneList<FInstruction*> instructions_;
+
   int instr_id_;
+  FFunction* current_function_;
   FLabel* loop_start_;
   FLabel* loop_end_;
 
+  int stack_index_;
+  FOperandList free_slots_;
+
   SourceMap* source_map_;
+
+  friend class FScopedSlot;
 };
 
 } // namespace internal
