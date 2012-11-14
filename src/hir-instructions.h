@@ -100,8 +100,8 @@ class HIRInstruction : public ZoneObject {
   void RemoveUse(HIRInstruction* i);
 
   // GVN hashmap routines
+  static bool IsEqual(HIRInstruction* a, HIRInstruction* b);
   static uint32_t Hash(HIRInstruction* instr);
-  static int Compare(HIRInstruction* a, HIRInstruction* b);
 
   inline HIRInstruction* AddArg(Type type);
   inline HIRInstruction* AddArg(HIRInstruction* instr);

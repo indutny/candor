@@ -331,6 +331,10 @@ class StringKey : public Base {
     return ComputeHash(key->value(), key->length());
   }
 
+  static inline bool IsEqual(StringKey* left, StringKey* right) {
+    return Compare(left, right) == 0;
+  }
+
   static inline int Compare(StringKey* left, StringKey* right) {
     if (left->length() != right->length()) return - 1;
     return strncmp(left->value(), right->value(), left->length());
@@ -407,12 +411,12 @@ class GenericHashMap {
       next = new Item(key, value);
       map_[index] = next;
     } else {
-      while (Key::Compare(i->key_, key) != 0 && i->next() != NULL) {
+      while (!Key::IsEqual(i->key_, key) && i->next() != NULL) {
         i = i->next();
       }
 
       // Overwrite key
-      if (Key::Compare(i->key_, key) == 0) {
+      if (Key::IsEqual(i->key_, key)) {
         i->value_ = value;
       } else {
         next = new Item(key, value);
@@ -443,7 +447,7 @@ class GenericHashMap {
     Item* i = map_[index];
 
     while (i != NULL) {
-      if (Key::Compare(i->key_, key) == 0) {
+      if (Key::IsEqual(i->key_, key)) {
         return i->value();
       }
       i = i->next();
@@ -458,7 +462,7 @@ class GenericHashMap {
     Item* i = map_[index];
 
     while (i != NULL) {
-      if (Key::Compare(i->key_, key) == 0) {
+      if (Key::IsEqual(i->key_, key)) {
         // Remove item from linked lists
         if (i->prev_scalar() != NULL) {
           i->prev_scalar()->next_scalar_ = i->next_scalar();
@@ -542,10 +546,14 @@ class NumberKey {
     return ComputeHash(key->value());
   }
 
+  static inline bool IsEqual(NumberKey* left, NumberKey* right) {
+    return left == right;
+  }
+
   static inline int Compare(NumberKey* left, NumberKey* right) {
     intptr_t l = reinterpret_cast<intptr_t>(left);
     intptr_t r = reinterpret_cast<intptr_t>(right);
-    return l - r;
+    return l == r ? 0 : l > r ? 1 : - 1;
   }
 };
 

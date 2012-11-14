@@ -149,22 +149,22 @@ uint32_t HIRInstruction::Hash(HIRInstruction* instr) {
 }
 
 
-int HIRInstruction::Compare(HIRInstruction* a, HIRInstruction* b) {
-  if (a == b) return 0;
+bool HIRInstruction::IsEqual(HIRInstruction* a, HIRInstruction* b) {
+  if (a == b) return true;
 
   // Types should be equal
-  if (a->type() != b->type()) return -1;
+  if (a->type() != b->type()) return false;
 
   // Arguments should be equal too
-  if (a->args()->length() != b->args()->length()) return -1;
+  if (a->args()->length() != b->args()->length()) return false;
 
   HIRInstructionList::Item* ahead = a->args()->head();
   HIRInstructionList::Item* bhead = b->args()->head();
   for (; ahead != NULL; ahead = ahead->next(), bhead = bhead->next()) {
-    if (ahead->value() != bhead->value()) return -1;
+    if (ahead->value() != bhead->value()) return false;
   }
 
-  return a->IsGVNEqual(b) ? 0 : 1;
+  return a->IsGVNEqual(b);
 }
 
 
