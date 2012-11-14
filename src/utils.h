@@ -174,7 +174,7 @@ class GenericList {
   }
 
 
-  void Push(T item) {
+  inline void Push(T item) {
     Item* next = new Item(item);
     next->prev_ = tail_;
 
@@ -189,7 +189,7 @@ class GenericList {
   }
 
 
-  void Remove(Item* item) {
+  inline void Remove(Item* item) {
     if (tail_ == item) tail_ = item->prev_;
     if (head_ == item) head_ = item->next_;
     Policy::Delete(item->value());
@@ -201,7 +201,7 @@ class GenericList {
   }
 
 
-  void Unshift(T item) {
+  inline void Unshift(T item) {
     Item* next = new Item(item);
 
     if (head_ != NULL) {
@@ -215,7 +215,7 @@ class GenericList {
   }
 
 
-  void InsertBefore(Item* next, T value) {
+  inline void InsertBefore(Item* next, T value) {
     Item* item = new Item(value);
 
     // `value` is a new head of list
@@ -233,7 +233,7 @@ class GenericList {
 
   // Sorted insertion
   template <class Shape>
-  void InsertSorted(T value) {
+  inline void InsertSorted(T value) {
     if (head() == NULL) return Push(value);
 
     Item* current = tail();
@@ -251,7 +251,7 @@ class GenericList {
   }
 
 
-  T Pop() {
+  inline T Pop() {
     if (tail_ == NULL) return NULL;
 
     Item* tmp = tail_;
@@ -268,7 +268,7 @@ class GenericList {
   }
 
 
-  T Shift() {
+  inline T Shift() {
     if (head_ == NULL) return NULL;
 
     Item* tmp = head_;
@@ -287,7 +287,7 @@ class GenericList {
 
   // Quicksort
   template <class Shape>
-  void Sort() {
+  inline void Sort() {
     // XXX: Replace it with qsort eventually
     Item* a;
     Item* b;
@@ -327,17 +327,17 @@ class StringKey : public Base {
                                                   length_(length) {
   }
 
-  static uint32_t Hash(StringKey* key) {
+  static inline uint32_t Hash(StringKey* key) {
     return ComputeHash(key->value(), key->length());
   }
 
-  static int Compare(StringKey* left, StringKey* right) {
+  static inline int Compare(StringKey* left, StringKey* right) {
     if (left->length() != right->length()) return - 1;
     return strncmp(left->value(), right->value(), left->length());
   }
 
-  const char* value() { return value_; }
-  uint32_t length() { return length_; }
+  inline const char* value() { return value_; }
+  inline uint32_t length() { return length_; }
 
  private:
   const char* value_;
@@ -398,7 +398,7 @@ class GenericHashMap {
     }
   }
 
-  void Set(Key* key, Value* value) {
+  inline void Set(Key* key, Value* value) {
     uint32_t index = Key::Hash(key) & mask_;
     Item* i = map_[index];
     Item* next = NULL;
@@ -438,7 +438,7 @@ class GenericHashMap {
   }
 
 
-  Value* Get(Key* key) {
+  inline Value* Get(Key* key) {
     uint32_t index = Key::Hash(key) & mask_;
     Item* i = map_[index];
 
@@ -453,7 +453,7 @@ class GenericHashMap {
   }
 
 
-  void RemoveOne(Key* key) {
+  inline void RemoveOne(Key* key) {
     uint32_t index = Key::Hash(key) & mask_;
     Item* i = map_[index];
 
@@ -491,7 +491,7 @@ class GenericHashMap {
   }
 
 
-  void Enumerate(EnumerateCallback cb) {
+  inline void Enumerate(EnumerateCallback cb) {
     Item* i = head_;
 
     while (i != NULL) {
@@ -526,26 +526,26 @@ class ZoneMap : public GenericHashMap<Key, Value, ItemParent, NopPolicy> {
 
 class NumberKey {
  public:
-  static NumberKey* New(const intptr_t value) {
+  static inline NumberKey* New(const intptr_t value) {
     return reinterpret_cast<NumberKey*>(value);
   }
 
-  static NumberKey* New(void* value) {
+  static inline NumberKey* New(void* value) {
     return reinterpret_cast<NumberKey*>(value);
   }
 
-  intptr_t value() {
+  intptr_t inline value() {
     return reinterpret_cast<intptr_t>(this);
   }
 
-  static uint32_t Hash(NumberKey* key) {
+  static inline uint32_t Hash(NumberKey* key) {
     return ComputeHash(key->value());
   }
 
-  static int Compare(NumberKey* left, NumberKey* right) {
+  static inline int Compare(NumberKey* left, NumberKey* right) {
     intptr_t l = reinterpret_cast<intptr_t>(left);
     intptr_t r = reinterpret_cast<intptr_t>(right);
-    return l == r ? 0 : l > r ? 1 : -1;
+    return l - r;
   }
 };
 
@@ -613,7 +613,7 @@ class AVLTree {
     }
   }
 
-  void Insert(Key* key, Value* value) {
+  inline void Insert(Key* key, Value* value) {
     // Fast case - empty tree
     if (head() == NULL) {
       Item* item = new Item(key);
@@ -700,7 +700,7 @@ class AVLTree {
     }
   }
 
-  Item* Search(Key* key, bool insert) {
+  inline Item* Search(Key* key, bool insert) {
     Item* current = NULL;
     Item* next = head();
     Item* new_node = NULL;

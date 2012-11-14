@@ -12,7 +12,7 @@ namespace candor {
 namespace internal {
 
 // Forward declaration
-struct ScopeSlot;
+class ScopeSlot;
 class AstNode;
 class AstValue;
 
