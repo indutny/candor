@@ -90,6 +90,10 @@ class Masm : public Assembler {
   // Fill stack slots with nil
   void FillStackSlots();
 
+  // Varargs
+  void StoreVarArg();
+  void LoadVarArg();
+
   // Generate enter/exit frame sequences
   void EnterFramePrologue();
   void EnterFrameEpilogue();

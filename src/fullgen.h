@@ -39,6 +39,12 @@ class FOperand : public ZoneObject {
                                               depth_(depth) {
   }
 
+  inline bool is_stack();
+  inline bool is_context();
+  inline int index();
+  inline int depth();
+  inline bool operator==(FOperand* t);
+
   void Print(PrintBuffer* p);
   Operand* ToOperand();
 
@@ -82,6 +88,7 @@ class Fullgen : public Visitor<FInstruction> {
   void Generate(Masm* masm);
 
   FInstruction* Visit(AstNode* node);
+  void VisitChildren(AstNode* node);
 
   void LoadArguments(FunctionLiteral* fn);
   FInstruction* VisitFunction(AstNode* stmt);
@@ -134,6 +141,7 @@ class Fullgen : public Visitor<FInstruction> {
   inline FFunction* current_function();
   inline void set_current_function(FFunction* current_function);
 
+  inline Root* root();
   inline SourceMap* source_map();
 
  private:

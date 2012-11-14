@@ -23,7 +23,7 @@ Fullgen::Fullgen(Heap* heap, const char* filename)
 
 
 void Fullgen::Build(AstNode* ast) {
-  FFunction* fn = new FFunction(ast);
+  FFunction* fn = new FFunction(ast, 0);
   fn->Init(this);
 
   work_queue_.Push(fn);
@@ -55,7 +55,7 @@ void Fullgen::Generate(Masm* masm) {
     }
 
     // Amend source map
-    if (instr->ast() != NULL) {
+    if (instr->ast() != NULL && instr->ast()->offset() >= 0) {
       source_map()->Push(masm->offset(), instr->ast()->offset());
     }
 
@@ -71,6 +71,20 @@ FInstruction* Fullgen::Visit(AstNode* node) {
   FInstruction* res = Visitor<FInstruction>::Visit(node);
   if (res != NULL) res->ast(node);
   return res;
+}
+
+
+void Fullgen::VisitChildren(AstNode* node) {
+  AstList::Item* child = node->children()->head();
+  for (; child != NULL; child = child->next()) {
+    FInstruction* res = Visit(child->value());
+
+    // Always set result
+    if (res != NULL && res->result == NULL) {
+      FScopedSlot slot(this);
+      res->SetResult(&slot);
+    }
+  }
 }
 
 
@@ -196,11 +210,11 @@ FInstruction* Fullgen::VisitFunction(AstNode* stmt) {
 
     return NULL;
   } else {
-    FFunction* fn = new FFunction(stmt);
-    Add(fn);
-    work_queue_.Push(fn);
+    FFunction* f = new FFunction(stmt, fn->args()->length());
+    Add(f);
+    work_queue_.Push(f);
 
-    return fn;
+    return f;
   }
 }
 
@@ -302,7 +316,8 @@ FInstruction* Fullgen::VisitDelete(AstNode* node) {
   FScopedSlot recv(this);
   Visit(node->lhs()->rhs())->SetResult(&prop);
   Visit(node->lhs()->lhs())->SetResult(&recv);
-  return Add(new FDeleteProperty())->AddArg(&recv)->AddArg(&prop);
+  Add(new FDeleteProperty())->AddArg(&recv)->AddArg(&prop);
+  return Add(new FNil());
 }
 
 
@@ -367,12 +382,16 @@ FInstruction* Fullgen::VisitIf(AstNode* node) {
   Add(new FIf(t, f))->AddArg(&cond);
 
   Add(t);
-  Visit(node->rhs());
+  FInstruction* rhs = Visit(node->rhs());
+  if (rhs != NULL) rhs->SetResult(&cond);
 
   Add(new FGoto(join));
   Add(f);
   AstList::Item* else_branch = node->children()->head()->next()->next();
-  if (else_branch != NULL) Visit(else_branch->value());
+  if (else_branch != NULL) {
+    FInstruction* e =Visit(else_branch->value());
+    if (e != NULL) e->SetResult(&cond);
+  }
 
   Add(join);
 
@@ -382,7 +401,6 @@ FInstruction* Fullgen::VisitIf(AstNode* node) {
 
 FInstruction* Fullgen::VisitWhile(AstNode* node) {
   FScopedSlot cond(this);
-  Visit(node->lhs())->SetResult(&cond);
 
   FLabel* prev_start = loop_start_;
   FLabel* prev_end = loop_end_;
@@ -392,10 +410,12 @@ FInstruction* Fullgen::VisitWhile(AstNode* node) {
   loop_end_ = new FLabel();
 
   Add(loop_start_);
+  Visit(node->lhs())->SetResult(&cond);
   Add(new FIf(body, loop_end_))->AddArg(&cond);
 
   Add(body);
-  Visit(node->rhs());
+  FInstruction* rhs = Visit(node->rhs());
+  if (rhs != NULL) rhs->SetResult(&cond);
 
   // Loop
   Add(new FGoto(loop_start_));
@@ -642,10 +662,36 @@ FInstruction* Fullgen::VisitBinOp(AstNode* node) {
   FScopedSlot lhs(this);
   Visit(node->lhs())->SetResult(&lhs);
 
-  FScopedSlot rhs(this);
-  Visit(node->rhs())->SetResult(&rhs);
+  if (!BinOp::is_bool_logic(op->subtype())) {
+    FScopedSlot rhs(this);
+    Visit(node->rhs())->SetResult(&rhs);
 
-  return Add(new FBinOp(op->subtype()))->AddArg(&lhs)->AddArg(&rhs);
+    return Add(new FBinOp(op->subtype()))->AddArg(&lhs)->AddArg(&rhs);
+  } else {
+    FScopedSlot result(this);
+    FLabel* t = new FLabel();
+    FLabel* f = new FLabel();
+    FLabel* join = new FLabel();
+    Add(new FIf(t, f))->AddArg(&lhs);
+
+    Add(t);
+    if (op->subtype() == BinOp::kLAnd) {
+      Visit(op->rhs())->SetResult(&result);
+    } else {
+      Add(new FChi())->AddArg(&lhs)->SetResult(&result);
+    }
+
+    Add(new FGoto(join));
+    Add(f);
+    if (op->subtype() == BinOp::kLAnd) {
+      Add(new FChi())->AddArg(&lhs)->SetResult(&result);
+    } else {
+      Visit(op->rhs())->SetResult(&result);
+    }
+    Add(join);
+
+    return Add(new FChi())->AddArg(&result);
+  }
 }
 
 

@@ -167,7 +167,14 @@ char* CodeSpace::Compile(const char* filename,
     }
   } else {
     Fullgen f(heap(), chunk->filename());
+
+    // Create instruction list
     f.Build(ast);
+
+    // Store root
+    *root = f.root()->Allocate()->addr();
+
+    // Generate instructions
     f.Generate(&masm);
   }
 

@@ -27,6 +27,7 @@ Root::Root(Heap* heap) : heap_(heap) {
   values()->Push(heap->CreateString("cdata", 5));
 }
 
+
 ScopeSlot* Root::GetSlot(char* value) {
   ScopeSlot* slot = map_.Get(NumberKey::New(value));
 

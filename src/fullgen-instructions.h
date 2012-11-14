@@ -148,10 +148,11 @@ class FReturn : public FInstruction {
 
 class FFunction : public FInstruction {
  public:
-  FFunction(AstNode* ast) : FInstruction(kFunction),
-                            body(NULL),
-                            entry(NULL),
-                            root_ast_(ast) {
+  FFunction(AstNode* ast, int argc) : FInstruction(kFunction),
+                                      body(NULL),
+                                      entry(NULL),
+                                      argc_(argc),
+                                      root_ast_(ast) {
   }
 
   FULLGEN_DEFAULT_METHODS(Function)
@@ -161,6 +162,7 @@ class FFunction : public FInstruction {
   FEntry* entry;
 
  protected:
+  int argc_;
   AstNode* root_ast_;
 };
 
@@ -256,7 +258,8 @@ class FDeleteProperty : public FInstruction {
 
 class FAllocateObject : public FInstruction {
  public:
-  FAllocateObject(int size) : FInstruction(kAllocateObject), size_(size) {
+  FAllocateObject(int size) : FInstruction(kAllocateObject),
+                              size_(RoundUp(PowerOfTwo(size + 1), 64)) {
   }
 
   FULLGEN_DEFAULT_METHODS(AllocateObject)
@@ -267,7 +270,8 @@ class FAllocateObject : public FInstruction {
 
 class FAllocateArray : public FInstruction {
  public:
-  FAllocateArray(int size) : FInstruction(kAllocateArray), size_(size) {
+  FAllocateArray(int size) : FInstruction(kAllocateArray),
+                             size_(RoundUp(PowerOfTwo(size + 1), 64)) {
   }
 
   FULLGEN_DEFAULT_METHODS(AllocateArray)

@@ -112,6 +112,11 @@ inline void Fullgen::set_current_function(FFunction* current_function) {
 }
 
 
+inline Root* Fullgen::root() {
+  return &root_;
+}
+
+
 inline SourceMap* Fullgen::source_map() {
   return source_map_;
 }
@@ -120,6 +125,31 @@ inline SourceMap* Fullgen::source_map() {
 inline void Fullgen::Print(char* out, int32_t size) {
   PrintBuffer p(out, size);
   Print(&p);
+}
+
+
+inline bool FOperand::is_stack() {
+  return type_ == kStack;
+}
+
+
+inline bool FOperand::is_context() {
+  return type_ == kContext;
+}
+
+
+inline int FOperand::index() {
+  return index_;
+}
+
+
+inline int FOperand::depth() {
+  return depth_;
+}
+
+
+inline bool FOperand::operator==(FOperand* t) {
+  return type_ == t->type_ && index_ == t->index_ && depth_ == t->depth_;
 }
 
 
