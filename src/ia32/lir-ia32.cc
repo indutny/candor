@@ -425,7 +425,7 @@ void LLoadArg::Generate(Masm* masm) {
   __ jmp(kGe, &oob);
 
   __ addlb(scratch, Immediate(HNumber::Tag(2)));
-  __ shl(scratch, 1);
+  __ shl(scratch, Immediate(1));
   __ addl(scratch, ebp);
   __ Move(result, slot);
 
@@ -440,95 +440,7 @@ void LLoadArg::Generate(Masm* masm) {
 
 
 void LLoadVarArg::Generate(Masm* masm) {
-  // offset and rest are unboxed
-  Register offset = eax;
-  Register rest = ebx;
-  Register arr = ecx;
-  Operand argc(ebp, -HValue::kPointerSize * 2);
-  Operand qmap(arr, HObject::kMapOffset);
-  Operand slot(scratch, 0);
-  Operand stack_slot(offset, 0);
-
-  Label loop, preloop, end;
-
-  // Calculate length of vararg array
-  __ mov(scratch, offset);
-  __ addl(scratch, rest);
-
-  // If offset + rest <= argc - return immediately
-  __ cmpl(scratch, argc);
-  __ jmp(kGe, &end);
-
-  // edx = argc - offset - rest
-  __ mov(edx, argc);
-  __ subl(edx, scratch);
-
-  // Array index
-  __ mov(ebx, Immediate(HNumber::Tag(0)));
-
-  Masm::Spill arr_s(masm, arr), edx_s(masm);
-  Masm::Spill offset_s(masm, offset), ebx_s(masm);
-
-  __ bind(&loop);
-
-  // while (edx > 0)
-  __ cmpl(edx, Immediate(HNumber::Tag(0)));
-  __ jmp(kEq, &end);
-
-  edx_s.SpillReg(edx);
-  ebx_s.SpillReg(ebx);
-
-  __ mov(eax, arr);
-
-  // eax <- object
-  // ebx <- property
-  __ mov(ecx, Immediate(1));
-  __ Call(masm->stubs()->GetLookupPropertyStub());
-
-  arr_s.Unspill();
-  ebx_s.Unspill();
-
-  // Make eax look like unboxed number to GC
-  __ dec(eax);
-  __ CheckGC();
-  __ inc(eax);
-
-  __ IsNil(eax, NULL, &preloop);
-
-  __ mov(arr, qmap);
-  __ addl(eax, arr);
-  __ mov(scratch, eax);
-
-  // Get stack offset
-  offset_s.Unspill();
-  __ addlb(offset, Immediate(HNumber::Tag(2)));
-  __ addl(offset, ebx);
-  __ shl(offset, 1);
-  __ addl(offset, ebp);
-  __ mov(offset, stack_slot);
-
-  // Put argument in array
-  __ mov(slot, offset);
-
-  arr_s.Unspill();
-
-  __ bind(&preloop);
-
-  // Increment array index
-  __ addlb(ebx, Immediate(HNumber::Tag(1)));
-
-  // edx --
-  edx_s.Unspill();
-  __ sublb(edx, Immediate(HNumber::Tag(1)));
-  __ jmp(&loop);
-
-  __ bind(&end);
-
-  // Cleanup?
-  __ xorl(eax, eax);
-  __ xorl(ebx, ebx);
-  __ xorl(edx, edx);
-  // ecx <- holds result
+  __ LoadVarArg();
 }
 
 
@@ -538,97 +450,7 @@ void LStoreArg::Generate(Masm* masm) {
 
 
 void LStoreVarArg::Generate(Masm* masm) {
-  Register varg = eax;
-  Register index = ebx;
-  Register map = ecx;
-
-  // eax <- varg
-  Label loop, not_array, odd_end, r1_nil, r2_nil;
-  Masm::Spill index_s(masm), map_s(masm), array_s(masm), r1(masm);
-  Operand slot(eax, 0);
-
-  __ IsUnboxed(varg, NULL, &not_array);
-  __ IsNil(varg, NULL, &not_array);
-  __ IsHeapObject(Heap::kTagArray, varg, &not_array, NULL);
-
-  Operand qmap(varg, HObject::kMapOffset);
-  __ mov(map, qmap);
-  map_s.SpillReg(map);
-
-  // index = sizeof(array)
-  Operand qlength(varg, HArray::kLengthOffset);
-  __ mov(index, qlength);
-  __ TagNumber(index);
-
-  // while ...
-  __ bind(&loop);
-
-  array_s.SpillReg(varg);
-
-  // while ... (index != 0) {
-  __ cmpl(index, Immediate(HNumber::Tag(0)));
-  __ jmp(kEq, &not_array);
-
-  // index--;
-  __ sublb(index, Immediate(HNumber::Tag(1)));
-
-  index_s.SpillReg(index);
-
-  // odd case: array[index]
-  __ mov(ebx, index);
-  __ mov(ecx, Immediate(0));
-  __ Call(masm->stubs()->GetLookupPropertyStub());
-
-  __ IsNil(eax, NULL, &r1_nil);
-  map_s.Unspill();
-  __ addl(eax, map);
-  __ mov(eax, slot);
-
-  __ bind(&r1_nil);
-  r1.SpillReg(eax);
-
-  index_s.Unspill();
-
-  // if (index == 0) goto odd_end;
-  __ cmpl(index, Immediate(HNumber::Tag(0)));
-  __ jmp(kEq, &odd_end);
-
-  // index--;
-  __ sublb(index, Immediate(HNumber::Tag(1)));
-
-  array_s.Unspill();
-  index_s.SpillReg(index);
-
-  // even case: array[index]
-  __ mov(ebx, index);
-  __ mov(ecx, Immediate(0));
-  __ Call(masm->stubs()->GetLookupPropertyStub());
-
-  __ IsNil(eax, NULL, &r2_nil);
-  map_s.Unspill();
-  __ addl(eax, map);
-  __ mov(eax, slot);
-
-  __ bind(&r2_nil);
-
-  // Push two item at the same time (to preserve alignment)
-  r1.Unspill(index);
-  __ push(index);
-  __ push(eax);
-
-  index_s.Unspill();
-  array_s.Unspill();
-
-  __ jmp(&loop);
-
-  __ bind(&odd_end);
-
-  r1.Unspill(eax);
-  __ push(eax);
-
-  __ bind(&not_array);
-
-  __ xorl(map, map);
+  __ StoreVarArg();
 }
 
 

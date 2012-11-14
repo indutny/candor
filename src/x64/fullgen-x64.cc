@@ -407,7 +407,7 @@ void FLoadArg::Generate(Masm* masm) {
   __ jmp(kGe, &oob);
 
   __ addqb(scratch, Immediate(HNumber::Tag(2)));
-  __ shl(scratch, 2);
+  __ shl(scratch, Immediate(2));
   __ addq(scratch, rbp);
   __ mov(rax, slot);
   __ mov(*result->ToOperand(), rax);
