@@ -11,7 +11,8 @@
     V(scope)\
     V(fullgen) \
     V(hir) \
-    V(lir)
+    V(lir) \
+    V(splaytree)
 
 #define TEST_DECLARE(name)\
     int __test_runner_##name();

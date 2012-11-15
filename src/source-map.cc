@@ -35,7 +35,7 @@ void SourceMap::Commit(const char* filename,
 SourceInfo* SourceMap::Get(char* addr) {
   intptr_t addr_o = reinterpret_cast<intptr_t>(addr);
 
-  return SourceMapBase::Get(NumberKey::New(addr_o));
+  return SourceMapBase::Find(NumberKey::New(addr_o));
 }
 
 } // namespace internal

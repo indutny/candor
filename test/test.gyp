@@ -39,6 +39,7 @@
       'test-fullgen.cc',
       'test-hir.cc',
       'test-lir.cc',
+      'test-splaytree.cc',
     ]
   }]
 }

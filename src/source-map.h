@@ -2,6 +2,7 @@
 #define _SRC_SOURCE_MAP_H_
 
 #include "utils.h" // HashMap
+#include "splay-tree.h" // HashMap
 
 namespace candor {
 namespace internal {
@@ -9,7 +10,7 @@ namespace internal {
 // Forward declaration
 class SourceInfo;
 
-typedef AVLTree<NumberKey, SourceInfo, EmptyClass> SourceMapBase;
+typedef SplayTree<NumberKey, SourceInfo, EmptyClass> SourceMapBase;
 
 class SourceMap : SourceMapBase {
  public:
@@ -17,7 +18,6 @@ class SourceMap : SourceMapBase {
 
   SourceMap() {
     // SourceInfo should be 'delete'ed on destruction
-    allocated = true;
   }
 
   void Push(const uint32_t jit_offset,  const uint32_t offset);

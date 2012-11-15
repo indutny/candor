@@ -20,6 +20,7 @@ test-runner: build
 	ln -sf out/$(BUILDTYPE)/test test-runner
 
 test: test-runner can
+	@./test-runner splaytree
 	@./test-runner parser
 	@./test-runner scope
 	@./test-runner fullgen
