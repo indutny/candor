@@ -665,11 +665,21 @@ class BitField : public Base {
     bool change = false;
     to->Grow(size_);
     assert(to->size_ >= size_);
-    for (int i = 0; i < size_; i++) {
-      if ((to->space_[i] & space_[i]) != space_[i]) change = true;
+    int i = 0;
 
+    // Find first non-matching pair
+    for (; i < size_; i++) {
+      if ((to->space_[i] & space_[i]) != space_[i]) {
+        change = true;
+        break;
+      }
+    }
+
+    // Copy starting from first non-matching pair
+    for (; i < size_; i++) {
       to->space_[i] |= space_[i];
     }
+
     return change;
   }
 
