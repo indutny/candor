@@ -289,7 +289,7 @@ inline void HIRBlock::root(HIRBlock* root) {
 }
 
 
-inline BitMap<EmptyClass>* HIRBlock::reachable_from() {
+inline BitField<EmptyClass>* HIRBlock::reachable_from() {
   return &reachable_from_;
 }
 

@@ -602,14 +602,14 @@ class FreeList {
 };
 
 template <class Base>
-class BitMap : public Base {
+class BitField : public Base {
  public:
-  BitMap(int size) : size_(size / 32) {
+  BitField(int size) : size_(size / 32) {
     space_ = new uint32_t[size_];
     memset(space_, 0, sizeof(*space_) * size_);
   }
 
-  ~BitMap() {
+  ~BitField() {
     delete[] space_;
     space_ = NULL;
   }
@@ -661,7 +661,7 @@ class BitMap : public Base {
     return (space_[index] & mask) != 0;
   }
 
-  inline bool Copy(BitMap<Base>* to) {
+  inline bool Copy(BitField<Base>* to) {
     bool change = false;
     to->Grow(size_);
     assert(to->size_ >= size_);

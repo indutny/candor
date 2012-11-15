@@ -147,7 +147,7 @@ char* CodeSpace::Compile(const char* filename,
 
   Masm masm(this);
 
-  if (false) {
+  if (true) {
     // Generate CFG with SSA
     HIRGen hir(heap(), chunk->filename(), ast);
 

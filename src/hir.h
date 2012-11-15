@@ -77,7 +77,7 @@ class HIRBlock : public ZoneObject {
   inline bool IsLoop();
   inline HIRPhi* CreatePhi(ScopeSlot* slot);
 
-  inline BitMap<EmptyClass>* reachable_from();
+  inline BitField<EmptyClass>* reachable_from();
   inline HIREnvironment* env();
   inline void env(HIREnvironment* env);
   inline HIRInstructionList* instructions();
@@ -111,7 +111,7 @@ class HIRBlock : public ZoneObject {
   inline HIRBlock* Evaluate();
 
   HIRGen* g_;
-  BitMap<EmptyClass> reachable_from_;
+  BitField<EmptyClass> reachable_from_;
 
   bool loop_;
   bool ended_;
