@@ -63,8 +63,8 @@ class SplayTree {
     }
 
     Item* current;
-    Item* last_positive;
     Item* next = root_;
+    Item* last_positive = root_;
     int cmp;
     do {
       current = next;
