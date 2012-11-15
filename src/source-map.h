@@ -10,7 +10,8 @@ namespace internal {
 // Forward declaration
 class SourceInfo;
 
-typedef SplayTree<NumberKey, SourceInfo, EmptyClass> SourceMapBase;
+typedef SplayTree<NumberKey, SourceInfo, DeletePolicy<SourceInfo*>, EmptyClass>
+    SourceMapBase;
 
 class SourceMap : SourceMapBase {
  public:

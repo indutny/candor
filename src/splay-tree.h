@@ -7,7 +7,7 @@
 namespace candor {
 namespace internal {
 
-template <class Key, class Value, class ItemBase>
+template <class Key, class Value, class Policy, class ItemBase>
 class SplayTree {
  public:
   class Item : public ItemBase {
@@ -27,7 +27,29 @@ class SplayTree {
   }
 
   ~SplayTree() {
-    // XXX: Destroy tree
+    Item* next = root_;
+    while (next != NULL) {
+      Item* current = next;
+
+      // Visit left subtree first
+      if (current->left != NULL) {
+        next = current->left;
+      } else if (current->right != NULL) {
+        next = current->right;
+      } else {
+        next = current->parent;
+      }
+
+      if (current->left != NULL) {
+        current->left->parent = current->right == NULL ? current->parent :
+                                                         current->right;
+      }
+      if (current->right != NULL) current->right->parent = current->parent;
+      current->parent = NULL;
+
+      Policy::Delete(current->value);
+      delete current;
+    }
   }
 
   inline void Insert(Key* key, Value* value) {

@@ -7,7 +7,7 @@ static const int kKeyCount = 100000;
 
 TEST_START(splaytree)
   {
-    SplayTree<NumberKey, NumberKey, EmptyClass> tree;
+    SplayTree<NumberKey, NumberKey, NopPolicy, EmptyClass> tree;
 
     // Sequential insertion
     for (int i = 0; i < kKeyCount; i++) {
@@ -36,7 +36,7 @@ TEST_START(splaytree)
   }
 
   {
-    SplayTree<NumberKey, NumberKey, EmptyClass> tree;
+    SplayTree<NumberKey, NumberKey, NopPolicy, EmptyClass> tree;
 
     // Insert even keys
     for (int i = 0; i < kKeyCount; i += 2) {
