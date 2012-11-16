@@ -130,6 +130,13 @@ void Masm::Spill::Unspill() {
 }
 
 
+Operand* Masm::Spill::GetOperand() {
+  Operand* r = new Operand(rax, 0);
+  masm()->SpillSlot(index(), *r);
+  return r;
+}
+
+
 void Masm::AllocateSpills() {
   subq(rsp, Immediate(0));
   spill_reloc_ = new RelocationInfo(RelocationInfo::kValue,
@@ -720,99 +727,6 @@ void Masm::StoreVarArg() {
   bind(&not_array);
 
   xorq(map, map);
-}
-
-
-void Masm::LoadVarArg() {
-  // offset and rest are unboxed
-  Register offset = rax;
-  Register rest = rbx;
-  Register arr = rcx;
-  Operand argc(rbp, -HValue::kPointerSize * 2);
-  Operand qmap(arr, HObject::kMapOffset);
-  Operand slot(scratch, 0);
-  Operand stack_slot(offset, 0);
-
-  Label loop, preloop, end;
-
-  // Calculate length of vararg array
-  mov(scratch, offset);
-  addq(scratch, rest);
-
-  // If offset + rest <= argc - return immediately
-  cmpq(scratch, argc);
-  jmp(kGe, &end);
-
-  // rdx = argc - offset - rest
-  mov(rdx, argc);
-  subq(rdx, scratch);
-
-  // Array index
-  mov(rbx, Immediate(HNumber::Tag(0)));
-
-  Spill arr_s(this, arr), rdx_s(this);
-  Spill offset_s(this, offset), rbx_s(this);
-
-  bind(&loop);
-
-  // while (rdx > 0)
-  cmpq(rdx, Immediate(HNumber::Tag(0)));
-  jmp(kEq, &end);
-
-  rdx_s.SpillReg(rdx);
-  rbx_s.SpillReg(rbx);
-
-  mov(rax, arr);
-
-  // rax <- object
-  // rbx <- property
-  mov(rcx, Immediate(1));
-  Call(stubs()->GetLookupPropertyStub());
-
-  arr_s.Unspill();
-  rbx_s.Unspill();
-
-  // Make rax look like unboxed number to GC
-  dec(rax);
-  CheckGC();
-  inc(rax);
-
-  IsNil(rax, NULL, &preloop);
-
-  mov(arr, qmap);
-  addq(rax, arr);
-  mov(scratch, rax);
-
-  // Get stack offset
-  offset_s.Unspill();
-  addqb(offset, Immediate(HNumber::Tag(2)));
-  addq(offset, rbx);
-  shl(offset, 2);
-  addq(offset, rbp);
-  mov(offset, stack_slot);
-
-  // Put argument in array
-  mov(slot, offset);
-
-  arr_s.Unspill();
-
-  bind(&preloop);
-
-  // Increment array index
-  addqb(rbx, Immediate(HNumber::Tag(1)));
-
-  // rdx --
-  rdx_s.Unspill();
-  subqb(rdx, Immediate(HNumber::Tag(1)));
-  jmp(&loop);
-
-  bind(&end);
-
-  // Cleanup?
-  xorq(rax, rax);
-  xorq(rbx, rbx);
-  xorq(rdx, rdx);
-  // rcx <- holds result
 }
 
 

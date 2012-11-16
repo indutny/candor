@@ -42,6 +42,7 @@ class Masm : public Assembler {
 
     void Unspill(Register dst);
     void Unspill();
+    Operand* GetOperand();
 
     inline bool is_empty() { return src_.is(reg_nil); }
 
@@ -92,7 +93,6 @@ class Masm : public Assembler {
 
   // Varargs
   void StoreVarArg();
-  void LoadVarArg();
 
   // Generate enter/exit frame sequences
   void EnterFramePrologue();

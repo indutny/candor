@@ -1195,5 +1195,103 @@ void BinOpStub::Generate() {
 
 #undef BINARY_SUB_TYPES
 
+void LoadVarArgStub::Generate() {
+  __ mov(edx, ebp);
+  GeneratePrologue();
+
+  // offset and rest are unboxed
+  Register offset = eax;
+  Register rest = ebx;
+  Register arr = ecx;
+  Masm::Spill ebp_s(masm(), edx);
+  Operand argc(edx, -HValue::kPointerSize * 2);
+  Operand qmap(arr, HObject::kMapOffset);
+  Operand slot(scratch, 0);
+  Operand stack_slot(offset, 0);
+
+  Label loop, preloop, end;
+
+  // Calculate length of vararg array
+  __ mov(scratch, offset);
+  __ addl(scratch, rest);
+
+  // If offset + rest <= argc - return immediately
+  __ cmpl(scratch, argc);
+  __ jmp(kGe, &end);
+
+  // edx = argc - offset - rest
+  __ mov(edx, argc);
+  __ subl(edx, scratch);
+
+  // Array index
+  __ mov(ebx, Immediate(HNumber::Tag(0)));
+
+  Masm::Spill arr_s(masm(), arr), edx_s(masm());
+  Masm::Spill offset_s(masm(), offset), ebx_s(masm());
+
+  __ bind(&loop);
+
+  // while (edx > 0)
+  __ cmpl(edx, Immediate(HNumber::Tag(0)));
+  __ jmp(kEq, &end);
+
+  edx_s.SpillReg(edx);
+  ebx_s.SpillReg(ebx);
+
+  __ mov(eax, arr);
+
+  // eax <- object
+  // ebx <- property
+  __ mov(ecx, Immediate(1));
+  __ Call(masm()->stubs()->GetLookupPropertyStub());
+
+  arr_s.Unspill();
+  ebx_s.Unspill();
+
+  // Make eax look like unboxed number to GC
+  __ dec(eax);
+  __ CheckGC();
+  __ inc(eax);
+
+  __ IsNil(eax, NULL, &preloop);
+
+  __ mov(arr, qmap);
+  __ addl(eax, arr);
+  __ mov(scratch, eax);
+
+  // Get stack offset
+  offset_s.Unspill();
+  __ addlb(offset, Immediate(HNumber::Tag(2)));
+  __ addl(offset, ebx);
+  __ shl(offset, 1);
+  __ addl(offset, *ebp_s.GetOperand());
+  __ mov(offset, stack_slot);
+
+  // Put argument in array
+  __ mov(slot, offset);
+
+  arr_s.Unspill();
+
+  __ bind(&preloop);
+
+  // Increment array index
+  __ addlb(ebx, Immediate(HNumber::Tag(1)));
+
+  // edx --
+  edx_s.Unspill();
+  __ sublb(edx, Immediate(HNumber::Tag(1)));
+  __ jmp(&loop);
+
+  __ bind(&end);
+
+  // Cleanup?
+  __ xorl(eax, eax);
+  __ xorl(ebx, ebx);
+  __ xorl(edx, edx);
+  // ecx <- holds result
+
+  GenerateEpilogue();
+}
+
 } // namespace internal
 } // namespace candor

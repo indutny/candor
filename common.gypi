@@ -7,8 +7,8 @@
       'osx_arch%': ''
     },
     'conditions': [
-      ['OS == "mac" and osx_arch != "ia32"', {
-        'target_arch%': 'x64'
+      ['OS == "mac" and osx_arch == "ia32"', {
+        'target_arch%': 'ia32'
       }, {
         'target_arch%': '<(host_arch)'
       }]
@@ -24,7 +24,7 @@
           'GCC_VERSION': '4.1',
           'GCC_WARN_ABOUT_MISSING_NEWLINE': 'YES',  # -Wnewline-eof
           'PREBINDING': 'NO',                       # No -Wl,-prebind
-          'MACOSX_DEPLOYMENT_TARGET': '10.6',       # -mmacosx-version-min=10.6
+          'MACOSX_DEPLOYMENT_TARGET': '10.6',       # -mmacosx-version-min=10.5
           'USE_HEADERMAP': 'NO',
           'WARNING_CFLAGS': [
             '-Wall',

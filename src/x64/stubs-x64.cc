@@ -1107,5 +1107,104 @@ void BinOpStub::Generate() {
 
 #undef BINARY_SUB_TYPES
 
+
+void LoadVarArgStub::Generate() {
+  __ mov(rdx, rbp);
+  GeneratePrologue();
+
+  // offset and rest are unboxed
+  Register offset = rax;
+  Register rest = rbx;
+  Register arr = rcx;
+  Masm::Spill rbp_s(masm(), rdx);
+  Operand argc(rdx, -HValue::kPointerSize * 2);
+  Operand qmap(arr, HObject::kMapOffset);
+  Operand slot(scratch, 0);
+  Operand stack_slot(offset, 0);
+
+  Label loop, preloop, end;
+
+  // Calculate length of vararg array
+  __ mov(scratch, offset);
+  __ addq(scratch, rest);
+
+  // If offset + rest <= argc - return immediately
+  __ cmpq(scratch, argc);
+  __ jmp(kGe, &end);
+
+  // rdx = argc - offset - rest
+  __ mov(rdx, argc);
+  __ subq(rdx, scratch);
+
+  // Array index
+  __ mov(rbx, Immediate(HNumber::Tag(0)));
+
+  Masm::Spill arr_s(masm(), arr), rdx_s(masm());
+  Masm::Spill offset_s(masm(), offset), rbx_s(masm());
+
+  __ bind(&loop);
+
+  // while (rdx > 0)
+  __ cmpq(rdx, Immediate(HNumber::Tag(0)));
+  __ jmp(kEq, &end);
+
+  rdx_s.SpillReg(rdx);
+  rbx_s.SpillReg(rbx);
+
+  __ mov(rax, arr);
+
+  // rax <- object
+  // rbx <- property
+  __ mov(rcx, Immediate(1));
+  __ Call(masm()->stubs()->GetLookupPropertyStub());
+
+  arr_s.Unspill();
+  rbx_s.Unspill();
+
+  // Make rax look like unboxed number to GC
+  __ dec(rax);
+  __ CheckGC();
+  __ inc(rax);
+
+  __ IsNil(rax, NULL, &preloop);
+
+  __ mov(arr, qmap);
+  __ addq(rax, arr);
+  __ mov(scratch, rax);
+
+  // Get stack offset
+  offset_s.Unspill();
+  __ addqb(offset, Immediate(HNumber::Tag(2)));
+  __ addq(offset, rbx);
+  __ shl(offset, 2);
+  __ addq(offset, *rbp_s.GetOperand());
+  __ mov(offset, stack_slot);
+
+  // Put argument in array
+  __ mov(slot, offset);
+
+  arr_s.Unspill();
+
+  __ bind(&preloop);
+
+  // Increment array index
+  __ addqb(rbx, Immediate(HNumber::Tag(1)));
+
+  // rdx --
+  rdx_s.Unspill();
+  __ subqb(rdx, Immediate(HNumber::Tag(1)));
+  __ jmp(&loop);
+
+  __ bind(&end);
+
+  // Cleanup?
+  __ xorq(rax, rax);
+  __ xorq(rbx, rbx);
+  __ xorq(rdx, rdx);
+  // rcx <- holds result
+
+  GenerateEpilogue(0);
+}
+
 } // namespace internal
 } // namespace candor

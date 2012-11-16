@@ -31,7 +31,8 @@ namespace internal {
     V(CloneObject)\
     V(DeleteProperty)\
     V(HashValue)\
-    V(StackTrace)
+    V(StackTrace)\
+    V(LoadVarArg)
 
 #define BINARY_STUBS_LIST(V)\
     V(Add)\

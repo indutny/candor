@@ -440,7 +440,7 @@ void LLoadArg::Generate(Masm* masm) {
 
 
 void LLoadVarArg::Generate(Masm* masm) {
-  __ LoadVarArg();
+  __ Call(masm->stubs()->GetLoadVarArgStub());
 }
 
 

@@ -133,6 +133,13 @@ void Masm::Spill::Unspill() {
 }
 
 
+Operand* Masm::Spill::GetOperand() {
+  Operand* r = new Operand(eax, 0);
+  masm()->SpillSlot(index(), *r);
+  return r;
+}
+
+
 void Masm::AllocateSpills() {
   subl(esp, Immediate(0));
   spill_reloc_ = new RelocationInfo(RelocationInfo::kValue,
@@ -738,6 +745,7 @@ void Masm::StoreVarArg() {
 
   jmp(&loop);
 
+  // }
   bind(&odd_end);
 
   r1.Unspill(eax);
@@ -746,99 +754,6 @@ void Masm::StoreVarArg() {
   bind(&not_array);
 
   xorl(map, map);
-}
-
-
-void Masm::LoadVarArg() {
-  // offset and rest are unboxed
-  Register offset = eax;
-  Register rest = ebx;
-  Register arr = ecx;
-  Operand argc(ebp, -HValue::kPointerSize * 2);
-  Operand qmap(arr, HObject::kMapOffset);
-  Operand slot(scratch, 0);
-  Operand stack_slot(offset, 0);
-
-  Label loop, preloop, end;
-
-  // Calculate length of vararg array
-  mov(scratch, offset);
-  addl(scratch, rest);
-
-  // If offset + rest <= argc - return immediately
-  cmpl(scratch, argc);
-  jmp(kGe, &end);
-
-  // edx = argc - offset - rest
-  mov(edx, argc);
-  subl(edx, scratch);
-
-  // Array index
-  mov(ebx, Immediate(HNumber::Tag(0)));
-
-  Spill arr_s(this, arr), edx_s(this);
-  Spill offset_s(this, offset), ebx_s(this);
-
-  bind(&loop);
-
-  // while (edx > 0)
-  cmpl(edx, Immediate(HNumber::Tag(0)));
-  jmp(kEq, &end);
-
-  edx_s.SpillReg(edx);
-  ebx_s.SpillReg(ebx);
-
-  mov(eax, arr);
-
-  // eax <- object
-  // ebx <- property
-  mov(ecx, Immediate(1));
-  Call(stubs()->GetLookupPropertyStub());
-
-  arr_s.Unspill();
-  ebx_s.Unspill();
-
-  // Make eax look like unboxed number to GC
-  dec(eax);
-  CheckGC();
-  inc(eax);
-
-  IsNil(eax, NULL, &preloop);
-
-  mov(arr, qmap);
-  addl(eax, arr);
-  mov(scratch, eax);
-
-  // Get stack offset
-  offset_s.Unspill();
-  addlb(offset, Immediate(HNumber::Tag(2)));
-  addl(offset, ebx);
-  shl(offset, 1);
-  addl(offset, ebp);
-  mov(offset, stack_slot);
-
-  // Put argument in array
-  mov(slot, offset);
-
-  arr_s.Unspill();
-
-  bind(&preloop);
-
-  // Increment array index
-  addlb(ebx, Immediate(HNumber::Tag(1)));
-
-  // edx --
-  edx_s.Unspill();
-  sublb(edx, Immediate(HNumber::Tag(1)));
-  jmp(&loop);
-
-  bind(&end);
-
-  // Cleanup?
-  xorl(eax, eax);
-  xorl(ebx, ebx);
-  xorl(edx, edx);
-  // ecx <- holds result
 }
 
 

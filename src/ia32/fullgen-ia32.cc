@@ -454,7 +454,7 @@ void FLoadVarArg::Generate(Masm* masm) {
   __ mov(eax, *inputs[0]->ToOperand());
   __ mov(ebx, *inputs[1]->ToOperand());
   __ mov(ecx, *inputs[2]->ToOperand());
-  __ LoadVarArg();
+  __ Call(masm->stubs()->GetLoadVarArgStub());
 }
 
 
