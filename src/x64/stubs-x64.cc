@@ -1206,5 +1206,114 @@ void LoadVarArgStub::Generate() {
   GenerateEpilogue(0);
 }
 
+
+void StoreVarArgStub::Generate() {
+  GeneratePrologue();
+
+  Register varg = rax;
+  Register index = rbx;
+  Register map = rcx;
+  Register stack = rdx;
+  Operand stack_slot(stack, 0);
+
+  // rax <- varg
+  Label loop, not_array, odd_end, r1_nil, r2_nil;
+  Masm::Spill index_s(masm()), map_s(masm()), array_s(masm()), r1(masm());
+  Masm::Spill stack_s(masm(), stack);
+  Operand slot(rax, 0);
+
+  __ IsUnboxed(varg, NULL, &not_array);
+  __ IsNil(varg, NULL, &not_array);
+  __ IsHeapObject(Heap::kTagArray, varg, &not_array, NULL);
+
+  Operand qmap(varg, HObject::kMapOffset);
+  __ mov(map, qmap);
+  map_s.SpillReg(map);
+
+  // index = sizeof(array)
+  Operand qlength(varg, HArray::kLengthOffset);
+  __ mov(index, qlength);
+  __ TagNumber(index);
+
+  // while ...
+  __ bind(&loop);
+
+  array_s.SpillReg(varg);
+
+  // while ... (index != 0) {
+  __ cmpq(index, Immediate(HNumber::Tag(0)));
+  __ jmp(kEq, &not_array);
+
+  // index--;
+  __ subqb(index, Immediate(HNumber::Tag(1)));
+
+  index_s.SpillReg(index);
+
+  // odd case: array[index]
+  __ mov(rbx, index);
+  __ mov(rcx, Immediate(0));
+  __ Call(masm()->stubs()->GetLookupPropertyStub());
+
+  __ IsNil(rax, NULL, &r1_nil);
+  map_s.Unspill();
+  __ addq(rax, map);
+  __ mov(rax, slot);
+
+  __ bind(&r1_nil);
+  r1.SpillReg(rax);
+
+  index_s.Unspill();
+
+  // if (index == 0) goto odd_end;
+  __ cmpq(index, Immediate(HNumber::Tag(0)));
+  __ jmp(kEq, &odd_end);
+
+  // index--;
+  __ subqb(index, Immediate(HNumber::Tag(1)));
+
+  array_s.Unspill();
+  index_s.SpillReg(index);
+
+  // even case: array[index]
+  __ mov(rbx, index);
+  __ mov(rcx, Immediate(0));
+  __ Call(masm()->stubs()->GetLookupPropertyStub());
+
+  __ IsNil(rax, NULL, &r2_nil);
+  map_s.Unspill();
+  __ addq(rax, map);
+  __ mov(rax, slot);
+
+  __ bind(&r2_nil);
+
+  // Push two item at the same time (to preserve alignment)
+  r1.Unspill(index);
+  stack_s.Unspill();
+  __ mov(stack_slot, index);
+  __ subqb(stack, Immediate(8));
+  __ mov(stack_slot, rax);
+  __ subqb(stack, Immediate(8));
+  stack_s.SpillReg(stack);
+
+  index_s.Unspill();
+  array_s.Unspill();
+
+  __ jmp(&loop);
+
+  // }
+  __ bind(&odd_end);
+
+  r1.Unspill(rax);
+  stack_s.Unspill();
+  __ mov(stack_slot, rax);
+  __ subqb(stack, Immediate(8));
+  stack_s.SpillReg(stack);
+
+  __ bind(&not_array);
+
+  __ xorl(map, map);
+  GenerateEpilogue(0);
+}
+
 } // namespace internal
 } // namespace candor

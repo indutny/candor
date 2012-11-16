@@ -372,14 +372,23 @@ void FTypeof::Generate(Masm* masm) {
 
 
 void FStoreArg::Generate(Masm* masm) {
-  __ push(*inputs[0]->ToOperand());
+  // Calculate slot position
+  __ mov(rax, rsp);
+  __ mov(rbx, *inputs[1]->ToOperand());
+  __ shl(rbx, Immediate(2));
+  __ addq(rax, rbx);
+  Operand slot(rax, 0);
+  __ mov(scratch, *inputs[0]->ToOperand());
+  __ mov(slot, scratch);
 }
 
 
 void FStoreVarArg::Generate(Masm* masm) {
   __ mov(rax, *inputs[0]->ToOperand());
-  __ mov(rbx, *inputs[0]->ToOperand());
-  __ StoreVarArg();
+  __ mov(rdx, rsp);
+  __ shl(rax, Immediate(2));
+  __ addq(rdx, *inputs[1]->ToOperand());
+  __ Call(masm->stubs()->GetStoreVarArgStub());
 }
 
 
@@ -390,6 +399,11 @@ void FAlignStack::Generate(Masm* masm) {
   __ jmp(kEq, &even);
   __ pushb(Immediate(Heap::kTagNil));
   __ bind(&even);
+
+  // Now allocate space on-stack for arguments
+  __ mov(rax, *inputs[0]->ToOperand());
+  __ shl(rax, Immediate(2));
+  __ subq(rsp, rax);
 }
 
 

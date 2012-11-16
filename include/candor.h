@@ -40,6 +40,8 @@ class Isolate {
 
   Array* StackTrace();
 
+  static void EnableFullgenLogging();
+  static void DisableFullgenLogging();
   static void EnableHIRLogging();
   static void DisableHIRLogging();
   static void EnableLIRLogging();

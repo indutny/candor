@@ -10,15 +10,28 @@
 namespace candor {
 namespace internal {
 
+bool Fullgen::log_ = false;
+
 Fullgen::Fullgen(Heap* heap, const char* filename)
     : Visitor<FInstruction>(kPreorder),
       heap_(heap),
       root_(heap),
+      filename_(filename),
       instr_id_(-2),
       current_function_(NULL),
       loop_start_(NULL),
       loop_end_(NULL),
       source_map_(heap->source_map()) {
+}
+
+
+void Fullgen::EnableLogging() {
+  log_ = true;
+}
+
+
+void Fullgen::DisableLogging() {
+  log_ = false;
 }
 
 
@@ -39,6 +52,14 @@ void Fullgen::Build(AstNode* ast) {
                                 current->root_ast()->stack_slots());
 
     if (work_queue_.length() != 0) Add(new FAlignCode());
+  }
+
+  if (log_) {
+    PrintBuffer p(stdout);
+    p.Print("## Fullgen %s Start ##\n",
+            filename_ == NULL ? "unknown" : filename_);
+    Print(&p);
+    p.Print("## Fulglen End ##\n");
   }
 }
 
@@ -495,8 +516,8 @@ FInstruction* Fullgen::VisitCall(AstNode* stmt) {
   GetNumber(argc)->SetResult(&argc_slot);
 
   // If call has vararg - increase argc by ...
+  FScopedSlot length(this);
   if (vararg != NULL) {
-    FScopedSlot length(this);
     Add(new FSizeof())
         ->AddArg(vararg->result)
         ->SetResult(&length);
@@ -538,6 +559,65 @@ FInstruction* Fullgen::VisitCall(AstNode* stmt) {
 
   // Add stack alignment instruction
   Add(new FAlignStack())->AddArg(&argc_slot);
+
+  // Add indexes to stores
+  FInstruction* index = GetNumber(0);
+  bool seen_varg = false;
+  FInstructionList::Item* htail = stores_.tail();
+  for (int i = 0; htail != NULL; htail = htail->prev(), i++) {
+    FInstruction* store = htail->value();
+
+    // Allocate slot
+    FOperand* slot = GetSlot();
+    arg_slots.Push(slot);
+    index->SetResult(slot);
+
+    if (store->type() == FInstruction::kStoreVarArg) {
+      AstNode* one = new AstNode(AstNode::kNumber, stmt);
+      FScopedSlot f_one(this);
+
+      one->value("1");
+      one->length(1);
+
+      Add(new FBinOp(BinOp::kAdd))
+          ->AddArg(slot)
+          ->AddArg(&length)
+          ->SetResult(slot);
+      Visit(one)->SetResult(&f_one);
+      Add(new FBinOp(BinOp::kSub))
+          ->AddArg(slot)
+          ->AddArg(&f_one)
+          ->SetResult(slot);
+      seen_varg = true;
+    }
+
+    // Add index as argument
+    store->AddArg(slot);
+
+    // No need to recalculate index after last argument
+    if (htail->prev() == NULL) continue;
+
+    if (seen_varg) {
+      AstNode* one = new AstNode(AstNode::kNumber, stmt);
+      FScopedSlot f_one(this);
+
+      one->value("1");
+      one->length(1);
+
+      Visit(one)->SetResult(&f_one);
+      index = Add(new FBinOp(BinOp::kAdd))
+          ->AddArg(slot)
+          ->AddArg(&f_one);
+    } else {
+      index = GetNumber(i + 1);
+    }
+  }
+
+  if (index->result == NULL) {
+    FOperand* slot = GetSlot();
+    arg_slots.Push(slot);
+    index->SetResult(slot);
+  }
 
   // Now add stores to hir
   FInstructionList::Item* hhead = stores_.head();

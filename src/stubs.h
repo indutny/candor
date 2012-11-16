@@ -32,7 +32,8 @@ namespace internal {
     V(DeleteProperty)\
     V(HashValue)\
     V(StackTrace)\
-    V(LoadVarArg)
+    V(LoadVarArg)\
+    V(StoreVarArg)
 
 #define BINARY_STUBS_LIST(V)\
     V(Add)\

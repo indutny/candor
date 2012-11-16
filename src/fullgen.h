@@ -125,6 +125,9 @@ class Fullgen : public Visitor<FInstruction> {
   FInstruction* VisitUnOp(AstNode* node);
   FInstruction* VisitBinOp(AstNode* node);
 
+  static void EnableLogging();
+  static void DisableLogging();
+
   inline void Print(char* out, int32_t size);
   void Print(PrintBuffer* p);
 
@@ -145,8 +148,11 @@ class Fullgen : public Visitor<FInstruction> {
   inline SourceMap* source_map();
 
  private:
+  static bool log_;
+
   Heap* heap_;
   Root root_;
+  const char* filename_;
 
   ZoneList<FFunction*> work_queue_;
   ZoneList<FInstruction*> instructions_;

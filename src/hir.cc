@@ -1046,14 +1046,9 @@ HIRInstruction* HIRGen::VisitMember(AstNode* stmt) {
 HIRInstruction* HIRGen::VisitDelete(AstNode* stmt) {
   HIRInstruction* prop = Visit(stmt->lhs()->rhs());
   HIRInstruction* recv = Visit(stmt->lhs()->lhs());
-  HIRInstruction* updated_obj = Add(new HIRDeleteProperty())
+  Add(new HIRDeleteProperty())
       ->AddArg(recv)
       ->AddArg(prop);
-
-  if (recv->slot() != NULL) {
-    assert(recv->slot()->is_stack());
-    Assign(recv->slot(), updated_obj);
-  }
 
   // Delete property returns nil
   return Add(new HIRNil());
@@ -1106,10 +1101,11 @@ HIRInstruction* HIRGen::VisitCall(AstNode* stmt) {
   if (vararg != NULL) argc--;
 
   HIRInstruction* hargc = GetNumber(argc);
+  HIRInstruction* length = NULL;
 
   // If call has vararg - increase argc by ...
   if (vararg != NULL) {
-    HIRInstruction* length = Add(new HIRSizeof())
+    length = Add(new HIRSizeof())
         ->AddArg(vararg);
 
     // ... by the length of vararg
@@ -1144,9 +1140,49 @@ HIRInstruction* HIRGen::VisitCall(AstNode* stmt) {
   // Add stack alignment instruction
   Add(new HIRAlignStack())->AddArg(hargc);
 
+  // Add indexes to stores
+  HIRInstruction* index = GetNumber(0);
+  bool seen_varg = false;
+  HIRInstructionList::Item* htail = stores_.tail();
+  for (int i = 0; htail != NULL; htail = htail->prev(), i++) {
+    HIRInstruction* store = htail->value();
+
+    if (store->Is(HIRInstruction::kStoreVarArg)) {
+      assert(length != NULL);
+      AstNode* one = new AstNode(AstNode::kNumber, stmt);
+
+      one->value("1");
+      one->length(1);
+
+      index = Add(new HIRBinOp(BinOp::kAdd))->AddArg(index)->AddArg(length);
+      HIRInstruction* hone = Visit(one);
+      index = Add(new HIRBinOp(BinOp::kSub))->AddArg(index)->AddArg(hone);
+      seen_varg = true;
+    }
+
+    store->AddArg(index);
+
+    // No need to recalculate index after last argument
+    if (htail->prev() == NULL) continue;
+
+    if (seen_varg) {
+      AstNode* one = new AstNode(AstNode::kNumber, stmt);
+
+      one->value("1");
+      one->length(1);
+
+      HIRInstruction* hone = Visit(one);
+      index = Add(new HIRBinOp(BinOp::kAdd))
+          ->AddArg(index)
+          ->AddArg(hone);
+    } else {
+      index = GetNumber(i + 1);
+    }
+  }
+
   // Now add stores to hir
   HIRInstructionList::Item* hhead = stores_.head();
-  for (; hhead != NULL; hhead = hhead->next()) {
+  for (int i = 0; hhead != NULL; hhead = hhead->next(), i++) {
     Add(hhead->value());
   }
 

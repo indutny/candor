@@ -424,12 +424,25 @@ void LLoadVarArg::Generate(Masm* masm) {
 
 
 void LStoreArg::Generate(Masm* masm) {
-  __ push(inputs[0]->ToRegister());
+  // Calculate slot position
+  __ mov(scratch, rsp);
+  __ shl(inputs[1]->ToRegister(), Immediate(2));
+  __ addq(scratch, inputs[1]->ToRegister());
+  __ shr(inputs[1]->ToRegister(), Immediate(2));
+
+  Operand slot(scratch, 0);
+  __ mov(slot, inputs[0]->ToRegister());
 }
 
 
 void LStoreVarArg::Generate(Masm* masm) {
-  __ StoreVarArg();
+  __ mov(rdx, rsp);
+  __ shl(rbx, Immediate(2));
+  __ addq(rdx, rbx);
+
+  // eax - value
+  // edx - offset
+  __ Call(masm->stubs()->GetStoreVarArgStub());
 }
 
 
@@ -439,6 +452,11 @@ void LAlignStack::Generate(Masm* masm) {
   __ jmp(kEq, &even);
   __ pushb(Immediate(Heap::kTagNil));
   __ bind(&even);
+
+  // Now allocate space on-stack for arguments
+  __ mov(scratch, inputs[0]->ToRegister());
+  __ shl(scratch, Immediate(2));
+  __ subq(rsp, scratch);
 }
 
 

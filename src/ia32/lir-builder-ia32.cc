@@ -235,7 +235,8 @@ void LGen::VisitLoadVarArg(HIRInstruction* instr) {
 
 void LGen::VisitStoreArg(HIRInstruction* instr) {
   Bind(new LStoreArg())
-      ->AddArg(instr->left(), LUse::kRegister);
+      ->AddArg(instr->left(), LUse::kRegister)
+      ->AddArg(instr->right(), LUse::kRegister);
 }
 
 
@@ -248,10 +249,12 @@ void LGen::VisitAlignStack(HIRInstruction* instr) {
 
 void LGen::VisitStoreVarArg(HIRInstruction* instr) {
   LInterval* lhs = ToFixed(instr->left(), eax);
+  LInterval* rhs = ToFixed(instr->right(), ebx);
   Bind(new LStoreVarArg())
       ->MarkHasCall()
       ->AddScratch(CreateVirtual())
-      ->AddArg(lhs, LUse::kRegister);
+      ->AddArg(lhs, LUse::kRegister)
+      ->AddArg(rhs, LUse::kRegister);
 }
 
 

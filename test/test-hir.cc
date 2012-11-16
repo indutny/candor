@@ -26,7 +26,7 @@ TEST_START(hir)
            "i4 = Literal[1]\n"
            "i6 = Literal[a]\n"
            "i8 = StoreProperty(i2, i6, i4)\n"
-           "i10 = Return(i8)\n")
+           "i10 = Return(i2)\n")
   HIR_TEST("return ['a']",
            "# Block 0\n"
            "i0 = Entry[0]\n"
@@ -34,7 +34,7 @@ TEST_START(hir)
            "i4 = Literal[0]\n"
            "i6 = Literal[a]\n"
            "i8 = StoreProperty(i2, i4, i6)\n"
-           "i10 = Return(i8)\n")
+           "i10 = Return(i2)\n")
   HIR_TEST("a = {}\na.b = 1\ndelete a.b\nreturn a.b",
            "# Block 0\n"
            "i0 = Entry[0]\n"
@@ -42,8 +42,8 @@ TEST_START(hir)
            "i4 = Literal[1]\n"
            "i6 = Literal[b]\n"
            "i8 = StoreProperty(i2, i6, i4)\n"
-           "i12 = DeleteProperty(i8, i6)\n"
-           "i18 = LoadProperty(i12, i6)\n"
+           "i12 = DeleteProperty(i2, i6)\n"
+           "i18 = LoadProperty(i2, i6)\n"
            "i20 = Return(i18)\n")
   HIR_TEST("a = global\nreturn a:b(1,2)",
            "# Block 0\n"
@@ -55,11 +55,12 @@ TEST_START(hir)
            "i10 = Literal[b]\n"
            "i12 = LoadProperty(i2, i10)\n"
            "i14 = AlignStack(i8)\n"
-           "i16 = StoreArg(i6)\n"
-           "i18 = StoreArg(i4)\n"
-           "i20 = StoreArg(i2)\n"
-           "i22 = Call(i12, i8)\n"
-           "i24 = Return(i22)\n")
+           "i16 = Literal[0]\n"
+           "i18 = StoreArg(i6, i16)\n"
+           "i22 = StoreArg(i4, i4)\n"
+           "i26 = StoreArg(i2, i6)\n"
+           "i28 = Call(i12, i8)\n"
+           "i30 = Return(i28)\n")
 
   // Var arg
   HIR_TEST("fn(a, b..., c) { return a + b[0] + b[1] + c }\n"

@@ -326,7 +326,7 @@ void LGen::BuildIntervals() {
       for (int i = 0; i < instr->input_count(); i++) {
         // If interval's range already covers instruction it should last
         // up to the block's start
-        if (!instr->inputs[i]->interval()->Covers(instr->id)) {
+        if (!instr->inputs[i]->interval()->Covers(instr->id - 1)) {
           instr->inputs[i]->interval()->AddRange(l->start_id, instr->id);
         }
       }

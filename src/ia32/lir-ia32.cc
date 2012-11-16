@@ -445,25 +445,44 @@ void LLoadVarArg::Generate(Masm* masm) {
 
 
 void LStoreArg::Generate(Masm* masm) {
-  __ push(inputs[0]->ToRegister());
+  // Calculate slot position
+  __ mov(scratch, esp);
+  __ shl(inputs[1]->ToRegister(), Immediate(1));
+  __ addl(scratch, inputs[1]->ToRegister());
+  __ shr(inputs[1]->ToRegister(), Immediate(1));
+
+  Operand slot(scratch, 0);
+  __ mov(slot, inputs[0]->ToRegister());
 }
 
 
 void LStoreVarArg::Generate(Masm* masm) {
-  __ StoreVarArg();
+  __ mov(edx, esp);
+  __ shl(ebx, Immediate(1));
+  __ addl(edx, ebx);
+
+  // eax - value
+  // edx - offset
+  __ Call(masm->stubs()->GetStoreVarArgStub());
 }
 
 
 void LAlignStack::Generate(Masm* masm) {
   Label even, loop;
-  __ mov(scratches[0]->ToRegister(), inputs[0]->ToRegister());
+  Register s = scratches[0]->ToRegister();
+  __ mov(s, inputs[0]->ToRegister());
   __ bind(&loop);
-  __ testb(scratches[0]->ToRegister(), Immediate(HNumber::Tag(3)));
+  __ testb(s, Immediate(HNumber::Tag(3)));
   __ jmp(kEq, &even);
   __ pushb(Immediate(Heap::kTagNil));
-  __ addlb(scratches[0]->ToRegister(), Immediate(HNumber::Tag(1)));
+  __ addlb(s, Immediate(HNumber::Tag(1)));
   __ jmp(&loop);
   __ bind(&even);
+
+  // Now allocate space on-stack for arguments
+  __ mov(s, inputs[0]->ToRegister());
+  __ shl(s, Immediate(1));
+  __ subl(esp, s);
 }
 
 

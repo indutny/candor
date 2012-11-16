@@ -2,6 +2,8 @@
 #include "heap.h"
 #include "heap-inl.h"
 #include "code-space.h"
+#include "fullgen.h"
+#include "fullgen-inl.h"
 #include "hir.h"
 #include "hir-inl.h"
 #include "lir.h"
@@ -105,6 +107,16 @@ void Isolate::SetError(Error* err) {
 Array* Isolate::StackTrace() {
   char** frame = reinterpret_cast<char**>(*heap->last_frame());
   return Value::Cast<Array>(RuntimeStackTrace(heap, frame, NULL));
+}
+
+
+void Isolate::EnableFullgenLogging() {
+  Fullgen::EnableLogging();
+}
+
+
+void Isolate::DisableFullgenLogging() {
+  Fullgen::DisableLogging();
 }
 
 
