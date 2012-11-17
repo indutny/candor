@@ -92,7 +92,7 @@ class SortableList {
     // Perform binary search for correct position
     int middle_pos;
     int cmp;
-    for (int i = 0, j = length() - 1; i < j; ) {
+    for (int i = 0, j = length() - 1; i <= j; ) {
       middle_pos = (i + j) >> 1;
       T* middle = map_[middle_pos];
 
@@ -114,8 +114,9 @@ class SortableList {
     }
 
     len_++;
+    assert(insert_pos >= 0 && insert_pos < len_);
+
     for (int i = len_ - 1; i > insert_pos; i--) {
-      assert(map_[i - 1] != NULL);
       map_[i] = map_[i - 1];
     }
     map_[insert_pos] = value;

@@ -931,7 +931,7 @@ LInterval* LGen::Split(LInterval* i, int pos) {
     LUse* use = i->uses()->At(j);
 
     // Uses are sorted - so break early
-    if (use->instr()->id < pos) continue;
+    if (use->instr()->id < pos) break;
 
     i->uses()->RemoveAt(j);
     child->uses()->Unshift(use);
