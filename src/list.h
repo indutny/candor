@@ -6,7 +6,7 @@
 namespace candor {
 namespace internal {
 
-template <class T, class Shape, class Policy, class Allocator>
+template <class T, class Policy, class Allocator>
 class SortableList {
  public:
   SortableList(int size) : map_(NULL), size_(0), grow_(size), len_(0) {
@@ -100,7 +100,7 @@ class SortableList {
       middle_pos = (i + j) >> 1;
       T* middle = map_[middle_pos];
 
-      cmp = Shape::Compare(value, middle);
+      cmp = T::Compare(value, middle);
       if (cmp < 0) {
         j = middle_pos - 1;
       } else if (cmp > 0) {
@@ -146,7 +146,7 @@ class SortableList {
   }
 
   static inline int Comparator(T** a, T** b) {
-    return Shape::Compare(*a, *b);
+    return T::Compare(*a, *b);
   }
 
   T** map_;

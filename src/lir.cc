@@ -424,8 +424,8 @@ void LGen::WalkIntervals() {
   }
 
   // Sort by starting position
-  unhandled_.Sort<LIntervalShape>();
-  inactive_.Sort<LIntervalShape>();
+  unhandled_.Sort<LInterval>();
+  inactive_.Sort<LInterval>();
 
   while (unhandled_.length() > 0) {
     // Pick first interval
@@ -711,7 +711,7 @@ void LGen::ResolveDataFlow() {
 
 void LGen::AllocateSpills() {
   // Sort by starting position
-  unhandled_spills_.Sort<LIntervalShape>();
+  unhandled_spills_.Sort<LInterval>();
   LIntervalList::Item* head;
 
   while (unhandled_spills_.length() > 0) {
@@ -959,7 +959,7 @@ LInterval* LGen::Split(LInterval* i, int pos) {
   child->split_parent(parent);
   parent->split_children()->Unshift(child);
 
-  unhandled_.InsertSorted<LIntervalShape>(child);
+  unhandled_.InsertSorted<LInterval>(child);
 
   assert(i->end() <= pos);
   assert(child->start() >= pos);
@@ -1125,17 +1125,17 @@ int LRange::FindIntersection(LRange* with) {
 }
 
 
-int LIntervalShape::Compare(LInterval* a, LInterval* b) {
+int LInterval::Compare(LInterval* a, LInterval* b) {
   return a->start() > b->start() ? 1 : a->start() < b->start() ? -1 : 0;
 }
 
 
-int LRangeShape::Compare(LRange* a, LRange* b) {
+int LRange::Compare(LRange* a, LRange* b) {
   return a->start() > b->start() ? 1 : a->start() < b->start() ? -1 : 0;
 }
 
 
-int LUseShape::Compare(LUse* a, LUse* b) {
+int LUse::Compare(LUse* a, LUse* b) {
   return a->instr()->id > b->instr()->id ? 1 :
          a->instr()->id < b->instr()->id ? -1 : 0;
 }

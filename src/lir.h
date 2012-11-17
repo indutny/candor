@@ -24,13 +24,11 @@ class LInstruction;
 class LLabel;
 class LGap;
 class LRange;
-class LRangeShape;
 class LUse;
-class LUseShape;
 class SourceMap;
 typedef ZoneList<LInterval*> LIntervalList;
-typedef SortableList<LRange, LRangeShape, NopPolicy, ZonePolicy> LRangeList;
-typedef SortableList<LUse, LUseShape, NopPolicy, ZonePolicy> LUseList;
+typedef SortableList<LRange, NopPolicy, ZonePolicy> LRangeList;
+typedef SortableList<LUse, NopPolicy, ZonePolicy> LUseList;
 typedef ZoneMap<NumberKey, LUse, ZoneObject> LUseMap;
 
 class LRange : public ZoneObject {
@@ -49,15 +47,12 @@ class LRange : public ZoneObject {
   inline void start(int start);
   inline int end();
 
+  static int Compare(LRange* a, LRange* b);
+
  private:
   LInterval* interval_;
   int start_;
   int end_;
-};
-
-class LRangeShape {
- public:
-  static int Compare(LRange* a, LRange* b);
 };
 
 class LUse : public ZoneObject {
@@ -88,15 +83,12 @@ class LUse : public ZoneObject {
   inline LInterval* interval();
   inline void interval(LInterval* interval);
 
+  static int Compare(LUse* a, LUse* b);
+
  private:
   LInterval* interval_;
   Type type_;
   LInstruction* instr_;
-};
-
-class LUseShape {
- public:
-  static int Compare(LUse* a, LUse* b);
 };
 
 class LInterval : public ZoneObject {
@@ -155,6 +147,8 @@ class LInterval : public ZoneObject {
 
   inline void Print(PrintBuffer* p);
 
+  static int Compare(LInterval* a, LInterval* b);
+
   int id;
   LUse* register_hint;
 
@@ -168,11 +162,6 @@ class LInterval : public ZoneObject {
 
   LInterval* split_parent_;
   LIntervalList split_children_;
-};
-
-class LIntervalShape {
- public:
-  static int Compare(LInterval* a, LInterval* b);
 };
 
 class LBlock : public ZoneObject {
