@@ -1029,7 +1029,7 @@ void LGen::Spill(LInterval* interval) {
 LUse* LInterval::Use(LUse::Type type, LInstruction* instr) {
   LUse* use = new LUse(this, type, instr);
 
-  uses_.InsertSorted<LUseShape>(use);
+  uses_.InsertSorted(use);
 
   return use;
 }

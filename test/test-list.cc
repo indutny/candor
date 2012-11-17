@@ -8,7 +8,7 @@ static const int kItemCount = 1003;
 TEST_START(list)
   // Push and pop
   {
-    SortableList<NumberKey, NopPolicy, EmptyClass> list(10);
+    SortableList<NumberKey, NumberKey, NopPolicy, EmptyClass> list(10);
 
     // Sequential insertion
     for (int i = 0; i < kItemCount; i++) {
@@ -25,7 +25,7 @@ TEST_START(list)
 
   // Push and shift
   {
-    SortableList<NumberKey, NopPolicy, EmptyClass> list(10);
+    SortableList<NumberKey, NumberKey, NopPolicy, EmptyClass> list(10);
 
     // Sequential insertion
     for (int i = 0; i < kItemCount; i++) {
@@ -42,7 +42,7 @@ TEST_START(list)
 
   // Unshift and pop
   {
-    SortableList<NumberKey, NopPolicy, EmptyClass> list(10);
+    SortableList<NumberKey, NumberKey, NopPolicy, EmptyClass> list(10);
 
     // Sequential insertion
     for (int i = 0; i < kItemCount; i++) {
@@ -59,7 +59,7 @@ TEST_START(list)
 
   // Sort and remove
   {
-    SortableList<NumberKey, NopPolicy, EmptyClass> list(10);
+    SortableList<NumberKey, NumberKey, NopPolicy, EmptyClass> list(10);
 
     // Insert in reverse order
     for (int i = kItemCount - 1; i >= 0; i--) {
@@ -67,13 +67,13 @@ TEST_START(list)
     }
 
     // Sort list
-    list.Sort<NumberKey>();
+    list.Sort();
 
     // Remove one item
     list.RemoveAt(kItemCount >> 1);
 
     // Insert item back in list
-    list.InsertSorted<NumberKey>(NumberKey::New(kItemCount >> 1));
+    list.InsertSorted(NumberKey::New(kItemCount >> 1));
 
     // Sequential read
     for (int i = 0; i < kItemCount; i++) {
@@ -87,7 +87,7 @@ TEST_START(list)
     list.Push(NumberKey::New(10));
 
     // Sort already sorted list
-    list.Sort<NumberKey>();
+    list.Sort();
 
     // Sequential read
     for (int i = 0; i < kItemCount; i++) {

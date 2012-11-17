@@ -1,10 +1,12 @@
 #ifndef _SRC_SORTED_LIST_H_
 #define _SRC_SORTED_LIST_H_
 
+#include <stdlib.h> // qsort
+
 namespace candor {
 namespace internal {
 
-template <class T, class Policy, class Allocator>
+template <class T, class Shape, class Policy, class Allocator>
 class SortableList {
  public:
   SortableList(int size) : map_(NULL), size_(0), grow_(size), len_(0) {
@@ -74,13 +76,15 @@ class SortableList {
   }
 
 
-  template <class Shape>
   inline void Sort() {
-    QuickSort<Shape>(0, length());
+    typedef int (*RawComparator)(const void*, const void*);
+    qsort(map_,
+          length(),
+          sizeof(*map_),
+          reinterpret_cast<RawComparator>(Comparator));
   }
 
 
-  template <class Shape>
   inline void InsertSorted(T* value) {
     if (len_ == 0) {
       Push(value);
@@ -141,34 +145,8 @@ class SortableList {
     size_ = new_size;
   }
 
-  template <class Shape>
-  inline void QuickSort(int start, int end) {
-    if (start + 1 >= end) return;
-
-    int marker_pos = (start + end) >> 1;
-    T* marker = map_[marker_pos];
-
-    int i = start;
-    int j = end - 1;
-    do {
-      while (Shape::Compare(map_[i], marker) < 0) {
-        i++;
-      }
-      while (Shape::Compare(marker, map_[j]) < 0) {
-        j--;
-      }
-
-      // Swap them out!
-      if (i < j) {
-        T* tmp = map_[i];
-        map_[i++] = map_[j];
-        map_[j--] = tmp;
-      }
-    } while (i < j);
-
-    // Sort lesser halves
-    QuickSort<Shape>(start, i);
-    QuickSort<Shape>(j, end);
+  static inline int Comparator(T** a, T** b) {
+    return Shape::Compare(*a, *b);
   }
 
   T** map_;

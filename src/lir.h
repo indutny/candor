@@ -24,11 +24,13 @@ class LInstruction;
 class LLabel;
 class LGap;
 class LRange;
+class LRangeShape;
 class LUse;
+class LUseShape;
 class SourceMap;
 typedef ZoneList<LInterval*> LIntervalList;
-typedef SortableList<LRange, NopPolicy, ZonePolicy> LRangeList;
-typedef SortableList<LUse, NopPolicy, ZonePolicy> LUseList;
+typedef SortableList<LRange, LRangeShape, NopPolicy, ZonePolicy> LRangeList;
+typedef SortableList<LUse, LUseShape, NopPolicy, ZonePolicy> LUseList;
 typedef ZoneMap<NumberKey, LUse, ZoneObject> LUseMap;
 
 class LRange : public ZoneObject {
