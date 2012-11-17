@@ -21,15 +21,15 @@ LGen::LGen(HIRGen* hir, const char* filename, HIRBlock* root)
       virtual_index_(40),
       current_block_(NULL),
       current_instruction_(NULL),
-      intervals_(64),
-      unhandled_(64),
-      active_(64),
-      inactive_(64),
+      intervals_(kIntervalsInitial),
+      unhandled_(kIntervalsInitial),
+      active_(kIntervalsInitial),
+      inactive_(kIntervalsInitial),
       spill_index_(0),
-      unhandled_spills_(8),
-      active_spills_(8),
-      inactive_spills_(8),
-      free_spills_(8) {
+      unhandled_spills_(kSpillsInitial),
+      active_spills_(kSpillsInitial),
+      inactive_spills_(kSpillsInitial),
+      free_spills_(kSpillsInitial) {
   // Initialize fixed intervals
   for (int i = 0; i < kLIRRegisterCount; i++) {
     registers_[i] = CreateRegister(RegisterByIndex(i));

@@ -109,7 +109,7 @@ class LInterval : public ZoneObject {
                                     uses_(10),
                                     fixed_(false),
                                     split_parent_(NULL),
-                                    split_children_(5) {
+                                    split_children_(kSplitChildrenInitial) {
   }
 
   LUse* Use(LUse::Type type, LInstruction* instr);
@@ -163,6 +163,8 @@ class LInterval : public ZoneObject {
 
   LInterval* split_parent_;
   LIntervalList split_children_;
+
+  static const int kSplitChildrenInitial = 5;
 };
 
 class LBlock : public ZoneObject {
@@ -266,6 +268,8 @@ class LGen : public ZoneObject {
   LIntervalList free_spills_;
 
   static bool log_;
+  static const int kIntervalsInitial = 64;
+  static const int kSpillsInitial = 16;
 };
 
 #undef LGEN_VISITOR
