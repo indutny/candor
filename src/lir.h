@@ -258,7 +258,6 @@ class LGen : public ZoneObject {
   HIRBlockList blocks_;
   LInterval* registers_[kLIRRegisterCount];
   LIntervalList intervals_;
-  ZoneList<LInstruction*> instructions_;
 
   // Walk intervals data
   LIntervalList unhandled_;

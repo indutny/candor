@@ -30,7 +30,6 @@ inline int LGen::virtual_index() {
 inline LInstruction* LGen::Add(LInstruction* instr) {
   instr->id = instr_id();
   instr->block(current_block_);
-  instructions_.Push(instr);
   current_block_->instructions()->Push(instr);
 
   return instr;

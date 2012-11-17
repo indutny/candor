@@ -697,15 +697,6 @@ void LGen::ResolveDataFlow() {
       if (control->type() == LInstruction::kGoto &&
           bhead->next()->value()->lir() == succ) {
         b->instructions()->Pop();
-
-        // Remove instruction from global list
-        LInstructionList::Item* ihead = instructions_.head();
-        for (; ihead != NULL; ihead = ihead->next()) {
-          if (ihead->value() == control) {
-            instructions_.Remove(ihead);
-            break;
-          }
-        }
       } else {
         // Assign labels to other movement instructions
         LLabel* label = LLabel::Cast(succ->instructions()->head()->value());
@@ -799,15 +790,20 @@ void LGen::Generate(Masm* masm, SourceMap* map) {
   masm->stack_slots(spill_index_ + 1);
 
   // Generate all instructions
-  LInstructionList::Item* ihead = instructions_.head();
-  for (; ihead != NULL; ihead = ihead->next()) {
-    LInstruction* instr = ihead->value();
+  HIRBlockList::Item* bhead = blocks_.head();
+  for (; bhead != NULL; bhead = bhead->next()) {
+    LBlock* l = bhead->value()->lir();
 
-    if (instr->hir() != NULL && instr->hir()->ast() != NULL &&
-        instr->hir()->ast()->offset() >= 0) {
-      map->Push(masm->offset(), instr->hir()->ast()->offset());
+    LInstructionList::Item* lhead = l->instructions()->head();
+    for (; lhead != NULL; lhead = lhead->next()) {
+      LInstruction* instr = lhead->value();
+
+      if (instr->hir() != NULL && instr->hir()->ast() != NULL &&
+          instr->hir()->ast()->offset() >= 0) {
+        map->Push(masm->offset(), instr->hir()->ast()->offset());
+      }
+      instr->Generate(masm);
     }
-    instr->Generate(masm);
   }
 
   masm->FinalizeSpills();
@@ -986,19 +982,30 @@ LInterval* LGen::Split(LInterval* i, int pos) {
 
 
 LGap* LGen::GetGap(int pos) {
-  // TODO: Optimize
-  LInstructionList::Item* head = instructions_.head();
-  for (; head != NULL; head = head->next()) {
-    LInstruction* instr = head->value();
-    if (instr->id < pos) continue;
+  HIRBlockList::Item* bhead = blocks_.head();
+  LInstructionList::Item* lhead = NULL;
+  LBlock* l = NULL;
+  for (; bhead != NULL; bhead = bhead->next()) {
+    l = bhead->value()->lir();
 
-    // Return existing gap
-    if (instr->id == pos) return LGap::Cast(instr);
+    // Skip blocks that definitely can't contain gap
+    if (l->end_id <= pos) continue;
 
-    break;
+    // Search for gap within block
+    lhead = l->instructions()->head();
+    for (; lhead != NULL; lhead = lhead->next()) {
+      LInstruction* instr = lhead->value();
+      if (instr->id < pos) continue;
+
+      // Return existing gap
+      if (instr->id == pos) return LGap::Cast(instr);
+
+      break;
+    }
+
+    if (lhead != NULL) break;
   }
-
-  assert(head != NULL && head->prev() != NULL);
+  assert(lhead != NULL && lhead->prev() != NULL && l != NULL);
 
   // Create temporary spill for gap
   LInterval* tmp = CreateVirtual();
@@ -1008,18 +1015,8 @@ LGap* LGen::GetGap(int pos) {
   // Create new gap
   LGap* gap = new LGap(tmp);
   gap->id = pos;
-  gap->block(head->prev()->value()->block());
-
-  // Insert into LIR
-  instructions_.InsertBefore(head, gap);
-
-  // Insert into block
-  head = gap->block()->instructions()->head();
-  for (; head != NULL; head = head->next()) {
-    if (head->value()->id != pos + 1) continue;
-    gap->block()->instructions()->InsertBefore(head, gap);
-    break;
-  }
+  gap->block(l);
+  l->instructions()->InsertBefore(lhead, gap);
 
   return gap;
 }
