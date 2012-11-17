@@ -1,5 +1,6 @@
 #include "hir.h"
 #include "hir-inl.h"
+#include "splay-tree.h"
 #include <string.h> // memset, memcpy
 
 namespace candor {
@@ -314,7 +315,7 @@ void HIRGen::FindOutEffects(HIRInstruction* instr) {
   if (instr->alias_visited == 1) return;
   instr->alias_visited = 1;
 
-  ZoneMap<NumberKey, HIRInstruction, ZoneObject> effects_;
+  SplayTree<NumberKey, HIRInstruction, NopPolicy, ZoneObject> effects_;
 
   HIRInstructionList::Item* uhead = instr->uses()->head();
   for (; uhead != NULL; uhead = uhead->next()) {
@@ -329,18 +330,14 @@ void HIRGen::FindOutEffects(HIRInstruction* instr) {
       HIRInstruction* effect = ehead->value();
 
       NumberKey* key = NumberKey::New(effect->id);
-      if (effects_.Get(key) != NULL) continue;
-
-      effects_.Set(key, effect);
+      if (!effects_.Insert(key, effect)) continue;
       instr->effects_out()->Push(effect);
     }
 
     // Phi effects it's inputs, and call effects it's arguments
     if (use->Effects(instr)) {
       NumberKey* key = NumberKey::New(use->id);
-      if (effects_.Get(key) != NULL) continue;
-
-      effects_.Set(key, use);
+      if (!effects_.Insert(key, use)) continue;
       instr->effects_out()->Push(use);
     }
   }
@@ -351,7 +348,7 @@ void HIRGen::FindInEffects(HIRInstruction* instr) {
   if (instr->alias_visited == 2) return;
   instr->alias_visited = 2;
 
-  ZoneMap<NumberKey, HIRInstruction, ZoneObject> effects_;
+  SplayTree<NumberKey, HIRInstruction, NopPolicy, ZoneObject> effects_;
 
   HIRInstructionList::Item* ahead = instr->args()->head();
   for (; ahead != NULL; ahead = ahead->next()) {
@@ -363,9 +360,7 @@ void HIRGen::FindInEffects(HIRInstruction* instr) {
     for (; ehead != NULL; ehead = ehead->next()) {
       HIRInstruction* effect = ehead->value();
       NumberKey* key = NumberKey::New(effect->id);
-      if (effects_.Get(key) != NULL) continue;
-
-      effects_.Set(key, effect);
+      if (!effects_.Insert(key, effect)) continue;
       instr->effects_in()->Push(effect);
     }
 
@@ -377,9 +372,7 @@ void HIRGen::FindInEffects(HIRInstruction* instr) {
       if (instr->block()->reachable_from()->Test(effect->block()->id) &&
           effect->id < instr->id) {
         NumberKey* key = NumberKey::New(effect->id);
-        if (effects_.Get(key) != NULL) continue;
-
-        effects_.Set(key, effect);
+        if (!effects_.Insert(key, effect)) continue;
         instr->effects_in()->Push(effect);
       }
     }

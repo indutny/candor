@@ -12,7 +12,7 @@ class SplayTree {
  public:
   class Item : public ItemBase {
    public:
-    Item() : parent(NULL), left(NULL), right(NULL) {}
+    Item() : value(NULL), parent(NULL), left(NULL), right(NULL) {}
     ~Item() {}
 
     Key* key;
@@ -52,12 +52,16 @@ class SplayTree {
     }
   }
 
-  inline void Insert(Key* key, Value* value) {
+  inline bool Insert(Key* key, Value* value) {
     Item* place = BinarySearch(key, true);
     assert(place != NULL);
+    bool is_new = place->value == NULL;
+
     place->value = value;
 
     Splay(place);
+
+    return is_new;
   }
 
   inline Value* Find(Key* key) {
