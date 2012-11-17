@@ -94,8 +94,8 @@ class SortableList {
     if (len_ == size_) Grow();
 
     // Perform binary search for correct position
-    int middle_pos;
-    int cmp;
+    int middle_pos = -1;
+    int cmp = 0;
     for (int i = 0, j = length() - 1; i <= j; ) {
       middle_pos = (i + j) >> 1;
       T* middle = map_[middle_pos];
