@@ -66,7 +66,8 @@ class AstNode : public ZoneObject {
     kNop
   };
 
-  AstNode(Type type) : type_(type),
+  AstNode(Type type) : id(-1),
+                       type_(type),
                        value_(NULL),
                        offset_(-1),
                        length_(0),
@@ -178,6 +179,8 @@ class AstNode : public ZoneObject {
            PrintChildren(p, children()) &&
            p->Print("]");
   }
+
+  int id;
 
  protected:
   Type type_;

@@ -36,11 +36,11 @@ AstNode* Parser::ParseStatement(ParseStatementType type) {
   switch (Peek()->type()) {
    case kReturn:
     {
-      result = new AstNode(AstNode::kReturn, Peek());
+      result = Add(Add(new AstNode(AstNode::kReturn, Peek())));
       Skip();
       AstNode* value = ParseExpression();
       if (value == NULL) {
-        value = new AstNode(AstNode::kNil);
+        value = Add(Add(new AstNode(AstNode::kNil)));
         value->value("nil");
         value->length(3);
       }
@@ -49,7 +49,8 @@ AstNode* Parser::ParseStatement(ParseStatementType type) {
     break;
    case kContinue:
    case kBreak:
-    result = new AstNode(AstNode::ConvertType(Peek()->type()), Peek());
+    result = Add(Add(new AstNode(AstNode::ConvertType(Peek()->type()),
+                                 Peek())));
     Skip();
     break;
    case kIf:
@@ -100,7 +101,7 @@ AstNode* Parser::ParseStatement(ParseStatementType type) {
         return NULL;
       }
 
-      result = new AstNode(AstNode::kIf, if_tok);
+      result = Add(new AstNode(AstNode::kIf, if_tok));
       result->children()->Push(cond);
       result->children()->Push(body);
       if (elseBody != NULL) result->children()->Push(elseBody);
@@ -132,7 +133,7 @@ AstNode* Parser::ParseStatement(ParseStatementType type) {
         return NULL;
       }
 
-      result = new AstNode(AstNode::kWhile);
+      result = Add(new AstNode(AstNode::kWhile));
       result->children()->Push(cond);
       result->children()->Push(body);
     }
@@ -236,7 +237,7 @@ AstNode* Parser::ParseExpression(int priority) {
         return NULL;
       }
 
-      member = new AstNode(AstNode::ConvertType(type));
+      member = Add(new AstNode(AstNode::ConvertType(type)));
       member->children()->Push(expr);
 
       pos.Commit(member);
@@ -269,7 +270,7 @@ AstNode* Parser::ParseExpression(int priority) {
         SetError("Expected rhs after '='");
         return NULL;
       }
-      result = new AstNode(AstNode::kAssign, token);
+      result = Add(new AstNode(AstNode::kAssign, token));
       result->children()->Push(member);
       result->children()->Push(value);
     }
@@ -288,16 +289,16 @@ AstNode* Parser::ParseExpression(int priority) {
   switch (type) {
    case kInc:
     Skip();
-    result = new UnOp(UnOp::kPostInc, result);
+    result = Add(new UnOp(UnOp::kPostInc, result));
     break;
    case kDec:
     Skip();
-    result = new UnOp(UnOp::kPostDec, result);
+    result = Add(new UnOp(UnOp::kPostDec, result));
     break;
    case kEllipsis:
     {
       Skip();
-      AstNode* varg = new AstNode(AstNode::kVarArg, result);
+      AstNode* varg = Add(new AstNode(AstNode::kVarArg, result));
       varg->children()->Push(result);
       result = varg;
     }
@@ -354,7 +355,8 @@ AstNode* Parser::ParsePrefixUnOp(TokenType type) {
     return NULL;
   }
 
-  return pos.Commit(new UnOp(UnOp::ConvertPrefixType(NegateType(type)), expr));
+  return pos.Commit(Add(new UnOp(UnOp::ConvertPrefixType(NegateType(type)),
+                                 expr)));
 }
 
 
@@ -378,7 +380,9 @@ AstNode* Parser::ParseBinOp(TokenType type, AstNode* lhs, int priority) {
     return NULL;
   }
 
-  AstNode* result = new BinOp(BinOp::ConvertType(NegateType(type)), lhs, rhs);
+  AstNode* result = Add(new BinOp(BinOp::ConvertType(NegateType(type)),
+                                  lhs,
+                                  rhs));
 
   return pos.Commit(result);
 }
@@ -396,7 +400,7 @@ AstNode* Parser::ParsePrimary(PrimaryRestriction rest) {
    case kTrue:
    case kFalse:
    case kNil:
-    result = new AstNode(AstNode::ConvertType(token->type()), token);
+    result = Add(new AstNode(AstNode::ConvertType(token->type()), token));
     Skip();
     break;
    case kParenOpen:
@@ -423,7 +427,7 @@ AstNode* Parser::ParsePrimary(PrimaryRestriction rest) {
    case kSizeof:
    case kKeysof:
     if (rest != kNoKeywords) {
-      result = new AstNode(AstNode::ConvertType(token->type()), token);
+      result = Add(new AstNode(AstNode::ConvertType(token->type()), token));
       Skip();
       break;
     }
@@ -450,11 +454,12 @@ AstNode* Parser::ParseMember() {
     if (Peek()->is(kParenOpen)) {
       // Calls and function declarations
       FunctionLiteral* fn = new FunctionLiteral(result);
+      Add(fn);
       result = NULL;
       Skip();
 
       if (colon_call) {
-        fn->args()->Push(new AstNode(AstNode::kSelf));
+        fn->args()->Push(Add(new AstNode(AstNode::kSelf)));
         colon_call = false;
       }
 
@@ -539,7 +544,7 @@ AstNode* Parser::ParseMember() {
 
       if (next == NULL) break;
 
-      AstNode* node = new AstNode(AstNode::kMember, token);
+      AstNode* node = Add(new AstNode(AstNode::kMember, token));
       node->children()->Push(result);
       node->children()->Push(next);
 
@@ -567,6 +572,7 @@ AstNode* Parser::ParseObjectLiteral() {
   Skip();
 
   ObjectLiteral* result = new ObjectLiteral();
+  Add(result);
 
   while (!Peek()->is(kBraceClose) && !Peek()->is(kEnd)) {
     AstNode* key;
@@ -579,11 +585,11 @@ AstNode* Parser::ParseObjectLiteral() {
      case kKeysof:
      case kClone:
      case kDelete:
-      key = new AstNode(AstNode::kProperty, Peek());
+      key = Add(new AstNode(AstNode::kProperty, Peek()));
       Skip();
       break;
      case kNumber:
-      key = new AstNode(AstNode::kNumber, Peek());
+      key = Add(new AstNode(AstNode::kNumber, Peek()));
       Skip();
       break;
      default:
@@ -641,7 +647,7 @@ AstNode* Parser::ParseArrayLiteral() {
     return NULL;
   }
 
-  AstNode* result = new AstNode(AstNode::kArrayLiteral, Peek());
+  AstNode* result = Add(new AstNode(AstNode::kArrayLiteral, Peek()));
   Skip();
 
   while (!Peek()->is(kArrayClose) && !Peek()->is(kEnd)) {
@@ -691,7 +697,7 @@ AstNode* Parser::ParseBlock(AstNode* block) {
   AstNode* result = fn ?
       block
       :
-      new AstNode(AstNode::kBlock, Peek());
+      Add(new AstNode(AstNode::kBlock, Peek()));
   Skip();
 
   while (!Peek()->is(kEnd) && !Peek()->is(kBraceClose)) {
@@ -710,7 +716,7 @@ AstNode* Parser::ParseBlock(AstNode* block) {
 
   // Block should not be empty
   if (result->children()->length() == 0) {
-    result->children()->Push(new AstNode(AstNode::kNop));
+    result->children()->Push(Add(new AstNode(AstNode::kNop)));
   }
 
   return pos.Commit(result);

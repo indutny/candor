@@ -29,8 +29,9 @@ class Parser : public Lexer, public ErrorHandler {
     kAny
   };
 
-  Parser(const char* source, uint32_t length) : Lexer(source, length) {
-    ast_ = new FunctionLiteral(NULL);
+  Parser(const char* source, uint32_t length) : Lexer(source, length),
+                                                ast_id_(0) {
+    ast_ = Add(new FunctionLiteral(NULL));
     ast_->make_root();
     sign_ = kNormal;
   }
@@ -97,6 +98,11 @@ class Parser : public Lexer, public ErrorHandler {
     }
   }
 
+  inline AstNode* Add(AstNode* node) {
+    node->id = ast_id_++;
+    return node;
+  }
+
   // AST (result)
   inline AstNode* ast() {
     return ast_;
@@ -123,6 +129,7 @@ class Parser : public Lexer, public ErrorHandler {
   ParserSign sign_;
 
   AstNode* ast_;
+  int ast_id_;
 };
 
 } // namespace internal
