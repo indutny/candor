@@ -26,7 +26,7 @@ class LGap;
 class LRange;
 class LUse;
 class SourceMap;
-typedef ZoneList<LInterval*> LIntervalList;
+typedef SortableList<LInterval, NopPolicy, ZonePolicy> LIntervalList;
 typedef SortableList<LRange, NopPolicy, ZonePolicy> LRangeList;
 typedef SortableList<LUse, NopPolicy, ZonePolicy> LUseList;
 typedef ZoneMap<NumberKey, LUse, ZoneObject> LUseMap;
@@ -108,7 +108,8 @@ class LInterval : public ZoneObject {
                                     ranges_(10),
                                     uses_(10),
                                     fixed_(false),
-                                    split_parent_(NULL) {
+                                    split_parent_(NULL),
+                                    split_children_(5) {
   }
 
   LUse* Use(LUse::Type type, LInstruction* instr);

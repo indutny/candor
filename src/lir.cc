@@ -21,7 +21,15 @@ LGen::LGen(HIRGen* hir, const char* filename, HIRBlock* root)
       virtual_index_(40),
       current_block_(NULL),
       current_instruction_(NULL),
-      spill_index_(0) {
+      intervals_(64),
+      unhandled_(64),
+      active_(64),
+      inactive_(64),
+      spill_index_(0),
+      unhandled_spills_(8),
+      active_spills_(8),
+      inactive_spills_(8),
+      free_spills_(8) {
   // Initialize fixed intervals
   for (int i = 0; i < kLIRRegisterCount; i++) {
     registers_[i] = CreateRegister(RegisterByIndex(i));
@@ -340,36 +348,31 @@ void LGen::ShuffleIntervals(LIntervalList* active,
                             LIntervalList* handled,
                             int pos) {
   // Check for intervals in active that are expired or inactive
-  LIntervalList::Item* head = active->head();
-  LIntervalList::Item* next;
-  for (; head != NULL; head = next) {
-    LInterval* interval = head->value();
-    next = head->next();
+  for (int i = 0; i < active->length(); i++) {
+    LInterval* interval = active->At(i);
 
     if (interval->end() < pos) {
       // Interval has ended before current position
-      active->Remove(head);
+      active->RemoveAt(i--);
       if (handled != NULL) handled->Push(interval);
     } else if (!interval->Covers(pos)){
       // Interval isn't covering current position - move to ininterval
-      active->Remove(head);
+      active->RemoveAt(i--);
       inactive->Push(interval);
     }
   }
 
   // Check for intervals in inactive that are expired or active
-  head = inactive->head();
-  for (; head != NULL; head = next) {
-    LInterval* interval = head->value();
-    next = head->next();
+  for (int i = 0; i < inactive->length(); i++) {
+    LInterval* interval = inactive->At(i);
 
     if (interval->end() < pos) {
       // Interval has ended before current position
-      inactive->Remove(head);
+      inactive->RemoveAt(i--);
       if (handled != NULL) handled->Push(interval);
     } else if (interval->Covers(pos)){
       // Interval is covering current position - move to active
-      inactive->Remove(head);
+      inactive->RemoveAt(i--);
       active->Push(interval);
     }
   }
@@ -378,9 +381,8 @@ void LGen::ShuffleIntervals(LIntervalList* active,
 
 void LGen::WalkIntervals() {
   // First populate and sort unhandled list
-  LIntervalList::Item* head = intervals_.head();
-  for (; head != NULL; head = head->next()) {
-    LInterval* interval = head->value();
+  for (int i = 0; i < intervals_.length(); i++) {
+    LInterval* interval = intervals_.At(i);
 
     // Skip empty intervals
     if (interval->ranges()->length() == 0) continue;
@@ -424,8 +426,8 @@ void LGen::WalkIntervals() {
   }
 
   // Sort by starting position
-  unhandled_.Sort<LInterval>();
-  inactive_.Sort<LInterval>();
+  unhandled_.Sort();
+  inactive_.Sort();
 
   while (unhandled_.length() > 0) {
     // Pick first interval
@@ -464,9 +466,8 @@ void LGen::TryAllocateFreeReg(LInterval* current) {
   }
 
   // But registers that are used by active intervals are not free at all
-  LIntervalList::Item* head = active_.head();
-  for (; head != NULL; head = head->next()) {
-    LInterval* active = head->value();
+  for (int i = 0; i < active_.length(); i++) {
+    LInterval* active = active_.At(i);
     assert(active->is_register());
 
     free_pos[active->index()] = 0;
@@ -474,9 +475,8 @@ void LGen::TryAllocateFreeReg(LInterval* current) {
 
   // Inactive intervals can limit availablity too, but only at the places
   // that are intersecting with current interval
-  head = inactive_.head();
-  for (; head != NULL; head = head->next()) {
-    LInterval* inactive = head->value();
+  for (int i = 0; i < inactive_.length(); i++) {
+    LInterval* inactive = inactive_.At(i);
     assert(inactive->is_register());
 
     int pos = current->FindIntersection(inactive);
@@ -535,9 +535,8 @@ void LGen::AllocateBlockedReg(LInterval* current) {
   }
 
   // In all active intervals
-  LIntervalList::Item* head = active_.head();
-  for (; head != NULL; head = head->next()) {
-    LInterval* active = head->value();
+  for (int i = 0; i < active_.length(); i++) {
+    LInterval* active = active_.At(i);
     int index = active->index();
 
     if (active->IsFixed()) {
@@ -555,9 +554,8 @@ void LGen::AllocateBlockedReg(LInterval* current) {
   }
 
   // Almost he same for inactive
-  head = inactive_.head();
-  for (; head != NULL; head = head->next()) {
-    LInterval* inactive = head->value();
+  for (int i = 0; i < inactive_.length(); i++) {
+    LInterval* inactive = inactive_.At(i);
     int index = inactive->index();
     int pos = current->FindIntersection(inactive);
 
@@ -609,9 +607,8 @@ void LGen::AllocateBlockedReg(LInterval* current) {
     if (split_pos % 2 == 0) split_pos--;
 
     // Active intervals
-    head = active_.head();
-    for (; head != NULL; head = head->next()) {
-      LInterval* interval = head->value();
+    for (int i = 0; i < active_.length(); i++) {
+      LInterval* interval = active_.At(i);
       if (!interval->IsEqual(current)) continue;
 
       // Split before current interval, and let allocator process it later
@@ -619,11 +616,8 @@ void LGen::AllocateBlockedReg(LInterval* current) {
     }
 
     // Inactive intervals
-    head = active_.head();
-    LIntervalList::Item* next;
-    for (; head != NULL; head = next) {
-      LInterval* interval = head->value();
-      next = head->next();
+    for (int i = 0; i < inactive_.length(); i++) {
+      LInterval* interval = inactive_.At(i);
       if (interval->IsFixed() || !interval->IsEqual(current)) continue;
 
       int intersection = current->FindIntersection(interval);
@@ -647,7 +641,7 @@ void LGen::AllocateBlockedReg(LInterval* current) {
         }
       }
 
-      inactive_.Remove(head);
+      inactive_.RemoveAt(i--);
     }
   }
 }
@@ -711,8 +705,7 @@ void LGen::ResolveDataFlow() {
 
 void LGen::AllocateSpills() {
   // Sort by starting position
-  unhandled_spills_.Sort<LInterval>();
-  LIntervalList::Item* head;
+  unhandled_spills_.Sort();
 
   while (unhandled_spills_.length() > 0) {
     LInterval* current = unhandled_spills_.Shift();
@@ -727,14 +720,12 @@ void LGen::AllocateSpills() {
         f = free_spills_.Shift();
 
         // Check that this spill is really free
-        head = active_spills_.head();
-        for (; f != NULL && head != NULL; head = head->next()) {
-          if (head->value()->IsEqual(f)) f = NULL;
+        for (int i = 0; f != NULL && i < active_spills_.length(); i++) {
+          if (active_spills_.At(i)->IsEqual(f)) f = NULL;
         }
 
-        head = inactive_spills_.head();
-        for (; f != NULL && head != NULL; head = head->next()) {
-          LInterval* inactive = head->value();
+        for (int i = 0; f != NULL && i < inactive_spills_.length(); i++) {
+          LInterval* inactive = inactive_spills_.At(i);
           if (inactive->IsEqual(f) &&
               inactive->FindIntersection(current) != -1) {
             f = NULL;
@@ -752,16 +743,14 @@ void LGen::AllocateSpills() {
     ZoneMap<NumberKey, LInterval, ZoneObject> blocked;
     int max_index = 0;
 
-    head = active_spills_.head();
-    for (; head != NULL; head = head->next()) {
-      LInterval* active = head->value();
+    for (int i = 0; i < active_spills_.length(); i++) {
+      LInterval* active = active_spills_.At(i);
       blocked.Set(NumberKey::New(active->index()), active);
       if (active->index() > max_index) max_index = active->index();
     }
 
-    head = inactive_spills_.head();
-    for (; head != NULL; head = head->next()) {
-      LInterval* inactive = head->value();
+    for (int i = 0; i < inactive_spills_.length(); i++) {
+      LInterval* inactive = inactive_spills_.At(i);
       if (inactive->FindIntersection(current) != -1) {
         blocked.Set(NumberKey::New(inactive->index()), inactive);
         if (inactive->index() > max_index) max_index = inactive->index();
@@ -833,9 +822,8 @@ void LGen::Print(PrintBuffer* p, bool extended) {
 
 
 void LGen::PrintIntervals(PrintBuffer* p) {
-  LIntervalList::Item* ihead = intervals_.head();
-  for (; ihead != NULL; ihead = ihead->next()) {
-    LInterval* interval = ihead->value();
+  for (int i = 0; i < intervals_.length(); i++) {
+    LInterval* interval = intervals_.At(i);
     if (interval->id < kLIRRegisterCount) {
       p->Print("%s     : ", RegisterNameByIndex(interval->id));
     } else if (interval->is_stackslot()) {
@@ -959,7 +947,7 @@ LInterval* LGen::Split(LInterval* i, int pos) {
   child->split_parent(parent);
   parent->split_children()->Unshift(child);
 
-  unhandled_.InsertSorted<LInterval>(child);
+  unhandled_.InsertSorted(child);
 
   assert(i->end() <= pos);
   assert(child->start() >= pos);
@@ -1103,9 +1091,8 @@ LInterval* LInterval::ChildAt(int pos) {
   if (split_parent() != NULL) return split_parent()->ChildAt(pos);
   if (Covers(pos)) return this;
 
-  LIntervalList::Item* head = split_children_.head();
-  for (; head != NULL; head = head->next()) {
-    LInterval* child = head->value();
+  for (int i = 0; i < split_children_.length(); i++) {
+    LInterval* child = split_children_.At(i);
     if (child->Covers(pos)) return child;
   }
 
