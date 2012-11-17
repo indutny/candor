@@ -577,12 +577,12 @@ void HIRGen::ScheduleLate(HIRInstruction* instr) {
   // Select best block between ->block() and lca
   HIRBlock* best = lca;
 
+  if (lca->loop_depth < best->loop_depth) best = lca;
+
   while (lca->reachable_from()->Test(instr->block()->id) &&
          lca != instr->block()) {
-    if (lca->loop_depth < best->loop_depth) {
-      best = lca;
-    }
     lca = lca->dominator();
+    if (lca->loop_depth < best->loop_depth) best = lca;
   }
   instr->block(best);
 }
