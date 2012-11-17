@@ -717,7 +717,7 @@ void LGen::AllocateSpills() {
     if (free_spills_.length() > 0) {
       LInterval* f = NULL;
       do {
-        f = free_spills_.Shift();
+        f = free_spills_.Pop();
 
         // Check that this spill is really free
         for (int i = 0; f != NULL && i < active_spills_.length(); i++) {
