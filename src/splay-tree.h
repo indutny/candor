@@ -95,8 +95,12 @@ class SplayTree {
     do {
       current = next;
       cmp = Key::Compare(key, current->key);
-      if (cmp >= 0) last_positive = current;
-      next = cmp == 0 ? NULL : cmp > 0 ? current->right : current->left;
+      if (cmp >= 0) {
+        last_positive = current;
+        next = cmp == 0 ? NULL : current->right;
+      } else {
+        next = current->left;
+      }
       assert(next == NULL || next->parent == current);
     } while (next != NULL);
 
