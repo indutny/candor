@@ -12,6 +12,7 @@
 #include "macroassembler.h" // Register
 #include "zone.h" // Zone
 #include "utils.h" // Lists and etc
+#include "list.h"
 
 namespace candor {
 namespace internal {
@@ -26,8 +27,8 @@ class LRange;
 class LUse;
 class SourceMap;
 typedef ZoneList<LInterval*> LIntervalList;
-typedef ZoneList<LRange*> LRangeList;
-typedef ZoneList<LUse*> LUseList;
+typedef SortableList<LRange, NopPolicy, ZonePolicy> LRangeList;
+typedef SortableList<LUse, NopPolicy, ZonePolicy> LUseList;
 typedef ZoneMap<NumberKey, LUse, ZoneObject> LUseMap;
 
 class LRange : public ZoneObject {
@@ -110,6 +111,8 @@ class LInterval : public ZoneObject {
                                     type_(type),
                                     definition_(NULL),
                                     index_(index),
+                                    ranges_(10),
+                                    uses_(10),
                                     fixed_(false),
                                     split_parent_(NULL) {
   }

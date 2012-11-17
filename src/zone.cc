@@ -20,5 +20,10 @@ void* Zone::Allocate(size_t size) {
   }
 }
 
+
+void* ZonePolicy::Allocate(size_t size) {
+  return Zone::current()->Allocate(size);
+}
+
 } // namespace internal
 } // namespace candor

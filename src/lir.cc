@@ -312,7 +312,7 @@ void LGen::BuildIntervals() {
           res->AddRange(instr->id, instr->id + 1);
         } else if (l->live_in.Get(NumberKey::New(res->id)) == NULL) {
           // Shorten first range
-          res->ranges()->head()->value()->start(instr->id);
+          res->ranges()->head()->start(instr->id);
         }
       }
 
@@ -393,9 +393,8 @@ void LGen::WalkIntervals() {
       inactive_.Push(interval);
     } else if (interval->is_const()) {
       // Rematerialize const intervals before their uses
-      LUseList::Item* utail = interval->uses()->tail();
-      for (; utail != NULL; utail = utail->prev()) {
-        LUse* use = utail->value();
+      for (int i = interval->uses()->length() - 1; i >= 0; i--) {
+        LUse* use = interval->uses()->At(i);
 
         // Skip constant definition
         if (use->instr()->result == use) continue;
@@ -411,6 +410,9 @@ void LGen::WalkIntervals() {
         // Replace interval in use
         use->interval(reg);
         reg->AddRange(use->instr()->id - 1, use->instr()->id);
+
+        // Current use could be probably moved
+        if (interval->uses()->At(i) != use) i++;
       }
     } else if (interval->is_stackslot()) {
       // Fix gap's stackslots
@@ -913,7 +915,7 @@ void LGen::ResultFromFixed(LInstruction* instr, Register reg) {
   res->register_hint = move->inputs[0];
 
   instr->SetResult(ireg, LUse::kRegister);
-  instr->Propagate(res->uses()->head()->value());
+  instr->Propagate(res->uses()->head());
 }
 
 
@@ -925,31 +927,25 @@ LInterval* LGen::Split(LInterval* i, int pos) {
   LInterval* child = CreateVirtual();
 
   // Move uses from parent to child
-  LUseList::Item* utail = i->uses()->tail();
-  LUseList::Item* uprev;
-  for (; utail != NULL; utail = uprev) {
-    LUse* use = utail->value();
-    uprev = utail->prev();
+  for (int j = i->uses()->length() - 1; j >= 0; j--) {
+    LUse* use = i->uses()->At(j);
 
     // Uses are sorted - so break early
-    if (use->instr()->id < pos) break;
+    if (use->instr()->id < pos) continue;
 
-    i->uses()->Remove(utail);
+    i->uses()->RemoveAt(j);
     child->uses()->Unshift(use);
     use->interval(child);
   }
 
   // Move ranges from parent to child
-  LRangeList::Item* rtail = i->ranges()->tail();
-  LRangeList::Item* rprev;
-  for (; rtail != NULL; rtail = rprev) {
-    LRange* range = rtail->value();
-    rprev = rtail->prev();
+  for (int j = i->ranges()->length() - 1; j >= 0; j--) {
+    LRange* range = i->ranges()->At(j);
 
     // Ranges are sorted too
-    if (range->end() <= pos)  break;
+    if (range->end() <= pos) break;
 
-    i->ranges()->Remove(rtail);
+    i->ranges()->RemoveAt(j);
     if (range->start() < pos) {
       // Range needs to be splitted first
       i->ranges()->Push(new LRange(i, range->start(), pos));
@@ -1042,7 +1038,7 @@ LUse* LInterval::Use(LUse::Type type, LInstruction* instr) {
 void LInterval::AddRange(int start, int end) {
   // Check if current range can be extended
   if (ranges_.length() > 0) {
-    LRange* head = ranges_.head()->value();
+    LRange* head = ranges_.head();
     if (head->start() == end) {
       head->start(start);
       return;
@@ -1059,9 +1055,8 @@ void LInterval::AddRange(int start, int end) {
 
 
 bool LInterval::Covers(int pos) {
-  LRangeList::Item* head = ranges_.head();
-  for (; head != NULL; head = head->next()) {
-    LRange* range = head->value();
+  for (int i = 0; i < ranges_.length(); i++) {
+    LRange* range = ranges_.At(i);
     if (range->start() > pos) return false;
     if (range->end() > pos) return true;
   }
@@ -1071,9 +1066,8 @@ bool LInterval::Covers(int pos) {
 
 
 LUse* LInterval::UseAt(int pos) {
-  LUseList::Item* head = uses_.head();
-  for (; head != NULL; head = head->next()) {
-    LUse* use = head->value();
+  for (int i = 0; i < uses_.length(); i++) {
+    LUse* use = uses_.At(i);
     if (use->instr()->id == pos) return use;
   }
 
@@ -1082,9 +1076,8 @@ LUse* LInterval::UseAt(int pos) {
 
 
 LUse* LInterval::UseAfter(int pos, LUse::Type use_type) {
-  LUseList::Item* head = uses_.head();
-  for (; head != NULL; head = head->next()) {
-    LUse* use = head->value();
+  for (int i = 0; i < uses_.length(); i++) {
+    LUse* use = uses_.At(i);
     if (use->instr()->id >= pos &&
         (use_type == LUse::kAny || use->type() == use_type)) {
       return use;
@@ -1096,11 +1089,9 @@ LUse* LInterval::UseAfter(int pos, LUse::Type use_type) {
 
 
 int LInterval::FindIntersection(LInterval* with) {
-  LRangeList::Item* ahead = ranges()->head();
-  for (; ahead != NULL; ahead = ahead->next()) {
-    LRangeList::Item* bhead = with->ranges()->head();
-    for (; bhead != NULL; bhead = bhead->next()) {
-      int r = ahead->value()->FindIntersection(bhead->value());
+  for (int i = 0; i < ranges()->length(); i++) {
+    for (int j = 0; j < with->ranges()->length(); j++) {
+      int r = ranges()->At(i)->FindIntersection(with->ranges()->At(j));
       if (r != -1) return r;
     }
   }

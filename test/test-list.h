@@ -12,7 +12,8 @@
     V(fullgen) \
     V(hir) \
     V(lir) \
-    V(splaytree)
+    V(splaytree) \
+    V(list)
 
 #define TEST_DECLARE(name)\
     int __test_runner_##name();

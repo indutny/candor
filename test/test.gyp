@@ -40,6 +40,7 @@
       'test-hir.cc',
       'test-lir.cc',
       'test-splaytree.cc',
+      'test-list.cc',
     ]
   }]
 }

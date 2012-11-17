@@ -73,6 +73,11 @@ class Zone {
   size_t page_size_;
 };
 
+class ZonePolicy {
+ public:
+  static void* Allocate(size_t size);
+};
+
 // Base class for objects that will be bound to some zone
 class ZoneObject {
  public:

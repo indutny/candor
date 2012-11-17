@@ -313,13 +313,13 @@ inline LInterval::Type LInterval::type() {
 
 inline int LInterval::start() {
   assert(ranges()->length() > 0);
-  return ranges()->head()->value()->start();
+  return ranges()->head()->start();
 }
 
 
 inline int LInterval::end() {
   assert(ranges()->length() > 0);
-  return ranges()->tail()->value()->end();
+  return ranges()->tail()->end();
 }
 
 } // namespace internal
