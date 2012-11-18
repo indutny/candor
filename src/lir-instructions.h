@@ -1,3 +1,25 @@
+/**
+ * Copyright (c) 2012, Fedor Indutny.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #ifndef _SRC_LIR_INSTRUCTIONS_H_
 #define _SRC_LIR_INSTRUCTIONS_H_
 
@@ -5,7 +27,7 @@
 #include "lir-inl.h"
 #include "hir-instructions.h"
 #include "hir-instructions-inl.h"
-#include "macroassembler.h" // Label
+#include "macroassembler.h"  // Label
 #include "zone.h"
 #include "utils.h"
 
@@ -68,15 +90,15 @@ class LInstruction : public ZoneObject {
     kNone
   };
 
-  LInstruction(Type type) : id(-1),
-                            type_(type),
-                            input_count_(0),
-                            scratch_count_(0),
-                            has_call_(NULL),
-                            block_(NULL),
-                            slot_(NULL),
-                            hir_(NULL),
-                            propagated_(NULL) {
+  explicit LInstruction(Type type) : id(-1),
+                                     type_(type),
+                                     input_count_(0),
+                                     scratch_count_(0),
+                                     has_call_(NULL),
+                                     block_(NULL),
+                                     slot_(NULL),
+                                     hir_(NULL),
+                                     propagated_(NULL) {
     inputs[0] = NULL;
     inputs[1] = NULL;
     scratches[0] = NULL;
@@ -99,7 +121,10 @@ class LInstruction : public ZoneObject {
 
   inline LInstruction* SetSlot(ScopeSlot* slot);
 
-  inline LInstruction* MarkHasCall() { has_call_ = true; return this; }
+  inline LInstruction* MarkHasCall() {
+    has_call_ = true;
+    return this;
+  }
   inline bool HasCall() { return has_call_; }
 
   inline Type type() { return type_; }
@@ -116,7 +141,10 @@ class LInstruction : public ZoneObject {
   int result_count() { return result != NULL; }
   int scratch_count() { return scratch_count_; }
 
-  inline ScopeSlot* slot() { assert(slot_ != NULL); return slot_; }
+  inline ScopeSlot* slot() {
+    assert(slot_ != NULL);
+    return slot_;
+  }
   inline HIRInstruction* hir() { return hir_; }
   inline void hir(HIRInstruction* hir) { hir_ = hir; }
 
@@ -147,8 +175,8 @@ class LInstruction : public ZoneObject {
 
 class LEntry : public LInstruction {
  public:
-  LEntry(int context_slots) : LInstruction(kEntry),
-                              context_slots_(context_slots) {
+  explicit LEntry(int context_slots) : LInstruction(kEntry),
+                                       context_slots_(context_slots) {
   }
 
   INSTRUCTION_METHODS(Entry)
@@ -194,7 +222,9 @@ class LGap : public LInstruction {
 
   typedef ZoneList<Pair*> PairList;
 
-  LGap(LInterval* tmp) : LInstruction(kGap), tmp_(tmp->Use(LUse::kAny, this)) {}
+  explicit LGap(LInterval* tmp) : LInstruction(kGap),
+                                  tmp_(tmp->Use(LUse::kAny, this)) {
+  }
 
   INSTRUCTION_METHODS(Gap)
 
@@ -213,7 +243,8 @@ class LGap : public LInstruction {
 
 class LControlInstruction : public LInstruction {
  public:
-  LControlInstruction(Type type) : LInstruction(type), target_count_(0) {
+  explicit LControlInstruction(Type type) : LInstruction(type),
+                                            target_count_(0) {
     targets_[0] = NULL;
     targets_[1] = NULL;
   }
@@ -258,7 +289,8 @@ class LBranchNumber : public LControlInstruction {
 
 class LAccessProperty : public LInstruction {
  public:
-  LAccessProperty(Type type) : LInstruction(type), monomorphic_prop_(false) {
+  explicit LAccessProperty(Type type) : LInstruction(type),
+                                        monomorphic_prop_(false) {
   }
 
   inline void SetMonomorphicProperty();
@@ -302,7 +334,8 @@ class LFunction : public LInstruction {
 
 class LLiteral : public LInstruction {
  public:
-  LLiteral(ScopeSlot* slot) : LInstruction(kLiteral), root_slot_(slot) {
+  explicit LLiteral(ScopeSlot* slot) : LInstruction(kLiteral),
+                                       root_slot_(slot) {
     assert(slot != NULL);
   }
 
@@ -314,7 +347,8 @@ class LLiteral : public LInstruction {
 
 class LAllocateObject : public LInstruction {
  public:
-  LAllocateObject(int size) : LInstruction(kAllocateObject), size_(size) {
+  explicit LAllocateObject(int size) : LInstruction(kAllocateObject),
+                                       size_(size) {
   }
 
   INSTRUCTION_METHODS(AllocateObject)
@@ -325,7 +359,8 @@ class LAllocateObject : public LInstruction {
 
 class LAllocateArray : public LInstruction {
  public:
-  LAllocateArray(int size) : LInstruction(kAllocateArray), size_(size) {
+  explicit LAllocateArray(int size) : LInstruction(kAllocateArray),
+                                      size_(size) {
   }
 
   INSTRUCTION_METHODS(AllocateArray)
@@ -336,7 +371,7 @@ class LAllocateArray : public LInstruction {
 
 #define DEFAULT_INSTR_IMPLEMENTATION(V) \
   class L##V : public LInstruction { \
-   public: \
+    public: \
     L##V() : LInstruction(k##V) {} \
     INSTRUCTION_METHODS(V) \
   };
@@ -346,7 +381,7 @@ LIR_INSTRUCTION_SIMPLE_TYPES(DEFAULT_INSTR_IMPLEMENTATION)
 #undef DEFAULT_INSTR_IMPLEMENTATION
 #undef INSTRUCTION_METHODS
 
-} // namespace internal
-} // namespace candor
+}  // namespace internal
+}  // namespace candor
 
-#endif // _SRC_LIR_INSTRUCTIONS_H_
+#endif  // _SRC_LIR_INSTRUCTIONS_H_

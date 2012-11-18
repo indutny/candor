@@ -1,24 +1,47 @@
-#include "code-space.h"
-#include "candor.h" // Error
-#include "heap.h" // Heap
-#include "heap-inl.h" // Heap
-#include "parser.h" // Parser
-#include "scope.h" // Scope
-#include "macroassembler.h" // Masm
-#include "fullgen.h" // Fullgen
-#include "fullgen-inl.h" // Fullgen
-#include "hir.h" // HIR
-#include "hir-inl.h" // HIR
-#include "lir.h" // LIR
-#include "lir-inl.h" // LIR
-#include "source-map.h" // SourceMap
-#include "stubs.h" // EntryStub
-#include "pic.h" // PIC
-#include "utils.h" // GetPageSize
+/**
+ * Copyright (c) 2012, Fedor Indutny.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
-#include <stdlib.h> // NULL
-#include <string.h> // memcpy, memset
-#include <sys/mman.h> // mmap
+#include "code-space.h"
+
+#include <stdlib.h>  // NULL
+#include <string.h>  // memcpy, memset
+#include <sys/mman.h>  // mmap
+
+#include "candor.h"  // Error
+#include "heap.h"  // Heap
+#include "heap-inl.h"  // Heap
+#include "parser.h"  // Parser
+#include "scope.h"  // Scope
+#include "macroassembler.h"  // Masm
+#include "fullgen.h"  // Fullgen
+#include "fullgen-inl.h"  // Fullgen
+#include "hir.h"  // HIR
+#include "hir-inl.h"  // HIR
+#include "lir.h"  // LIR
+#include "lir-inl.h"  // LIR
+#include "source-map.h"  // SourceMap
+#include "stubs.h"  // EntryStub
+#include "pic.h"  // PIC
+#include "utils.h"  // GetPageSize
 
 namespace candor {
 namespace internal {
@@ -292,5 +315,5 @@ void CodeChunk::Unref() {
   assert(ref_ >= 0);
 }
 
-} // namespace internal
-} // namespace candor
+}  // namespace internal
+}  // namespace candor

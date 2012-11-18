@@ -1,11 +1,33 @@
+/**
+ * Copyright (c) 2012, Fedor Indutny.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #ifndef _SRC_MARCOASSEMBLER_H_
 #define _SRC_MARCOASSEMBLER_H_
 
 #include "assembler.h"
 #include "assembler-inl.h"
-#include "ast.h" // AstNode
-#include "code-space.h" // CodeSpace
-#include "heap.h" // Heap::HeapTag and etc
+#include "ast.h"  // AstNode
+#include "code-space.h"  // CodeSpace
+#include "heap.h"  // Heap::HeapTag and etc
 #include "heap-inl.h"
 
 namespace candor {
@@ -17,7 +39,7 @@ class LUse;
 
 class Masm : public Assembler {
  public:
-  Masm(CodeSpace* space);
+  explicit Masm(CodeSpace* space);
 
   // Save/restore all valuable register
   void Pushad();
@@ -25,7 +47,7 @@ class Masm : public Assembler {
 
   class Align {
    public:
-    Align(Masm* masm);
+    explicit Align(Masm* masm);
     ~Align();
    private:
     Masm* masm_;
@@ -34,7 +56,7 @@ class Masm : public Assembler {
 
   class Spill {
    public:
-    Spill(Masm* masm);
+    explicit Spill(Masm* masm);
     Spill(Masm* masm, Register src);
     ~Spill();
 
@@ -117,12 +139,12 @@ class Masm : public Assembler {
   // Generic move, LIR augmentation
   void Move(LUse* dst, LUse* src);
   void Move(LUse* dst, Register src);
-  void Move(LUse* dst, Operand& src);
+  void Move(LUse* dst, const Operand& src);
   void Move(LUse* dst, Immediate src);
 
   // Sets correct environment and calls function
   void Call(Register addr);
-  void Call(Operand& addr);
+  void Call(const Operand& addr);
   void Call(char* stub);
   void CallFunction(Register fn);
   void ProbeCPU();
@@ -139,7 +161,7 @@ class Masm : public Assembler {
   inline void Untag(Register src);
   inline Operand& SpillToOperand(int index);
   inline Condition BinOpToCondition(BinOp::BinOpType type, BinOpUsage usage);
-  inline void SpillSlot(uint32_t index, Operand& op);
+  inline void SpillSlot(uint32_t index, Operand* op);
 
   inline Heap* heap() { return space_->heap(); }
   inline Stubs* stubs() { return space_->stubs(); }
@@ -180,7 +202,7 @@ class AbsoluteAddress {
   RelocationInfo* r_;
 };
 
-} // namespace internal
-} // namespace candor
+}  // namespace internal
+}  // namespace candor
 
-#endif // _SRC_MARCOASSEMBLER_H_
+#endif  // _SRC_MARCOASSEMBLER_H_

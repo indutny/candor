@@ -1,9 +1,31 @@
+/**
+ * Copyright (c) 2012, Fedor Indutny.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #include "root.h"
-#include "scope.h" // ScopeSlot
-#include "ast.h" // AstNode
-#include "heap.h" // HContext
+#include "scope.h"  // ScopeSlot
+#include "ast.h"  // AstNode
+#include "heap.h"  // HContext
 #include "heap-inl.h"
-#include "utils.h" // List
+#include "utils.h"  // List
 
 namespace candor {
 namespace internal {
@@ -46,26 +68,26 @@ ScopeSlot* Root::Put(AstNode* node) {
   char* value = HNil::New();
 
   switch (node->type()) {
-   case AstNode::kNumber:
-    value = NumberToValue(node, &slot);
-    break;
-   case AstNode::kProperty:
-   case AstNode::kString:
-    value = StringToValue(node);
-    break;
-   case AstNode::kTrue:
-    value = heap()->CreateBoolean(true);
-    break;
-   case AstNode::kFalse:
-    value = heap()->CreateBoolean(false);
-    break;
-   case AstNode::kNil:
-    {
-      slot = new ScopeSlot(ScopeSlot::kContext, -2);
-      slot->type(ScopeSlot::kImmediate);
-      slot->value(HNil::New());
-    }
-   default: UNEXPECTED break;
+    case AstNode::kNumber:
+      value = NumberToValue(node, &slot);
+      break;
+    case AstNode::kProperty:
+    case AstNode::kString:
+      value = StringToValue(node);
+      break;
+    case AstNode::kTrue:
+      value = heap()->CreateBoolean(true);
+      break;
+    case AstNode::kFalse:
+      value = heap()->CreateBoolean(false);
+      break;
+    case AstNode::kNil:
+      {
+        slot = new ScopeSlot(ScopeSlot::kContext, -2);
+        slot->type(ScopeSlot::kImmediate);
+        slot->value(HNil::New());
+      }
+    default: UNEXPECTED break;
   }
 
   if (slot != NULL) return slot;
@@ -112,5 +134,5 @@ HContext* Root::Allocate() {
   return HValue::As<HContext>(HContext::New(heap(), values()));
 }
 
-} // namespace internal
-} // namespace candor
+}  // namespace internal
+}  // namespace candor

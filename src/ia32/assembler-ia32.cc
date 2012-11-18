@@ -1,8 +1,31 @@
+/**
+ * Copyright (c) 2012, Fedor Indutny.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+#include <assert.h>
+
 #include "assembler.h"
 #include "assembler-inl.h"
 #include "heap.h"
 #include "heap-inl.h"
-#include <assert.h>
 
 namespace candor {
 namespace internal {
@@ -19,17 +42,17 @@ void RelocationInfo::Relocate(Heap* heap, char* buffer) {
   }
 
   switch (size_) {
-   case kByte:
-    *reinterpret_cast<uint8_t*>(buffer + offset_) = addr;
-    break;
-   case kWord:
-    *reinterpret_cast<uint16_t*>(buffer + offset_) = addr;
-    break;
-   case kLong:
-    *reinterpret_cast<uint32_t*>(buffer + offset_) = addr;
-    break;
-   default:
-    break;
+    case kByte:
+      *reinterpret_cast<uint8_t*>(buffer + offset_) = addr;
+      break;
+    case kWord:
+      *reinterpret_cast<uint16_t*>(buffer + offset_) = addr;
+      break;
+    case kLong:
+      *reinterpret_cast<uint32_t*>(buffer + offset_) = addr;
+      break;
+    default:
+      break;
   }
 
   if (notify_gc_) {
@@ -79,19 +102,19 @@ void Assembler::push(Register src) {
 }
 
 
-void Assembler::push(Immediate imm) {
+void Assembler::push(const Immediate imm) {
   emitb(0x68);
   emitl(imm.value());
 }
 
 
-void Assembler::pushb(Immediate imm) {
+void Assembler::pushb(const Immediate imm) {
   emitb(0x6A);
   emitb(imm.value());
 }
 
 
-void Assembler::push(Operand& src) {
+void Assembler::push(const Operand& src) {
   emitb(0xFF);
   emit_modrm(src, 6);
 }
@@ -124,54 +147,54 @@ void Assembler::cmpl(Register dst, Register src) {
 }
 
 
-void Assembler::cmpl(Register dst, Operand& src) {
+void Assembler::cmpl(Register dst, const Operand& src) {
   emitb(0x3B);
   emit_modrm(dst, src);
 }
 
 
-void Assembler::cmpl(Register dst, Immediate src) {
+void Assembler::cmpl(Register dst, const Immediate src) {
   emitb(0x81);
   emit_modrm(dst, 7);
   emitl(src.value());
 }
 
 
-void Assembler::cmplb(Register dst, Immediate src) {
+void Assembler::cmplb(Register dst, const Immediate src) {
   emitb(0x83);
   emit_modrm(dst, 7);
   emitb(src.value());
 }
 
 
-void Assembler::cmpl(Operand& dst, Immediate src) {
+void Assembler::cmpl(const Operand& dst, const Immediate src) {
   emitb(0x81);
   emit_modrm(dst, 7);
   emitl(src.value());
 }
 
 
-void Assembler::cmpb(Register dst, Operand& src) {
+void Assembler::cmpb(Register dst, const Operand& src) {
   emitb(0x3A);
   emit_modrm(dst, src);
 }
 
 
-void Assembler::cmpb(Register dst, Immediate src) {
+void Assembler::cmpb(Register dst, const Immediate src) {
   emitb(0x80);
   emit_modrm(dst, 7);
   emitb(src.value());
 }
 
 
-void Assembler::cmpb(Operand& dst, Immediate src) {
+void Assembler::cmpb(const Operand& dst, const Immediate src) {
   emitb(0x80);
   emit_modrm(dst, 7);
   emitb(src.value());
 }
 
 
-void Assembler::testb(Register dst, Immediate src) {
+void Assembler::testb(Register dst, const Immediate src) {
   assert(dst != esi && dst != edi);
   emitb(0xF6);
   emit_modrm(dst, 0);
@@ -179,7 +202,7 @@ void Assembler::testb(Register dst, Immediate src) {
 }
 
 
-void Assembler::testl(Register dst, Immediate src) {
+void Assembler::testl(Register dst, const Immediate src) {
   assert(dst != esi && dst != edi);
   emitb(0xF7);
   emit_modrm(dst, 0);
@@ -197,21 +220,21 @@ void Assembler::jmp(Label* label) {
 void Assembler::jmp(Condition cond, Label* label) {
   emitb(0x0F);
   switch (cond) {
-   case kEq: emitb(0x84); break;
-   case kNe: emitb(0x85); break;
-   case kLt: emitb(0x8C); break;
-   case kLe: emitb(0x8E); break;
-   case kGt: emitb(0x8F); break;
-   case kGe: emitb(0x8D); break;
-   case kBelow: emitb(0x82); break;
-   case kBe: emitb(0x86); break;
-   case kAbove: emitb(0x87); break;
-   case kAe: emitb(0x83); break;
-   case kCarry: emitb(0x82); break;
-   case kOverflow: emitb(0x80); break;
-   case kNoOverflow: emitb(0x81); break;
-   default:
-    UNEXPECTED
+    case kEq: emitb(0x84); break;
+    case kNe: emitb(0x85); break;
+    case kLt: emitb(0x8C); break;
+    case kLe: emitb(0x8E); break;
+    case kGt: emitb(0x8F); break;
+    case kGe: emitb(0x8D); break;
+    case kBelow: emitb(0x82); break;
+    case kBe: emitb(0x86); break;
+    case kAbove: emitb(0x87); break;
+    case kAe: emitb(0x83); break;
+    case kCarry: emitb(0x82); break;
+    case kOverflow: emitb(0x80); break;
+    case kNoOverflow: emitb(0x81); break;
+    default:
+      UNEXPECTED
   }
   emitl(0x12345678);
   label->use(this, offset() - 4);
@@ -224,52 +247,52 @@ void Assembler::mov(Register dst, Register src) {
 }
 
 
-void Assembler::mov(Register dst, Operand& src) {
+void Assembler::mov(Register dst, const Operand& src) {
   emitb(0x8B);
   emit_modrm(dst, src);
 }
 
 
-void Assembler::mov(Operand& dst, Register src) {
+void Assembler::mov(const Operand& dst, Register src) {
   emitb(0x89);
   emit_modrm(src, dst);
 }
 
 
-void Assembler::mov(Register dst, Immediate src) {
+void Assembler::mov(Register dst, const Immediate src) {
   emitb(0xB8 | dst.low());
   emitl(src.value());
 }
 
 
-void Assembler::mov(Operand& dst, Immediate src) {
+void Assembler::mov(const Operand& dst, const Immediate src) {
   emitb(0xC7);
   emit_modrm(dst);
   emitl(src.value());
 }
 
 
-void Assembler::movb(Register dst, Immediate src) {
+void Assembler::movb(Register dst, const Immediate src) {
   emitb(0xC6);
   emit_modrm(dst, 0);
   emitb(src.value());
 }
 
 
-void Assembler::movb(Operand& dst, Immediate src) {
+void Assembler::movb(const Operand& dst, const Immediate src) {
   emitb(0xC6);
   emit_modrm(dst);
   emitb(src.value());
 }
 
 
-void Assembler::movb(Operand& dst, Register src) {
+void Assembler::movb(const Operand& dst, Register src) {
   emitb(0x88);
   emit_modrm(src, dst);
 }
 
 
-void Assembler::movzxb(Register dst, Operand& src) {
+void Assembler::movzxb(Register dst, const Operand& src) {
   emitb(0x0F);
   emitb(0xB6);
   emit_modrm(dst, src);
@@ -288,20 +311,20 @@ void Assembler::addl(Register dst, Register src) {
 }
 
 
-void Assembler::addl(Register dst, Operand& src) {
+void Assembler::addl(Register dst, const Operand& src) {
   emitb(0x03);
   emit_modrm(dst, src);
 }
 
 
-void Assembler::addl(Register dst, Immediate imm) {
+void Assembler::addl(Register dst, const Immediate imm) {
   emitb(0x81);
   emit_modrm(dst, 0);
   emitl(imm.value());
 }
 
 
-void Assembler::addlb(Register dst, Immediate imm) {
+void Assembler::addlb(Register dst, const Immediate imm) {
   emitb(0x83);
   emit_modrm(dst, 0);
   emitb(imm.value());
@@ -314,20 +337,20 @@ void Assembler::subl(Register dst, Register src) {
 }
 
 
-void Assembler::subl(Register dst, Immediate src) {
+void Assembler::subl(Register dst, const Immediate src) {
   emitb(0x81);
   emit_modrm(dst, 0x05);
   emitl(src.value());
 }
 
 
-void Assembler::subl(Register dst, Operand& src) {
+void Assembler::subl(Register dst, const Operand& src) {
   emitb(0x2B);
   emit_modrm(dst, src);
 }
 
 
-void Assembler::sublb(Register dst, Immediate src) {
+void Assembler::sublb(Register dst, const Immediate src) {
   emitb(0x83);
   emit_modrm(dst, 0x05);
   emitb(src.value());
@@ -352,7 +375,7 @@ void Assembler::andl(Register dst, Register src) {
 }
 
 
-void Assembler::andb(Register dst, Immediate src) {
+void Assembler::andb(Register dst, const Immediate src) {
   emitb(0x80);
   emit_modrm(dst, 4);
   emitb(src.value());
@@ -365,7 +388,7 @@ void Assembler::orl(Register dst, Register src) {
 }
 
 
-void Assembler::orlb(Register dst, Immediate src) {
+void Assembler::orlb(Register dst, const Immediate src) {
   emitb(0x83);
   emit_modrm(dst, 0x01);
   emitb(src.value());
@@ -390,14 +413,14 @@ void Assembler::dec(Register dst) {
 }
 
 
-void Assembler::shl(Register dst, Immediate src) {
+void Assembler::shl(Register dst, const Immediate src) {
   emitb(0xC1);
   emit_modrm(dst, 0x04);
   emitb(src.value());
 }
 
 
-void Assembler::shr(Register dst, Immediate src) {
+void Assembler::shr(Register dst, const Immediate src) {
   emitb(0xC1);
   emit_modrm(dst, 0x05);
   emitb(src.value());
@@ -416,14 +439,14 @@ void Assembler::shr(Register dst) {
 }
 
 
-void Assembler::sal(Register dst, Immediate src) {
+void Assembler::sal(Register dst, const Immediate src) {
   emitb(0xC1);
   emit_modrm(dst, 0x04);
   emitb(src.value());
 }
 
 
-void Assembler::sar(Register dst, Immediate src) {
+void Assembler::sar(Register dst, const Immediate src) {
   emitb(0xC1);
   emit_modrm(dst, 0x07);
   emitb(src.value());
@@ -448,7 +471,7 @@ void Assembler::call(Register dst) {
 }
 
 
-void Assembler::call(Operand& dst) {
+void Assembler::call(const Operand& dst) {
   emitb(0xFF);
   emit_modrm(dst, 2);
 }
@@ -464,7 +487,7 @@ void Assembler::movd(DoubleRegister dst, DoubleRegister src) {
 }
 
 
-void Assembler::movd(Operand& dst, DoubleRegister src) {
+void Assembler::movd(const Operand& dst, DoubleRegister src) {
   emitb(0x66);
   emitb(0x0F);
   emitb(0xD6);
@@ -472,7 +495,7 @@ void Assembler::movd(Operand& dst, DoubleRegister src) {
 }
 
 
-void Assembler::movd(DoubleRegister dst, Operand& src) {
+void Assembler::movd(DoubleRegister dst, const Operand& src) {
   emitb(0xF3);
   emitb(0x0F);
   emitb(0x7E);
@@ -557,5 +580,5 @@ void Assembler::ucomisd(DoubleRegister dst, DoubleRegister src) {
   emit_modrm(dst, src);
 }
 
-} // namespace internal
-} // namespace candor
+}  // namespace internal
+}  // namespace candor

@@ -1,18 +1,43 @@
+/**
+ * Copyright (c) 2012, Fedor Indutny.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #ifndef _SRC_UTILS_H_
 #define _SRC_UTILS_H_
 
-#include <stdlib.h> // NULL
-#include <stdarg.h> // va_list
-#include <stdint.h> // uint32_t
-#include <stdio.h> // fprintf, vsnprintf
-#include <string.h> // strncmp, memset
-#include <unistd.h> // sysconf or getpagesize, intptr_t
-#include <assert.h> // assert
+#include <stdlib.h>  // NULL
+#include <stdarg.h>  // va_list
+#include <stdint.h>  // uint32_t
+#include <stdio.h>  // fprintf, vsnprintf
+#include <string.h>  // strncmp, memset
+#include <unistd.h>  // sysconf or getpagesize, intptr_t
+#include <assert.h>  // assert
 
 namespace candor {
 namespace internal {
 
-#define UNEXPECTED { assert(0 && "Unexpected"); abort(); }
+#define UNEXPECTED { \
+      assert(0 && "Unexpected"); \
+      abort(); \
+    }
 
 inline uint32_t ComputeHash(int64_t key) {
   uint32_t hash = 0;
@@ -141,7 +166,7 @@ class GenericList {
  public:
   class Item : public ItemParent {
    public:
-    Item(T value) : value_(value), prev_(NULL), next_(NULL) {
+    explicit Item(T value) : value_(value), prev_(NULL), next_(NULL) {
     }
 
     inline T value() { return value_; }
@@ -168,11 +193,9 @@ class GenericList {
   GenericList() : head_(NULL), tail_(NULL), length_(0) {
   }
 
-
   ~GenericList() {
     while (length() > 0) Policy::Delete(Shift());
   }
-
 
   inline void Push(T item) {
     Item* next = new Item(item);
@@ -188,7 +211,6 @@ class GenericList {
     length_++;
   }
 
-
   inline void Remove(Item* item) {
     if (tail_ == item) tail_ = item->prev_;
     if (head_ == item) head_ = item->next_;
@@ -199,7 +221,6 @@ class GenericList {
 
     length_--;
   }
-
 
   inline void Unshift(T item) {
     Item* next = new Item(item);
@@ -213,7 +234,6 @@ class GenericList {
     if (tail_ == NULL) tail_ = head_;
     length_++;
   }
-
 
   inline void InsertBefore(Item* next, T value) {
     Item* item = new Item(value);
@@ -229,7 +249,6 @@ class GenericList {
     // Increase length
     length_++;
   }
-
 
   // Sorted insertion
   template <class Shape>
@@ -250,7 +269,6 @@ class GenericList {
     InsertBefore(insert_node, value);
   }
 
-
   inline T Pop() {
     if (tail_ == NULL) return NULL;
 
@@ -266,7 +284,6 @@ class GenericList {
 
     return value;
   }
-
 
   inline T Shift() {
     if (head_ == NULL) return NULL;
@@ -284,7 +301,6 @@ class GenericList {
     return value;
   }
 
-
   // Quicksort
   template <class Shape>
   inline void Sort() {
@@ -301,7 +317,6 @@ class GenericList {
       }
     }
   }
-
 
   inline Item* head() { return head_; }
   inline Item* tail() { return tail_; }
@@ -441,7 +456,6 @@ class GenericHashMap {
     current_ = next;
   }
 
-
   inline Value* Get(Key* key) {
     uint32_t index = Key::Hash(key) & mask_;
     Item* i = map_[index];
@@ -455,7 +469,6 @@ class GenericHashMap {
 
     return NULL;
   }
-
 
   inline void RemoveOne(Key* key) {
     uint32_t index = Key::Hash(key) & mask_;
@@ -493,7 +506,6 @@ class GenericHashMap {
       i = i->next();
     }
   }
-
 
   inline void Enumerate(EnumerateCallback cb) {
     Item* i = head_;
@@ -573,7 +585,7 @@ class FreeList {
 
   inline void Remove(T value) {
     for (int i = 0; i < length_; i++) {
-      // TODO: Use Shape class here
+      // TODO(indutny): Use Shape class here
       if (list_[i] != value) continue;
 
       // Shift all registers to the left
@@ -589,7 +601,7 @@ class FreeList {
 
   inline bool Has(T value) {
     for (int i = 0; i < length_; i++) {
-      // TODO: Use Shape class here
+      // TODO(indutny): Use Shape class here
       if (list_[i] == value) return true;
     }
 
@@ -604,7 +616,7 @@ class FreeList {
 template <class Base>
 class BitField : public Base {
  public:
-  BitField(int size) : size_(size / 32) {
+  explicit BitField(int size) : size_(size / 32) {
     space_ = new uint32_t[size_];
     memset(space_, 0, sizeof(*space_) * size_);
   }
@@ -697,7 +709,7 @@ class PrintBuffer {
                                             total_(0) {
   }
 
-  PrintBuffer(FILE* out) : out_(out) {
+  explicit PrintBuffer(FILE* out) : out_(out) {
   }
 
   bool Print(const char* format, ...) {
@@ -821,28 +833,28 @@ inline bool is_hex(const char c) {
 
 inline int hex_to_num(const char c) {
   switch (c) {
-   case '0': return 0;
-   case '1': return 1;
-   case '2': return 2;
-   case '3': return 3;
-   case '4': return 4;
-   case '5': return 5;
-   case '6': return 6;
-   case '7': return 7;
-   case '8': return 8;
-   case '9': return 9;
-   case 'a': return 10;
-   case 'b': return 11;
-   case 'c': return 12;
-   case 'd': return 13;
-   case 'e': return 14;
-   case 'f': return 15;
-   case 'A': return 10;
-   case 'B': return 11;
-   case 'C': return 12;
-   case 'D': return 13;
-   case 'E': return 14;
-   case 'F': return 15;
+    case '0': return 0;
+    case '1': return 1;
+    case '2': return 2;
+    case '3': return 3;
+    case '4': return 4;
+    case '5': return 5;
+    case '6': return 6;
+    case '7': return 7;
+    case '8': return 8;
+    case '9': return 9;
+    case 'a': return 10;
+    case 'b': return 11;
+    case 'c': return 12;
+    case 'd': return 13;
+    case 'e': return 14;
+    case 'f': return 15;
+    case 'A': return 10;
+    case 'B': return 11;
+    case 'C': return 12;
+    case 'D': return 13;
+    case 'E': return 14;
+    case 'F': return 15;
   }
   return 0;
 }
@@ -965,7 +977,7 @@ inline uint32_t GetPageSize() {
 #endif
 }
 
-} // namespace internal
-} // namespace candor
+}  // namespace internal
+}  // namespace candor
 
-#endif // _SRC_UTILS_H_
+#endif  // _SRC_UTILS_H_

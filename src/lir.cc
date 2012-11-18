@@ -1,13 +1,37 @@
+/**
+ * Copyright (c) 2012, Fedor Indutny.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+#include "lir.h"
+
+#define __STDC_LIMIT_MACROS
+#include <limits.h>  // INT_MAX
+#include <string.h>  // memset
+
+#include "lir-inl.h"
 #include "hir.h"
 #include "hir-inl.h"
-#include "lir.h"
-#include "lir-inl.h"
 #include "lir-instructions.h"
 #include "lir-instructions-inl.h"
-#include "source-map.h" // SourceMap
-#define __STDC_LIMIT_MACROS
-#include <limits.h> // INT_MAX
-#include <string.h> // memset
+#include "source-map.h"  // SourceMap
 
 namespace candor {
 namespace internal {
@@ -355,7 +379,7 @@ void LGen::ShuffleIntervals(LIntervalList* active,
       // Interval has ended before current position
       active->RemoveAt(i--);
       if (handled != NULL) handled->Push(interval);
-    } else if (!interval->Covers(pos)){
+    } else if (!interval->Covers(pos)) {
       // Interval isn't covering current position - move to ininterval
       active->RemoveAt(i--);
       inactive->Push(interval);
@@ -370,7 +394,7 @@ void LGen::ShuffleIntervals(LIntervalList* active,
       // Interval has ended before current position
       inactive->RemoveAt(i--);
       if (handled != NULL) handled->Push(interval);
-    } else if (interval->Covers(pos)){
+    } else if (interval->Covers(pos)) {
       // Interval is covering current position - move to active
       inactive->RemoveAt(i--);
       active->Push(interval);
@@ -908,7 +932,7 @@ void LGen::ResultFromFixed(LInstruction* instr, Register reg) {
 
 
 LInterval* LGen::Split(LInterval* i, int pos) {
-  // TODO: Find optimal split position here
+  // TODO(indutny): Find optimal split position here
   assert(!i->IsFixed());
 
   assert(pos > i->start() && pos < i->end());
@@ -1135,5 +1159,5 @@ LBlock::LBlock(HIRBlock* hir) : start_id(-1),
   hir->lir(this);
 }
 
-} // namespace internal
-} // namespace candor
+}  // namespace internal
+}  // namespace candor

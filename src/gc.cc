@@ -1,12 +1,35 @@
+/**
+ * Copyright (c) 2012, Fedor Indutny.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #include "gc.h"
+
+#include <stdlib.h>  // NULL
+#include <stdint.h>  // int32_t and others
+#include <unistd.h>  // intptr_t
+#include <assert.h>  // assert
+
 #include "heap.h"
 #include "heap-inl.h"
 #include "code-space.h"
-
-#include <stdlib.h> // NULL
-#include <stdint.h> // int32_t and others
-#include <unistd.h> // intptr_t
-#include <assert.h> // assert
 
 namespace candor {
 namespace internal {
@@ -29,11 +52,11 @@ void GC::CollectGarbage(char* stack_top) {
   }
 
   switch (heap()->needs_gc()) {
-   case Heap::kGCNewSpace: gc_type(kNewSpace); break;
-   case Heap::kGCOldSpace: gc_type(kOldSpace); break;
-   default:
-    UNEXPECTED
-    break;
+    case Heap::kGCNewSpace: gc_type(kNewSpace); break;
+    case Heap::kGCOldSpace: gc_type(kOldSpace); break;
+    default:
+      UNEXPECTED
+      break;
   }
 
   // Select space to GC
@@ -234,31 +257,35 @@ bool GC::IsInCurrentSpace(HValue* value) {
 
 void GC::VisitValue(HValue* value) {
   switch (value->tag()) {
-   case Heap::kTagContext:
-    return VisitContext(value->As<HContext>());
-   case Heap::kTagFunction:
-    return VisitFunction(value->As<HFunction>());
-   case Heap::kTagObject:
-    return VisitObject(value->As<HObject>());
-   case Heap::kTagArray:
-    return VisitArray(value->As<HArray>());
-   case Heap::kTagMap:
-    return VisitMap(value->As<HMap>());
+    case Heap::kTagContext:
+      return VisitContext(value->As<HContext>());
+    case Heap::kTagFunction:
+      return VisitFunction(value->As<HFunction>());
+    case Heap::kTagObject:
+      return VisitObject(value->As<HObject>());
+    case Heap::kTagArray:
+      return VisitArray(value->As<HArray>());
+    case Heap::kTagMap:
+      return VisitMap(value->As<HMap>());
 
-   // non-cons strings and numbers ain't referencing anyone
-   case Heap::kTagString:
-    switch (HValue::GetRepresentation<HString::Representation>(value->addr())) {
-     case HString::kNormal:
-      break;
-     case HString::kCons:
-      return VisitString(value);
-    }
-   case Heap::kTagNumber:
-   case Heap::kTagBoolean:
-   case Heap::kTagCData:
-    return;
-   default:
-    UNEXPECTED
+      // non-cons strings and numbers ain't referencing anyone
+    case Heap::kTagString:
+      {
+        HString::Representation r;
+        r = HValue::GetRepresentation<HString::Representation>(value->addr());
+        switch (r) {
+          case HString::kNormal:
+            break;
+          case HString::kCons:
+            return VisitString(value);
+        }
+      }
+    case Heap::kTagNumber:
+    case Heap::kTagBoolean:
+    case Heap::kTagCData:
+      return;
+    default:
+      UNEXPECTED
   }
 }
 
@@ -319,5 +346,5 @@ void GC::VisitString(HValue* value) {
             HString::RightConsSlot(value->addr()));
 }
 
-} // namespace internal
-} // namespace candor
+}  // namespace internal
+}  // namespace candor

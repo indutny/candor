@@ -5,3 +5,4 @@
 /build
 /out
 /test-runner
+.cpplint-cache

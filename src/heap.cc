@@ -1,12 +1,35 @@
-#include "heap.h"
-#include "heap-inl.h"
-#include "runtime.h" // RuntimeLookupProperty
+/**
+ * Copyright (c) 2012, Fedor Indutny.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
-#include <stdint.h> // uint32_t, intptr_t
-#include <stdlib.h> // NULL
-#include <string.h> // memcpy
-#include <zone.h> // Zone::Allocate
-#include <assert.h> // assert
+#include "heap.h"
+
+#include <stdint.h>  // uint32_t, intptr_t
+#include <stdlib.h>  // NULL
+#include <string.h>  // memcpy
+#include <zone.h>  // Zone::Allocate
+#include <assert.h>  // assert
+
+#include "heap-inl.h"
+#include "runtime.h"  // RuntimeLookupProperty
 
 namespace candor {
 namespace internal {
@@ -143,14 +166,14 @@ char* Heap::CreateBoolean(bool value) {
 
 const char* Heap::ErrorToString(Error err) {
   switch (err) {
-   case kErrorNone:
-    return NULL;
-   case kErrorIncorrectLhs:
-    return "Incorrect left-hand side";
-   case kErrorCallWithoutVariable:
-    return "Call without variable";
-   case kErrorExpectedLoop:
-    return "Expected loop";
+    case kErrorNone:
+      return NULL;
+    case kErrorIncorrectLhs:
+      return "Incorrect left-hand side";
+    case kErrorCallWithoutVariable:
+      return "Call without variable";
+    case kErrorExpectedLoop:
+      return "Expected loop";
   }
 
   return NULL;
@@ -202,55 +225,55 @@ HValue* HValue::CopyTo(Space* old_space, Space* new_space) {
 
   uint32_t size = kPointerSize;
   switch (tag()) {
-   case Heap::kTagContext:
-    // parent + slots
-    size += (2 + As<HContext>()->slots()) * kPointerSize;
-    break;
-   case Heap::kTagFunction:
-    // parent + body + root + argc
-    size += 4 * kPointerSize;
-    break;
-   case Heap::kTagNumber:
-    size += sizeof(double);
-    break;
-   case Heap::kTagBoolean:
-    size += kPointerSize;
-    break;
-   case Heap::kTagString:
-    // hash + length
-    size += 2 * kPointerSize;
-    switch (GetRepresentation<HString::Representation>(addr())) {
-     case HString::kNormal:
-      // + bytes
-      size += As<HString>()->length();
+    case Heap::kTagContext:
+      // parent + slots
+      size += (2 + As<HContext>()->slots()) * kPointerSize;
       break;
-     case HString::kCons:
-      // + lhs + rhs + scratch_slot (for traversing)
+    case Heap::kTagFunction:
+      // parent + body + root + argc
+      size += 4 * kPointerSize;
+      break;
+    case Heap::kTagNumber:
+      size += sizeof(double);
+      break;
+    case Heap::kTagBoolean:
+      size += kPointerSize;
+      break;
+    case Heap::kTagString:
+      // hash + length
       size += 2 * kPointerSize;
+      switch (GetRepresentation<HString::Representation>(addr())) {
+        case HString::kNormal:
+          // + bytes
+          size += As<HString>()->length();
+          break;
+        case HString::kCons:
+          // + lhs + rhs + scratch_slot (for traversing)
+          size += 2 * kPointerSize;
+          break;
+        default:
+          UNEXPECTED
+          break;
+      }
       break;
-     default:
+    case Heap::kTagObject:
+      // mask + map + proto
+      size += 3 * kPointerSize;
+      break;
+    case Heap::kTagArray:
+      // mask + map + proto + length
+      size += 4 * kPointerSize;
+      break;
+    case Heap::kTagMap:
+      // size + space ( keys + values )
+      size += (1 + (As<HMap>()->size() << 1)) * kPointerSize;
+      break;
+    case Heap::kTagCData:
+      // size + data
+      size += kPointerSize + As<HCData>()->size();
+      break;
+    default:
       UNEXPECTED
-      break;
-    }
-    break;
-   case Heap::kTagObject:
-    // mask + map + proto
-    size += 3 * kPointerSize;
-    break;
-   case Heap::kTagArray:
-    // mask + map + proto + length
-    size += 4 * kPointerSize;
-    break;
-   case Heap::kTagMap:
-    // size + space ( keys + values )
-    size += (1 + (As<HMap>()->size() << 1)) * kPointerSize;
-    break;
-   case Heap::kTagCData:
-    // size + data
-    size += kPointerSize + As<HCData>()->size();
-    break;
-   default:
-    UNEXPECTED
   }
 
   IncrementGeneration();
@@ -283,7 +306,7 @@ char* HContext::New(Heap* heap,
   char** slot = reinterpret_cast<char**>(result + GetIndexDisp(0));
   while (values->length() != 0) {
     *slot = values->Shift();
-    slot ++;
+    slot++;
   }
 
   return result;
@@ -363,34 +386,34 @@ char* HString::NewCons(Heap* heap,
 char* HString::FlattenCons(char* addr, char* buffer) {
   while (addr != NULL) {
     switch (GetRepresentation<Representation>(addr)) {
-     case kNormal:
-      {
-        uint32_t len = HString::Length(addr);
-        memcpy(buffer, addr + kValueOffset, len);
-        return buffer + len;
-      }
-     case kCons:
-      {
-        char* left = LeftCons(addr);
-        char* right = RightCons(addr);
+      case kNormal:
+        {
+          uint32_t len = HString::Length(addr);
+          memcpy(buffer, addr + kValueOffset, len);
+          return buffer + len;
+        }
+      case kCons:
+        {
+          char* left = LeftCons(addr);
+          char* right = RightCons(addr);
 
-        if (right == HNil::New()) {
-          addr = left;
-        } else {
-          // Iterate through bigger string, recurse through smaller
-          if (HString::Length(left) > HString::Length(right)) {
-            FlattenCons(right, buffer + HString::Length(left));
+          if (right == HNil::New()) {
             addr = left;
           } else {
-            buffer = FlattenCons(left, buffer);
-            addr = right;
+            // Iterate through bigger string, recurse through smaller
+            if (HString::Length(left) > HString::Length(right)) {
+              FlattenCons(right, buffer + HString::Length(left));
+              addr = left;
+            } else {
+              buffer = FlattenCons(left, buffer);
+              addr = right;
+            }
           }
         }
-      }
-      break;
-     default:
-      UNEXPECTED
-      return buffer;
+        break;
+      default:
+        UNEXPECTED
+        return buffer;
     }
   }
 
@@ -400,30 +423,30 @@ char* HString::FlattenCons(char* addr, char* buffer) {
 
 char* HString::Value(Heap* heap, char* addr) {
   switch (GetRepresentation<Representation>(addr)) {
-   case kNormal:
-    return addr + kValueOffset;
-   case kCons:
-    if (RightCons(addr) == HNil::New()) {
-      // Return cached left if right is null
-      return HString::Value(heap, LeftCons(addr));
-    } else {
-      // Concatenate strings and put them into left slot
-      char* result = HString::New(heap,
-                                  Heap::kTenureNew,
-                                  HString::Length(addr));
-      char* value = HString::Value(heap, result);
+    case kNormal:
+      return addr + kValueOffset;
+    case kCons:
+      if (RightCons(addr) == HNil::New()) {
+        // Return cached left if right is null
+        return HString::Value(heap, LeftCons(addr));
+      } else {
+        // Concatenate strings and put them into left slot
+        char* result = HString::New(heap,
+            Heap::kTenureNew,
+            HString::Length(addr));
+        char* value = HString::Value(heap, result);
 
-      // Traverse cons tree and put strings in
-      HString::FlattenCons(addr, value);
+        // Traverse cons tree and put strings in
+        HString::FlattenCons(addr, value);
 
-      *RightConsSlot(addr) = HNil::New();
-      *LeftConsSlot(addr) = result;
+        *RightConsSlot(addr) = HNil::New();
+        *LeftConsSlot(addr) = result;
 
-      return value;
-    }
-   default:
-    UNEXPECTED
-    return NULL;
+        return value;
+      }
+    default:
+      UNEXPECTED
+      return NULL;
   }
 }
 
@@ -568,5 +591,5 @@ char* HCData::New(Heap* heap, size_t size) {
   return d;
 }
 
-} // namespace internal
-} // namespace candor
+}  // namespace internal
+}  // namespace candor

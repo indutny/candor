@@ -1,13 +1,35 @@
+/**
+ * Copyright (c) 2012, Fedor Indutny.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #include "visitor.h"
 #include "ast.h"
 #include "hir.h"
-#include "hir-instructions.h" // HIRInstruction
-#include "hir-instructions-inl.h" // HIRInstruction
+#include "hir-instructions.h"  // HIRInstruction
+#include "hir-instructions-inl.h"  // HIRInstruction
 #include "fullgen.h"
-#include "fullgen-instructions.h" // FInstruction
-#include "fullgen-instructions-inl.h" // FInstruction
-#include "utils.h" // List
-#include "zone.h" // ZoneObject
+#include "fullgen-instructions.h"  // FInstruction
+#include "fullgen-instructions-inl.h"  // FInstruction
+#include "utils.h"  // List
+#include "zone.h"  // ZoneObject
 
 namespace candor {
 namespace internal {
@@ -39,11 +61,11 @@ T* Visitor<T>::Visit(AstNode* node) {
   current_node_ = node;
 
   switch (node->type()) {
-   VISITOR_MAPPING_BLOCK(VISITOR_SWITCH, 0)
-   VISITOR_MAPPING_REGULAR(VISITOR_SWITCH, 0)
-   default:
-    VisitChildren(node);
-    return NULL;
+    VISITOR_MAPPING_BLOCK(VISITOR_SWITCH, 0)
+    VISITOR_MAPPING_REGULAR(VISITOR_SWITCH, 0)
+    default:
+      VisitChildren(node);
+      return NULL;
   }
 }
 
@@ -79,5 +101,5 @@ void Visitor<T>::VisitChildren(AstNode* node) {
 VISITOR_MAPPING_BLOCK(VISITOR_BLOCK_STUB, 0)
 VISITOR_MAPPING_REGULAR(VISITOR_REGULAR_STUB, 0)
 
-} // namespace internal
-} // namescape candor
+}  // namespace internal
+}  // namescape candor

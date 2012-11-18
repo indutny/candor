@@ -1,18 +1,41 @@
+/**
+ * Copyright (c) 2012, Fedor Indutny.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #ifndef _SRC_IA32_ASSEMBLER_H_
 #define _SRC_IA32_ASSEMBLER_H_
 
-#include <stdint.h> // uint32_t
-#include <stdlib.h> // NULL
-#include <string.h> // memset
+#include <stdint.h>  // uint32_t
+#include <stdlib.h>  // NULL
+#include <string.h>  // memset
 
-#include "zone.h" // ZoneObject
-#include "utils.h" // List
+#include "zone.h"  // ZoneObject
+#include "utils.h"  // List
 
 namespace candor {
 namespace internal {
 
 // Forward declaration
 class Assembler;
+class Masm;
 class Label;
 class Heap;
 
@@ -60,11 +83,11 @@ const Register scratch = edi;
 
 static inline Register RegisterByIndex(int index) {
   switch (index) {
-   case 0: return eax;
-   case 1: return ebx;
-   case 2: return ecx;
-   case 3: return edx;
-   default: UNEXPECTED return reg_nil;
+    case 0: return eax;
+    case 1: return ebx;
+    case 2: return ecx;
+    case 3: return edx;
+    default: UNEXPECTED return reg_nil;
   }
 }
 
@@ -72,11 +95,11 @@ static inline Register RegisterByIndex(int index) {
 static inline const char* RegisterNameByIndex(int index) {
   // rsi, rdi, r14, r15 are reserved
   switch (index) {
-   case 0: return "eax";
-   case 1: return "ebx";
-   case 2: return "ecx";
-   case 3: return "edx";
-   default: UNEXPECTED return "enil";
+    case 0: return "eax";
+    case 1: return "ebx";
+    case 2: return "ecx";
+    case 3: return "edx";
+    default: UNEXPECTED return "enil";
   }
 }
 
@@ -84,11 +107,11 @@ static inline const char* RegisterNameByIndex(int index) {
 static inline int IndexByRegister(Register reg) {
   // rsi, rdi, r14, r15 are reserved
   switch (reg.code()) {
-   case 0: return 0;
-   case 1: return 2;
-   case 2: return 3;
-   case 3: return 1;
-   default: UNEXPECTED return -1;
+    case 0: return 0;
+    case 1: return 2;
+    case 2: return 3;
+    case 3: return 1;
+    default: UNEXPECTED return -1;
   }
 }
 
@@ -133,15 +156,16 @@ const DoubleRegister fscratch = xmm7;
 
 class Immediate : public ZoneObject {
  public:
-  Immediate(uint32_t value) : value_(value) {
+  explicit Immediate(uint32_t value) : value_(value) {
   }
 
-  inline uint32_t value() { return value_; }
+  inline uint32_t value() const { return value_; }
 
  private:
   uint32_t value_;
 
   friend class Assembler;
+  friend class Masm;
 };
 
 class Operand : public ZoneObject {
@@ -161,14 +185,11 @@ class Operand : public ZoneObject {
                                           disp_(disp) {
   }
 
-  inline Register base() { return base_; }
-  inline Scale scale() { return scale_; }
-  inline int32_t disp() { return disp_; }
+  inline Register base() const { return base_; }
+  inline Scale scale() const { return scale_; }
+  inline int32_t disp() const { return disp_; }
 
-  inline Register base(Register base) { return base_ = base; }
-  inline Scale scale(Scale scale) { return scale_ = scale; }
-  inline int32_t disp(int32_t disp) { return disp_ = disp; }
-  inline bool byte_disp() { return disp() > -128 && disp() < 128; }
+  inline bool byte_disp() const { return disp() > -128 && disp() < 128; }
 
  private:
   Register base_;
@@ -176,6 +197,7 @@ class Operand : public ZoneObject {
   int32_t disp_;
 
   friend class Assembler;
+  friend class Masm;
 };
 
 class RelocationInfo : public ZoneObject {
@@ -200,7 +222,6 @@ class RelocationInfo : public ZoneObject {
                                     offset_(offset),
                                     target_(0),
                                     notify_gc_(false) {
-
   }
 
   void Relocate(Heap* heap, char* buffer);
@@ -262,9 +283,9 @@ class Assembler {
   void cpuid();
 
   void push(Register src);
-  void push(Operand& src);
-  void push(Immediate imm);
-  void pushb(Immediate imm);
+  void push(const Operand& src);
+  void push(const Immediate imm);
+  void pushb(const Immediate imm);
   void pop(Register dst);
   void ret(uint16_t imm);
 
@@ -273,64 +294,64 @@ class Assembler {
   void jmp(Condition cond, Label* label);
 
   void cmpl(Register dst, Register src);
-  void cmpl(Register dst, Operand& src);
-  void cmpl(Register dst, Immediate src);
-  void cmplb(Register dst, Immediate src);
-  void cmpl(Operand& dst, Immediate src);
-  void cmpb(Register dst, Operand& src);
-  void cmpb(Register dst, Immediate src);
-  void cmpb(Operand& dst, Immediate src);
+  void cmpl(Register dst, const Operand& src);
+  void cmpl(Register dst, const Immediate src);
+  void cmplb(Register dst, const Immediate src);
+  void cmpl(const Operand& dst, const Immediate src);
+  void cmpb(Register dst, const Operand& src);
+  void cmpb(Register dst, const Immediate src);
+  void cmpb(const Operand& dst, const Immediate src);
 
-  void testb(Register dst, Immediate src);
-  void testl(Register dst, Immediate src);
+  void testb(Register dst, const Immediate src);
+  void testl(Register dst, const Immediate src);
 
   void mov(Register dst, Register src);
-  void mov(Register dst, Operand& src);
-  void mov(Operand& dst, Register src);
-  void mov(Register dst, Immediate src);
-  void mov(Operand& dst, Immediate src);
-  void movb(Register dst, Immediate src);
-  void movb(Operand& dst, Immediate src);
-  void movb(Operand& dst, Register src);
-  void movzxb(Register dst, Operand& src);
+  void mov(Register dst, const Operand& src);
+  void mov(const Operand& dst, Register src);
+  void mov(Register dst, const Immediate src);
+  void mov(const Operand& dst, const Immediate src);
+  void movb(Register dst, const Immediate src);
+  void movb(const Operand& dst, const Immediate src);
+  void movb(const Operand& dst, Register src);
+  void movzxb(Register dst, const Operand& src);
 
   void xchg(Register dst, Register src);
 
   void addl(Register dst, Register src);
-  void addl(Register dst, Operand& src);
-  void addl(Register dst, Immediate src);
-  void addlb(Register dst, Immediate src);
+  void addl(Register dst, const Operand& src);
+  void addl(Register dst, const Immediate src);
+  void addlb(Register dst, const Immediate src);
   void subl(Register dst, Register src);
-  void subl(Register dst, Immediate src);
-  void subl(Register dst, Operand& src);
-  void sublb(Register dst, Immediate src);
+  void subl(Register dst, const Immediate src);
+  void subl(Register dst, const Operand& src);
+  void sublb(Register dst, const Immediate src);
   void imull(Register src);
   void idivl(Register src);
 
   void andl(Register dst, Register src);
-  void andb(Register dst, Immediate src);
+  void andb(Register dst, const Immediate src);
   void orl(Register dst, Register src);
-  void orlb(Register dst, Immediate src);
+  void orlb(Register dst, const Immediate src);
   void xorl(Register dst, Register src);
 
   void inc(Register dst);
   void dec(Register dst);
-  void shl(Register dst, Immediate src);
-  void shr(Register dst, Immediate src);
+  void shl(Register dst, const Immediate src);
+  void shr(Register dst, const Immediate src);
   void shl(Register dst);
   void shr(Register dst);
-  void sal(Register dst, Immediate src);
-  void sar(Register dst, Immediate src);
+  void sal(Register dst, const Immediate src);
+  void sar(Register dst, const Immediate src);
   void sal(Register dst);
   void sar(Register dst);
 
   void call(Register dst);
-  void call(Operand& dst);
+  void call(const Operand& dst);
 
   // Floating point instructions
   void movd(DoubleRegister dst, DoubleRegister src);
-  void movd(Operand& dst, DoubleRegister src);
-  void movd(DoubleRegister dst, Operand &src);
+  void movd(const Operand& dst, DoubleRegister src);
+  void movd(DoubleRegister dst, const Operand &src);
   void addld(DoubleRegister dst, DoubleRegister src);
   void subld(DoubleRegister dst, DoubleRegister src);
   void mulld(DoubleRegister dst, DoubleRegister src);
@@ -344,16 +365,16 @@ class Assembler {
 
   // Routines
   inline void emit_modrm(Register dst);
-  inline void emit_modrm(Operand &dst);
+  inline void emit_modrm(const Operand &dst);
   inline void emit_modrm(Register dst, Register src);
-  inline void emit_modrm(Register dst, Operand& src);
+  inline void emit_modrm(Register dst, const Operand& src);
   inline void emit_modrm(Register dst, uint32_t op);
-  inline void emit_modrm(Operand& dst, uint32_t op);
+  inline void emit_modrm(const Operand& dst, uint32_t op);
   inline void emit_modrm(DoubleRegister dst, Register src);
   inline void emit_modrm(Register dst, DoubleRegister src);
   inline void emit_modrm(DoubleRegister dst, DoubleRegister src);
-  inline void emit_modrm(DoubleRegister dst, Operand& src);
-  inline void emit_modrm(Operand& dst, DoubleRegister src);
+  inline void emit_modrm(DoubleRegister dst, const Operand& src);
+  inline void emit_modrm(const Operand& dst, DoubleRegister src);
 
   inline void emitb(uint8_t v);
   inline void emitw(uint16_t v);
@@ -374,7 +395,7 @@ class Assembler {
   ZoneList<RelocationInfo*> relocation_info_;
 };
 
-} // namespace internal
-} // namespace candor
+}  // namespace internal
+}  // namespace candor
 
-#endif // _SRC_IA32_ASSEMBLER_H_
+#endif  // _SRC_IA32_ASSEMBLER_H_

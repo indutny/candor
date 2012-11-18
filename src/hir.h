@@ -1,17 +1,40 @@
+/**
+ * Copyright (c) 2012, Fedor Indutny.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #ifndef _SRC_HIR_H_
 #define _SRC_HIR_H_
 
+#include <stdint.h>  // int32_t
+
 #include "hir-instructions.h"
 #include "hir-instructions-inl.h"
-#include "heap.h" // Heap
-#include "heap-inl.h" // Heap
-#include "root.h" // Root
-#include "ast.h" // AstNode
-#include "scope.h" // ScopeSlot
-#include "visitor.h" // Visitor
-#include "zone.h" // ZoneObject
-#include "utils.h" // PrintBuffer
-#include <stdint.h> // int32_t
+#include "heap.h"  // Heap
+#include "heap-inl.h"  // Heap
+#include "root.h"  // Root
+#include "ast.h"  // AstNode
+#include "scope.h"  // ScopeSlot
+#include "visitor.h"  // Visitor
+#include "zone.h"  // ZoneObject
+#include "utils.h"  // PrintBuffer
 
 namespace candor {
 namespace internal {
@@ -25,7 +48,7 @@ typedef ZoneList<HIRBlock*> HIRBlockList;
 
 class HIREnvironment : public ZoneObject {
  public:
-  HIREnvironment(int stack_slots);
+  explicit HIREnvironment(int stack_slots);
   void Copy(HIREnvironment* from);
 
   inline HIRInstruction* At(int i);
@@ -50,7 +73,7 @@ class HIREnvironment : public ZoneObject {
 
 class HIRBlock : public ZoneObject {
  public:
-  HIRBlock(HIRGen* g);
+  explicit HIRBlock(HIRGen* g);
 
   int id;
   int dfs_id;
@@ -270,7 +293,7 @@ class HIRGen : public Visitor<HIRInstruction> {
   static bool log_;
 };
 
-} // namespace internal
-} // namespace candor
+}  // namespace internal
+}  // namespace candor
 
-#endif // _SRC_HIR_H_
+#endif  // _SRC_HIR_H_

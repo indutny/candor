@@ -1,13 +1,35 @@
+/**
+ * Copyright (c) 2012, Fedor Indutny.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #ifndef _SRC_HIR_INL_H_
 #define _SRC_HIR_INL_H_
 
 #ifndef __STDC_FORMAT_MACROS
 #define __STDC_FORMAT_MACROS
-#endif // _STDC_FORMAT_MACROS
-#include <inttypes.h> // PRIu64
+#endif  // _STDC_FORMAT_MACROS
+#include <inttypes.h>  // PRIu64
+#include <assert.h>
 
 #include "hir.h"
-#include <assert.h>
 
 namespace candor {
 namespace internal {
@@ -454,14 +476,14 @@ inline void HIRBlock::Print(PrintBuffer* p) {
   }
 
   switch (succ_count_) {
-   case 1:
-    p->Print("# succ: %d\n--------\n", succ_[0]->id);
-    break;
-   case 2:
-    p->Print("# succ: %d %d\n--------\n", succ_[0]->id, succ_[1]->id);
-    break;
-   default:
-    break;
+    case 1:
+      p->Print("# succ: %d\n--------\n", succ_[0]->id);
+      break;
+    case 2:
+      p->Print("# succ: %d %d\n--------\n", succ_[0]->id, succ_[1]->id);
+      break;
+    default:
+      break;
   }
 }
 
@@ -524,7 +546,7 @@ inline HIRBlockList* BreakContinueInfo::continue_blocks() {
   return &continue_blocks_;
 }
 
-} // namespace internal
-} // namespace candor
+}  // namespace internal
+}  // namespace candor
 
-#endif // _SRC_HIR_INL_H_
+#endif  // _SRC_HIR_INL_H_

@@ -1,7 +1,31 @@
+/**
+ * Copyright (c) 2012, Fedor Indutny.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #include "parser.h"
+
+#include <assert.h>  // assert
+#include <stdlib.h>  // NULL
+
 #include "ast.h"
-#include <assert.h> // assert
-#include <stdlib.h> // NULL
 
 namespace candor {
 namespace internal {
@@ -34,116 +58,116 @@ AstNode* Parser::ParseStatement(ParseStatementType type) {
   SkipCr();
 
   switch (Peek()->type()) {
-   case kReturn:
-    {
-      result = Add(Add(new AstNode(AstNode::kReturn, Peek())));
-      Skip();
-      AstNode* value = ParseExpression();
-      if (value == NULL) {
-        value = Add(Add(new AstNode(AstNode::kNil)));
-        value->value("nil");
-        value->length(3);
+    case kReturn:
+      {
+        result = Add(Add(new AstNode(AstNode::kReturn, Peek())));
+        Skip();
+        AstNode* value = ParseExpression();
+        if (value == NULL) {
+          value = Add(Add(new AstNode(AstNode::kNil)));
+          value->value("nil");
+          value->length(3);
+        }
+        result->children()->Push(value);
       }
-      result->children()->Push(value);
-    }
-    break;
-   case kContinue:
-   case kBreak:
-    result = Add(Add(new AstNode(AstNode::ConvertType(Peek()->type()),
-                                 Peek())));
-    Skip();
-    break;
-   case kIf:
-    {
-      Lexer::Token* if_tok = Peek();
-
+      break;
+    case kContinue:
+    case kBreak:
+      result = Add(Add(new AstNode(AstNode::ConvertType(Peek()->type()),
+              Peek())));
       Skip();
-      if (!Peek()->is(kParenOpen)) {
-        SetError("Expected '(' before if's condition");
-        return NULL;
-      }
-      Skip();
+      break;
+    case kIf:
+      {
+        Lexer::Token* if_tok = Peek();
 
-      AstNode* cond = ParseExpression();
-      if (cond == NULL) {
-        SetError("Expected if's condition");
-        return NULL;
-      }
+        Skip();
+        if (!Peek()->is(kParenOpen)) {
+          SetError("Expected '(' before if's condition");
+          return NULL;
+        }
+        Skip();
 
-      if (!Peek()->is(kParenClose)) {
-        SetError("Expected ')' after if's condition");
-        return NULL;
-      }
-      Skip();
+        AstNode* cond = ParseExpression();
+        if (cond == NULL) {
+          SetError("Expected if's condition");
+          return NULL;
+        }
 
-      AstNode* body = ParseBlock(NULL);
-      AstNode* elseBody = NULL;
+        if (!Peek()->is(kParenClose)) {
+          SetError("Expected ')' after if's condition");
+          return NULL;
+        }
+        Skip();
 
-      if (body == NULL) {
-        body = ParseStatement(kLeaveTrailingCr);
-      } else {
-        if (Peek()->is(kElse)) {
-          Skip();
-          elseBody = ParseBlock(NULL);
-          if (elseBody == NULL) {
-            elseBody = ParseStatement(kLeaveTrailingCr);
-          }
+        AstNode* body = ParseBlock(NULL);
+        AstNode* elseBody = NULL;
 
-          if (elseBody == NULL) {
-            SetError("Expected else's body");
-            return NULL;
+        if (body == NULL) {
+          body = ParseStatement(kLeaveTrailingCr);
+        } else {
+          if (Peek()->is(kElse)) {
+            Skip();
+            elseBody = ParseBlock(NULL);
+            if (elseBody == NULL) {
+              elseBody = ParseStatement(kLeaveTrailingCr);
+            }
+
+            if (elseBody == NULL) {
+              SetError("Expected else's body");
+              return NULL;
+            }
           }
         }
-      }
 
-      if (body == NULL) {
-        SetError("Expected if's body");
-        return NULL;
-      }
+        if (body == NULL) {
+          SetError("Expected if's body");
+          return NULL;
+        }
 
-      result = Add(new AstNode(AstNode::kIf, if_tok));
-      result->children()->Push(cond);
-      result->children()->Push(body);
-      if (elseBody != NULL) result->children()->Push(elseBody);
-    }
-    break;
-   case kWhile:
-    Skip();
-    {
-      if (!Peek()->is(kParenOpen)) {
-        SetError("Expected '(' before while's condition");
-        return NULL;
+        result = Add(new AstNode(AstNode::kIf, if_tok));
+        result->children()->Push(cond);
+        result->children()->Push(body);
+        if (elseBody != NULL) result->children()->Push(elseBody);
       }
+      break;
+    case kWhile:
       Skip();
+      {
+        if (!Peek()->is(kParenOpen)) {
+          SetError("Expected '(' before while's condition");
+          return NULL;
+        }
+        Skip();
 
-      AstNode* cond = ParseExpression();
-      if (cond == NULL) {
-        SetError("Expected while's condition");
-        return NULL;
-      }
-      if (!Peek()->is(kParenClose)) {
-        SetError("Expected ')' after while's condition");
-        return NULL;
-      }
-      Skip();
+        AstNode* cond = ParseExpression();
+        if (cond == NULL) {
+          SetError("Expected while's condition");
+          return NULL;
+        }
+        if (!Peek()->is(kParenClose)) {
+          SetError("Expected ')' after while's condition");
+          return NULL;
+        }
+        Skip();
 
-      AstNode* body = ParseBlock(NULL);
-      if (body == NULL) {
-        SetError("Expected while's body");
-        return NULL;
-      }
+        AstNode* body = ParseBlock(NULL);
+        if (body == NULL) {
+          SetError("Expected while's body");
+          return NULL;
+        }
 
-      result = Add(new AstNode(AstNode::kWhile));
-      result->children()->Push(cond);
-      result->children()->Push(body);
-    }
-    break;
-   case kBraceOpen:
-    result = ParseBlock(NULL);
-    break;
-   default:
-    result = ParseExpression();
-    break;
+        result = Add(new AstNode(AstNode::kWhile));
+        result->children()->Push(cond);
+        result->children()->Push(body);
+      }
+      break;
+    case kBraceOpen:
+      result = ParseBlock(NULL);
+      break;
+    default:
+      result = ParseExpression();
+      break;
   }
 
   // Consume kCr or kBraceClose
@@ -213,71 +237,71 @@ AstNode* Parser::ParseExpression(int priority) {
 
   // Parse prefix unops and block expression
   switch (Peek()->type()) {
-   case kInc:
-   case kDec:
-   case kNot:
-   case kAdd:
-   case kSub:
-    member = ParsePrefixUnOp(Peek()->type());
-    break;
-   case kTypeof:
-   case kSizeof:
-   case kKeysof:
-   case kClone:
-   case kDelete:
-    {
-      Position pos(this);
-
-      TokenType type = Peek()->type();
-      Skip();
-
-      AstNode* expr = ParseExpression(7);
-      if (expr == NULL) {
-        SetError("Expected body of prefix operation");
-        return NULL;
-      }
-
-      member = Add(new AstNode(AstNode::ConvertType(type)));
-      member->children()->Push(expr);
-
-      pos.Commit(member);
+    case kInc:
+    case kDec:
+    case kNot:
+    case kAdd:
+    case kSub:
+      member = ParsePrefixUnOp(Peek()->type());
       break;
-    }
-   default:
-    member = ParseMember();
-    break;
+    case kTypeof:
+    case kSizeof:
+    case kKeysof:
+    case kClone:
+    case kDelete:
+      {
+        Position pos(this);
+
+        TokenType type = Peek()->type();
+        Skip();
+
+        AstNode* expr = ParseExpression(7);
+        if (expr == NULL) {
+          SetError("Expected body of prefix operation");
+          return NULL;
+        }
+
+        member = Add(new AstNode(AstNode::ConvertType(type)));
+        member->children()->Push(expr);
+
+        pos.Commit(member);
+        break;
+      }
+    default:
+      member = ParseMember();
+      break;
   }
 
   switch (Peek()->type()) {
-   case kAssign:
-    if (member == NULL) {
-      SetError("Expected lhs before '='");
-      return NULL;
-    }
-
-    if (member->type() != AstNode::kName &&
-        member->type() != AstNode::kMember) {
-      SetError("Invalid lhs");
-      return NULL;
-    }
-
-    // member "=" expr
-    {
-      Lexer::Token* token = Peek();
-      Skip();
-      AstNode* value = ParseExpression();
-      if (value == NULL) {
-        SetError("Expected rhs after '='");
+    case kAssign:
+      if (member == NULL) {
+        SetError("Expected lhs before '='");
         return NULL;
       }
-      result = Add(new AstNode(AstNode::kAssign, token));
-      result->children()->Push(member);
-      result->children()->Push(value);
-    }
-    break;
-   default:
-    result = member;
-    break;
+
+      if (member->type() != AstNode::kName &&
+          member->type() != AstNode::kMember) {
+        SetError("Invalid lhs");
+        return NULL;
+      }
+
+      // member "=" expr
+      {
+        Lexer::Token* token = Peek();
+        Skip();
+        AstNode* value = ParseExpression();
+        if (value == NULL) {
+          SetError("Expected rhs after '='");
+          return NULL;
+        }
+        result = Add(new AstNode(AstNode::kAssign, token));
+        result->children()->Push(member);
+        result->children()->Push(value);
+      }
+      break;
+    default:
+      result = member;
+      break;
   }
 
   if (result == NULL) {
@@ -287,24 +311,24 @@ AstNode* Parser::ParseExpression(int priority) {
   // Parse postfixes
   TokenType type = Peek()->type();
   switch (type) {
-   case kInc:
-    Skip();
-    result = Add(new UnOp(UnOp::kPostInc, result));
-    break;
-   case kDec:
-    Skip();
-    result = Add(new UnOp(UnOp::kPostDec, result));
-    break;
-   case kEllipsis:
-    {
+    case kInc:
       Skip();
-      AstNode* varg = Add(new AstNode(AstNode::kVarArg, result));
-      varg->children()->Push(result);
-      result = varg;
-    }
-    break;
-   default:
-    break;
+      result = Add(new UnOp(UnOp::kPostInc, result));
+      break;
+    case kDec:
+      Skip();
+      result = Add(new UnOp(UnOp::kPostDec, result));
+      break;
+    case kEllipsis:
+      {
+        Skip();
+        AstNode* varg = Add(new AstNode(AstNode::kVarArg, result));
+        varg->children()->Push(result);
+        result = varg;
+      }
+      break;
+    default:
+      break;
   }
 
   // Parse binops ordered by priority
@@ -312,24 +336,24 @@ AstNode* Parser::ParseExpression(int priority) {
   do {
     initial = result;
     switch (priority) {
-     default:
-     case 1:
-      BINOP_SWITCH(type, result, 1, BINOP_PRI1)
-     case 2:
-      BINOP_SWITCH(type, result, 2, BINOP_PRI2)
-     case 3:
-      BINOP_SWITCH(type, result, 3, BINOP_PRI3)
-     case 4:
-      BINOP_SWITCH(type, result, 4, BINOP_PRI4)
-     case 5:
-      BINOP_SWITCH(type, result, 5, BINOP_PRI5)
-     case 6:
-      BINOP_SWITCH(type, result, 6, BINOP_PRI6)
-     case 7:
-      BINOP_SWITCH(type, result, 7, BINOP_PRI7)
-     case 8:
-      break;
-      // Do not parse binary operations
+      default:
+      case 1:
+        BINOP_SWITCH(type, result, 1, BINOP_PRI1)
+      case 2:
+        BINOP_SWITCH(type, result, 2, BINOP_PRI2)
+      case 3:
+        BINOP_SWITCH(type, result, 3, BINOP_PRI3)
+      case 4:
+        BINOP_SWITCH(type, result, 4, BINOP_PRI4)
+      case 5:
+        BINOP_SWITCH(type, result, 5, BINOP_PRI5)
+      case 6:
+        BINOP_SWITCH(type, result, 6, BINOP_PRI6)
+      case 7:
+        BINOP_SWITCH(type, result, 7, BINOP_PRI7)
+      case 8:
+        break;
+        // Do not parse binary operations
     }
   } while (initial != result);
 
@@ -394,46 +418,46 @@ AstNode* Parser::ParsePrimary(PrimaryRestriction rest) {
   AstNode* result = NULL;
 
   switch (token->type()) {
-   case kName:
-   case kNumber:
-   case kString:
-   case kTrue:
-   case kFalse:
-   case kNil:
-    result = Add(new AstNode(AstNode::ConvertType(token->type()), token));
-    Skip();
-    break;
-   case kParenOpen:
-    Skip();
-    result = ParseExpression();
-    if (!Peek()->is(kParenClose)) {
-      SetError("Expected closing paren for primary expression");
-      return NULL;
-    } else {
-      Skip();
-    }
-
-    // Check if we haven't parsed function's declaration by occasion
-    if (Peek()->is(kBraceOpen)) {
-      SetError("Unexpected '{' after expression in parens");
-      return NULL;
-    }
-    break;
-   case kReturn:
-   case kBreak:
-   case kContinue:
-   case kClone:
-   case kTypeof:
-   case kSizeof:
-   case kKeysof:
-    if (rest != kNoKeywords) {
+    case kName:
+    case kNumber:
+    case kString:
+    case kTrue:
+    case kFalse:
+    case kNil:
       result = Add(new AstNode(AstNode::ConvertType(token->type()), token));
       Skip();
       break;
-    }
-   default:
-    result = NULL;
-    break;
+    case kParenOpen:
+      Skip();
+      result = ParseExpression();
+      if (!Peek()->is(kParenClose)) {
+        SetError("Expected closing paren for primary expression");
+        return NULL;
+      } else {
+        Skip();
+      }
+
+      // Check if we haven't parsed function's declaration by occasion
+      if (Peek()->is(kBraceOpen)) {
+        SetError("Unexpected '{' after expression in parens");
+        return NULL;
+      }
+      break;
+    case kReturn:
+    case kBreak:
+    case kContinue:
+    case kClone:
+    case kTypeof:
+    case kSizeof:
+    case kKeysof:
+      if (rest != kNoKeywords) {
+        result = Add(new AstNode(AstNode::ConvertType(token->type()), token));
+        Skip();
+        break;
+      }
+    default:
+      result = NULL;
+      break;
   }
 
   return pos.Commit(result);
@@ -729,5 +753,5 @@ void Parser::Print(char* buffer, uint32_t size) {
   p.Finalize();
 }
 
-} // namespace internal
-} // namespace candor
+}  // namespace internal
+}  // namespace candor

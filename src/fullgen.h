@@ -1,14 +1,36 @@
+/**
+ * Copyright (c) 2012, Fedor Indutny.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #ifndef _SRC_FULLGEN_H_
 #define _SRC_FULLGEN_H_
 
+#include <assert.h>  // assert
+#include <stdint.h>  // uint32_t
+
 #include "visitor.h"
 #include "root.h"
-#include "ast.h" // AstNode, FunctionLiteral
-#include "zone.h" // ZoneObject
-#include "utils.h" // List
-
-#include <assert.h> // assert
-#include <stdint.h> // uint32_t
+#include "ast.h"  // AstNode, FunctionLiteral
+#include "zone.h"  // ZoneObject
+#include "utils.h"  // List
 
 namespace candor {
 namespace internal {
@@ -56,7 +78,7 @@ class FOperand : public ZoneObject {
 
 class FStackSlot : public FOperand {
  public:
-  FStackSlot(int index) : FOperand(kStack, index, -1) {
+  explicit FStackSlot(int index) : FOperand(kStack, index, -1) {
   }
 };
 
@@ -68,7 +90,7 @@ class FContextSlot : public FOperand {
 
 class FScopedSlot {
  public:
-  FScopedSlot(Fullgen* f);
+  explicit FScopedSlot(Fullgen* f);
   ~FScopedSlot();
 
   inline FOperand* operand();
@@ -170,7 +192,7 @@ class Fullgen : public Visitor<FInstruction> {
   friend class FScopedSlot;
 };
 
-} // namespace internal
-} // namespace candor
+}  // namespace internal
+}  // namespace candor
 
-#endif // _SRC_FULLGEN_H_
+#endif  // _SRC_FULLGEN_H_

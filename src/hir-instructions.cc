@@ -1,3 +1,25 @@
+/**
+ * Copyright (c) 2012, Fedor Indutny.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #include "hir.h"
 #include "hir-inl.h"
 #include "hir-instructions.h"
@@ -6,39 +28,39 @@
 namespace candor {
 namespace internal {
 
-HIRInstruction::HIRInstruction(Type type) :
-    id(-1),
-    gcm_visited(0),
-    gvn_visited(0),
-    alias_visited(0),
-    is_live(0),
-    type_(type),
-    slot_(NULL),
-    ast_(NULL),
-    lir_(NULL),
-    hashed_(false),
-    hash_(0),
-    removed_(false),
-    pinned_(true),
-    representation_(kHoleRepresentation) {
+HIRInstruction::HIRInstruction(Type type)
+    : id(-1),
+      gcm_visited(0),
+      gvn_visited(0),
+      alias_visited(0),
+      is_live(0),
+      type_(type),
+      slot_(NULL),
+      ast_(NULL),
+      lir_(NULL),
+      hashed_(false),
+      hash_(0),
+      removed_(false),
+      pinned_(true),
+      representation_(kHoleRepresentation) {
 }
 
 
-HIRInstruction::HIRInstruction(Type type, ScopeSlot* slot) :
-    id(-1),
-    gcm_visited(0),
-    gvn_visited(0),
-    alias_visited(0),
-    is_live(0),
-    type_(type),
-    slot_(slot),
-    ast_(NULL),
-    lir_(NULL),
-    hashed_(false),
-    hash_(0),
-    removed_(false),
-    pinned_(true),
-    representation_(kHoleRepresentation) {
+HIRInstruction::HIRInstruction(Type type, ScopeSlot* slot)
+    : id(-1),
+      gcm_visited(0),
+      gvn_visited(0),
+      alias_visited(0),
+      is_live(0),
+      type_(type),
+      slot_(slot),
+      ast_(NULL),
+      lir_(NULL),
+      hashed_(false),
+      hash_(0),
+      removed_(false),
+      pinned_(true),
+      representation_(kHoleRepresentation) {
 }
 
 
@@ -270,10 +292,10 @@ bool HIRPhi::Effects(HIRInstruction* instr) {
 }
 
 
-HIRLiteral::HIRLiteral(AstNode::Type type, ScopeSlot* slot) :
-    HIRInstruction(kLiteral),
-    type_(type),
-    root_slot_(slot) {
+HIRLiteral::HIRLiteral(AstNode::Type type, ScopeSlot* slot)
+    : HIRInstruction(kLiteral),
+      type_(type),
+      root_slot_(slot) {
 }
 
 
@@ -287,20 +309,20 @@ bool HIRLiteral::IsGVNEqual(HIRInstruction* to) {
 
 void HIRLiteral::CalculateRepresentation() {
   switch (type_) {
-   case AstNode::kNumber:
-    representation_ = root_slot_->is_immediate() ?
+    case AstNode::kNumber:
+      representation_ = root_slot_->is_immediate() ?
         kSmiRepresentation : kHeapNumberRepresentation;
-    break;
-   case AstNode::kString:
-   case AstNode::kProperty:
-    representation_ = kStringRepresentation;
-    break;
-   case AstNode::kTrue:
-   case AstNode::kFalse:
-    representation_ = kBooleanRepresentation;
-    break;
-   default:
-    representation_ = kUnknownRepresentation;
+      break;
+    case AstNode::kString:
+    case AstNode::kProperty:
+      representation_ = kStringRepresentation;
+      break;
+    case AstNode::kTrue:
+    case AstNode::kFalse:
+      representation_ = kBooleanRepresentation;
+      break;
+    default:
+      representation_ = kUnknownRepresentation;
   }
 }
 
@@ -441,9 +463,9 @@ bool HIRLoadContext::HasGVNSideEffects() {
 }
 
 
-HIRStoreContext::HIRStoreContext(ScopeSlot* slot) :
-    HIRInstruction(kStoreContext),
-    context_slot_(slot) {
+HIRStoreContext::HIRStoreContext(ScopeSlot* slot)
+    : HIRInstruction(kStoreContext),
+      context_slot_(slot) {
 }
 
 
@@ -649,5 +671,5 @@ void HIRClone::CalculateRepresentation() {
   representation_ = kObjectRepresentation;
 }
 
-} // namespace internal
-} // namespace candor
+}  // namespace internal
+}  // namespace candor

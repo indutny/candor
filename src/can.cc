@@ -1,12 +1,34 @@
-#include "candor.h"
-#include "utils.h" // candor::internal::List
+/**
+ * Copyright (c) 2012, Fedor Indutny.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
-#include <stdio.h> // fprintf
-#include <stdlib.h> // abort
-#include <unistd.h> // open, lseek
-#include <fcntl.h> // O_RDONLY, ...
-#include <sys/types.h> // off_t
-#include <string.h> // memcpy
+#include <stdio.h>  // fprintf
+#include <stdlib.h>  // abort
+#include <unistd.h>  // open, lseek
+#include <fcntl.h>  // O_RDONLY, ...
+#include <sys/types.h>  // off_t
+#include <string.h>  // memcpy
+
+#include "candor.h"
+#include "utils.h"  // candor::internal::List
 
 typedef candor::internal::List<char*, candor::internal::EmptyClass> List;
 
@@ -170,7 +192,6 @@ void StartRepl() {
                                                     strlen(prepended));
 
     if (!multiline || strlen(cmd) != 0) {
-
       // Continue collecting string on syntax error
       if (isolate.HasError()) {
         delete prepended;

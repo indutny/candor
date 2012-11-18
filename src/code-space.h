@@ -1,7 +1,29 @@
+/**
+ * Copyright (c) 2012, Fedor Indutny.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #ifndef _SRC_CODE_SPACE_H_
 #define _SRC_CODE_SPACE_H_
 
-#include "utils.h" // List
+#include "utils.h"  // List
 
 namespace candor {
 
@@ -27,7 +49,7 @@ class CodeSpace {
  public:
   typedef Value* (*Code)(char*, uint32_t, Value* []);
 
-  CodeSpace(Heap* heap);
+  explicit CodeSpace(Heap* heap);
   ~CodeSpace();
 
   void CollectGarbage();
@@ -62,7 +84,7 @@ class CodeSpace {
 
 class CodePage {
  public:
-  CodePage(uint32_t size);
+  explicit CodePage(uint32_t size);
   ~CodePage();
 
   bool Has(uint32_t size);
@@ -106,7 +128,7 @@ class CodeChunk {
   friend class CodeSpace;
 };
 
-} // internal
-} // candor
+}  // internal
+}  // candor
 
-#endif // _SRC_CODE_SPACE_H_
+#endif  // _SRC_CODE_SPACE_H_

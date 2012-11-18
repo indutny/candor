@@ -1,7 +1,29 @@
+/**
+ * Copyright (c) 2012, Fedor Indutny.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #ifndef _SRC_FULLGEN_INSTRUCTIONS_H
 #define _SRC_FULLGEN_INSTRUCTIONS_H
 
-#include "ast.h" // AstNode
+#include "ast.h"  // AstNode
 #include "macroassembler.h"
 #include "zone.h"
 #include "utils.h"
@@ -64,7 +86,7 @@ class FInstruction : public ZoneObject {
     kNone
   };
 
-  FInstruction(Type type);
+  explicit FInstruction(Type type);
 
   static inline const char* TypeToStr(Type type);
   inline FInstruction* SetResult(FOperand* op);
@@ -125,8 +147,8 @@ class FLabel : public FInstruction {
 
 class FEntry : public FInstruction {
  public:
-  FEntry(int context_slots) : FInstruction(kEntry),
-                              context_slots_(context_slots) {
+  explicit FEntry(int context_slots) : FInstruction(kEntry),
+                                       context_slots_(context_slots) {
   }
 
   inline int stack_slots();
@@ -182,8 +204,8 @@ class FLiteral : public FInstruction {
 
 class FBinOp : public FInstruction {
  public:
-  FBinOp(BinOp::BinOpType sub_type) : FInstruction(kBinOp),
-                                      sub_type_(sub_type) {
+  explicit FBinOp(BinOp::BinOpType sub_type) : FInstruction(kBinOp),
+                                               sub_type_(sub_type) {
   }
 
   FULLGEN_DEFAULT_METHODS(BinOp)
@@ -258,8 +280,9 @@ class FDeleteProperty : public FInstruction {
 
 class FAllocateObject : public FInstruction {
  public:
-  FAllocateObject(int size) : FInstruction(kAllocateObject),
-                              size_(RoundUp(PowerOfTwo(size + 1), 64)) {
+  explicit FAllocateObject(int size)
+      : FInstruction(kAllocateObject),
+        size_(RoundUp(PowerOfTwo(size + 1), 64)) {
   }
 
   FULLGEN_DEFAULT_METHODS(AllocateObject)
@@ -270,8 +293,9 @@ class FAllocateObject : public FInstruction {
 
 class FAllocateArray : public FInstruction {
  public:
-  FAllocateArray(int size) : FInstruction(kAllocateArray),
-                             size_(RoundUp(PowerOfTwo(size + 1), 64)) {
+  explicit FAllocateArray(int size)
+      : FInstruction(kAllocateArray),
+        size_(RoundUp(PowerOfTwo(size + 1), 64)) {
   }
 
   FULLGEN_DEFAULT_METHODS(AllocateArray)
@@ -322,7 +346,7 @@ class FKeysof : public FInstruction {
 
 class FBreak : public FInstruction {
  public:
-  FBreak(FLabel* label) : FInstruction(kBreak), label_(label) {
+  explicit FBreak(FLabel* label) : FInstruction(kBreak), label_(label) {
   }
 
   void Print(PrintBuffer* p);
@@ -334,7 +358,7 @@ class FBreak : public FInstruction {
 
 class FContinue : public FInstruction {
  public:
-  FContinue(FLabel* label) : FInstruction(kContinue), label_(label) {
+  explicit FContinue(FLabel* label) : FInstruction(kContinue), label_(label) {
   }
 
   void Print(PrintBuffer* p);
@@ -359,7 +383,7 @@ class FIf : public FInstruction {
 
 class FGoto : public FInstruction {
  public:
-  FGoto(FLabel* label) : FInstruction(kGoto), label_(label) {
+  explicit FGoto(FLabel* label) : FInstruction(kGoto), label_(label) {
   }
 
   void Print(PrintBuffer* p);
@@ -443,7 +467,7 @@ class FCall : public FInstruction {
 
 #undef FULLGEN_DEFAULT_METHODS
 
-} // internal
-} // candor
+}  // internal
+}  // candor
 
-#endif // _SRC_FULLGEN_INSTRUCTIONS_H
+#endif  // _SRC_FULLGEN_INSTRUCTIONS_H

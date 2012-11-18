@@ -1,13 +1,33 @@
+/**
+ * Copyright (c) 2012, Fedor Indutny.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+#include <stdlib.h>  // NULL
+
 #include "macroassembler.h"
-
-#include "code-space.h" // CodeSpace
-#include "heap.h" // HeapValue
+#include "code-space.h"  // CodeSpace
+#include "heap.h"  // HeapValue
 #include "heap-inl.h"
-
 #include "stubs.h"
-#include "utils.h" // ComputeHash
-
-#include <stdlib.h> // NULL
+#include "utils.h"  // ComputeHash
 
 namespace candor {
 namespace internal {
@@ -103,7 +123,7 @@ void Masm::Spill::SpillReg(Register src) {
 
   src_ = src;
   Operand slot(eax, 0);
-  masm()->SpillSlot(index(), slot);
+  masm()->SpillSlot(index(), &slot);
   masm()->mov(slot, src);
 
   if (masm()->spill_index_ > masm()->spills_) {
@@ -123,7 +143,7 @@ void Masm::Spill::Unspill(Register dst) {
   assert(!is_empty());
 
   Operand slot(eax, 0);
-  masm()->SpillSlot(index(), slot);
+  masm()->SpillSlot(index(), &slot);
   masm()->mov(dst, slot);
 }
 
@@ -135,7 +155,7 @@ void Masm::Spill::Unspill() {
 
 Operand* Masm::Spill::GetOperand() {
   Operand* r = new Operand(eax, 0);
-  masm()->SpillSlot(index(), *r);
+  masm()->SpillSlot(index(), r);
   return r;
 }
 
@@ -608,7 +628,7 @@ void Masm::Call(Register addr) {
 }
 
 
-void Masm::Call(Operand& addr) {
+void Masm::Call(const Operand& addr) {
   while ((offset() & 0x1) != 0x1) {
     nop();
   }
@@ -618,7 +638,7 @@ void Masm::Call(Operand& addr) {
 
 
 void Masm::Call(char* stub) {
-  mov(scratch, reinterpret_cast<uint32_t>(stub));
+  mov(scratch, Immediate(reinterpret_cast<uint32_t>(stub)));
 
   Call(scratch);
 }
@@ -682,5 +702,5 @@ void Masm::ProbeCPU() {
   ret(0);
 }
 
-} // namespace internal
-} // namespace candor
+}  // namespace internal
+}  // namespace candor

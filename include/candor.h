@@ -1,8 +1,30 @@
+/**
+ * Copyright (c) 2012, Fedor Indutny.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #ifndef _INCLUDE_CANDOR_H_
 #define _INCLUDE_CANDOR_H_
 
-#include <stdint.h> // uint32_t
-#include <sys/types.h> // size_t
+#include <stdint.h>  // uint32_t
+#include <sys/types.h>  // size_t
 
 namespace candor {
 
@@ -14,7 +36,7 @@ namespace internal {
   class List;
   class EmptyClass;
   class HValueReference;
-} // namespace internal
+}  // namespace internal
 
 class Value;
 class Nil;
@@ -48,7 +70,6 @@ class Isolate {
   static void DisableLIRLogging();
 
  protected:
-
   void SetError(Error* err);
 
   internal::Heap* heap;
@@ -232,7 +253,7 @@ template <class T>
 class Handle {
  public:
   Handle();
-  Handle(Value* v);
+  explicit Handle(Value* v);
   ~Handle();
 
   void Wrap(Value* v);
@@ -263,7 +284,7 @@ class Handle {
 
 class CWrapper {
  public:
-  CWrapper(const int* magic);
+  explicit CWrapper(const int* magic);
   virtual ~CWrapper();
 
   inline CData* Wrap() { return ref->As<CData>(); }
@@ -295,6 +316,6 @@ class CWrapper {
   Handle<CData> ref;
 };
 
-} // namespace candor
+}  // namespace candor
 
-#endif // _INCLUDE_CANDOR_H_
+#endif  // _INCLUDE_CANDOR_H_

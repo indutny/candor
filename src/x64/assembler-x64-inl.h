@@ -1,11 +1,33 @@
+/**
+ * Copyright (c) 2012, Fedor Indutny.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #ifndef _SRC_X64_ASSEMBLER_INL_H_
 #define _SRC_X64_ASSEMBLER_INL_H_
 
 #include "assembler.h"
 
-#include <assert.h> // assert
-#include <string.h> // memcpy, memset
-#include <stdlib.h> // NULL
+#include <assert.h>  // assert
+#include <string.h>  // memcpy, memset
+#include <stdlib.h>  // NULL
 
 namespace candor {
 namespace internal {
@@ -20,7 +42,7 @@ inline void Assembler::emit_rexw(Register dst) {
 }
 
 
-inline void Assembler::emit_rexw(Operand& dst) {
+inline void Assembler::emit_rexw(const Operand& dst) {
   emitb(0x48 | dst.base().high() << 2);
 }
 
@@ -30,12 +52,12 @@ inline void Assembler::emit_rexw(Register dst, Register src) {
 }
 
 
-inline void Assembler::emit_rexw(Register dst, Operand& src) {
+inline void Assembler::emit_rexw(Register dst, const Operand& src) {
   emitb(0x48 | dst.high() << 2 | src.base().high());
 }
 
 
-inline void Assembler::emit_rexw(Operand& dst, Register src) {
+inline void Assembler::emit_rexw(const Operand& dst, Register src) {
   emitb(0x48 | dst.base().high() << 2 | src.high());
 }
 
@@ -55,7 +77,7 @@ inline void Assembler::emit_rexw(Register dst, DoubleRegister src) {
 }
 
 
-inline void Assembler::emit_rexw(DoubleRegister dst, Operand& src) {
+inline void Assembler::emit_rexw(DoubleRegister dst, const Operand& src) {
   emitb(0x48 | dst.high() << 2 | src.base().high());
 }
 
@@ -65,7 +87,7 @@ inline void Assembler::emit_modrm(Register dst) {
 }
 
 
-inline void Assembler::emit_modrm(Operand &dst) {
+inline void Assembler::emit_modrm(const Operand &dst) {
   if (dst.scale() == Operand::one) {
     if (dst.byte_disp()) {
       emitb(0x40 | dst.base().low());
@@ -75,7 +97,7 @@ inline void Assembler::emit_modrm(Operand &dst) {
       emitl(dst.disp());
     }
   } else {
-    // TODO: Support scales
+    // TODO(indutny): Support scales
   }
 }
 
@@ -85,7 +107,7 @@ inline void Assembler::emit_modrm(Register dst, Register src) {
 }
 
 
-inline void Assembler::emit_modrm(Register dst, Operand& src) {
+inline void Assembler::emit_modrm(Register dst, const Operand& src) {
   if (src.scale() == Operand::one) {
     if (src.byte_disp()) {
       emitb(0x40 | dst.low() << 3 | src.base().low());
@@ -104,7 +126,7 @@ inline void Assembler::emit_modrm(Register dst, uint32_t op) {
 }
 
 
-inline void Assembler::emit_modrm(Operand& dst, uint32_t op) {
+inline void Assembler::emit_modrm(const Operand& dst, uint32_t op) {
   if (dst.byte_disp()) {
     emitb(0x40 | op << 3 | dst.base().low());
     emitb(dst.disp());
@@ -130,7 +152,7 @@ inline void Assembler::emit_modrm(DoubleRegister dst, DoubleRegister src) {
 }
 
 
-inline void Assembler::emit_modrm(DoubleRegister dst, Operand& src) {
+inline void Assembler::emit_modrm(DoubleRegister dst, const Operand& src) {
   if (src.byte_disp()) {
     emitb(0x40 | dst.low() << 3 | src.base().low());
     emitb(src.disp());
@@ -141,7 +163,7 @@ inline void Assembler::emit_modrm(DoubleRegister dst, Operand& src) {
 }
 
 
-inline void Assembler::emit_modrm(Operand& dst, DoubleRegister src) {
+inline void Assembler::emit_modrm(const Operand& dst, DoubleRegister src) {
   if (dst.byte_disp()) {
     emitb(0x40 | dst.base().low() | src.low() << 3);
     emitb(dst.disp());
@@ -179,7 +201,7 @@ inline void Assembler::emitq(uint64_t v) {
   Grow();
 }
 
-} // namespace internal
-} // namespace candor
+}  // namespace internal
+}  // namespace candor
 
-#endif // _SRC_X64_ASSEMBLER_INL_H_
+#endif  // _SRC_X64_ASSEMBLER_INL_H_

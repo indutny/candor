@@ -1,12 +1,34 @@
+/**
+ * Copyright (c) 2012, Fedor Indutny.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #ifndef _SRC_AST_H_
 #define _SRC_AST_H_
 
-#include "zone.h" // ZoneObject
-#include "utils.h" // List
-#include "lexer.h" // lexer
-#include "scope.h" // Scope
+#include <assert.h>  // assert
 
-#include <assert.h> // assert
+#include "zone.h"  // ZoneObject
+#include "utils.h"  // List
+#include "lexer.h"  // lexer
+#include "scope.h"  // Scope
 
 namespace candor {
 namespace internal {
@@ -57,7 +79,6 @@ typedef ZoneList<AstNode*> AstList;
 class AstNode : public ZoneObject {
  public:
   enum Type {
-
 #define MAP_DF(x) x,
     TYPE_MAPPING_NORMAL(MAP_DF)
     TYPE_MAPPING_LEXER(MAP_DF)
@@ -66,14 +87,14 @@ class AstNode : public ZoneObject {
     kNop
   };
 
-  AstNode(Type type) : id(-1),
-                       type_(type),
-                       value_(NULL),
-                       offset_(-1),
-                       length_(0),
-                       stack_count_(0),
-                       context_count_(0),
-                       root_(false) {
+  explicit AstNode(Type type) : id(-1),
+                                type_(type),
+                                value_(NULL),
+                                offset_(-1),
+                                length_(0),
+                                stack_count_(0),
+                                context_count_(0),
+                                root_(false) {
   }
 
   AstNode(Type type, Lexer::Token* token) : type_(type),
@@ -103,8 +124,8 @@ class AstNode : public ZoneObject {
 #define MAP_DF(x) case Lexer::x: return x;
       TYPE_MAPPING_LEXER(MAP_DF)
 #undef MAP_DF
-     default:
-      return kNop;
+      default:
+        return kNop;
     }
   }
 
@@ -169,8 +190,7 @@ class AstNode : public ZoneObject {
             is(kContinue) || is(kReturn) || is(kIf) ?
                p->Print("[")
                :
-               p->Print("[%s ", strtype)
-           ) &&
+               p->Print("[%s ", strtype)) &&
 
            (length_ == 0 ||
            (p->PrintValue(value(), length()) &&
@@ -443,7 +463,7 @@ class ObjectLiteral : public AstNode {
 // contains name and variables list
 class FunctionLiteral : public AstNode {
  public:
-  FunctionLiteral(AstNode* variable) : AstNode(kFunction) {
+  explicit FunctionLiteral(AstNode* variable) : AstNode(kFunction) {
     if (variable != NULL) {
       offset(variable->offset());
       length(variable->length());
@@ -503,8 +523,7 @@ class FunctionLiteral : public AstNode {
            (variable() == NULL ?
                p->Print("(anonymous)")
                :
-               variable()->Print(p)
-           ) &&
+               variable()->Print(p)) &&
            p->Print(" @[") &&
            PrintChildren(p, args()) &&
            p->Print("] ") &&
@@ -547,7 +566,7 @@ class AstValue : public AstNode {
                                              name_(name) {
   }
 
-  AstValue(AstValueType type) : AstNode(kValue), type_(type) {
+  explicit AstValue(AstValueType type) : AstNode(kValue), type_(type) {
   }
 
   static inline AstValue* Cast(AstNode* node) {
@@ -563,8 +582,7 @@ class AstValue : public AstNode {
            (slot()->is_context() ?
               p->Print(" @context[%d]:%d", slot()->depth(), slot()->index())
               :
-              p->Print(" @stack:%d", slot()->index())
-           ) &&
+              p->Print(" @stack:%d", slot()->index())) &&
            p->Print("]");
   }
 
@@ -581,7 +599,7 @@ class AstValue : public AstNode {
   AstNode* name_;
 };
 
-} // namespace internal
-} // namespace candor
+}  // namespace internal
+}  // namespace candor
 
-#endif // _SRC_AST_H_
+#endif  // _SRC_AST_H_

@@ -1,46 +1,69 @@
+/**
+ * Copyright (c) 2012, Fedor Indutny.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #include "runtime.h"
-#include "heap.h" // Heap
-#include "heap-inl.h"
-#include "utils.h" // ComputeHash, etc
 
 #define __STDC_FORMAT_MACROS
-#include <inttypes.h> // printf formats for big integers
-#include <stdint.h> // uint32_t
-#include <assert.h> // assert
-#include <string.h> // strncmp
-#include <stdio.h> // snprintf
-#include <sys/types.h> // size_t
+#include <inttypes.h>  // printf formats for big integers
+#include <stdint.h>  // uint32_t
+#include <assert.h>  // assert
+#include <string.h>  // strncmp
+#include <stdio.h>  // snprintf
+#include <sys/types.h>  // size_t
+
+#include "heap.h"  // Heap
+#include "heap-inl.h"
+#include "utils.h"  // ComputeHash, etc
 
 namespace candor {
 namespace internal {
 
 // Declare all template function variants
-#define BINARY_SUB_TYPES(V)\
-    V(Add)\
-    V(Sub)\
-    V(Mul)\
-    V(Div)\
-    V(Mod)\
-    V(BAnd)\
-    V(BOr)\
-    V(BXor)\
-    V(Shl)\
-    V(Shr)\
-    V(UShr)\
-    V(Eq)\
-    V(StrictEq)\
-    V(Ne)\
-    V(StrictNe)\
-    V(Lt)\
-    V(Gt)\
-    V(Le)\
-    V(Ge)\
-    V(LOr)\
+#define BINARY_SUB_TYPES(V) \
+    V(Add) \
+    V(Sub) \
+    V(Mul) \
+    V(Div) \
+    V(Mod) \
+    V(BAnd) \
+    V(BOr) \
+    V(BXor) \
+    V(Shl) \
+    V(Shr) \
+    V(UShr) \
+    V(Eq) \
+    V(StrictEq) \
+    V(Ne) \
+    V(StrictNe) \
+    V(Lt) \
+    V(Gt) \
+    V(Le) \
+    V(Ge) \
+    V(LOr) \
     V(LAnd)
 
-#define BINARY_OP_TEMPLATE(V)\
-    template char* RuntimeBinOp<BinOp::k##V>(Heap* heap,\
-                                             char* lhs,\
+#define BINARY_OP_TEMPLATE(V) \
+    template char* RuntimeBinOp<BinOp::k##V>(Heap* heap, \
+                                             char* lhs, \
                                              char* rhs);
 
 BINARY_SUB_TYPES(BINARY_OP_TEMPLATE)
@@ -64,36 +87,36 @@ intptr_t RuntimeGetHash(Heap* heap, char* value) {
   Heap::HeapTag tag = HValue::GetTag(value);
 
   switch (tag) {
-   case Heap::kTagString:
-    return HString::Hash(heap, value);
-   case Heap::kTagFunction:
-   case Heap::kTagObject:
-   case Heap::kTagArray:
-   case Heap::kTagCData:
-    return reinterpret_cast<intptr_t>(value);
-   case Heap::kTagNil:
-    return 0;
-   case Heap::kTagBoolean:
-    if (HBoolean::Value(value)) {
-      return 1;
-    } else {
+    case Heap::kTagString:
+      return HString::Hash(heap, value);
+    case Heap::kTagFunction:
+    case Heap::kTagObject:
+    case Heap::kTagArray:
+    case Heap::kTagCData:
+      return reinterpret_cast<intptr_t>(value);
+    case Heap::kTagNil:
       return 0;
-    }
-   case Heap::kTagNumber:
-    {
-      int64_t intval;
-
-      if (HValue::IsUnboxed(value)) {
-        intval = HNumber::IntegralValue(value);
+    case Heap::kTagBoolean:
+      if (HBoolean::Value(value)) {
+        return 1;
       } else {
-        intval = HNumber::DoubleValue(value);
+        return 0;
       }
+    case Heap::kTagNumber:
+      {
+        int64_t intval;
 
-      // And create new string
-      return ComputeHash(intval);
-    }
-   default:
-    UNEXPECTED
+        if (HValue::IsUnboxed(value)) {
+          intval = HNumber::IntegralValue(value);
+        } else {
+          intval = HNumber::DoubleValue(value);
+        }
+
+        // And create new string
+        return ComputeHash(intval);
+      }
+    default:
+      UNEXPECTED
   }
 
   return 0;
@@ -243,39 +266,39 @@ char* RuntimeToString(Heap* heap, char* value) {
   Heap::HeapTag tag = HValue::GetTag(value);
 
   switch (tag) {
-   case Heap::kTagString:
-    return value;
-   case Heap::kTagFunction:
-   case Heap::kTagObject:
-   case Heap::kTagArray:
-   case Heap::kTagCData:
-   case Heap::kTagNil:
-    return HString::New(heap, Heap::kTenureNew, "", 0);
-   case Heap::kTagBoolean:
-    if (HBoolean::Value(value)) {
-      return HString::New(heap, Heap::kTenureNew, "true", 4);
-    } else {
-      return HString::New(heap, Heap::kTenureNew, "false", 5);
-    }
-   case Heap::kTagNumber:
-    {
-      char str[128];
-      uint32_t len;
-
-      if (HValue::IsUnboxed(value)) {
-        int64_t num = HNumber::IntegralValue(value);
-        // Maximum int64 value may contain only 20 chars, last one for '\0'
-        len = snprintf(str, sizeof(str), "%" PRIi64, num);
+    case Heap::kTagString:
+      return value;
+    case Heap::kTagFunction:
+    case Heap::kTagObject:
+    case Heap::kTagArray:
+    case Heap::kTagCData:
+    case Heap::kTagNil:
+      return HString::New(heap, Heap::kTenureNew, "", 0);
+    case Heap::kTagBoolean:
+      if (HBoolean::Value(value)) {
+        return HString::New(heap, Heap::kTenureNew, "true", 4);
       } else {
-        double num = HNumber::DoubleValue(value);
-        len = snprintf(str, sizeof(str), "%g", num);
+        return HString::New(heap, Heap::kTenureNew, "false", 5);
       }
+    case Heap::kTagNumber:
+      {
+        char str[128];
+        uint32_t len;
 
-      // And create new string
-      return HString::New(heap, Heap::kTenureNew, str, len);
-    }
-   default:
-    UNEXPECTED
+        if (HValue::IsUnboxed(value)) {
+          int64_t num = HNumber::IntegralValue(value);
+          // Maximum int64 value may contain only 20 chars, last one for '\0'
+          len = snprintf(str, sizeof(str), "%" PRIi64, num);
+        } else {
+          double num = HNumber::DoubleValue(value);
+          len = snprintf(str, sizeof(str), "%g", num);
+        }
+
+        // And create new string
+        return HString::New(heap, Heap::kTenureNew, str, len);
+      }
+    default:
+      UNEXPECTED
   }
 
   return HNil::New();
@@ -286,28 +309,29 @@ char* RuntimeToNumber(Heap* heap, char* value) {
   Heap::HeapTag tag = HValue::GetTag(value);
 
   switch (tag) {
-   case Heap::kTagString:
-    {
-      char* str = HString::Value(heap, value);
-      uint32_t length = HString::Length(value);
+    case Heap::kTagString:
+      {
+        char* str = HString::Value(heap, value);
+        uint32_t length = HString::Length(value);
+        double value = StringToDouble(str, length);
 
-      return HNumber::New(heap, Heap::kTenureNew, StringToDouble(str, length));
-    }
-   case Heap::kTagBoolean:
-    {
-      int64_t val = HBoolean::Value(value) ? 1 : 0;
-      return HNumber::New(heap, Heap::kTenureNew, val);
-    }
-   case Heap::kTagFunction:
-   case Heap::kTagObject:
-   case Heap::kTagArray:
-   case Heap::kTagCData:
-   case Heap::kTagNil:
-    return HNumber::New(heap, Heap::kTenureNew, static_cast<int64_t>(0));
-   case Heap::kTagNumber:
-    return value;
-   default:
-    UNEXPECTED
+        return HNumber::New(heap, Heap::kTenureNew, value);
+      }
+    case Heap::kTagBoolean:
+      {
+        int64_t val = HBoolean::Value(value) ? 1 : 0;
+        return HNumber::New(heap, Heap::kTenureNew, val);
+      }
+    case Heap::kTagFunction:
+    case Heap::kTagObject:
+    case Heap::kTagArray:
+    case Heap::kTagCData:
+    case Heap::kTagNil:
+      return HNumber::New(heap, Heap::kTenureNew, static_cast<int64_t>(0));
+    case Heap::kTagNumber:
+      return value;
+    default:
+      UNEXPECTED
   }
 
   return HNil::New();
@@ -318,27 +342,27 @@ char* RuntimeToBoolean(Heap* heap, char* value) {
   Heap::HeapTag tag = HValue::GetTag(value);
 
   switch (tag) {
-   case Heap::kTagString:
-    return HBoolean::New(heap, Heap::kTenureNew, HString::Length(value) > 0);
-   case Heap::kTagBoolean:
-    return value;
-   case Heap::kTagFunction:
-   case Heap::kTagObject:
-   case Heap::kTagArray:
-   case Heap::kTagCData:
-    return HBoolean::New(heap, Heap::kTenureNew, true);
-   case Heap::kTagNil:
-    return HBoolean::New(heap, Heap::kTenureNew, false);
-   case Heap::kTagNumber:
-    if (HValue::IsUnboxed(value)) {
-      int64_t num = HNumber::IntegralValue(value);
-      return HBoolean::New(heap, Heap::kTenureNew, num != 0);
-    } else {
-      double num = HNumber::DoubleValue(value);
-      return HBoolean::New(heap, Heap::kTenureNew, num != 0);
-    }
-   default:
-    UNEXPECTED
+    case Heap::kTagString:
+      return HBoolean::New(heap, Heap::kTenureNew, HString::Length(value) > 0);
+    case Heap::kTagBoolean:
+      return value;
+    case Heap::kTagFunction:
+    case Heap::kTagObject:
+    case Heap::kTagArray:
+    case Heap::kTagCData:
+      return HBoolean::New(heap, Heap::kTenureNew, true);
+    case Heap::kTagNil:
+      return HBoolean::New(heap, Heap::kTenureNew, false);
+    case Heap::kTagNumber:
+      if (HValue::IsUnboxed(value)) {
+        int64_t num = HNumber::IntegralValue(value);
+        return HBoolean::New(heap, Heap::kTenureNew, num != 0);
+      } else {
+        double num = HNumber::DoubleValue(value);
+        return HBoolean::New(heap, Heap::kTenureNew, num != 0);
+      }
+    default:
+      UNEXPECTED
   }
 
   return HNil::New();
@@ -356,20 +380,20 @@ intptr_t RuntimeStrictCompare(Heap* heap, char* lhs, char* rhs) {
   if (rtag != tag) return -1;
 
   switch (tag) {
-   case Heap::kTagString:
-    return RuntimeStringCompare(heap, lhs, rhs);
-   case Heap::kTagFunction:
-   case Heap::kTagObject:
-   case Heap::kTagArray:
-   case Heap::kTagCData:
-   case Heap::kTagNil:
-    return -1;
-   case Heap::kTagBoolean:
-    return HBoolean::Value(lhs) == HBoolean::Value(rhs) ? 0 : -1;
-   case Heap::kTagNumber:
-    return HNumber::DoubleValue(lhs) == HNumber::DoubleValue(rhs) ? 0 : -1;
-   default:
-    UNEXPECTED
+    case Heap::kTagString:
+      return RuntimeStringCompare(heap, lhs, rhs);
+    case Heap::kTagFunction:
+    case Heap::kTagObject:
+    case Heap::kTagArray:
+    case Heap::kTagCData:
+    case Heap::kTagNil:
+      return -1;
+    case Heap::kTagBoolean:
+      return HBoolean::Value(lhs) == HBoolean::Value(rhs) ? 0 : -1;
+    case Heap::kTagNumber:
+      return HNumber::DoubleValue(lhs) == HNumber::DoubleValue(rhs) ? 0 : -1;
+    default:
+      UNEXPECTED
   }
 
   return 0;
@@ -425,29 +449,29 @@ Heap::HeapTag RuntimeCoerceType(Heap* heap,
   if (lhs_tag == rhs_tag) return lhs_tag;
 
   switch (lhs_tag) {
-   case Heap::kTagString:
-    rhs = RuntimeToString(heap, rhs);
-    break;
-   case Heap::kTagBoolean:
-    rhs = RuntimeToBoolean(heap, rhs);
-    break;
-   case Heap::kTagNil:
-    return RuntimeCoerceType(heap, type, rhs, lhs);
-   case Heap::kTagFunction:
-   case Heap::kTagObject:
-   case Heap::kTagArray:
-   case Heap::kTagCData:
-    if (!BinOp::is_math(type) && !BinOp::is_binary(type)) {
-      lhs = RuntimeToString(heap, lhs);
+    case Heap::kTagString:
       rhs = RuntimeToString(heap, rhs);
       break;
-    }
-    lhs = RuntimeToNumber(heap, lhs);
-   case Heap::kTagNumber:
-    rhs = RuntimeToNumber(heap, rhs);
-    break;
-   default:
-    UNEXPECTED
+    case Heap::kTagBoolean:
+      rhs = RuntimeToBoolean(heap, rhs);
+      break;
+    case Heap::kTagNil:
+      return RuntimeCoerceType(heap, type, rhs, lhs);
+    case Heap::kTagFunction:
+    case Heap::kTagObject:
+    case Heap::kTagArray:
+    case Heap::kTagCData:
+      if (!BinOp::is_math(type) && !BinOp::is_binary(type)) {
+        lhs = RuntimeToString(heap, lhs);
+        rhs = RuntimeToString(heap, rhs);
+        break;
+      }
+      lhs = RuntimeToNumber(heap, lhs);
+    case Heap::kTagNumber:
+      rhs = RuntimeToNumber(heap, rhs);
+      break;
+    default:
+      UNEXPECTED
   }
 
   return lhs_tag;
@@ -492,66 +516,66 @@ char* RuntimeBinOp(Heap* heap, char* lhs, char* rhs) {
 
     bool result = false;
     switch (lhs_tag) {
-     case Heap::kTagString:
-      // Compare strings
-      if (BinOp::is_equality(type)) {
-        result = RuntimeStringCompare(heap, lhs, rhs) == 0;
-      } else {
-        result = BinOp::NumToCompare(type,
-                                     RuntimeStringCompare(heap, lhs, rhs));
-      }
-      break;
-     case Heap::kTagObject:
-     case Heap::kTagArray:
-     case Heap::kTagCData:
-      // object (+) object = false
-      if (BinOp::is_strict_eq(type)) {
-        result = lhs == rhs;
-      } else {
-        result = false;
-      }
-      break;
-     case Heap::kTagNil:
-     case Heap::kTagFunction:
-      if (BinOp::is_equality(type)) {
-        result = lhs == rhs;
-      } else {
-        // Can't compare functions
-        result = false;
-      }
-      break;
-     case Heap::kTagNumber:
-      if (HValue::IsUnboxed(lhs)) {
-        int64_t lnum = HNumber::IntegralValue(lhs);
-        int64_t rnum = HNumber::IntegralValue(rhs);
-
+      case Heap::kTagString:
+        // Compare strings
         if (BinOp::is_equality(type)) {
-          result = lnum == rnum;
+          result = RuntimeStringCompare(heap, lhs, rhs) == 0;
         } else {
-          result = BinOp::NumToCompare(type, lnum - rnum);
+          result = BinOp::NumToCompare(type,
+              RuntimeStringCompare(heap, lhs, rhs));
         }
-      } else {
-        double lnum = HNumber::DoubleValue(lhs);
-        double rnum = HNumber::DoubleValue(rhs);
-
+        break;
+      case Heap::kTagObject:
+      case Heap::kTagArray:
+      case Heap::kTagCData:
+        // object (+) object = false
+        if (BinOp::is_strict_eq(type)) {
+          result = lhs == rhs;
+        } else {
+          result = false;
+        }
+        break;
+      case Heap::kTagNil:
+      case Heap::kTagFunction:
         if (BinOp::is_equality(type)) {
-          result = lnum == rnum;
+          result = lhs == rhs;
         } else {
-          result = BinOp::NumToCompare(type, lnum - rnum);
+          // Can't compare functions
+          result = false;
         }
-      }
-      break;
-     case Heap::kTagBoolean:
-      if (BinOp::is_equality(type)) {
-        result = HBoolean::Value(lhs) == HBoolean::Value(rhs);
-      } else {
-        result = BinOp::NumToCompare(
-            type, HBoolean::Value(lhs) - HBoolean::Value(rhs));
-      }
-      break;
-     default:
-      UNEXPECTED
-      break;
+        break;
+      case Heap::kTagNumber:
+        if (HValue::IsUnboxed(lhs)) {
+          int64_t lnum = HNumber::IntegralValue(lhs);
+          int64_t rnum = HNumber::IntegralValue(rhs);
+
+          if (BinOp::is_equality(type)) {
+            result = lnum == rnum;
+          } else {
+            result = BinOp::NumToCompare(type, lnum - rnum);
+          }
+        } else {
+          double lnum = HNumber::DoubleValue(lhs);
+          double rnum = HNumber::DoubleValue(rhs);
+
+          if (BinOp::is_equality(type)) {
+            result = lnum == rnum;
+          } else {
+            result = BinOp::NumToCompare(type, lnum - rnum);
+          }
+        }
+        break;
+      case Heap::kTagBoolean:
+        if (BinOp::is_equality(type)) {
+          result = HBoolean::Value(lhs) == HBoolean::Value(rhs);
+        } else {
+          result = BinOp::NumToCompare(
+              type, HBoolean::Value(lhs) - HBoolean::Value(rhs));
+        }
+        break;
+      default:
+        UNEXPECTED
+        break;
     }
 
     if (BinOp::is_negative_eq(type)) result = !result;
@@ -590,11 +614,11 @@ char* RuntimeBinOp(Heap* heap, char* lhs, char* rhs) {
       double rval = HNumber::DoubleValue(rhs);
 
       switch (type) {
-       case BinOp::kAdd: result = lval + rval; break;
-       case BinOp::kSub: result = lval - rval; break;
-       case BinOp::kMul: result = lval * rval; break;
-       case BinOp::kDiv: result = lval / rval; break;
-       default: UNEXPECTED
+        case BinOp::kAdd: result = lval + rval; break;
+        case BinOp::kSub: result = lval - rval; break;
+        case BinOp::kMul: result = lval * rval; break;
+        case BinOp::kDiv: result = lval / rval; break;
+        default: UNEXPECTED
       }
 
       return HNumber::New(heap, Heap::kTenureNew, result);
@@ -605,20 +629,20 @@ char* RuntimeBinOp(Heap* heap, char* lhs, char* rhs) {
       int64_t rval = HNumber::IntegralValue(rhs);
 
       switch (type) {
-       case BinOp::kBAnd: result = lval & rval; break;
-       case BinOp::kBOr: result = lval | rval; break;
-       case BinOp::kBXor: result = lval ^ rval; break;
-       case BinOp::kMod: result = lval % rval; break;
-       case BinOp::kShl: result = lval << rval; break;
-       case BinOp::kShr: result = lval >> rval; break;
-       case BinOp::kUShr:
-        {
-          intptr_t ulval = lval;
-          intptr_t urval = rval;
-          result = type == ulval >> urval;
-        }
-        break;
-       default: UNEXPECTED
+        case BinOp::kBAnd: result = lval & rval; break;
+        case BinOp::kBOr: result = lval | rval; break;
+        case BinOp::kBXor: result = lval ^ rval; break;
+        case BinOp::kMod: result = lval % rval; break;
+        case BinOp::kShl: result = lval << rval; break;
+        case BinOp::kShr: result = lval >> rval; break;
+        case BinOp::kUShr:
+          {
+            intptr_t ulval = lval;
+            intptr_t urval = rval;
+            result = type == ulval >> urval;
+          }
+          break;
+        default: UNEXPECTED
       }
 
       return HNumber::New(heap, Heap::kTenureNew, result);
@@ -636,26 +660,26 @@ char* RuntimeSizeof(Heap* heap, char* value) {
 
   int64_t size = 0;
   switch (tag) {
-   case Heap::kTagString:
-    size = HString::Length(value);
-    break;
-   case Heap::kTagCData:
-    size = HCData::Size(value);
-    break;
-   case Heap::kTagArray:
-    size = HArray::Length(value, true);
-    break;
-   case Heap::kTagFunction:
-    size = HFunction::Argc(value);
-    break;
-   case Heap::kTagObject:
-   case Heap::kTagNil:
-   case Heap::kTagBoolean:
-   case Heap::kTagNumber:
-    size = 0;
-    break;
-   default:
-    UNEXPECTED
+    case Heap::kTagString:
+      size = HString::Length(value);
+      break;
+    case Heap::kTagCData:
+      size = HCData::Size(value);
+      break;
+    case Heap::kTagArray:
+      size = HArray::Length(value, true);
+      break;
+    case Heap::kTagFunction:
+      size = HFunction::Argc(value);
+      break;
+    case Heap::kTagObject:
+    case Heap::kTagNil:
+    case Heap::kTagBoolean:
+    case Heap::kTagNumber:
+      size = 0;
+      break;
+    default:
+      UNEXPECTED
   }
   return HNumber::New(heap, size);
 }
@@ -808,5 +832,5 @@ char* RuntimeStackTrace(Heap* heap, char** frame, char* ip) {
   return result;
 }
 
-} // namespace internal
-} // namespace candor
+}  // namespace internal
+}  // namespace candor

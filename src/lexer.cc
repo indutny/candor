@@ -1,7 +1,29 @@
+/**
+ * Copyright (c) 2012, Fedor Indutny.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #include "lexer.h"
-#include <string.h> // strncmp
-#include <stdlib.h> // NULL
-#include "zone.h" // ZoneObject
+#include <string.h>  // strncmp
+#include <stdlib.h>  // NULL
+#include "zone.h"  // ZoneObject
 
 #define LENGTH_CHECK\
     if (offset_ == length_) return new Token(kEnd, offset_);
@@ -98,10 +120,9 @@ Lexer::Token* Lexer::Consume() {
   LENGTH_CHECK
 
   // One-char tokens
-  {
-    TokenType type = kEnd;
-    switch (get(0)) {
-     case '.':
+  TokenType type = kEnd;
+  switch (get(0)) {
+    case '.':
       if (has(3) && get(1) == '.' && get(2) == '.') {
         offset_ += 2;
         type = kEllipsis;
@@ -109,22 +130,21 @@ Lexer::Token* Lexer::Consume() {
         type = kDot;
       }
       break;
-     case ',': type = kComma; break;
-     case ':': type = kColon; break;
-     case '(': type = kParenOpen; break;
-     case ')': type = kParenClose; break;
-     case '{': type = kBraceOpen; break;
-     case '}': type = kBraceClose; break;
-     case '[': type = kArrayOpen; break;
-     case ']': type = kArrayClose; break;
-     default:
-      break;
-    }
+    case ',': type = kComma; break;
+    case ':': type = kColon; break;
+    case '(': type = kParenOpen; break;
+    case ')': type = kParenClose; break;
+    case '{': type = kBraceOpen; break;
+    case '}': type = kBraceClose; break;
+    case '[': type = kArrayOpen; break;
+    case ']': type = kArrayClose; break;
+    default:
+              break;
+  }
 
-    if (type != kEnd) {
-      offset_++;
-      return new Token(type, offset_ - 1);
-    }
+  if (type != kEnd) {
+    offset_++;
+    return new Token(type, offset_ - 1);
   }
 
   // Number
@@ -154,7 +174,7 @@ Lexer::Token* Lexer::Consume() {
 
     while (has(1)) {
       if (get(0) == endchar) break;
-      if (get(0) == '\\' ) {
+      if (get(0) == '\\') {
         // Skip escaped char
         offset_++;
         LENGTH_CHECK
@@ -243,5 +263,5 @@ Lexer::Token* Lexer::Consume() {
   }
 }
 
-} // namespace internal
-} // namespace candor
+}  // namespace internal
+}  // namespace candor

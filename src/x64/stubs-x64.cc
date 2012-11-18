@@ -1,8 +1,30 @@
+/**
+ * Copyright (c) 2012, Fedor Indutny.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #include "stubs.h"
-#include "code-space.h" // CodeSpace
-#include "cpu.h" // CPU
-#include "ast.h" // BinOp
-#include "macroassembler.h" // Masm
+#include "code-space.h"  // CodeSpace
+#include "cpu.h"  // CPU
+#include "ast.h"  // BinOp
+#include "macroassembler.h"  // Masm
 #include "macroassembler-inl.h"
 #include "runtime.h"
 #include "pic.h"
@@ -693,8 +715,8 @@ void CloneObjectStub::Generate() {
   __ mov(rbx, rdx);
 
   // Get new object's map
-  qmap.base(rbx);
-  __ mov(rbx, qmap);
+  Operand qmap_rbx(rbx, HObject::kMapOffset);
+  __ mov(rbx, qmap_rbx);
 
   // Set proto
   Operand qproto(rdx, HObject::kProtoOffset);
@@ -1070,10 +1092,10 @@ void BinOpStub::Generate() {
     case BinOp::k##V: cb = &RuntimeBinOp<BinOp::k##V>; break;
 
   switch (type()) {
-   BINARY_SUB_TYPES(BINARY_ENUM_CASES)
-   default:
-    UNEXPECTED
-    break;
+    BINARY_SUB_TYPES(BINARY_ENUM_CASES)
+    default:
+      UNEXPECTED
+      break;
   }
 #undef BINARY_ENUM_CASES
 
@@ -1315,5 +1337,5 @@ void StoreVarArgStub::Generate() {
   GenerateEpilogue(0);
 }
 
-} // namespace internal
-} // namespace candor
+}  // namespace internal
+}  // namespace candor

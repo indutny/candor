@@ -1,3 +1,30 @@
+/**
+ * Copyright (c) 2012, Fedor Indutny.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+#include <stdio.h>  // fprintf
+#include <stdint.h>  // uint32_t
+#include <string.h>  // strlen
+#include <stdlib.h>  // NULL
+
 #include "candor.h"
 #include "heap.h"
 #include "heap-inl.h"
@@ -10,11 +37,6 @@
 #include "lir-inl.h"
 #include "runtime.h"
 #include "utils.h"
-
-#include <stdio.h> // fprintf
-#include <stdint.h> // uint32_t
-#include <string.h> // strlen
-#include <stdlib.h> // NULL
 
 namespace candor {
 
@@ -70,7 +92,7 @@ Isolate::~Isolate() {
 
 
 Isolate* ISOLATE {
-  // TODO: Support multiple isolates
+  // TODO(indutny): Support multiple isolates
   return current_isolate;
 }
 
@@ -237,15 +259,15 @@ bool Value::Is() {
   Heap::HeapTag tag = Heap::kTagNil;
 
   switch (T::tag) {
-   case kNil: tag = Heap::kTagNil; break;
-   case kNumber: tag = Heap::kTagNumber; break;
-   case kBoolean: tag = Heap::kTagBoolean; break;
-   case kString: tag = Heap::kTagString; break;
-   case kFunction: tag = Heap::kTagFunction; break;
-   case kObject: tag = Heap::kTagObject; break;
-   case kArray: tag = Heap::kTagArray; break;
-   case kCData: tag = Heap::kTagCData; break;
-   default: return false;
+    case kNil: tag = Heap::kTagNil; break;
+    case kNumber: tag = Heap::kTagNumber; break;
+    case kBoolean: tag = Heap::kTagBoolean; break;
+    case kString: tag = Heap::kTagString; break;
+    case kFunction: tag = Heap::kTagFunction; break;
+    case kObject: tag = Heap::kTagObject; break;
+    case kArray: tag = Heap::kTagArray; break;
+    case kCData: tag = Heap::kTagCData; break;
+    default: return false;
   }
 
   if (addr() != NULL && addr() != HNil::New()) {
@@ -259,15 +281,15 @@ bool Value::Is() {
 
 Value::ValueType Value::Type() {
   switch (HValue::GetTag(addr())) {
-   case Heap::kTagNil: return kNil;
-   case Heap::kTagNumber: return kNumber;
-   case Heap::kTagBoolean: return kBoolean;
-   case Heap::kTagString: return kString;
-   case Heap::kTagFunction: return kFunction;
-   case Heap::kTagObject: return kObject;
-   case Heap::kTagArray: return kArray;
-   case Heap::kTagCData: return kCData;
-   default: return kNone;
+    case Heap::kTagNil: return kNil;
+    case Heap::kTagNumber: return kNumber;
+    case Heap::kTagBoolean: return kBoolean;
+    case Heap::kTagString: return kString;
+    case Heap::kTagFunction: return kFunction;
+    case Heap::kTagObject: return kObject;
+    case Heap::kTagArray: return kArray;
+    case Heap::kTagCData: return kCData;
+    default: return kNone;
   }
 }
 
@@ -540,7 +562,7 @@ void* CData::GetContents() {
 
 
 CWrapper::CWrapper(const int* magic) : isolate(ISOLATE), magic_(magic) {
-  CData* data = CData::New(sizeof(void*));
+  CData* data = CData::New(sizeof(this));
 
   // Save pointer of class
   *reinterpret_cast<CWrapper**>(data->GetContents()) = this;
@@ -583,5 +605,4 @@ void CWrapper::WeakCallback(Value* data) {
   delete wrapper;
 }
 
-
-} // namespace candor
+}  // namespace candor

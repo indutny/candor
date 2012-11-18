@@ -1,10 +1,32 @@
+/**
+ * Copyright (c) 2012, Fedor Indutny.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #ifndef _SRC_HIR_INSTRUCTIONS_H_
 #define _SRC_HIR_INSTRUCTIONS_H_
 
-#include "ast.h" // AstNode
-#include "scope.h" // ScopeSlot
-#include "zone.h" // Zone, ZoneList
-#include "utils.h" // PrintBuffer
+#include "ast.h"  // AstNode
+#include "scope.h"  // ScopeSlot
+#include "zone.h"  // Zone, ZoneList
+#include "utils.h"  // PrintBuffer
 
 namespace candor {
 namespace internal {
@@ -72,15 +94,15 @@ class HIRInstruction : public ZoneObject {
     kBooleanRepresentation    = 0x20,  // 0000100000
     kNumMapRepresentation     = 0x40,  // 0001000000
     kObjectRepresentation     = 0xC0,  // 0011000000
-    kArrayRepresentation      = 0x140, // 0101000000
-    kFunctionRepresentation   = 0x200, // 1000000000
-    kAnyRepresentation        = 0x2FF, // 1111111111
+    kArrayRepresentation      = 0x140,  // 0101000000
+    kFunctionRepresentation   = 0x200,  // 1000000000
+    kAnyRepresentation        = 0x2FF,  // 1111111111
 
     // no value, not for real use
-    kHoleRepresentation       = 0x300 // 10000000000
+    kHoleRepresentation       = 0x300  // 10000000000
   };
 
-  HIRInstruction(Type type);
+  explicit HIRInstruction(Type type);
   HIRInstruction(Type type, ScopeSlot* slot);
 
   virtual void Init(HIRGen* g, HIRBlock* block);
@@ -180,7 +202,7 @@ class HIRGVNMap : public ZoneMap<HIRInstruction, HIRInstruction, ZoneObject>,
 
 class HIRPhi : public HIRInstruction {
  public:
-  HIRPhi(ScopeSlot* slot);
+  explicit HIRPhi(ScopeSlot* slot);
 
   void Init(HIRGen* g, HIRBlock* b);
 
@@ -221,7 +243,7 @@ class HIRLiteral : public HIRInstruction {
 
 class HIRFunction : public HIRInstruction {
  public:
-  HIRFunction(AstNode* ast);
+  explicit HIRFunction(AstNode* ast);
 
   HIRBlock* body;
   int arg_count;
@@ -244,7 +266,7 @@ class HIRNil : public HIRInstruction {
 
 class HIREntry : public HIRInstruction {
  public:
-  HIREntry(int context_slots);
+  explicit HIREntry(int context_slots);
 
   void Print(PrintBuffer* p);
   bool HasSideEffects();
@@ -313,7 +335,7 @@ class HIRGetStackTrace : public HIRInstruction {
 
 class HIRBinOp : public HIRInstruction {
   public:
-  HIRBinOp(BinOp::BinOpType type);
+  explicit HIRBinOp(BinOp::BinOpType type);
 
   void CalculateRepresentation();
   inline BinOp::BinOpType binop_type();
@@ -328,7 +350,7 @@ class HIRBinOp : public HIRInstruction {
 
 class HIRLoadContext : public HIRInstruction {
  public:
-  HIRLoadContext(ScopeSlot* slot);
+  explicit HIRLoadContext(ScopeSlot* slot);
 
   inline ScopeSlot* context_slot();
   bool HasGVNSideEffects();
@@ -341,7 +363,7 @@ class HIRLoadContext : public HIRInstruction {
 
 class HIRStoreContext : public HIRInstruction {
  public:
-  HIRStoreContext(ScopeSlot* slot);
+  explicit HIRStoreContext(ScopeSlot* slot);
 
   void CalculateRepresentation();
   bool HasSideEffects();
@@ -390,7 +412,7 @@ class HIRDeleteProperty : public HIRInstruction {
 
 class HIRAllocateObject : public HIRInstruction {
  public:
-  HIRAllocateObject(int size);
+  explicit HIRAllocateObject(int size);
 
   bool HasGVNSideEffects();
   void CalculateRepresentation();
@@ -404,7 +426,7 @@ class HIRAllocateObject : public HIRInstruction {
 
 class HIRAllocateArray : public HIRInstruction {
  public:
-  HIRAllocateArray(int size);
+  explicit HIRAllocateArray(int size);
 
   bool HasGVNSideEffects();
   void CalculateRepresentation();
@@ -531,7 +553,7 @@ class HIRClone : public HIRInstruction {
 
 #undef HIR_DEFAULT_METHODS
 
-} // namespace internal
-} // namespace candor
+}  // namespace internal
+}  // namespace candor
 
-#endif // _SRC_HIR_INSTRUCTIONS_H_
+#endif  // _SRC_HIR_INSTRUCTIONS_H_

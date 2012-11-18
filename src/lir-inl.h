@@ -1,3 +1,25 @@
+/**
+ * Copyright (c) 2012, Fedor Indutny.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #ifndef _SRC_LIR_INL_H_
 #define _SRC_LIR_INL_H_
 
@@ -238,16 +260,18 @@ inline bool LInterval::IsEqual(LInterval* i) {
 
 inline void LInterval::Print(PrintBuffer* p) {
   switch (type_) {
-   case kVirtual: p->Print("v%d", id); break;
-   case kRegister:
-    p->Print("%s:%d", RegisterNameByIndex(index()), id);
-    if (register_hint != NULL) {
-      p->Print("(%s)", RegisterNameByIndex(register_hint->interval()->index()));
-    }
-    break;
-   case kStackSlot: p->Print("[%d]:%d", index(), id); break;
-   case kConst: p->Print("c%d", id); break;
-   default: UNEXPECTED
+    case kVirtual: p->Print("v%d", id); break;
+    case kRegister:
+      p->Print("%s:%d", RegisterNameByIndex(index()), id);
+      if (register_hint != NULL) {
+        int index = register_hint->interval()->index();
+        const char* name = RegisterNameByIndex(index);
+        p->Print("(%s)", name);
+      }
+      break;
+    case kStackSlot: p->Print("[%d]:%d", index(), id); break;
+    case kConst: p->Print("c%d", id); break;
+    default: UNEXPECTED
   }
 }
 
@@ -322,7 +346,7 @@ inline int LInterval::end() {
   return ranges()->tail()->end();
 }
 
-} // namespace internal
-} // namespace candor
+}  // namespace internal
+}  // namespace candor
 
-#endif // _SRC_LIR_INL_H_
+#endif  // _SRC_LIR_INL_H_

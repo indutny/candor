@@ -1,10 +1,33 @@
+/**
+ * Copyright (c) 2012, Fedor Indutny.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #ifndef _SRC_ZONE_H_
 #define _SRC_ZONE_H_
 
-#include "utils.h" // List
-#include <stdlib.h> // malloc, free, abort
-#include <sys/types.h> // size_t
-#include <assert.h> // assert
+#include <stdlib.h>  // malloc, free, abort
+#include <sys/types.h>  // size_t
+#include <assert.h>  // assert
+
+#include "utils.h"  // List
 
 namespace candor {
 namespace internal {
@@ -12,7 +35,7 @@ namespace internal {
 // Chunk of memory that will hold some of allocated data in Zone
 class ZoneBlock {
  public:
-  ZoneBlock(size_t size) : data_(NULL), offset_(0), size_(size) {
+  explicit ZoneBlock(size_t size) : data_(NULL), offset_(0), size_(size) {
     data_ = malloc(size);
     if (data_ == NULL) abort();
   }
@@ -48,7 +71,7 @@ class Zone {
   };
 
   Zone() {
-    // TODO: this should use thread id
+    // TODO(indutny): this should use thread id
     parent_ = current_;
     current_ = this;
 
@@ -95,7 +118,7 @@ class ZoneList : public GenericList<T, ZoneObject, NopPolicy> {
  public:
 };
 
-} // namespace internal
-} // namespace candor
+}  // namespace internal
+}  // namespace candor
 
-#endif // _SRC_ZONE_H_
+#endif  // _SRC_ZONE_H_
