@@ -127,7 +127,6 @@ class CodeChunk {
 
   friend class CodeSpace;
 };
-
 }  // internal
 }  // candor
 

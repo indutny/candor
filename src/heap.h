@@ -315,7 +315,11 @@ class HValue {
     *reinterpret_cast<uint8_t*>(addr + kRepresentationOffset) = r;
   }
 
-  static const int kPointerSize = sizeof(char*);
+#if CANDOR_ARCH_x64
+  static const int kPointerSize = 8;
+#elif CANDOR_ARCH_ia32
+  static const int kPointerSize = 4;
+#endif
 
   static const int kTagOffset = HINTERIOR_OFFSET(0);
   static const int kGCMarkOffset = HINTERIOR_OFFSET(1) - 1;
@@ -430,6 +434,8 @@ class HNumber : public HValue {
   static inline double DoubleValue(char* addr);
 
   static inline bool IsIntegral(char* addr);
+
+  static const int kDoubleSize = 8;
 
   static const int kValueOffset = HINTERIOR_OFFSET(1);
 

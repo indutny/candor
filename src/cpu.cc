@@ -58,6 +58,5 @@ void CPU::Probe() {
   cpu_features_.SSE4_1 = (features & (1 << 19)) != 0;
   probed_ = true;
 }
-
 }  // internal
 }  // candor

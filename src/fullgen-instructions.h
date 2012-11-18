@@ -466,7 +466,6 @@ class FCall : public FInstruction {
 };
 
 #undef FULLGEN_DEFAULT_METHODS
-
 }  // internal
 }  // candor
 

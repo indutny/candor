@@ -239,7 +239,7 @@ void Masm::AllocateContext(uint32_t slots) {
 
 
 void Masm::AllocateNumber(DoubleRegister value, Register result) {
-  Allocate(Heap::kTagNumber, reg_nil, sizeof(double), result);
+  Allocate(Heap::kTagNumber, reg_nil, HNumber::kDoubleSize, result);
 
   Operand qvalue(result, HNumber::kValueOffset);
   movd(qvalue, value);

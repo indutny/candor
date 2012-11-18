@@ -20,6 +20,7 @@ test-runner: build
 	ln -sf out/$(BUILDTYPE)/test test-runner
 
 test: test-runner can
+	@./tools/presubmit.py
 	@./test-runner splaytree
 	@./test-runner list
 	@./test-runner parser

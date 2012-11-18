@@ -569,50 +569,6 @@ class NumberKey {
   }
 };
 
-
-template <class T, int size>
-class FreeList {
- public:
-  FreeList() : length_(0) {
-  }
-
-  inline bool IsEmpty() { return length_ == 0; }
-  inline T Get() { return list_[--length_]; }
-  inline void Release(T value) {
-    assert(!Has(value));
-    list_[length_++] = value;
-  }
-
-  inline void Remove(T value) {
-    for (int i = 0; i < length_; i++) {
-      // TODO(indutny): Use Shape class here
-      if (list_[i] != value) continue;
-
-      // Shift all registers to the left
-      for (int j = i + 1; j < length_; j++) {
-        list_[j - 1] = list_[j];
-      }
-
-      // Decrement length
-      length_--;
-      return;
-    }
-  }
-
-  inline bool Has(T value) {
-    for (int i = 0; i < length_; i++) {
-      // TODO(indutny): Use Shape class here
-      if (list_[i] == value) return true;
-    }
-
-    return false;
-  }
-
- private:
-  T list_[size];
-  int length_;
-};
-
 template <class Base>
 class BitField : public Base {
  public:

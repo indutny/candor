@@ -85,6 +85,5 @@ void FIf::Print(PrintBuffer* p) {
   inputs[0]->Print(p);
   p->Print(") => %d Else %d\n", t_->id, f_->id);
 }
-
 }  // internal
 }  // candor
