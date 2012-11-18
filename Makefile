@@ -20,7 +20,6 @@ test-runner: build
 	ln -sf out/$(BUILDTYPE)/test test-runner
 
 test: test-runner can
-	@./tools/presubmit.py
 	@./test-runner splaytree
 	@./test-runner list
 	@./test-runner parser
@@ -47,8 +46,11 @@ test: test-runner can
 	@./can test/functional/regressions/regr-3.can
 	@./can test/functional/regressions/regr-4.can
 
+lint:
+	@./tools/presubmit.py
+
 clean:
 	-rm -rf out
 	-rm libcandor.a can test-runner
 
-.PHONY: clean all build test libcandor.a can test-runner
+.PHONY: clean all build test lint libcandor.a can test-runner
