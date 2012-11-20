@@ -83,12 +83,13 @@ using namespace internal;
       Zone z;\
       char out[10024];\
       Heap heap(2 * 1024 * 1024);\
+      Root root(&heap);\
       Parser p(code, strlen(code));\
       AstNode* ast = p.Execute();\
       ASSERT(!p.has_error());\
       Scope::Analyze(ast);\
       ASSERT(ast != NULL);\
-      Fullgen gen(&heap, "test");\
+      Fullgen gen(&heap, &root, "test");\
       gen.Build(ast);\
       gen.Print(out, sizeof(out));\
       if (strcmp(expected, out) != 0) {\
@@ -105,12 +106,14 @@ using namespace internal;
       Zone z;\
       char out[10024];\
       Heap heap(2 * 1024 * 1024);\
+      Root root(&heap);\
       Parser p(code, strlen(code));\
       AstNode* ast = p.Execute();\
       ASSERT(!p.has_error());\
       Scope::Analyze(ast);\
       ASSERT(ast != NULL);\
-      HIRGen gen(&heap, NULL, ast);\
+      HIRGen gen(&heap, &root, NULL);\
+      gen.Build(ast);\
       gen.Print(out, sizeof(out));\
       if (strcmp(expected, out) != 0) {\
         fprintf(stderr, "HIR test failed, got:\n%s\n expected:\n%s\n",\
@@ -126,12 +129,14 @@ using namespace internal;
       Zone z;\
       char out[10024];\
       Heap heap(2 * 1024 * 1024);\
+      Root root(&heap);\
       Parser p(code, strlen(code));\
       AstNode* ast = p.Execute();\
       ASSERT(!p.has_error());\
       Scope::Analyze(ast);\
       ASSERT(ast != NULL);\
-      HIRGen hgen(&heap, NULL, ast);\
+      HIRGen hgen(&heap, &root, NULL);\
+      hgen.Build(ast);\
       LGen lgen(&hgen, NULL, hgen.roots()->head()->value());\
       lgen.Print(out, sizeof(out));\
       if (strcmp(expected, out) != 0) {\

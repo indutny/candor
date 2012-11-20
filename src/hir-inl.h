@@ -139,7 +139,7 @@ inline void HIRGen::Print(PrintBuffer* p) {
 
 
 inline Root* HIRGen::root() {
-  return &root_;
+  return root_;
 }
 
 

@@ -32,6 +32,7 @@
 #include "parser.h"  // Parser
 #include "scope.h"  // Scope
 #include "macroassembler.h"  // Masm
+#include "root.h"  // Root
 #include "fullgen.h"  // Fullgen
 #include "fullgen-inl.h"  // Fullgen
 #include "hir.h"  // HIR
@@ -168,14 +169,14 @@ char* CodeSpace::Compile(const char* filename,
   // Add scope chunkrmation to variables (i.e. stack vs context, and indexes)
   Scope::Analyze(ast);
 
+  Root r(heap());
   Masm masm(this);
 
   if (true) {
     // Generate CFG with SSA
-    HIRGen hir(heap(), chunk->filename(), ast);
+    HIRGen hir(heap(), &r, chunk->filename());
 
-    // Store root
-    *root = hir.root()->Allocate()->addr();
+    hir.Build(ast);
 
     // Generate low-level representation:
     //   For each root in reverse order generate lir
@@ -189,7 +190,7 @@ char* CodeSpace::Compile(const char* filename,
       lir.Generate(&masm, heap()->source_map());
     }
   } else {
-    Fullgen f(heap(), chunk->filename());
+    Fullgen f(heap(), &r, chunk->filename());
 
     // Create instruction list
     f.Build(ast);
@@ -200,6 +201,9 @@ char* CodeSpace::Compile(const char* filename,
     // Generate instructions
     f.Generate(&masm);
   }
+
+  // Store root
+  *root = r.Allocate()->addr();
 
   // Put code into code space
   Put(chunk, &masm);

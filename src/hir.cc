@@ -32,16 +32,30 @@ namespace internal {
 
 bool HIRGen::log_ = false;
 
-HIRGen::HIRGen(Heap* heap, const char* filename, AstNode* root)
+HIRGen::HIRGen(Heap* heap, Root* root, const char* filename)
     : Visitor<HIRInstruction>(kPreorder),
       current_block_(NULL),
       current_root_(NULL),
       break_continue_info_(NULL),
-      root_(heap),
+      root_(root),
+      filename_(filename),
       loop_depth_(0),
       block_id_(0),
       instr_id_(-2),
       dfs_id_(0) {
+}
+
+
+HIRGen::~HIRGen() {
+  // Bitmaps in blocks are allocated :(
+  HIRBlock* b;
+  while ((b = blocks_.Shift()) != NULL) {
+    delete b;
+  }
+}
+
+
+void HIRGen::Build(AstNode* root) {
   HIRInstruction* hroot = new HIRFunction(root);
   hroot->Init(this, NULL);
   work_queue_.Push(hroot);
@@ -71,20 +85,12 @@ HIRGen::HIRGen(Heap* heap, const char* filename, AstNode* root)
 
   if (log_) {
     PrintBuffer p(stdout);
-    p.Print("## HIR %s Start ##\n", filename == NULL ? "unknown" : filename);
+    p.Print("## HIR %s Start ##\n", filename_ == NULL ? "unknown" : filename_);
     Print(&p);
     p.Print("## HIR End ##\n");
   }
 }
 
-
-HIRGen::~HIRGen() {
-  // Bitmaps in blocks are allocated :(
-  HIRBlock* b;
-  while ((b = blocks_.Shift()) != NULL) {
-    delete b;
-  }
-}
 
 void HIRGen::EnableLogging() {
   log_ = true;
@@ -405,17 +411,17 @@ void HIRGen::FindInEffects(HIRInstruction* instr) {
 
 
 void HIRGen::GlobalValueNumbering() {
-  HIRGVNMap* gvn_ = NULL;
-  HIRBlock* root_ = NULL;
+  HIRGVNMap* gvn = NULL;
+  HIRBlock* root = NULL;
 
   // For each block
   HIRBlockList::Item* bhead = blocks_.head();
   for (; bhead != NULL; bhead = bhead->next()) {
     HIRBlock* block = bhead->value();
 
-    if (root_ != block->root()) {
-      root_ = block->root();
-      gvn_ = new HIRGVNMap();
+    if (root != block->root()) {
+      root = block->root();
+      gvn = new HIRGVNMap();
     }
 
     // Visit instructions that wasn't yet visited
@@ -423,7 +429,7 @@ void HIRGen::GlobalValueNumbering() {
     for (; ihead != NULL; ihead = ihead->next()) {
       HIRInstruction* instr = ihead->value();
 
-      GlobalValueNumbering(instr, gvn_);
+      GlobalValueNumbering(instr, gvn);
     }
   }
 }
@@ -1234,7 +1240,7 @@ HIRInstruction* HIRGen::VisitClone(AstNode* stmt) {
 
 
 HIRInstruction* HIRGen::VisitLiteral(AstNode* stmt) {
-  HIRInstruction* i = Add(new HIRLiteral(stmt->type(), root_.Put(stmt)))
+  HIRInstruction* i = Add(new HIRLiteral(stmt->type(), root_->Put(stmt)))
       ->Unpin();
 
   i->ast(stmt);

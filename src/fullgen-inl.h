@@ -134,7 +134,7 @@ inline void Fullgen::set_current_function(FFunction* current_function) {
 
 
 inline Root* Fullgen::root() {
-  return &root_;
+  return root_;
 }
 
 

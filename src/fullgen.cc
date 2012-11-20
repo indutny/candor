@@ -34,10 +34,10 @@ namespace internal {
 
 bool Fullgen::log_ = false;
 
-Fullgen::Fullgen(Heap* heap, const char* filename)
+Fullgen::Fullgen(Heap* heap, Root* root, const char* filename)
     : Visitor<FInstruction>(kPreorder),
       heap_(heap),
-      root_(heap),
+      root_(root),
       filename_(filename),
       instr_id_(-2),
       current_function_(NULL),
@@ -271,7 +271,7 @@ FInstruction* Fullgen::VisitReturn(AstNode* node) {
 
 
 FInstruction* Fullgen::VisitLiteral(AstNode* node) {
-  return Add(new FLiteral(node->type(), root_.Put(node)));
+  return Add(new FLiteral(node->type(), root_->Put(node)));
 }
 
 

@@ -104,7 +104,7 @@ class FScopedSlot {
 // Generates non-optimized code by visiting each node in AST tree in-order
 class Fullgen : public Visitor<FInstruction> {
  public:
-  Fullgen(Heap* heap, const char* filename);
+  Fullgen(Heap* heap, Root* root, const char* filename);
 
   void Build(AstNode* ast);
   void Generate(Masm* masm);
@@ -173,7 +173,7 @@ class Fullgen : public Visitor<FInstruction> {
   static bool log_;
 
   Heap* heap_;
-  Root root_;
+  Root* root_;
   const char* filename_;
 
   ZoneList<FFunction*> work_queue_;
