@@ -176,7 +176,6 @@ class Fullgen : public Visitor<FInstruction> {
   Root* root_;
   const char* filename_;
 
-  ZoneList<FFunction*> work_queue_;
   ZoneList<FInstruction*> instructions_;
 
   int instr_id_;

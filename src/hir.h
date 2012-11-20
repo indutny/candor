@@ -277,8 +277,6 @@ class HIRGen : public Visitor<HIRInstruction> {
   inline int dfs_id();
 
  private:
-  HIRInstructionList work_queue_;
-
   HIRBlock* current_block_;
   HIRBlock* current_root_;
   BreakContinueInfo* break_continue_info_;

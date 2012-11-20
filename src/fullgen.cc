@@ -58,23 +58,17 @@ void Fullgen::DisableLogging() {
 
 
 void Fullgen::Build(AstNode* ast) {
-  FFunction* fn = new FFunction(ast, 0);
-  fn->Init(this);
+  EmptySlots();
 
-  work_queue_.Push(fn);
-  while (work_queue_.length() > 0) {
-    EmptySlots();
+  FFunction* current = new FFunction(ast, 0);
+  current->Init(this);
+  set_current_function(current);
+  Visit(current->root_ast());
+  set_current_function(NULL);
 
-    FFunction* current = work_queue_.Shift();
-    set_current_function(current);
-    Visit(current->root_ast());
-    set_current_function(NULL);
-
-    current->entry->stack_slots(stack_index_ +
-                                current->root_ast()->stack_slots());
-
-    if (work_queue_.length() != 0) Add(new FAlignCode());
-  }
+  current->entry->stack_slots(stack_index_ +
+                              current->root_ast()->stack_slots());
+  Add(new FAlignCode());
 
   if (log_) {
     PrintBuffer p(stdout);
@@ -259,7 +253,8 @@ FInstruction* Fullgen::VisitFunction(AstNode* stmt) {
   } else {
     FFunction* f = new FFunction(stmt, fn->args()->length());
     Add(f);
-    work_queue_.Push(f);
+
+    f->body = new FLabel(fn->label());
 
     return f;
   }

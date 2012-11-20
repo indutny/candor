@@ -172,9 +172,7 @@ char* CodeSpace::Compile(const char* filename,
   Root r(heap());
   Masm masm(this);
 
-  FunctionIterator it(ast);
-
-  for (; !it.IsEnded(); it.Advance()) {
+  for (FunctionIterator it(ast); !it.IsEnded(); it.Advance()) {
     FunctionLiteral* current = it.Value();
 
     if (true) {
