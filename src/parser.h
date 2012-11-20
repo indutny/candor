@@ -29,6 +29,7 @@
 #include "lexer.h"
 #include "ast.h"
 #include "utils.h"
+#include "zone.h"
 
 namespace candor {
 namespace internal {
@@ -148,7 +149,9 @@ class Parser : public Lexer, public ErrorHandler {
   AstNode* ParseArrayLiteral();
   AstNode* ParseBlock(AstNode* block);
 
+ protected:
   ParserSign sign_;
+  ZoneList<FunctionLiteral*> fns_;
 
   AstNode* ast_;
   int ast_id_;

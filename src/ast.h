@@ -465,7 +465,8 @@ class ObjectLiteral : public AstNode {
 class FunctionLiteral : public AstNode {
  public:
   explicit FunctionLiteral(AstNode* variable) : AstNode(kFunction),
-                                                label_(NULL) {
+                                                label_(NULL),
+                                                own_length_(0) {
     if (variable != NULL) {
       offset(variable->offset());
       length(variable->length());
@@ -538,12 +539,15 @@ class FunctionLiteral : public AstNode {
   inline AstList* args() { return &args_; }
   inline Label* label() { return label_; }
   inline void label(Label* label) { label_ = label; }
+  inline void own_length(uint32_t own_length) { own_length_ = own_length; }
+  inline uint32_t own_length() { return own_length_; }
 
  protected:
   AstNode* variable_;
   AstList args_;
 
   Label* label_;
+  uint32_t own_length_;
 };
 
 

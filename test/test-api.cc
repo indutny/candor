@@ -77,7 +77,7 @@ static Value* GetWeak(uint32_t argc, Value* argv[]) {
   Array* arr = Isolate::GetCurrent()->StackTrace();
   ASSERT(arr->Length() == 2);
   ASSERT(arr->Get(0)->As<Object>()->Get("line")->As<Number>()->Value() == 3);
-  ASSERT(arr->Get(1)->As<Object>()->Get("line")->As<Number>()->Value() == 1);
+  ASSERT(arr->Get(1)->As<Object>()->Get("line")->As<Number>()->Value() == 2);
 
   return *obj;
 }

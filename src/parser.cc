@@ -480,7 +480,14 @@ AstNode* Parser::ParseMember() {
       FunctionLiteral* fn = new FunctionLiteral(result);
       Add(fn);
       result = NULL;
+
+      // Always set start offset for function
+      if (result == NULL) fn->offset(Peek()->offset());
       Skip();
+
+
+      // Push function to the list
+      fns_.Push(fn);
 
       if (colon_call) {
         fn->args()->Push(Add(new AstNode(AstNode::kSelf)));
@@ -518,6 +525,15 @@ AstNode* Parser::ParseMember() {
       }
 
       fn->end(Peek()->offset());
+
+      fn->own_length(fn->length());
+      while (fns_.tail()->value() != fn) {
+        FunctionLiteral* i = fns_.Pop();
+
+        // Unroll all visited functions
+        fn->own_length(fn->own_length() - i->length());
+      }
+
       result = fn;
     } else {
       if (result == NULL) {
