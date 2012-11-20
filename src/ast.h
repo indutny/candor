@@ -37,6 +37,7 @@ namespace internal {
 class ScopeSlot;
 class AstNode;
 class AstValue;
+class Label;
 
 // Just to simplify future use cases
 typedef ZoneList<AstNode*> AstList;
@@ -463,7 +464,8 @@ class ObjectLiteral : public AstNode {
 // contains name and variables list
 class FunctionLiteral : public AstNode {
  public:
-  explicit FunctionLiteral(AstNode* variable) : AstNode(kFunction) {
+  explicit FunctionLiteral(AstNode* variable) : AstNode(kFunction),
+                                                label_(NULL) {
     if (variable != NULL) {
       offset(variable->offset());
       length(variable->length());
@@ -534,12 +536,14 @@ class FunctionLiteral : public AstNode {
   inline AstNode* variable() { return variable_; }
   inline void variable(AstNode* variable) { variable_ = variable; }
   inline AstList* args() { return &args_; }
+  inline Label* label() { return label_; }
+  inline void label(Label* label) { label_ = label; }
 
+ protected:
   AstNode* variable_;
   AstList args_;
 
-  uint32_t offset_;
-  uint32_t length_;
+  Label* label_;
 };
 
 

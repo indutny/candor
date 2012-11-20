@@ -328,9 +328,8 @@ void HIRLiteral::CalculateRepresentation() {
 
 
 HIRFunction::HIRFunction(AstNode* ast) : HIRInstruction(kFunction),
-                                         body(NULL),
-                                         arg_count(0) {
-  ast_ = ast;
+                                         arg_count(0),
+                                         ast_(FunctionLiteral::Cast(ast)) {
 }
 
 
@@ -340,7 +339,7 @@ void HIRFunction::CalculateRepresentation() {
 
 
 void HIRFunction::Print(PrintBuffer* p) {
-  p->Print("i%d = Function[b%d]\n", id, body->id);
+  p->Print("i%d = Function\n", id);
 }
 
 
@@ -353,8 +352,10 @@ HIRNil::HIRNil() : HIRInstruction(kNil) {
 }
 
 
-HIREntry::HIREntry(int context_slots_) : HIRInstruction(kEntry),
-                                         context_slots_(context_slots_) {
+HIREntry::HIREntry(Label* label, int context_slots_)
+    : HIRInstruction(kEntry),
+      label_(label),
+      context_slots_(context_slots_) {
 }
 
 

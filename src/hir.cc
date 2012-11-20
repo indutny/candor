@@ -25,6 +25,7 @@
 #include <string.h>  // memset, memcpy
 
 #include "hir-inl.h"
+#include "macroassembler.h" // Label
 #include "splay-tree.h"
 
 namespace candor {
@@ -69,7 +70,11 @@ void HIRGen::Build(AstNode* root) {
 
     roots_.Push(b);
 
-    current->body = b;
+    // Lazily create labels
+    if (current->ast()->label() == NULL) {
+      current->ast()->label(new Label());
+    }
+
     Visit(current->ast());
 
     set_current_root(NULL);
@@ -651,7 +656,10 @@ HIRInstruction* HIRGen::VisitFunction(AstNode* stmt) {
 
   if (current_root() == current_block() &&
       current_block()->IsEmpty()) {
-    Add(new HIREntry(stmt->context_slots()));
+    if (fn->label() == NULL) {
+      fn->label(new Label());
+    }
+    Add(new HIREntry(fn->label(), stmt->context_slots()));
     HIRInstruction* index = NULL;
     int flat_index = 0;
     bool seen_varg = false;

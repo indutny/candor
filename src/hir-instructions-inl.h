@@ -255,6 +255,16 @@ inline ScopeSlot* HIRLiteral::root_slot() {
 }
 
 
+inline FunctionLiteral* HIRFunction::ast() {
+  return ast_;
+}
+
+
+inline Label* HIREntry::label() {
+  return label_;
+}
+
+
 inline int HIREntry::context_slots() {
   return context_slots_;
 }

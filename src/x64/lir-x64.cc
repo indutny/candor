@@ -54,6 +54,7 @@ void LLabel::Generate(Masm* masm) {
 }
 
 void LEntry::Generate(Masm* masm) {
+  __ bind(label_);
   __ push(rbp);
   __ mov(rbp, rsp);
 
@@ -347,7 +348,7 @@ void LFunction::Generate(Masm* masm) {
   RelocationInfo* addr = new RelocationInfo(RelocationInfo::kAbsolute,
                                             RelocationInfo::kQuad,
                                             masm->offset() - 8);
-  block_->label()->label->AddUse(masm, addr);
+  label_->AddUse(masm, addr);
 
   // Call stub
   __ push(Immediate(HNumber::Tag(arg_count_)));

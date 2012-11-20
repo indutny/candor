@@ -245,16 +245,18 @@ class HIRFunction : public HIRInstruction {
  public:
   explicit HIRFunction(AstNode* ast);
 
-  HIRBlock* body;
   int arg_count;
 
   void CalculateRepresentation();
   void Print(PrintBuffer* p);
 
+  inline FunctionLiteral* ast();
+
   HIR_DEFAULT_METHODS(Function)
 
  protected:
   bool IsGVNEqual(HIRInstruction* to);
+  FunctionLiteral* ast_;
 };
 
 class HIRNil : public HIRInstruction {
@@ -266,15 +268,18 @@ class HIRNil : public HIRInstruction {
 
 class HIREntry : public HIRInstruction {
  public:
-  explicit HIREntry(int context_slots);
+  HIREntry(Label* label, int context_slots);
 
   void Print(PrintBuffer* p);
   bool HasSideEffects();
+
+  inline Label* label();
   inline int context_slots();
 
   HIR_DEFAULT_METHODS(Entry)
 
  private:
+  Label* label_;
   int context_slots_;
 };
 

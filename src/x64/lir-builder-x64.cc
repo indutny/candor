@@ -40,7 +40,8 @@ void LGen::VisitNil(HIRInstruction* instr) {
 
 
 void LGen::VisitEntry(HIRInstruction* instr) {
-  Bind(new LEntry(HIREntry::Cast(instr)->context_slots()));
+  HIREntry* entry = HIREntry::Cast(instr);
+  Bind(new LEntry(entry->label(), entry->context_slots()));
 }
 
 
@@ -76,11 +77,7 @@ void LGen::VisitAllocateArray(HIRInstruction* instr) {
 void LGen::VisitFunction(HIRInstruction* instr) {
   HIRFunction* fn = HIRFunction::Cast(instr);
 
-  // Generate block and label if needed
-  if (fn->body->lir() == NULL) new LBlock(fn->body);
-
-  // XXX : Store address somewhere
-  LInstruction* op = Bind(new LFunction(fn->body->lir(), fn->arg_count))
+  LInstruction* op = Bind(new LFunction(fn->ast()->label(), fn->arg_count))
       ->MarkHasCall()
       ->AddScratch(CreateVirtual());
 

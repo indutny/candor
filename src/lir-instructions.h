@@ -175,13 +175,16 @@ class LInstruction : public ZoneObject {
 
 class LEntry : public LInstruction {
  public:
-  explicit LEntry(int context_slots) : LInstruction(kEntry),
-                                       context_slots_(context_slots) {
+  LEntry(Label* label, int context_slots)
+      : LInstruction(kEntry),
+        label_(label),
+        context_slots_(context_slots) {
   }
 
   INSTRUCTION_METHODS(Entry)
 
  private:
+  Label* label_;
   int context_slots_;
 };
 
@@ -319,16 +322,16 @@ class LStoreProperty : public LAccessProperty {
 
 class LFunction : public LInstruction {
  public:
-  LFunction(LBlock* block, int arg_count) : LInstruction(kFunction),
-                                            block_(block),
-                                            arg_count_(arg_count) {
-    assert(block_ != NULL);
+  LFunction(Label* label, int arg_count) : LInstruction(kFunction),
+                                           label_(label),
+                                           arg_count_(arg_count) {
+    assert(label_ != NULL);
   }
 
   INSTRUCTION_METHODS(Function)
 
  private:
-  LBlock* block_;
+  Label* label_;
   int arg_count_;
 };
 

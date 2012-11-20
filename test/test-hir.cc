@@ -67,7 +67,7 @@ TEST_START(hir)
            "return fn(1, 2, [3,4]...)",
            "# Block 0\n"
            "i0 = Entry[0]\n"
-           "i2 = Function[b1]\n"
+           "i2 = Function\n"
            "i4 = Literal[1]\n"
            "i6 = Literal[2]\n"
            "i8 = AllocateArray\n"
