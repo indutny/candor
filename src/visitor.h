@@ -72,6 +72,7 @@ namespace internal {
 
 // Forward declaration
 class AstNode;
+class FunctionLiteral;
 
 // AST Visiting abstraction
 template <class T>
@@ -128,6 +129,20 @@ class Visitor {
 
   AstNode* current_node_;
   ZoneList<ZoneList<AstNode*>::Item*>* queue_;
+};
+
+class FunctionIterator : public Visitor<AstNode> {
+ public:
+  explicit FunctionIterator(AstNode* root);
+
+  bool IsEnded();
+  void Advance();
+  FunctionLiteral* Value();
+
+  AstNode* VisitFunction(AstNode* node);
+
+ private:
+  ZoneList<AstNode*> work_queue_;
 };
 
 }  // namespace internal

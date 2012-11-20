@@ -101,5 +101,31 @@ void Visitor<T>::VisitChildren(AstNode* node) {
 VISITOR_MAPPING_BLOCK(VISITOR_BLOCK_STUB, 0)
 VISITOR_MAPPING_REGULAR(VISITOR_REGULAR_STUB, 0)
 
+FunctionIterator::FunctionIterator(AstNode* root) : Visitor(kPreorder) {
+  work_queue_.Push(root);
+}
+
+
+FunctionLiteral* FunctionIterator::Value() {
+  return FunctionLiteral::Cast(work_queue_.head()->value());
+}
+
+
+bool FunctionIterator::IsEnded() {
+  return work_queue_.length() == 0;
+}
+
+
+void FunctionIterator::Advance() {
+  AstNode* node = work_queue_.Shift();
+  VisitChildren(node);
+}
+
+
+AstNode* FunctionIterator::VisitFunction(AstNode* node) {
+  work_queue_.Push(node);
+  return node;
+}
+
 }  // namespace internal
 }  // namescape candor
