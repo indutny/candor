@@ -25,7 +25,7 @@
 #include <string.h>  // memset, memcpy
 
 #include "hir-inl.h"
-#include "macroassembler.h" // Label
+#include "macroassembler.h"  // Label
 #include "splay-tree.h"
 
 namespace candor {
