@@ -137,12 +137,15 @@ class FNil : public FInstruction {
 
 class FLabel : public FInstruction {
  public:
-  FLabel() : FInstruction(kLabel) {
+  FLabel() : FInstruction(kLabel), label(new Label()) {
+  }
+
+  explicit FLabel(Label* l) : FInstruction(kLabel), label(l) {
   }
 
   FULLGEN_DEFAULT_METHODS(Label)
 
-  Label label;
+  Label* label;
 };
 
 class FEntry : public FInstruction {

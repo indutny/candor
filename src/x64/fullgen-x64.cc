@@ -53,7 +53,7 @@ void FNil::Generate(Masm* masm) {
 
 
 void FLabel::Generate(Masm* masm) {
-  __ bind(&label);
+  __ bind(label);
 }
 
 
@@ -251,23 +251,23 @@ void FIf::Generate(Masm* masm) {
   // Jmp to `right` block if value is `false`
   Operand bvalue(rax, HBoolean::kValueOffset);
   __ cmpb(bvalue, Immediate(0));
-  __ jmp(kEq, &f_->label);
-  __ jmp(kNe, &t_->label);
+  __ jmp(kEq, f_->label);
+  __ jmp(kNe, t_->label);
 }
 
 
 void FGoto::Generate(Masm* masm) {
-  __ jmp(&label_->label);
+  __ jmp(label_->label);
 }
 
 
 void FBreak::Generate(Masm* masm) {
-  __ jmp(&label_->label);
+  __ jmp(label_->label);
 }
 
 
 void FContinue::Generate(Masm* masm) {
-  __ jmp(&label_->label);
+  __ jmp(label_->label);
 }
 
 
@@ -355,7 +355,7 @@ void FFunction::Generate(Masm* masm) {
   RelocationInfo* addr = new RelocationInfo(RelocationInfo::kAbsolute,
                                             RelocationInfo::kQuad,
                                             masm->offset() - 8);
-  body->label.AddUse(masm, addr);
+  body->label->AddUse(masm, addr);
 
   // Call stub
   __ push(Immediate(HNumber::Tag(argc_)));

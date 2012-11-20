@@ -231,7 +231,10 @@ FInstruction* Fullgen::VisitFunction(AstNode* stmt) {
   FunctionLiteral* fn = FunctionLiteral::Cast(stmt);
 
   if (current_function()->root_ast() == stmt) {
-    current_function()->body = new FLabel();
+    if (fn->label() == NULL) {
+      fn->label(new Label());
+    }
+    current_function()->body = new FLabel(fn->label());
     Add(current_function()->body);
     current_function()->entry = new FEntry(stmt->context_slots());
     Add(current_function()->entry);

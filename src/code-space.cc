@@ -195,9 +195,6 @@ char* CodeSpace::Compile(const char* filename,
     // Create instruction list
     f.Build(ast);
 
-    // Store root
-    *root = f.root()->Allocate()->addr();
-
     // Generate instructions
     f.Generate(&masm);
   }
