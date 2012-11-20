@@ -230,10 +230,11 @@ void Fullgen::LoadArguments(FunctionLiteral* fn) {
 FInstruction* Fullgen::VisitFunction(AstNode* stmt) {
   FunctionLiteral* fn = FunctionLiteral::Cast(stmt);
 
+  if (fn->label() == NULL) {
+    fn->label(new Label());
+  }
+
   if (current_function()->root_ast() == stmt) {
-    if (fn->label() == NULL) {
-      fn->label(new Label());
-    }
     current_function()->body = new FLabel(fn->label());
     Add(current_function()->body);
     current_function()->entry = new FEntry(stmt->context_slots());

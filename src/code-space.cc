@@ -172,31 +172,37 @@ char* CodeSpace::Compile(const char* filename,
   Root r(heap());
   Masm masm(this);
 
-  if (true) {
-    // Generate CFG with SSA
-    HIRGen hir(heap(), &r, chunk->filename());
+  FunctionIterator it(ast);
 
-    hir.Build(ast);
+  for (; !it.IsEnded(); it.Advance()) {
+    FunctionLiteral* current = it.Value();
 
-    // Generate low-level representation:
-    //   For each root in reverse order generate lir
-    //   (Generate children first, parents later)
-    HIRBlockList::Item* head = hir.roots()->head();
-    for (; head != NULL; head = head->next()) {
-      // Generate LIR
-      LGen lir(&hir, chunk->filename(), head->value());
+    if (true) {
+      // Generate CFG with SSA
+      HIRGen hir(heap(), &r, chunk->filename());
 
-      // Generate Masm code
-      lir.Generate(&masm, heap()->source_map());
+      hir.Build(current);
+
+      // Generate low-level representation:
+      //   For each root in reverse order generate lir
+      //   (Generate children first, parents later)
+      HIRBlockList::Item* head = hir.roots()->head();
+      for (; head != NULL; head = head->next()) {
+        // Generate LIR
+        LGen lir(&hir, chunk->filename(), head->value());
+
+        // Generate Masm code
+        lir.Generate(&masm, heap()->source_map());
+      }
+    } else {
+      Fullgen f(heap(), &r, chunk->filename());
+
+      // Create instruction list
+      f.Build(current);
+
+      // Generate instructions
+      f.Generate(&masm);
     }
-  } else {
-    Fullgen f(heap(), &r, chunk->filename());
-
-    // Create instruction list
-    f.Build(ast);
-
-    // Generate instructions
-    f.Generate(&masm);
   }
 
   // Store root

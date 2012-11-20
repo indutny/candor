@@ -122,6 +122,20 @@ void FunctionIterator::Advance() {
 }
 
 
+AstNode* FunctionIterator::VisitCall(AstNode* node) {
+  FunctionLiteral* fn = FunctionLiteral::Cast(node);
+
+  Visit(fn->variable());
+
+  AstList::Item* arg = fn->args()->head();
+  for (; arg != NULL; arg = arg->next()) {
+    Visit(arg->value());
+  }
+
+  return node;
+}
+
+
 AstNode* FunctionIterator::VisitFunction(AstNode* node) {
   work_queue_.Push(node);
   return node;

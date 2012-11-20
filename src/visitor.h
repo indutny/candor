@@ -139,6 +139,7 @@ class FunctionIterator : public Visitor<AstNode> {
   void Advance();
   FunctionLiteral* Value();
 
+  AstNode* VisitCall(AstNode* node);
   AstNode* VisitFunction(AstNode* node);
 
  private:

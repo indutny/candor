@@ -57,29 +57,25 @@ HIRGen::~HIRGen() {
 
 
 void HIRGen::Build(AstNode* root) {
-  HIRInstruction* hroot = new HIRFunction(root);
-  hroot->Init(this, NULL);
-  work_queue_.Push(hroot);
+  HIRFunction* current = new HIRFunction(root);
+  current->Init(this, NULL);
 
-  while (work_queue_.length() != 0) {
-    HIRFunction* current = HIRFunction::Cast(work_queue_.Shift());
+  HIRBlock* b = CreateBlock(current->ast()->stack_slots());
+  set_current_block(b);
+  set_current_root(b);
 
-    HIRBlock* b = CreateBlock(current->ast()->stack_slots());
-    set_current_block(b);
-    set_current_root(b);
+  roots_.Push(b);
 
-    roots_.Push(b);
-
-    // Lazily create labels
-    if (current->ast()->label() == NULL) {
-      current->ast()->label(new Label());
-    }
-
-    Visit(current->ast());
-
-    set_current_root(NULL);
+  // Lazily create labels
+  if (current->ast()->label() == NULL) {
+    current->ast()->label(new Label());
   }
 
+  Visit(current->ast());
+
+  set_current_root(NULL);
+
+  // Optimize
   PrunePhis();
   FindReachableBlocks();
   DeriveDominators();
@@ -654,11 +650,12 @@ HIRInstruction* HIRGen::Visit(AstNode* stmt) {
 HIRInstruction* HIRGen::VisitFunction(AstNode* stmt) {
   FunctionLiteral* fn = FunctionLiteral::Cast(stmt);
 
+  if (fn->label() == NULL) {
+    fn->label(new Label());
+  }
+
   if (current_root() == current_block() &&
       current_block()->IsEmpty()) {
-    if (fn->label() == NULL) {
-      fn->label(new Label());
-    }
     Add(new HIREntry(fn->label(), stmt->context_slots()));
     HIRInstruction* index = NULL;
     int flat_index = 0;
@@ -753,7 +750,6 @@ HIRInstruction* HIRGen::VisitFunction(AstNode* stmt) {
     HIRFunction* f = new HIRFunction(stmt);
     f->arg_count = fn->args()->length();
 
-    work_queue_.Push(f);
     return Add(f);
   }
 }
