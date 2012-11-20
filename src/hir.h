@@ -276,6 +276,8 @@ class HIRGen : public Visitor<HIRInstruction> {
   inline int instr_id();
   inline int dfs_id();
 
+  static const int kMaxOptimizableSize = 25000;
+
  private:
   HIRBlock* current_block_;
   HIRBlock* current_root_;

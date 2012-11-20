@@ -41,6 +41,18 @@ AstNode* Parser::Execute() {
     if (offset_ != length_) {
       SetError("Unexpected symbol");
     } else {
+      // Calculate size of main function
+      FunctionLiteral* fn = FunctionLiteral::Cast(ast());
+      fn->end(Peek()->offset());
+
+      fn->own_length(fn->length());
+      while (fns_.length() != 0) {
+        FunctionLiteral* i = fns_.Pop();
+
+        // Unroll all visited functions
+        fn->own_length(fn->own_length() - i->length());
+      }
+
       SetError(NULL);
     }
   }
@@ -484,7 +496,6 @@ AstNode* Parser::ParseMember() {
       // Always set start offset for function
       if (result == NULL) fn->offset(Peek()->offset());
       Skip();
-
 
       // Push function to the list
       fns_.Push(fn);
