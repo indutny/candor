@@ -78,8 +78,8 @@ void HIRGen::Build(AstNode* root) {
   // Optimize
   FindReachableBlocks();
   DeriveDominators();
-  FindEffects();
   PrunePhis();
+  FindEffects();
   EliminateDeadCode();
   GlobalValueNumbering();
   GlobalCodeMotion();
@@ -179,6 +179,7 @@ void HIRGen::FindReachableBlocks() {
       HIRBlock* block = bhead->value();
 
       for (int i = 0; i < block->succ_count(); i++) {
+        block->SuccAt(i)->reachable_from()->Set(block->id);
         if (block->reachable_from()->Copy(
                 block->SuccAt(i)->reachable_from())) {
           change = true;
@@ -398,10 +399,10 @@ void HIRGen::FindInEffects(HIRInstruction* instr) {
     ehead = arg->effects_out()->head();
     for (; ehead != NULL; ehead = ehead->next()) {
       // If instruction may be reachable from one of outcoming effects of
-      // it's arguments - it's under effect.
+      // it's arguments are under effect.
       HIRInstruction* effect = ehead->value();
-      if (instr->block()->reachable_from()->Test(effect->block()->id) &&
-          effect->id < instr->id) {
+      if (instr->block()->reachable_from()->Test(effect->block()->id) ||
+          (instr->block() == effect->block() && effect->id < instr->id)) {
         NumberKey* key = NumberKey::New(effect->id);
         if (!effects_.Insert(key, effect)) continue;
         instr->effects_in()->Push(effect);
@@ -610,11 +611,17 @@ void HIRGen::ScheduleLate(HIRInstruction* instr) {
 
   if (lca->loop_depth < best->loop_depth) best = lca;
 
-  while (lca->reachable_from()->Test(instr->block()->id) &&
-         lca != instr->block()) {
+  while (lca != instr->block()) {
     lca = lca->dominator();
+    if (lca == NULL) break;
+    if (!lca->reachable_from()->Test(instr->block()->id) &&
+        lca != instr->block()) {
+      break;
+    }
+
     if (lca->loop_depth < best->loop_depth) best = lca;
   }
+
   instr->block(best);
 }
 
@@ -1307,7 +1314,6 @@ HIRBlock::HIRBlock(HIRGen* g) : id(g->block_id()),
   pred_[1] = NULL;
   succ_[0] = NULL;
   succ_[1] = NULL;
-  reachable_from_.Set(id);
 }
 
 
