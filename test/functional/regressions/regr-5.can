@@ -1,0 +1,13 @@
+print = global.print
+assert = global.assert
+
+print("-- can: hir regr#5 --")
+
+test(a, items...) {
+  while (i < sizeof items) {
+    a[sizeof a] = items[i++]
+  }
+
+  assert(sizeof a == 6, "Sizeof and store property")
+}
+test([1,2,3], 1,2,3)

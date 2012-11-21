@@ -76,11 +76,11 @@ void HIRGen::Build(AstNode* root) {
   set_current_root(NULL);
 
   // Optimize
-  PrunePhis();
   FindReachableBlocks();
   DeriveDominators();
-  EliminateDeadCode();
   FindEffects();
+  PrunePhis();
+  EliminateDeadCode();
   GlobalValueNumbering();
   GlobalCodeMotion();
 

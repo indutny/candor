@@ -45,6 +45,7 @@ test: test-runner can
 	@./can test/functional/regressions/regr-2.can
 	@./can test/functional/regressions/regr-3.can
 	@./can test/functional/regressions/regr-4.can
+	@./can test/functional/regressions/regr-5.can
 
 lint:
 	@./tools/presubmit.py
