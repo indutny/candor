@@ -101,7 +101,8 @@ void Visitor<T>::VisitChildren(AstNode* node) {
 VISITOR_MAPPING_BLOCK(VISITOR_BLOCK_STUB, 0)
 VISITOR_MAPPING_REGULAR(VISITOR_REGULAR_STUB, 0)
 
-FunctionIterator::FunctionIterator(AstNode* root) : Visitor(kPreorder) {
+FunctionIterator::FunctionIterator(AstNode* root)
+    : Visitor<AstNode>(kPreorder) {
   work_queue_.Push(root);
 }
 

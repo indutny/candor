@@ -175,7 +175,8 @@ char* CodeSpace::Compile(const char* filename,
   for (FunctionIterator it(ast); !it.IsEnded(); it.Advance()) {
     FunctionLiteral* current = it.Value();
 
-    if (current->own_length() < HIRGen::kMaxOptimizableSize) {
+    int len = current->own_length();
+    if (len < HIRGen::kMaxOptimizableSize) {
       // Generate CFG with SSA
       HIRGen hir(heap(), &r, chunk->filename());
 
