@@ -1198,7 +1198,7 @@ void LoadVarArgStub::Generate() {
   offset_s.Unspill();
   __ addqb(offset, Immediate(HNumber::Tag(2)));
   __ addq(offset, rbx);
-  __ shl(offset, 2);
+  __ shl(offset, Immediate(2));
   __ addq(offset, *rbp_s.GetOperand());
   __ mov(offset, stack_slot);
 

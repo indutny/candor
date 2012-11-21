@@ -194,7 +194,7 @@ const DoubleRegister fscratch = xmm11;
 
 class Immediate : public ZoneObject {
  public:
-  const Immediate(uint64_t value) : value_(value) {
+  explicit Immediate(uint64_t value) : value_(value) {
   }
 
   inline uint64_t value() const { return value_; }

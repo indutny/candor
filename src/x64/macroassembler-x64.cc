@@ -95,7 +95,7 @@ Masm::Align::Align(Masm* masm) : masm_(masm), align_(masm->align_) {
 
 Masm::Align::~Align() {
   if (align_ % 2 == 0) return;
-  masm_->addqb(rsp, 8);
+  masm_->addqb(rsp, Immediate(8));
   masm_->align_ -= 1;
 }
 
@@ -623,7 +623,7 @@ void Masm::Call(const Operand& addr) {
 
 
 void Masm::Call(char* stub) {
-  mov(scratch, reinterpret_cast<intptr_t>(stub));
+  mov(scratch, Immediate(reinterpret_cast<intptr_t>(stub)));
 
   Call(scratch);
 }
