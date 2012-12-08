@@ -16,6 +16,13 @@
       'include',
       'src'
     ],
+    'direct_dependent_settings': {
+      'include_dirs': [ 'include' ],
+      'link_settings': {
+        'ldflags': [ '-pthread' ],
+      },
+      'cflags': [ '-pthread', '-fno-strict-aliasing' ],
+    },
     'sources': [
       'src/zone.cc',
       'src/isolate.cc',
