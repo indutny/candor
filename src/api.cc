@@ -26,6 +26,7 @@
 #include <stdlib.h>  // NULL
 
 #include "candor.h"
+#include "isolate.h"
 #include "heap.h"
 #include "heap-inl.h"
 #include "code-space.h"
@@ -77,6 +78,8 @@ TYPES_LIST(METHODS_ENUM)
 static Isolate* current_isolate = NULL;
 
 Isolate::Isolate() {
+  IsolateData::GetCurrent()->isolate = this;
+
   heap = new Heap(2 * 1024 * 1024);
   space = new CodeSpace(heap);
   error = NULL;
@@ -88,12 +91,12 @@ Isolate::Isolate() {
 Isolate::~Isolate() {
   delete heap;
   delete space;
+  delete IsolateData::GetCurrent();
 }
 
 
-Isolate* ISOLATE {
-  // TODO(indutny): Support multiple isolates
-  return current_isolate;
+Isolate* Isolate::GetCurrent() {
+  return IsolateData::GetCurrent()->isolate;
 }
 
 

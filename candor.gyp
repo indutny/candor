@@ -18,6 +18,7 @@
     ],
     'sources': [
       'src/zone.cc',
+      'src/isolate.cc',
       'src/api.cc',
       'src/code-space.cc',
       'src/cpu.cc',

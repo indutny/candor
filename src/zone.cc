@@ -29,8 +29,6 @@
 namespace candor {
 namespace internal {
 
-Zone* Zone::current_ = NULL;
-
 void* Zone::Allocate(size_t size) {
   // If current block has enough size - allocate chunk in it
   if (blocks_.head()->value()->has(size)) {

@@ -27,6 +27,7 @@
 #include <sys/types.h>  // size_t
 #include <assert.h>  // assert
 
+#include "isolate.h"  // IsolateData
 #include "utils.h"  // List
 
 namespace candor {
@@ -71,9 +72,8 @@ class Zone {
   };
 
   Zone() {
-    // TODO(indutny): this should use thread id
-    parent_ = current_;
-    current_ = this;
+    parent_ = IsolateData::GetCurrent()->zone;
+    IsolateData::GetCurrent()->zone = this;
 
     page_size_ = GetPageSize();
 
@@ -81,13 +81,14 @@ class Zone {
   }
 
   ~Zone() {
-    current_ = parent_;
+    IsolateData::GetCurrent()->zone = parent_;
   }
 
   void* Allocate(size_t size);
 
-  static Zone* current_;
-  static inline Zone* current() { return current_; }
+  static inline Zone* current() {
+    return IsolateData::GetCurrent()->zone;
+  }
 
   Zone* parent_;
 
