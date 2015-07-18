@@ -94,7 +94,7 @@ class LInstruction : public ZoneObject {
                                      type_(type),
                                      input_count_(0),
                                      scratch_count_(0),
-                                     has_call_(NULL),
+                                     has_call_(false),
                                      block_(NULL),
                                      slot_(NULL),
                                      hir_(NULL),
