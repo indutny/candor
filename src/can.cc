@@ -178,7 +178,8 @@ void StartRepl() {
   while (true) {
     char* cmd = new char[1000];
     fprintf(stdout, multiline ? "...   " : "can> ");
-    fgets(cmd, 1000, stdin);
+    if (!fgets(cmd, 1000, stdin))
+      break;
 
     // Replace '\n' with '\0'
     cmd[strlen(cmd) - 1] = 0;
